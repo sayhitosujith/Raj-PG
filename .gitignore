@@ -1,0 +1,8 @@
+# Secrets: DATABASE_URL, encryption keys, bootstrap passwords. Commit .env.example instead.
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+*.log

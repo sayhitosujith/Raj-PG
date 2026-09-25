@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id                  String               @id @default(cuid())
+  name                String
+  location            String
+  imageUrl            String
+  status              String               @default("Healthy")
+  // Meal service windows shown to residents, as 24-hour "HH:MM" local (IST) times.
+  breakfastFrom       String               @default("07:30")
+  breakfastTo         String               @default("09:30")
+  lunchFrom           String               @default("12:30")
+  lunchTo             String               @default("14:30")
+  dinnerFrom          String               @default("19:30")
+  dinnerTo            String               @default("21:30")
+  // Who the PG is for; null only for properties created before this was asked.
+  tenantType          TenantType?
+  // Codes from the known amenity list (see propertyFeatures.ts), so new amenities need no migration.
+  amenities           String[]             @default([])
+  // Room capacity the owner declared; occupancy is measured against it. Null for older properties,
+  // which fall back to the number of Room rows that exist.
+  totalRooms          Int?
+  rooms               Room[]
+  payments            Payment[]
+  activities          Activity[]
+  maintenanceRequests MaintenanceRequest[]
+  bookings            Booking[]
+  announcements       Announcement[]
+  createdAt           DateTime             @default(now())
+}
+
+model Room {
+  id         String    @id @default(cuid())
+  number     String
+  occupied   Boolean   @default(false)
+  propertyId String
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  resident   Resident?
+}
+
+model Resident {
+  id                    String                   @id @default(cuid())
+  name                  String
+  phone                 String?
+  email                 String?
+  aadharNumber          String?
+  permanentAddress      String?
+  aadharCardUrl         String?
+  accessKeyHash         String?
+  // Set by the resident after their first access-key sign-in; from then on the access key is retired.
+  passwordHash          String?
+  roomId                String                   @unique
+  room                  Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  active                Boolean                  @default(true)
+  // Move-in date, separate from createdAt because residents are often added after they arrive.
+  joinedAt              DateTime                 @default(now()) @db.Date
+  // Portal content stays locked until an owner approves the resident's Aadhaar details.
+  aadharStatus          AadharVerificationStatus @default(NOT_SUBMITTED)
+  aadharRejectionReason String?
+  aadharSubmittedAt     DateTime?
+  aadharReviewedAt      DateTime?
+  // Small square JPEG (resized in the browser) stored as a data URL; the timestamp versions the
+  // photo URL so browsers fetch the new one after a change instead of showing a cached copy.
+  profilePhotoUrl       String?
+  profilePhotoUpdatedAt DateTime?
+  // Whole rupees per month; null means rent is not tracked for this resident.
+  monthlyRent           Int?
+  // When rent was first set: billing starts from here, so adding rent for an existing resident
+  // never produces surprise arrears for months before the owner started tracking.
+  rentTrackedFrom       DateTime?
+  sessions              Session[]
+  housekeepingRequests  HousekeepingRequest[]
+  rentPayments          RentPayment[]
+  createdAt             DateTime                 @default(now())
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  amount     Int
+  status     String   @default("paid")
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model MaintenanceRequest {
+  id         String   @id @default(cuid())
+  title      String
+  status     String   @default("open")
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  amountLabel String
+  timeLabel   String
+  tone        String
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  residentName String
+  roomNumber   String
+  status       String   @default("pending")
+  propertyId   String
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  message    String
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  RESIDENT
+}
+
+model SuperAdmin {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+}
+
+// A session belongs to exactly one user type; the nullable FKs keep referential
+// integrity for both without merging residents and admins into one table.
+model Session {
+  id           String      @id @default(cuid())
+  tokenHash    String      @unique
+  role         UserRole
+  superAdminId String?
+  superAdmin   SuperAdmin? @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  residentId   String?
+  resident     Resident?   @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+}
+
+enum AadharVerificationStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum HousekeepingSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum HousekeepingStatus {
+  REQUESTED
+  SCHEDULED
+  DONE
+  CANCELLED
+}
+
+// A resident's one-off cleaning request, worked through by the owner on the Housekeeping page.
+model HousekeepingRequest {
+  id                     String             @id @default(cuid())
+  residentId             String
+  resident               Resident           @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  date                   DateTime           @db.Date
+  slot                   HousekeepingSlot
+  note                   String?
+  status                 HousekeepingStatus @default(REQUESTED)
+  // Shown to the resident, e.g. "Cleaner arrives at 10am" or why a request was cancelled.
+  ownerNote              String?
+  // "Cleaner did not turn up" nudges from the resident; a reminder counts as open until the owner
+  // replies or changes the status after it (reminderAcknowledgedAt later than lastReminderAt).
+  reminderCount          Int                @default(0)
+  lastReminderAt         DateTime?
+  reminderAcknowledgedAt DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([status, date])
+  @@index([residentId, date])
+}
+
+enum TenantType {
+  MEN
+  WOMEN
+  COLIVING
+}
+
+// One month of rent recorded as paid by the owner. `month` is "YYYY-MM" (the month the rent is for).
+model RentPayment {
+  id         String   @id @default(cuid())
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  month      String
+  amount     Int
+  paidAt     DateTime @default(now())
+
+  @@unique([residentId, month])
+}
