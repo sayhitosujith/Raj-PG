@@ -1,0 +1,6 @@
+# Netlify: the web app calls the API at /api on its own origin (so the SameSite=Strict session
+# cookie works), and this proxies those calls to the Render backend. Status 200 = rewrite, not redirect.
+/api/*  https://raj-pg-api.onrender.com/api/:splat  200
+
+# Single-page app: serve index.html for client-side routes such as /superadmin.
+/*      /index.html  200
