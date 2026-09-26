@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { BadgeCheck, ChevronDown, ExternalLink, Eye, EyeOff, Pencil, ShieldX, Trash2 } from 'lucide-react'
+import { BadgeCheck, ChevronDown, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, ShieldX, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus, Resident } from './resident'
@@ -91,7 +91,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onD
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}</strong><small>{resident.property} · {resident.location}</small></div>
-        <div className="resident-room"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small><em className={`rent-chip ${rentChip(resident.rent).tone}`}>{rentChip(resident.rent).text}</em></div>
+        <div className="resident-room"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
         <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>
         <button className="row-delete" aria-label={`Remove ${resident.name}`} title="Remove resident" onClick={onDelete}><Trash2 size={14} /></button>

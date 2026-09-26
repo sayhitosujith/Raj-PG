@@ -7,8 +7,8 @@ import { readApiError } from './superAdmin'
 import { MealTimings } from './MealTimings'
 import type { MealTimes } from './meals'
 import { ProfilePhotoPicker } from './ProfilePhotoPicker'
-import { formatDueDate, formatRupees as formatRentAmount, ordinal, type RentSummary } from './rent'
-import { RentBanner } from './RentBanner'
+import type { RentSummary } from './rent'
+import { RentBanner, RentHighlight } from './RentBanner'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
 import { RefreshButton } from './RefreshButton'
@@ -103,7 +103,6 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     ['Aadhaar number', profile.aadharLast4 ? `XXXX XXXX ${profile.aadharLast4}` : '—'],
     ['Joining date', formatJoinDate(profile.joinedAt)],
     ['Days stayed', daysStayedLabel(profile.joinedAt)],
-    ...(profile.rent.monthlyRent ? [['Monthly rent', `${formatRentAmount(profile.rent.monthlyRent)} · due by the ${ordinal(profile.rent.dueDay)} of each month`], ['This month', profile.rent.state === 'PAID' ? 'Paid' : profile.rent.state === 'LOCK_DUE' ? 'Overdue' : profile.rent.outstandingMonths.length ? `Due by ${formatDueDate(profile.rent.outstandingMonths[0], profile.rent.dueDay)}` : 'Nothing due yet']] as Array<[string, string]> : []),
   ]
 
   return (
@@ -117,7 +116,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profile.name.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
         <section className="workspace-view">
           <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.</p></div><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>
-          <dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl>
+          <RentHighlight rent={profile.rent} /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl>
         </section>
         <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} onNotice={showNotice} />
         <div className="portal-grid">

@@ -1,5 +1,25 @@
-import { AlertTriangle, BellRing } from 'lucide-react'
-import { formatDueDate, formatMonth, formatRupees, type RentSummary } from './rent'
+import { AlertTriangle, BellRing, IndianRupee } from 'lucide-react'
+import { formatDueDate, formatMonth, formatRupees, ordinal, type RentSummary } from './rent'
+
+/** Prominent monthly rent card for the resident's "My details": amount, due day, and this month's state. */
+export function RentHighlight({ rent }: { rent: RentSummary }) {
+  if (!rent.monthlyRent) return null
+  const status = rent.state === 'LOCK_DUE' ? { label: `Overdue · ${formatRupees(rent.amountDue)}`, tone: 'coral' }
+    : rent.state === 'PAID' ? { label: `${formatMonth(rent.currentMonth)} paid`, tone: 'sage' }
+    : rent.outstandingMonths.length ? { label: `Due by ${formatDueDate(rent.outstandingMonths[0], rent.dueDay)}`, tone: 'gold' }
+    : { label: 'Nothing due yet', tone: 'muted' }
+  return (
+    <div className={`rent-highlight is-${status.tone}`}>
+      <span className="rent-highlight-icon"><IndianRupee size={20} /></span>
+      <div className="rent-highlight-copy">
+        <p className="eyebrow">Monthly rent</p>
+        <strong>{formatRupees(rent.monthlyRent)}<small> / month</small></strong>
+        <span>Due by the {ordinal(rent.dueDay)} of every month</span>
+      </div>
+      <span className={`rent-highlight-status ${status.tone}`}>{status.label}</span>
+    </div>
+  )
+}
 
 /** The resident's rent reminders: two on the 1st and 2nd, then an overdue notice from the 3rd. */
 export function RentBanner({ rent }: { rent: RentSummary }) {

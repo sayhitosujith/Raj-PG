@@ -4,7 +4,7 @@ import { TenantType } from '@prisma/client'
  * Amenities an owner can tick for a property. Stored as these codes in Property.amenities, so
  * adding one (e.g. AC or laundry) is a one-line change here and in the web labels, not a migration.
  */
-export const amenityCodes = ['HOT_WATER', 'TV', 'WIFI', 'SECURITY', 'LIFT'] as const
+export const amenityCodes = ['HOT_WATER', 'TV', 'WIFI', 'SECURITY', 'LIFT', 'AC'] as const
 
 /** Validated amenity list, de-duplicated and in the canonical order, or an error. */
 export function parseAmenities(value: unknown): { amenities: string[] } | { error: string } {
