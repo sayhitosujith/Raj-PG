@@ -1,19 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
-import { applyTheme, chooseTheme, storedTheme, systemTheme, type Theme } from './theme'
+import { applyTheme, chooseTheme, currentTheme, nextThemeSwitch, type Theme } from './theme'
 
 /**
- * Light/dark switch. Until the viewer picks, it follows the device setting (and live changes to
- * it); after that their choice sticks. The initial theme is applied in main.tsx before first paint.
+ * Light/dark switch. The theme follows the device clock (light 7am–7pm, dark otherwise) and flips
+ * by itself at those times; a click overrides it only until the next flip. The initial theme is
+ * applied in main.tsx before first paint.
  */
 export function ThemeToggle({ className = '' }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>(() => storedTheme() ?? systemTheme())
+  const [theme, setTheme] = useState<Theme>(() => currentTheme())
 
   useEffect(() => {
-    const query = window.matchMedia('(prefers-color-scheme: dark)')
-    const followSystem = () => { if (!storedTheme()) { const next = systemTheme(); applyTheme(next); setTheme(next) } }
-    query.addEventListener('change', followSystem)
-    return () => query.removeEventListener('change', followSystem)
+    let timer: number
+    const sync = () => {
+      const next = currentTheme()
+      applyTheme(next)
+      setTheme(next)
+      window.clearTimeout(timer)
+      // A second past the switch, so the clock is clearly on the new side of it.
+      timer = window.setTimeout(sync, nextThemeSwitch().getTime() - Date.now() + 1000)
+    }
+    // Background tabs throttle timers and laptops sleep, so re-check when the page is shown again.
+    const onVisible = () => { if (document.visibilityState === 'visible') sync() }
+    timer = window.setTimeout(sync, nextThemeSwitch().getTime() - Date.now() + 1000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [])
 
   function toggle() {
@@ -22,7 +33,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     setTheme(next)
   }
 
-  const label = theme === 'dark' ? 'Switch to light view' : 'Switch to dark view'
+  const label = theme === 'dark' ? 'Switch to light view (until the next day/night change)' : 'Switch to dark view (until the next day/night change)'
   return (
     <button type="button" className={`icon-button theme-toggle ${className}`.trim()} onClick={toggle} aria-label={label} title={label}>
       {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}

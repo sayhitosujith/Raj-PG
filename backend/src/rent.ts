@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
+import { propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
@@ -10,8 +11,6 @@ import { getSettings, rentRulesOf, type RentRules } from './settings.js'
  * Reminders are shown in the app (no SMS/email provider is set up); nothing is locked automatically.
  */
 const maxMonthlyRent = 10_00_000
-// Properties are in India (IST, UTC+5:30, no daylight saving), so "which day is it" is decided there.
-const propertyUtcOffsetMs = 5.5 * 60 * 60 * 1000
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /** Where a resident stands for rent right now. */
@@ -48,7 +47,7 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   const today = propertyToday(now)
   const currentMonth = monthKey(today.year, today.month)
   if (!resident.monthlyRent || !resident.rentTrackedFrom || !resident.active) {
-    return { state: 'NOT_TRACKED' as RentState, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths: [] as string[], overdueMonths: [] as string[], amountDue: 0, dueDay }
+    return { state: 'NOT_TRACKED' as RentState, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths: [] as string[], overdueMonths: [] as string[], amountDue: 0, dueDay, lateFee: rules.lateFee }
   }
   const start = resident.rentTrackedFrom > resident.joinedAt ? resident.rentTrackedFrom : resident.joinedAt
   const paid = new Set(paidMonths)
@@ -61,7 +60,9 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
     : owesCurrent && today.day >= rules.reminderOneDay ? 'REMINDER_1'
     : paid.has(currentMonth) ? 'PAID'
     : 'NOT_DUE'
-  return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue: outstandingMonths.length * resident.monthlyRent, dueDay }
+  // Each overdue month carries the late fee on top of its rent.
+  const amountDue = outstandingMonths.length * resident.monthlyRent + overdueMonths.length * rules.lateFee
+  return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee }
 }
 
 /** True when the resident is past the second reminder; used to limit their portal until paid. */
@@ -102,7 +103,7 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 export const rentAdminRouter = Router()
 
 // Records a month as paid: the oldest unpaid month by default, or a specific "YYYY-MM" (e.g. an
-// advance payment for next month). Amount defaults to the resident's monthly rent.
+// advance payment for next month). Amount defaults to the monthly rent, plus the late fee when that month is overdue.
 rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) => {
   const { id } = request.params
   const { month: requestedMonth, amount: requestedAmount } = request.body as { month?: unknown; amount?: unknown }
@@ -112,7 +113,7 @@ rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) =
     const status = await rentSummary(id)
     if (!status.monthlyRent) { response.status(409).json({ error: 'Set a monthly rent for this resident first.' }); return }
     const month = (requestedMonth as string | undefined) ?? status.outstandingMonths[0] ?? status.currentMonth
-    await prisma.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? status.monthlyRent } })
+    await prisma.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? status.monthlyRent + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
     response.status(201).json(await rentSummary(id))
   } catch (error) {
     respondToError(response, error, 'The payment could not be recorded.')

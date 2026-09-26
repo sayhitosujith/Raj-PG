@@ -29,7 +29,7 @@ export function RentBanner({ rent }: { rent: RentSummary }) {
     return (
       <div className="rent-banner is-reminder" role="status">
         <BellRing size={18} />
-        <div><strong>Rent reminder {isFinal ? '2' : '1'} of 2</strong><p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{isFinal ? ' This is the last reminder.' : ''} Please pay your property owner.</p></div>
+        <div><strong>Rent reminder {isFinal ? '2' : '1'} of 2</strong><p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{isFinal ? ' This is the last reminder.' : ''}{rent.lateFee ? ` A late fee of ${formatRupees(rent.lateFee)} applies after that.` : ''} Please pay your property owner.</p></div>
       </div>
     )
   }
@@ -37,7 +37,7 @@ export function RentBanner({ rent }: { rent: RentSummary }) {
     return (
       <div className="rent-banner is-overdue" role="alert">
         <AlertTriangle size={18} />
-        <div><strong>Your rent is overdue</strong><p>{formatRupees(rent.amountDue)} outstanding for {rent.overdueMonths.map(formatMonth).join(', ')}. Please pay your property owner today. Until the payment is recorded, new housekeeping requests are paused and your property owner may restrict door access.</p></div>
+        <div><strong>Your rent is overdue</strong><p>{formatRupees(rent.amountDue)} outstanding for {rent.overdueMonths.map(formatMonth).join(', ')}{rent.lateFee ? ', including late fees' : ''}. Please pay your property owner today. Until the payment is recorded, new housekeeping requests are paused and your property owner may restrict door access.</p></div>
       </div>
     )
   }

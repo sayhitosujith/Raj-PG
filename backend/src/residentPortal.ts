@@ -7,7 +7,8 @@ import { prisma } from './db.js'
 import { toMealTimes } from './meals.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { rentSummary } from './rent.js'
-import { getSettings, policiesOf, slotOptionsOf } from './settings.js'
+import { pendingPolicyConsent, policiesOf } from './policies.js'
+import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
@@ -30,10 +31,10 @@ export async function requirePortalAccess(_request: Request, response: Response,
   }
 }
 
-/** Workspace details a resident needs: who to contact, the housekeeping slot hours, and the policies. */
+/** Workspace details a resident needs: contacts, house rules, housekeeping slots and limit, and the policies. */
 async function residentWorkspace() {
   const settings = await getSettings()
-  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), ...policiesOf(settings) }
+  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
@@ -61,9 +62,9 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
-    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, room } = resident
+    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -153,4 +154,23 @@ residentPortalRouter.delete('/resident-portal/photo', requireResident, requirePo
 residentPortalRouter.get('/resident-portal/announcements', requireResident, requirePortalAccess, async (_request, response) => {
   const announcements = await prisma.announcement.findMany({ where: { propertyId: response.locals.propertyId as string }, orderBy: { createdAt: 'desc' }, select: { id: true, title: true, message: true, createdAt: true } })
   response.json(announcements)
+})
+
+// Accepts the policy version the resident was shown. If the owner changed a policy again since,
+// the versions differ and the resident is sent back to read the newer text.
+residentPortalRouter.post('/resident-portal/policies/accept', requireResident, requirePortalAccess, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  const { version } = request.body as { version?: unknown }
+  if (typeof version !== 'string') { response.status(400).json({ error: 'Policy version is missing.' }); return }
+  try {
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { policiesAcceptedVersion: true } })
+    const pending = pendingPolicyConsent(await getSettings(), resident.policiesAcceptedVersion)
+    if (!pending) { response.json({ accepted: true }); return }
+    if (pending.version !== version) { response.status(409).json({ error: 'The policies were updated again. Please review the latest version.', code: 'POLICY_CHANGED' }); return }
+    await prisma.resident.update({ where: { id: userId }, data: { policiesAcceptedVersion: new Date(pending.version), policiesAcceptedAt: new Date() } })
+    response.json({ accepted: true })
+  } catch (error) {
+    console.error('Policy acceptance failed:', error)
+    response.status(503).json({ error: 'Your acceptance could not be saved. Please try again.' })
+  }
 })

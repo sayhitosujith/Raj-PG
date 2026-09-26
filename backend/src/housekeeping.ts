@@ -1,7 +1,7 @@
 import { HousekeepingSlot, HousekeepingStatus, Prisma, UserRole } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
-import { parseDateOnly } from './dates.js'
+import { parseDateOnly, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
 import { photoVersion } from './photo.js'
 import { isRentLockDue } from './rent.js'
@@ -16,9 +16,6 @@ const msPerDay = 24 * msPerHour
 const openStatuses: HousekeepingStatus[] = [HousekeepingStatus.REQUESTED, HousekeepingStatus.SCHEDULED]
 // Residents can nudge again after this long, so one missed visit cannot flood the owner.
 const reminderCooldownMs = msPerHour
-// Slot hours (set in Settings) are local to the properties, which are all in India (IST, UTC+5:30,
-// no daylight saving), so a fixed offset turns "Morning on the 25th" into exact instants on any server.
-const propertyUtcOffsetMs = 5.5 * msPerHour
 
 // What the owner may move a request to. DONE and CANCELLED are final so the history stays honest.
 const allowedTransitions: Record<HousekeepingStatus, HousekeepingStatus[]> = {
@@ -96,6 +93,19 @@ housekeepingResidentRouter.get('/resident-portal/housekeeping', requireResident,
   }
 })
 
+// Counted by cleaning date within its Monday–Sunday week, so booking ahead cannot exceed the allowance.
+// Cancelled requests do not count. Returns the limit when that week is full, otherwise null.
+async function fullWeekLimit(residentId: string, date: Date) {
+  const { housekeepingWeeklyLimit: limit } = await getSettings()
+  if (!limit) return null
+  const weekStart = new Date(date)
+  weekStart.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 7)
+  const booked = await prisma.housekeepingRequest.count({ where: { residentId, date: { gte: weekStart, lt: weekEnd }, status: { not: HousekeepingStatus.CANCELLED } } })
+  return booked >= limit ? limit : null
+}
+
 housekeepingResidentRouter.post('/resident-portal/housekeeping', requireResident, requirePortalAccess, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { date: rawDate, slot, note: rawNote } = request.body as { date?: string; slot?: unknown; note?: unknown }
@@ -110,6 +120,8 @@ housekeepingResidentRouter.post('/resident-portal/housekeeping', requireResident
     if (await isRentLockDue(userId)) { response.status(403).json({ error: 'Your rent is overdue. Housekeeping requests are paused until it is paid.', code: 'RENT_OVERDUE' }); return }
     const duplicate = await prisma.housekeepingRequest.count({ where: { residentId: userId, date, slot, status: { in: openStatuses } } })
     if (duplicate) { response.status(409).json({ error: 'You already have a request for that date and time.' }); return }
+    const weeklyLimit = await fullWeekLimit(userId, date)
+    if (weeklyLimit) { response.status(409).json({ error: `You can book up to ${weeklyLimit} cleanings a week, and that week is already full. Choose a date in another week.`, code: 'WEEKLY_LIMIT' }); return }
     response.status(201).json(withTiming(await prisma.housekeepingRequest.create({ data: { residentId: userId, date, slot, note: note.note }, select: requestFields }), await getSettings()))
   } catch (error) {
     respondToError(response, error, 'Your housekeeping request could not be saved.')

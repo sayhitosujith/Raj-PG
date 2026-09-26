@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, ImageUp, Sparkles, Trash2, UserRound } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { resizeLogo } from './imageResize'
 import { ordinal } from './rent'
@@ -38,6 +38,23 @@ function SettingsSection({ icon, title, description, onSubmit, children, wide = 
 }
 
 const value = (form: FormData, name: string) => String(form.get(name) ?? '')
+// Blank number inputs mean "not set" (sent as null); the server validates the range.
+const optionalNumber = (form: FormData, name: string) => value(form, name).trim() ? Number(value(form, name)) : null
+
+type WindowKey = 'morning' | 'afternoon' | 'evening' | 'visiting' | 'quiet'
+const windowFields = (form: FormData, keys: WindowKey[]) => Object.fromEntries(keys.flatMap((key) => [[`${key}From`, value(form, `${key}From`)], [`${key}To`, value(form, `${key}To`)]]))
+
+/** A labelled start–end time pair; used for housekeeping slots and house rules. */
+function TimeWindowRow({ name, label, settings }: { name: WindowKey; label: string; settings: WorkspaceSettings }) {
+  return (
+    <div className="settings-slot-row">
+      <span>{label}</span>
+      <input name={`${name}From`} type="time" required defaultValue={settings[`${name}From`]} aria-label={`${label} starts`} />
+      <span className="settings-slot-to">to</span>
+      <input name={`${name}To`} type="time" required defaultValue={settings[`${name}To`]} aria-label={`${label} ends`} />
+    </div>
+  )
+}
 
 /** Workspace logo: preview plus upload/replace/remove, saved immediately (not with the section's Save). */
 function LogoField({ logoVersion, onSave }: { logoVersion: number | null; onSave: (logo: string | null) => SaveResult }) {
@@ -78,7 +95,7 @@ function LogoField({ logoVersion, onSave }: { logoVersion: number | null; onSave
   )
 }
 
-/** Settings page: the owner's own account, workspace details, rent rules, housekeeping hours, and resident policies. */
+/** Settings page: the owner's account, workspace details, rent rules, deposit and notice, house rules, housekeeping, and resident policies. */
 export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveLogo, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveLogo: (logo: string | null) => SaveResult; onBack: () => void }) {
   return (
     <section className="workspace-view settings-view">
@@ -113,24 +130,32 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             </div>
           </SettingsSection>
 
-          <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the two reminders appear. After the due day, unpaid residents are flagged “access lock due”." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')) })}>
+          <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the two reminders appear. After the due day, unpaid residents are flagged “access lock due”." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
             <div className="settings-trio">
               <label>Reminder 1 on<select name="rentReminderOneDay" defaultValue={settings.rentReminderOneDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
               <label>Reminder 2 on<select name="rentReminderTwoDay" defaultValue={settings.rentReminderTwoDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
               <label>Rent due by<select name="rentDueDay" defaultValue={settings.rentDueDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
             </div>
             <p className="settings-hint">Days go up to the 28th so every month has them. Reminder 1 must come before reminder 2, and reminder 2 no later than the due day.</p>
+            <label>Late fee <span>(₹ added to each month paid after the due day; 0 for none)</span><input name="lateFee" type="number" min={0} max={100000} step={1} defaultValue={settings.lateFee} /></label>
           </SettingsSection>
 
-          <SettingsSection icon={<Sparkles size={18} />} title="Housekeeping hours" description="The time windows residents choose from when requesting a cleaning." onSubmit={(form) => onSaveSettings({ morningFrom: value(form, 'morningFrom'), morningTo: value(form, 'morningTo'), afternoonFrom: value(form, 'afternoonFrom'), afternoonTo: value(form, 'afternoonTo'), eveningFrom: value(form, 'eveningFrom'), eveningTo: value(form, 'eveningTo') })}>
-            {(['morning', 'afternoon', 'evening'] as const).map((slot) => (
-              <div key={slot} className="settings-slot-row">
-                <span>{slot[0].toUpperCase() + slot.slice(1)}</span>
-                <input name={`${slot}From`} type="time" required defaultValue={settings[`${slot}From`]} aria-label={`${slot} starts`} />
-                <span className="settings-slot-to">to</span>
-                <input name={`${slot}To`} type="time" required defaultValue={settings[`${slot}To`]} aria-label={`${slot} ends`} />
-              </div>
-            ))}
+          <SettingsSection icon={<WalletCards size={18} />} title="Deposit and notice" description="Shown to residents in their portal under House rules." onSubmit={(form) => onSaveSettings({ securityDeposit: optionalNumber(form, 'securityDeposit'), noticePeriodDays: optionalNumber(form, 'noticePeriodDays') ?? 0 })}>
+            <div className="settings-pair">
+              <label>Security deposit <span>(₹; blank to hide)</span><input name="securityDeposit" type="number" min={1} max={1000000} step={1} defaultValue={settings.securityDeposit ?? ''} placeholder="e.g. 10000" /></label>
+              <label>Notice to move out <span>(days)</span><input name="noticePeriodDays" type="number" min={0} max={180} step={1} required defaultValue={settings.noticePeriodDays} /></label>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection icon={<House size={18} />} title="House rules" description="Visiting and quiet hours, shown to residents in their portal." onSubmit={(form) => onSaveSettings(windowFields(form, ['visiting', 'quiet']))}>
+            <TimeWindowRow name="visiting" label="Visiting" settings={settings} />
+            <TimeWindowRow name="quiet" label="Quiet" settings={settings} />
+            <p className="settings-hint">Quiet hours can run past midnight, e.g. 10pm to 7am.</p>
+          </SettingsSection>
+
+          <SettingsSection icon={<Sparkles size={18} />} title="Housekeeping hours" description="The time windows residents choose from when requesting a cleaning." onSubmit={(form) => onSaveSettings({ ...windowFields(form, ['morning', 'afternoon', 'evening']), housekeepingWeeklyLimit: optionalNumber(form, 'housekeepingWeeklyLimit') })}>
+            {(['morning', 'afternoon', 'evening'] as const).map((slot) => <TimeWindowRow key={slot} name={slot} label={slot[0].toUpperCase() + slot.slice(1)} settings={settings} />)}
+            <label>Cleanings per week <span>(per resident, Monday to Sunday; blank for no limit)</span><input name="housekeepingWeeklyLimit" type="number" min={1} max={21} step={1} defaultValue={settings.housekeepingWeeklyLimit ?? ''} placeholder="No limit" /></label>
           </SettingsSection>
 
           {policySections.map(({ field, title }) => (

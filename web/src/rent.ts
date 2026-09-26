@@ -2,8 +2,8 @@
 export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'LOCK_DUE'
 export type RentPaymentRecord = { id: string; month: string; amount: number; paidAt: string }
 
-/** A resident's rent position; months are "YYYY-MM", amounts whole rupees. */
-export type RentSummary = { state: RentState; monthlyRent: number | null; currentMonth: string; outstandingMonths: string[]; overdueMonths: string[]; amountDue: number; dueDay: number; payments: RentPaymentRecord[] }
+/** A resident's rent position; months are "YYYY-MM", amounts whole rupees. amountDue includes late fees. */
+export type RentSummary = { state: RentState; monthlyRent: number | null; currentMonth: string; outstandingMonths: string[]; overdueMonths: string[]; amountDue: number; dueDay: number; lateFee: number; payments: RentPaymentRecord[] }
 
 /** "October 2026" from "2026-10". */
 export function formatMonth(month: string) {

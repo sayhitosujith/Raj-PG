@@ -7,6 +7,7 @@ import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
+import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
@@ -24,6 +25,7 @@ app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
 app.use('/api', housekeepingResidentRouter)
+app.use('/api', foodResidentRouter)
 
 app.get('/api/health', async (_request, response) => {
   if (!process.env.DATABASE_URL) {
@@ -46,6 +48,7 @@ app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', settingsRouter)
+app.use('/api', foodAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered

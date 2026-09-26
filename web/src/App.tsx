@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  UtensilsCrossed,
   WalletCards,
   X,
   Trash2,
@@ -30,6 +31,7 @@ import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
 import { readPropertyFeatures, tenantHint, type TenantType } from './propertyFeatureOptions'
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
+import { FoodView } from './FoodView'
 import { formatMonth, type RentSummary } from './rent'
 import type { AadharDecision } from './ResidentRow'
 import { SettingsView } from './SettingsView'
@@ -339,6 +341,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <NavItem icon={WalletCards} label="Payments" active={activeView === 'Payments'} onClick={() => handleNavigation('Payments')} />
           <p className="nav-label nav-label-spaced">Manage</p>
           <NavItem icon={Sparkles} label="Housekeeping" badge={newHousekeepingCount ? String(newHousekeepingCount) : undefined} active={activeView === 'Housekeeping'} onClick={() => handleNavigation('Housekeeping')} />
+          <NavItem icon={UtensilsCrossed} label="Food" active={activeView === 'Food'} onClick={() => handleNavigation('Food')} />
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
           <NavItem icon={ShieldCheck} label="Super admins" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
@@ -349,7 +352,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
       <main className="main-content">
         <header className="topbar">
           <button className="icon-button menu-trigger" aria-label="Open navigation" onClick={() => setIsSidebarOpen(true)}><Menu size={21} /></button>
-          <div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div>
+          <div className="topbar-heading"><span className="home-title">Admin Home</span><div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div></div>
           <div className="topbar-actions"><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><button className="icon-button notification-button" aria-label="View notifications" onClick={() => { setIsNotificationsOpen((open) => !open); setIsProfileOpen(false) }}><Bell size={19} /><i /></button><button className="profile" aria-expanded={isProfileOpen} onClick={() => { setIsProfileOpen((open) => !open); setIsNotificationsOpen(false) }}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isNotificationsOpen && <div className="notification-popover"><strong>Notifications</strong><p>4 residents have paid rent this week.</p><p>2 rooms are ready to list.</p></div>}{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>Super admin</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
@@ -360,8 +363,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {['Bookings', 'Payments', 'Announcements'].includes(activeView) && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveLogo={saveLogo} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Settings' && activeView !== 'Properties' && !['Bookings', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Bookings', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail="All properties active" accent="teal" />

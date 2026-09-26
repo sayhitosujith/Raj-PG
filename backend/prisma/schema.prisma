@@ -33,6 +33,8 @@ model Property {
   maintenanceRequests MaintenanceRequest[]
   bookings            Booking[]
   announcements       Announcement[]
+  menuItems           MenuItem[]
+  mealFeedback        MealFeedback[]
   createdAt           DateTime             @default(now())
 }
 
@@ -46,39 +48,44 @@ model Room {
 }
 
 model Resident {
-  id                    String                   @id @default(cuid())
-  name                  String
-  phone                 String?
-  email                 String?
-  aadharNumber          String?
-  permanentAddress      String?
-  aadharCardUrl         String?
-  accessKeyHash         String?
+  id                      String                   @id @default(cuid())
+  name                    String
+  phone                   String?
+  email                   String?
+  aadharNumber            String?
+  permanentAddress        String?
+  aadharCardUrl           String?
+  accessKeyHash           String?
   // Set by the resident after their first access-key sign-in; from then on the access key is retired.
-  passwordHash          String?
-  roomId                String                   @unique
-  room                  Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  active                Boolean                  @default(true)
+  passwordHash            String?
+  roomId                  String                   @unique
+  room                    Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  active                  Boolean                  @default(true)
   // Move-in date, separate from createdAt because residents are often added after they arrive.
-  joinedAt              DateTime                 @default(now()) @db.Date
+  joinedAt                DateTime                 @default(now()) @db.Date
   // Portal content stays locked until an owner approves the resident's Aadhaar details.
-  aadharStatus          AadharVerificationStatus @default(NOT_SUBMITTED)
-  aadharRejectionReason String?
-  aadharSubmittedAt     DateTime?
-  aadharReviewedAt      DateTime?
+  aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)
+  aadharRejectionReason   String?
+  aadharSubmittedAt       DateTime?
+  aadharReviewedAt        DateTime?
   // Small square JPEG (resized in the browser) stored as a data URL; the timestamp versions the
   // photo URL so browsers fetch the new one after a change instead of showing a cached copy.
-  profilePhotoUrl       String?
-  profilePhotoUpdatedAt DateTime?
+  profilePhotoUrl         String?
+  profilePhotoUpdatedAt   DateTime?
   // Whole rupees per month; null means rent is not tracked for this resident.
-  monthlyRent           Int?
+  monthlyRent             Int?
   // When rent was first set: billing starts from here, so adding rent for an existing resident
   // never produces surprise arrears for months before the owner started tracking.
-  rentTrackedFrom       DateTime?
-  sessions              Session[]
-  housekeepingRequests  HousekeepingRequest[]
-  rentPayments          RentPayment[]
-  createdAt             DateTime                 @default(now())
+  rentTrackedFrom         DateTime?
+  sessions                Session[]
+  housekeepingRequests    HousekeepingRequest[]
+  rentPayments            RentPayment[]
+  mealSkips               MealSkip[]
+  // The policy version (latest update timestamp) this resident accepted, and when they did.
+  policiesAcceptedVersion DateTime?
+  policiesAcceptedAt      DateTime?
+  mealFeedback            MealFeedback[]
+  createdAt               DateTime                 @default(now())
 }
 
 model Payment {
@@ -221,27 +228,93 @@ model RentPayment {
 
 // Single row (id "workspace") of owner-editable settings; defaults match the original fixed behaviour.
 model WorkspaceSettings {
-  id                 String    @id @default("workspace")
-  businessName       String    @default("Raj Properties")
-  contactPhone       String?
-  contactEmail       String?
+  id                      String    @id @default("workspace")
+  businessName            String    @default("Raj Properties")
+  contactPhone            String?
+  contactEmail            String?
   // Workspace logo as a data URL (resized in the browser); the timestamp versions its URL for caching.
-  logoUrl            String?
-  logoUpdatedAt      DateTime?
+  logoUrl                 String?
+  logoUpdatedAt           DateTime?
   // Rent is due by rentDueDay; reminders show from reminder one/two day; overdue after the due day.
-  rentDueDay         Int       @default(2)
-  rentReminderOneDay Int       @default(1)
-  rentReminderTwoDay Int       @default(2)
+  rentDueDay              Int       @default(2)
+  rentReminderOneDay      Int       @default(1)
+  rentReminderTwoDay      Int       @default(2)
   // Housekeeping slot windows as 24-hour "HH:MM" local (IST) times.
-  morningFrom        String    @default("08:00")
-  morningTo          String    @default("12:00")
-  afternoonFrom      String    @default("12:00")
-  afternoonTo        String    @default("16:00")
-  eveningFrom        String    @default("16:00")
-  eveningTo          String    @default("20:00")
+  morningFrom             String    @default("08:00")
+  morningTo               String    @default("12:00")
+  afternoonFrom           String    @default("12:00")
+  afternoonTo             String    @default("16:00")
+  eveningFrom             String    @default("16:00")
+  eveningTo               String    @default("20:00")
   // Plain-text resident policies linked from the resident portal. Null = never saved, so the
   // starter draft is used; an empty string means the owner removed it.
-  termsAndConditions String?
-  privacyPolicy      String?
-  updatedAt          DateTime  @updatedAt
+  termsAndConditions      String?
+  privacyPolicy           String?
+  // Policy versions: stamped only when the owner saves changed, non-empty text; residents must
+  // accept anything newer than the version they last accepted.
+  termsUpdatedAt          DateTime?
+  privacyPolicyUpdatedAt  DateTime?
+  // Whole rupees added to each month paid after the due day; 0 = no late fee.
+  lateFee                 Int       @default(0)
+  // Shown to residents; null deposit = not shown.
+  securityDeposit         Int?
+  noticePeriodDays        Int       @default(30)
+  // House rules as "HH:MM" local times; quiet hours may run past midnight (from > to).
+  visitingFrom            String    @default("10:00")
+  visitingTo              String    @default("20:00")
+  quietFrom               String    @default("22:00")
+  quietTo                 String    @default("07:00")
+  // Cleanings a resident may book per Monday–Sunday week; null = no limit.
+  housekeepingWeeklyLimit Int?
+  updatedAt               DateTime  @updatedAt
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+// A property's repeating weekly menu; weekday is ISO (1 = Monday … 7 = Sunday). A missing row means
+// that meal has no menu set.
+model MenuItem {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  weekday    Int
+  meal       MealType
+  items      String
+
+  @@unique([propertyId, weekday, meal])
+}
+
+// A resident opting out of one meal on one date, so the kitchen can cook for fewer people.
+model MealSkip {
+  id         String   @id @default(cuid())
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  meal       MealType
+  createdAt  DateTime @default(now())
+
+  @@unique([residentId, date, meal])
+}
+
+// A resident's thumbs up/down on one served meal. propertyId is kept so feedback stays with the
+// property that served the meal even if the resident later moves.
+model MealFeedback {
+  id         String   @id @default(cuid())
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  meal       MealType
+  liked      Boolean
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([residentId, date, meal])
+  @@index([propertyId, date])
 }

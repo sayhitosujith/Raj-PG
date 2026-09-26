@@ -66,7 +66,7 @@ function RequestForm({ slots, onCreated, onClose }: { slots: SlotOption[]; onCre
 
 /** The resident's housekeeping card: request a cleaning, follow its status, cancel if plans change. */
 // While rent is overdue the server refuses new requests; the button says so instead of failing.
-export function ResidentHousekeeping({ refreshSignal, isPaused, slots, onNotice }: { refreshSignal: number; isPaused: boolean; slots: SlotOption[]; onNotice: (message: string) => void }) {
+export function ResidentHousekeeping({ refreshSignal, isPaused, slots, weeklyLimit, onNotice }: { refreshSignal: number; isPaused: boolean; slots: SlotOption[]; weeklyLimit: number | null; onNotice: (message: string) => void }) {
   const [requests, setRequests] = useState<HousekeepingRequest[] | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
@@ -108,7 +108,7 @@ export function ResidentHousekeeping({ refreshSignal, isPaused, slots, onNotice 
 
   return (
     <section className="workspace-view housekeeping-card">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Housekeeping</h2><p>Request a room cleaning at a time that suits you.</p></div><div className="view-actions"><button className="primary-button" disabled={isPaused} title={isPaused ? 'Paused until your overdue rent is paid' : undefined} onClick={() => setIsRequesting(true)}><Sparkles size={16} /> Request housekeeping</button>{isPaused && <small className="paused-note">Paused until overdue rent is paid</small>}</div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Housekeeping</h2><p>Request a room cleaning at a time that suits you.{weeklyLimit ? ` Up to ${weeklyLimit} ${weeklyLimit === 1 ? 'cleaning' : 'cleanings'} a week.` : ''}</p></div><div className="view-actions"><button className="primary-button" disabled={isPaused} title={isPaused ? 'Paused until your overdue rent is paid' : undefined} onClick={() => setIsRequesting(true)}><Sparkles size={16} /> Request housekeeping</button>{isPaused && <small className="paused-note">Paused until overdue rent is paid</small>}</div></div>
       {requests === null
         ? <p className="portal-empty">Loading…</p>
         : requests.length

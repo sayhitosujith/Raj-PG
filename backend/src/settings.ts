@@ -1,8 +1,8 @@
 import type { HousekeepingSlot, WorkspaceSettings } from '@prisma/client'
 import { Router } from 'express'
 import { prisma } from './db.js'
-import { defaultPrivacyPolicy, defaultTerms } from './defaultPolicies.js'
 import { findLogoProblem, photoVersion, sendLogo } from './photo.js'
+import { policiesOf, policyFields, policyMaxLength, policyVersionChanges, type PolicyField } from './policies.js'
 import { isValidEmail } from './validation.js'
 
 const settingsId = 'workspace'
@@ -16,9 +16,9 @@ export async function getSettings() {
   return cached
 }
 
-/** Rent cycle days, e.g. { dueDay: 2, reminderOneDay: 1, reminderTwoDay: 2 }. */
-export type RentRules = { dueDay: number; reminderOneDay: number; reminderTwoDay: number }
-export const rentRulesOf = (settings: WorkspaceSettings): RentRules => ({ dueDay: settings.rentDueDay, reminderOneDay: settings.rentReminderOneDay, reminderTwoDay: settings.rentReminderTwoDay })
+/** Rent cycle days plus the late fee, e.g. { dueDay: 2, reminderOneDay: 1, reminderTwoDay: 2, lateFee: 200 }. */
+export type RentRules = { dueDay: number; reminderOneDay: number; reminderTwoDay: number; lateFee: number }
+export const rentRulesOf = (settings: WorkspaceSettings): RentRules => ({ dueDay: settings.rentDueDay, reminderOneDay: settings.rentReminderOneDay, reminderTwoDay: settings.rentReminderTwoDay, lateFee: settings.lateFee })
 
 const slotNames: Record<HousekeepingSlot, { key: 'morning' | 'afternoon' | 'evening'; label: string }> = {
   MORNING: { key: 'morning', label: 'Morning' },
@@ -31,26 +31,49 @@ function formatClock(time: string) {
   return `${hours % 12 || 12}${minutes ? `:${String(minutes).padStart(2, '0')}` : ''}${hours < 12 ? 'am' : 'pm'}`
 }
 
+/** "10am – 8pm" from two "HH:MM" times. */
+const formatHours = (from: string, to: string) => `${formatClock(from)} – ${formatClock(to)}`
+
 /** A slot's window in minutes after local midnight, plus labels for display. */
 export function slotDetails(settings: WorkspaceSettings, slot: HousekeepingSlot) {
   const { key, label } = slotNames[slot]
   const from = settings[`${key}From`]
   const to = settings[`${key}To`]
-  const hours = `${formatClock(from)} – ${formatClock(to)}`
+  const hours = formatHours(from, to)
   return { value: slot, label, hours, fullLabel: `${label} (${hours})`, startMinutes: toMinutes(from), endMinutes: toMinutes(to) }
 }
+
+/** House rules shown in the resident portal. */
+export const houseRulesOf = (settings: WorkspaceSettings) => ({ visitingHours: formatHours(settings.visitingFrom, settings.visitingTo), quietHours: formatHours(settings.quietFrom, settings.quietTo), noticePeriodDays: settings.noticePeriodDays, securityDeposit: settings.securityDeposit })
 
 /** All three slots for forms (value, label, hours). */
 export const slotOptionsOf = (settings: WorkspaceSettings) => (Object.keys(slotNames) as HousekeepingSlot[]).map((slot) => { const { value, label, hours } = slotDetails(settings, slot); return { value, label, hours } })
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 
-type SettingsInput = { termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown } & Partial<Record<`${'morning' | 'afternoon' | 'evening'}${'From' | 'To'}`, unknown>>
+// Each window is a start/end pair of "HH:MM" fields; overnight windows may end the next morning.
+const timeWindows = [
+  { key: 'morning', label: 'Morning', overnight: false },
+  { key: 'afternoon', label: 'Afternoon', overnight: false },
+  { key: 'evening', label: 'Evening', overnight: false },
+  { key: 'visiting', label: 'Visiting hours', overnight: false },
+  { key: 'quiet', label: 'Quiet hours', overnight: true },
+] as const
+type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-const policyMaxLength = 5000
-const policyFields = { termsAndConditions: 'Terms and conditions', privacyPolicy: 'Privacy policy' } as const
+type SettingsInput = { termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
-const isDay = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 28
+
+const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
+const isDay = (value: unknown): value is number => isWholeNumber(value, 1, 28)
+
+// Whole-number settings: [field, min, max, nullable, error]. A nullable field is cleared with null.
+const numberFields = [
+  ['lateFee', 0, 1_00_000, false, 'Late fee must be a whole number of rupees (0 for none).'],
+  ['securityDeposit', 1, 10_00_000, true, 'Security deposit must be a whole number of rupees, or blank.'],
+  ['noticePeriodDays', 0, 180, false, 'Notice period must be 0 to 180 days.'],
+  ['housekeepingWeeklyLimit', 1, 21, true, 'Weekly cleanings must be 1 to 21, or blank for no limit.'],
+] as const
 
 /**
  * Validates a partial settings update (each Settings section saves on its own). Rent days must
@@ -72,13 +95,14 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     if (email && !isValidEmail(email)) return { error: 'Enter a valid contact email.' }
     data.contactEmail = email
   }
-  for (const [field, label] of Object.entries(policyFields) as [keyof typeof policyFields, string][]) {
+  for (const [field, { label }] of Object.entries(policyFields) as [PolicyField, (typeof policyFields)[PolicyField]][]) {
     const text = input[field]
     if (text === undefined) continue
     if (typeof text !== 'string') return { error: `${label} must be text.` }
     if (text.trim().length > policyMaxLength) return { error: `${label} can be up to ${policyMaxLength} characters.` }
     data[field] = text.trim()
   }
+  Object.assign(data, policyVersionChanges(data as Partial<Record<PolicyField, string>>, current))
   const rentFields = ['rentDueDay', 'rentReminderOneDay', 'rentReminderTwoDay'] as const
   if (rentFields.some((field) => input[field] !== undefined)) {
     const due = input.rentDueDay ?? current.rentDueDay
@@ -88,23 +112,26 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     if (!(one < two && two <= due)) return { error: 'Reminder 1 must come before reminder 2, and reminder 2 cannot be after the due day.' }
     Object.assign(data, { rentDueDay: due, rentReminderOneDay: one, rentReminderTwoDay: two })
   }
-  for (const key of ['morning', 'afternoon', 'evening'] as const) {
+  for (const [field, min, max, nullable, error] of numberFields) {
+    const raw = input[field]
+    if (raw === undefined) continue
+    if (nullable && raw === null) { data[field] = null; continue }
+    if (!isWholeNumber(raw, min, max)) return { error }
+    data[field] = raw
+  }
+  for (const { key, label, overnight } of timeWindows) {
     const from = input[`${key}From`]
     const to = input[`${key}To`]
     if (from === undefined && to === undefined) continue
     const start = from ?? current[`${key}From`]
     const end = to ?? current[`${key}To`]
-    const label = key[0].toUpperCase() + key.slice(1)
     if (typeof start !== 'string' || typeof end !== 'string' || !timePattern.test(start) || !timePattern.test(end)) return { error: `${label} needs a start and end time.` }
-    if (start >= end) return { error: `${label} must start before it ends.` }
+    if (overnight ? start === end : start >= end) return { error: overnight ? `${label} must start and end at different times.` : `${label} must start before it ends.` }
     data[`${key}From`] = start
     data[`${key}To`] = end
   }
   return { data }
 }
-
-/** The policies residents see: the owner's saved text, or the starter draft if they never saved any. */
-export const policiesOf = (settings: WorkspaceSettings) => ({ termsAndConditions: settings.termsAndConditions ?? defaultTerms, privacyPolicy: settings.privacyPolicy ?? defaultPrivacyPolicy })
 
 /** Settings as sent to browsers: the logo is served separately, referenced by version. */
 export function toClientSettings(settings: WorkspaceSettings) {

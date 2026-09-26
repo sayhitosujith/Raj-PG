@@ -94,6 +94,12 @@ button { cursor: pointer; }
 .portal-signout { justify-self: center; margin-top: 16px; }
 .portal-shell { min-height: 100vh; background: var(--paper); color: var(--ink); }
 .portal-topbar .brand-row { display: flex; align-items: center; gap: 10px; font: 700 20px Manrope, sans-serif; }
+/* "Admin Home" / "Resident Home" page titles in the top bars. */
+.home-title { color: var(--teal); font: 700 16px Manrope, sans-serif; white-space: nowrap; }
+.topbar-heading { display: grid; gap: 4px; }
+/* Resident portal: beside the logo, split by a thin divider; hidden on phones where the header is tight. */
+.portal-title { padding-left: 14px; margin-left: 4px; border-left: 1px solid var(--line); }
+@media (max-width: 560px) { .portal-title { display: none; } }
 .portal-topbar .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
 .portal-details { margin: 20px 0 0; }
 .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
@@ -505,7 +511,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .settings-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .settings-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .settings-hint { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.settings-slot-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; color: #55635f; font-size: 11px; font-weight: 700; }
+.settings-slot-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; color: #55635f; font-size: 11px; font-weight: 700; }
 .settings-slot-to { color: var(--muted); font-size: 10px; font-weight: 400; }
 .settings-actions { display: flex; align-items: center; justify-content: end; gap: 12px; }
 .settings-message { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; animation: fade-in .2s ease both; }
@@ -553,3 +559,120 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .terms-modal { width: min(100%, 620px); }
 /* pre-line keeps the owner's line breaks; the modal scrolls on long terms instead of the page. */
 .terms-text { max-height: min(60vh, 520px); margin: 14px 0 0; overflow-y: auto; color: #55635f; font-size: 12px; line-height: 1.7; white-space: pre-line; }
+
+/* Resident portal: house rules as a compact icon list that wraps with the card width. */
+.house-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.house-rules li { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.house-rules small { display: block; color: var(--muted); font-size: 10px; }
+.house-rules strong { color: var(--ink); font-size: 13px; }
+.house-rule-icon { display: grid; flex: none; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--teal); background: #167c7014; }
+
+/* Resident food menu: day chips, then one row per meal with its actions on the right. */
+.menu-days { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+.menu-day { flex: none; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: #55635f; background: white; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.menu-day:hover { border-color: #9fd0c2; }
+.menu-day.is-selected { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.menu-meals { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.menu-meals li { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.menu-meals li.is-skipped .menu-meal-body p { color: var(--muted); text-decoration: line-through; }
+.menu-meal-icon { display: grid; flex: none; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--teal); background: #167c7014; }
+.menu-meal-body { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.menu-meal-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.menu-meal-head strong { color: var(--ink); font-size: 13px; }
+.menu-meal-head small { color: var(--muted); font-size: 10px; }
+.menu-meal-body p { margin: 0; color: #44524e; font-size: 12px; line-height: 1.5; }
+.menu-meal-body p.is-empty { color: var(--muted); font-style: italic; }
+.meal-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; color: var(--muted); font-size: 10px; }
+.meal-feedback .icon-button.is-active { color: var(--teal); background: var(--teal-soft); }
+.meal-feedback .icon-button.is-active.is-negative { color: #c85e4e; background: #f9e7e2; }
+.meal-comment { display: flex; flex: 1 1 220px; gap: 6px; }
+.meal-comment input { flex: 1; min-width: 0; padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 11px; }
+.meal-comment input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+
+/* Owner food screen. */
+.food-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px; margin-top: 20px; }
+.food-property-select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.headcount-days { display: grid; gap: 12px; }
+.headcount-days > div > small { color: var(--muted); font-size: 10px; font-weight: 700; }
+.headcount-meals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.headcount-meals li { display: grid; gap: 2px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.headcount-meals span { color: #55635f; font-size: 10px; font-weight: 700; }
+.headcount-meals strong { color: var(--ink); font-size: 20px; }
+.headcount-meals small { color: #ad7c2c; font-size: 10px; }
+.food-feedback { display: grid; gap: 8px; max-height: 320px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.food-feedback li { display: flex; align-items: flex-start; gap: 10px; }
+.food-feedback strong { display: block; color: var(--ink); font-size: 11px; }
+.food-feedback small { color: var(--muted); font-size: 11px; }
+.feedback-thumb { display: grid; flex: none; width: 26px; height: 26px; place-items: center; border-radius: 7px; }
+.feedback-thumb.is-up { color: #4d977c; background: #e5f3ed; }
+.feedback-thumb.is-down { color: #c85e4e; background: #f9e7e2; }
+.menu-editor { display: grid; gap: 14px; }
+.menu-grid { display: grid; gap: 6px; }
+.menu-grid-row { display: grid; grid-template-columns: 92px repeat(3, minmax(0, 1fr)); gap: 8px; align-items: center; }
+.menu-grid-head span { color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.menu-grid-row strong { color: #55635f; font-size: 11px; }
+.menu-grid-row input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.menu-grid-row input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+/* Container query: the cards narrow on phones and in the sidebar layout alike. */
+@container (max-width: 640px) {
+  .menu-grid-head { display: none; }
+  .menu-grid-row { grid-template-columns: 1fr; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .menu-meals li { flex-wrap: wrap; }
+}
+
+/*
+ * Resident portal: slowly drifting ambient glows behind the content. Built from theme tokens (not
+ * literal colours) so the generated dark theme needs no mapping, and only transform is animated so
+ * it stays cheap. isolation keeps the z-index -1 layers above the shell's own background.
+ */
+.portal-shell { position: relative; isolation: isolate; overflow-x: clip; }
+.portal-shell::before, .portal-shell::after { position: fixed; z-index: -1; inset: -20vmax; content: ''; pointer-events: none; will-change: transform; }
+.portal-shell::before {
+  background:
+    radial-gradient(38vmax 38vmax at 18% 22%, color-mix(in srgb, var(--teal) 16%, transparent), transparent 70%),
+    radial-gradient(30vmax 30vmax at 82% 68%, color-mix(in srgb, var(--teal) 11%, transparent), transparent 70%);
+  animation: portal-drift-a 26s ease-in-out infinite alternate;
+}
+.portal-shell::after {
+  background:
+    radial-gradient(26vmax 26vmax at 70% 18%, color-mix(in srgb, var(--coral) 10%, transparent), transparent 70%),
+    radial-gradient(24vmax 24vmax at 28% 84%, color-mix(in srgb, var(--gold) 8%, transparent), transparent 70%);
+  animation: portal-drift-b 34s ease-in-out infinite alternate;
+}
+@keyframes portal-drift-a { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(6vmax, 4vmax, 0) scale(1.12); } }
+@keyframes portal-drift-b { from { transform: translate3d(0, 0, 0) rotate(0deg); } to { transform: translate3d(-5vmax, -3vmax, 0) rotate(8deg); } }
+/* Swaying tree line along the bottom, behind the cards; tinted from theme tokens like the glows. */
+.portal-scenery { position: fixed; z-index: -1; right: 0; bottom: 0; left: 0; width: 100%; height: clamp(120px, 22vh, 220px); pointer-events: none; }
+.scenery-back { color: color-mix(in srgb, var(--teal) 9%, transparent); fill: currentColor; }
+.scenery-front { color: color-mix(in srgb, var(--teal) 16%, transparent); fill: currentColor; }
+.scenery-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: tree-sway var(--sway-duration, 7s) ease-in-out var(--sway-delay, 0s) infinite alternate; }
+@keyframes tree-sway { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .portal-shell::before, .portal-shell::after, .scenery-sway { animation: none; }
+}
+
+/* Policy consent prompt: blocks the portal until accepted, so it sits above other modals. */
+.consent-backdrop { z-index: 60; }
+.consent-summary { margin: 12px 0 0; color: #55635f; font-size: 12px; line-height: 1.6; }
+.consent-policies { display: grid; gap: 8px; margin-top: 14px; }
+.consent-policies details { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
+.consent-policies summary { color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; }
+.consent-policies .terms-text { max-height: min(40vh, 360px); margin-top: 10px; }
+.consent-check { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; color: var(--ink); font-size: 12px; font-weight: 600; line-height: 1.5; cursor: pointer; }
+.consent-check input { flex: none; width: 16px; height: 16px; margin-top: 1px; accent-color: var(--teal); }
+
+/* Weekly menu: button beside the meal timings, and the modal that holds the menu. */
+.details-heading-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+.weekly-menu-button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.menu-modal { width: min(100%, 640px); max-height: calc(100vh - 48px); overflow-y: auto; }
+.menu-modal-hint { margin: 8px 0 14px; color: var(--muted); font-size: 11px; }
+@container (max-width: 640px) { .details-heading-actions { justify-content: flex-start; } }
+
+/* Next-meal alert: same banner shape as the rent reminder, in the brand green, with actions. */
+.meal-alert { align-items: center; color: var(--teal); background: var(--teal-soft); border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent); }
+.meal-alert-body { flex: 1; min-width: 0; }
+.meal-alert-body strong { color: var(--ink); }
+.meal-alert-body p { color: #55635f; }
+.meal-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.meal-alert-actions .primary-button, .meal-alert-actions .secondary-button { width: auto; padding: 8px 12px; font-size: 11px; }
+@media (max-width: 560px) { .meal-alert { flex-wrap: wrap; } .meal-alert-actions { width: 100%; } }
