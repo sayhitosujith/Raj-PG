@@ -1,0 +1,12 @@
+# Exported from Render on 2026-09-26T13:05:33Z
+version: "1"
+databases:
+- name: testexpress-db
+  databaseName: testexpress_db
+  user: testexpress_db_user
+  plan: free
+  region: oregon
+  ipAllowList:
+  - source: 0.0.0.0/0
+    description: everywhere
+  postgresMajorVersion: "18"
