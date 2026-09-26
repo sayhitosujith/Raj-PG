@@ -218,3 +218,30 @@ model RentPayment {
 
   @@unique([residentId, month])
 }
+
+// Single row (id "workspace") of owner-editable settings; defaults match the original fixed behaviour.
+model WorkspaceSettings {
+  id                 String    @id @default("workspace")
+  businessName       String    @default("Raj Properties")
+  contactPhone       String?
+  contactEmail       String?
+  // Workspace logo as a data URL (resized in the browser); the timestamp versions its URL for caching.
+  logoUrl            String?
+  logoUpdatedAt      DateTime?
+  // Rent is due by rentDueDay; reminders show from reminder one/two day; overdue after the due day.
+  rentDueDay         Int       @default(2)
+  rentReminderOneDay Int       @default(1)
+  rentReminderTwoDay Int       @default(2)
+  // Housekeeping slot windows as 24-hour "HH:MM" local (IST) times.
+  morningFrom        String    @default("08:00")
+  morningTo          String    @default("12:00")
+  afternoonFrom      String    @default("12:00")
+  afternoonTo        String    @default("16:00")
+  eveningFrom        String    @default("16:00")
+  eveningTo          String    @default("20:00")
+  // Plain-text resident policies linked from the resident portal. Null = never saved, so the
+  // starter draft is used; an empty string means the owner removed it.
+  termsAndConditions String?
+  privacyPolicy      String?
+  updatedAt          DateTime  @updatedAt
+}

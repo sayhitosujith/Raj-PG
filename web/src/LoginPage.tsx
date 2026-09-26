@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Building2, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
+import { BrandMark } from './BrandMark'
 import type { SessionResponse } from './session'
+import { ThemeToggle } from './ThemeToggle'
 import { readApiError } from './superAdmin'
 
 /**
@@ -29,8 +31,9 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
 
   return (
     <main className="login-shell">
-      <form className="login-card" onSubmit={signIn}>
-        <div className="brand-row"><div className="brand-mark"><Building2 size={19} strokeWidth={2.5} /></div><span>raj<span className="brand-accent">.</span>pg</span></div>
+      <form className="login-card login-card-themed" onSubmit={signIn}>
+        <ThemeToggle className="card-theme-toggle" />
+        <div className="brand-row"><BrandMark /></div>
         <h1>Sign in</h1>
         <label>Email or phone number<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus /></label>
         <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>

@@ -3,8 +3,8 @@ import { Router } from 'express'
 import type { AuthContext } from './auth.js'
 import { createTemporaryPassword, hashPassword, isAcceptablePassword, passwordRequirement } from './credentials.js'
 import { prisma } from './db.js'
+import { isValidEmail } from './validation.js'
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Super admin fields that are safe to return to clients (never the password hash). */
 export type PublicSuperAdmin = Pick<SuperAdmin, 'id' | 'name' | 'email' | 'createdAt'>
@@ -27,7 +27,7 @@ export async function createSuperAdmin(input: { name?: string; email?: string; p
   const name = input.name?.trim()
   const email = input.email ? normalizeEmail(input.email) : ''
   if (!name) return { ok: false, status: 400, error: 'Name is required.' }
-  if (!emailPattern.test(email)) return { ok: false, status: 400, error: 'A valid email address is required.' }
+  if (!isValidEmail(email)) return { ok: false, status: 400, error: 'A valid email address is required.' }
   if (!isAcceptablePassword(input.password)) return { ok: false, status: 400, error: passwordRequirement }
   try {
     const admin = await prisma.superAdmin.create({ data: { name, email, passwordHash: hashPassword(input.password) } })

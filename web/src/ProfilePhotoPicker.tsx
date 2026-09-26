@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Camera, LoaderCircle } from 'lucide-react'
 import { Avatar } from './Avatar'
-import { resizeToSquareJpeg } from './profilePhoto'
+import { resizeToSquareJpeg } from './imageResize'
 import { readApiError } from './superAdmin'
 
 /**

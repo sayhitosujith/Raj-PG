@@ -489,3 +489,67 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .rent-highlight { flex-wrap: wrap; }
   .rent-highlight-status { margin-left: 58px; }
 }
+
+/* Settings page. */
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; margin-top: 20px; }
+.settings-section { display: grid; align-content: start; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfb; animation: rise-in .35s ease both; }
+.settings-section-head { display: flex; gap: 12px; }
+.settings-section-head h3 { margin: 0 0 3px; color: #27373b; font: 700 15px Manrope, sans-serif; }
+.settings-section-head p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.settings-section-icon { display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--teal); background: var(--teal-soft); }
+.settings-fields { display: grid; gap: 12px; }
+.settings-fields label { display: grid; gap: 6px; color: #55635f; font-size: 11px; font-weight: 700; }
+.settings-fields label > span { color: #9da7a3; font-weight: 400; }
+.settings-fields input, .settings-fields select { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.settings-fields input:focus, .settings-fields select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+.settings-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.settings-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.settings-hint { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.settings-slot-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; color: #55635f; font-size: 11px; font-weight: 700; }
+.settings-slot-to { color: var(--muted); font-size: 10px; font-weight: 400; }
+.settings-actions { display: flex; align-items: center; justify-content: end; gap: 12px; }
+.settings-message { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; animation: fade-in .2s ease both; }
+.settings-message.saved { color: var(--teal); }
+.settings-message.error { color: #b5523f; }
+.owner-contact a { color: var(--teal); text-decoration: none; }
+.owner-contact a:hover { text-decoration: underline; }
+@media (max-width: 480px) {
+  .settings-trio { grid-template-columns: 1fr; }
+  .settings-slot-row { grid-template-columns: 1fr 1fr; }
+  .settings-slot-row > span:first-child { grid-column: 1 / -1; }
+  .settings-slot-to { display: none; }
+}
+
+/* Light/dark toggle placement. */
+.theme-toggle { color: #64716d; }
+.theme-toggle svg { transition: transform .35s ease; }
+.theme-toggle:hover svg { transform: rotate(-20deg); }
+.portal-theme-toggle { border: 1px solid var(--line); border-radius: 8px; }
+.login-card-themed { position: relative; }
+.card-theme-toggle { position: absolute; top: 14px; right: 14px; }
+
+/* Workspace logo: brand mark replacement and the Settings uploader. */
+.brand-logo { display: block; max-width: 180px; max-height: 40px; object-fit: contain; }
+.logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
+.logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
+.logo-preview img { max-width: 88px; max-height: 48px; object-fit: contain; }
+.logo-preview span { color: var(--teal); }
+.logo-copy { display: grid; gap: 4px; min-width: 0; }
+.logo-copy strong { color: #55635f; font-size: 11px; }
+.logo-copy small { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.logo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.logo-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 11px; }
+.logo-actions .icon-button { color: #b5523f; }
+
+/* Settings: full-width section and textarea (terms and conditions). */
+.settings-section.wide { grid-column: 1 / -1; }
+.settings-fields textarea { width: 100%; min-height: 220px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; font-weight: 400; line-height: 1.55; resize: vertical; }
+.settings-fields textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+
+/* Resident portal: terms link at the foot of the page, full text in a modal. */
+.portal-terms { margin-top: 28px; padding: 16px 4px 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; text-align: center; }
+.portal-terms .text-link { padding: 0; }
+.portal-terms .text-link { text-decoration: underline; text-underline-offset: 3px; }
+.terms-modal { width: min(100%, 620px); }
+/* pre-line keeps the owner's line breaks; the modal scrolls on long terms instead of the page. */
+.terms-text { max-height: min(60vh, 520px); margin: 14px 0 0; overflow-y: auto; color: #55635f; font-size: 12px; line-height: 1.7; white-space: pre-line; }

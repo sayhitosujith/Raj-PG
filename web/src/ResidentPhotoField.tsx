@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Camera, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
-import { resizeToSquareJpeg } from './profilePhoto'
+import { resizeToSquareJpeg } from './imageResize'
 
 /** Pending photo change in the form: undefined = keep current, null = remove, string = new upload. */
 export type PhotoChange = string | null | undefined

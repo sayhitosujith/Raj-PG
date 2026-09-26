@@ -6,7 +6,7 @@ export type HousekeepingStatus = 'REQUESTED' | 'SCHEDULED' | 'DONE' | 'CANCELLED
  * A request as the resident sees it. The timing fields are computed by the server (in the
  * property's time zone) so neither side's device clock or time zone decides them.
  */
-export type HousekeepingRequest = { id: string; date: string; slot: HousekeepingSlot; note: string | null; status: HousekeepingStatus; ownerNote: string | null; createdAt: string; updatedAt: string; reminderCount: number; lastReminderAt: string | null; reminderAcknowledgedAt: string | null; slotStartsAt: string; slotEndsAt: string; isOverdue: boolean; hasOpenReminder: boolean; canRemindAt: string | null }
+export type HousekeepingRequest = { id: string; date: string; slot: HousekeepingSlot; note: string | null; status: HousekeepingStatus; ownerNote: string | null; createdAt: string; updatedAt: string; reminderCount: number; lastReminderAt: string | null; reminderAcknowledgedAt: string | null; slotStartsAt: string; slotEndsAt: string; isOverdue: boolean; hasOpenReminder: boolean; canRemindAt: string | null; slotLabel?: string }
 
 /** A request as the owner sees it, with who asked. */
 export type OwnerHousekeepingRequest = HousekeepingRequest & { resident: { id: string; name: string; room: string; property: string; photoVersion: number | null } }
@@ -31,9 +31,10 @@ export const formatTime = (value: string) => new Date(value).toLocaleTimeString(
 export const isOpenRequest = (request: HousekeepingRequest) => request.status === 'REQUESTED' || request.status === 'SCHEDULED'
 
 /** e.g. "Sat, 27 Sept · Morning (8am – 12pm)"; the date is a calendar day, so it is read without time zone shifts. */
-export function describeVisit(request: Pick<HousekeepingRequest, 'date' | 'slot'>) {
+export function describeVisit(request: Pick<HousekeepingRequest, 'date' | 'slot' | 'slotLabel'>) {
   const [year, month, day] = request.date.slice(0, 10).split('-').map(Number)
   const slot = slotOptions.find((option) => option.value === request.slot)
   const date = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
-  return `${date} · ${slot?.label ?? request.slot} (${slot?.hours ?? ''})`
+  // The server labels each request with the hours from Settings; the defaults are only a fallback.
+  return `${date} · ${request.slotLabel ?? `${slot?.label ?? request.slot} (${slot?.hours ?? ''})`}`
 }

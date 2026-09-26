@@ -7,6 +7,7 @@ import { prisma } from './db.js'
 import { toMealTimes } from './meals.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { rentSummary } from './rent.js'
+import { getSettings, policiesOf, slotOptionsOf } from './settings.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
@@ -27,6 +28,12 @@ export async function requirePortalAccess(_request: Request, response: Response,
     console.error('Resident lookup failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
   }
+}
+
+/** Workspace details a resident needs: who to contact, the housekeeping slot hours, and the policies. */
+async function residentWorkspace() {
+  const settings = await getSettings()
+  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
@@ -56,7 +63,7 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -146,10 +153,4 @@ residentPortalRouter.delete('/resident-portal/photo', requireResident, requirePo
 residentPortalRouter.get('/resident-portal/announcements', requireResident, requirePortalAccess, async (_request, response) => {
   const announcements = await prisma.announcement.findMany({ where: { propertyId: response.locals.propertyId as string }, orderBy: { createdAt: 'desc' }, select: { id: true, title: true, message: true, createdAt: true } })
   response.json(announcements)
-})
-
-// Payments are recorded per property, not per resident, so residents see their property's ledger.
-residentPortalRouter.get('/resident-portal/payments', requireResident, requirePortalAccess, async (_request, response) => {
-  const payments = await prisma.payment.findMany({ where: { propertyId: response.locals.propertyId as string }, orderBy: { createdAt: 'desc' }, select: { id: true, amount: true, status: true, createdAt: true } })
-  response.json(payments)
 })

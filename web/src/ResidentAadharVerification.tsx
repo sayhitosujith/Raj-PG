@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Building2, Clock, RotateCw, ShieldAlert, Upload } from 'lucide-react'
+import { Clock, RotateCw, ShieldAlert, Upload } from 'lucide-react'
+import { BrandMark } from './BrandMark'
 import { aadharCardAccept, readAadharCard } from './aadharCard'
 import type { AadharStatus } from './resident'
 import { RefreshButton } from './RefreshButton'
@@ -64,7 +65,7 @@ export function ResidentAadharVerification({ profile, lastRefreshedAt, onRefresh
     <main className="login-shell">
       <div className="login-card verification-card">
         <RefreshButton className="card-refresh" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} />
-        <div className="brand-row"><div className="brand-mark"><Building2 size={19} strokeWidth={2.5} /></div><span>raj<span className="brand-accent">.</span>pg</span></div>
+        <div className="brand-row"><BrandMark /></div>
         <p className="eyebrow">Welcome, {firstName}</p>
         <h1>{isPending && !isReplacing ? 'Verification in review' : 'Verify your Aadhaar'}</h1>
         {profile.aadharStatus === 'REJECTED' && <div className="verification-callout is-rejected"><ShieldAlert size={16} /><div><strong>Your last submission was not accepted</strong><p>{profile.aadharRejectionReason || 'Please submit your details again.'}</p></div></div>}

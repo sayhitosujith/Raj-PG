@@ -9,6 +9,7 @@ import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { rentAdminRouter } from './rent.js'
+import { brandingRouter, settingsRouter } from './settings.js'
 import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
 import { superAdminRouter } from './superAdmins.js'
@@ -21,6 +22,7 @@ app.use(express.json({ limit: '6mb' }))
 
 app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
+app.use('/api', brandingRouter)
 app.use('/api', housekeepingResidentRouter)
 
 app.get('/api/health', async (_request, response) => {
@@ -43,6 +45,7 @@ app.use('/api', superAdminRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
+app.use('/api', settingsRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered

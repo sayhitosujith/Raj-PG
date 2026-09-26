@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { UserRole } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
-import { verifyPassword } from './credentials.js'
+import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
+import { isValidEmail } from './validation.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 import { normalizeEmail, toPublicSuperAdmin } from './superAdmins.js'
 
@@ -125,4 +126,28 @@ authRouter.get('/auth/me', requireRole(UserRole.SUPER_ADMIN), async (_request, r
   const admin = await prisma.superAdmin.findUnique({ where: { id: userId } })
   if (!admin) { response.status(401).json({ error: 'Sign in required.' }); return }
   response.json({ admin: toPublicSuperAdmin(admin) })
+})
+
+// The signed-in super admin edits their own account. A name change needs nothing more; changing
+// the sign-in email or password needs the current password, so an unattended session cannot be
+// used to take the account over. Other sessions are signed out when the password changes.
+authRouter.put('/auth/me', requireRole(UserRole.SUPER_ADMIN), async (request, response) => {
+  const { userId, sessionId } = response.locals.auth as AuthContext
+  const { name, email, currentPassword, newPassword } = request.body as { name?: unknown; email?: unknown; currentPassword?: unknown; newPassword?: unknown }
+  if (name !== undefined && (typeof name !== 'string' || !name.trim() || name.trim().length > 60)) { response.status(400).json({ error: 'Name is required (up to 60 characters).' }); return }
+  if (email !== undefined && (typeof email !== 'string' || !isValidEmail(email.trim()))) { response.status(400).json({ error: 'Enter a valid email address.' }); return }
+  if (newPassword !== undefined && (typeof newPassword !== 'string' || !isAcceptablePassword(newPassword))) { response.status(400).json({ error: passwordRequirement }); return }
+  try {
+    const admin = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId } })
+    const newEmail = typeof email === 'string' ? normalizeEmail(email) : admin.email
+    const changesCredentials = newEmail !== admin.email || newPassword !== undefined
+    if (changesCredentials && !(typeof currentPassword === 'string' && verifyPassword(currentPassword, admin.passwordHash))) { response.status(400).json({ error: 'Enter your current password to change your email or password.' }); return }
+    if (newEmail !== admin.email && await prisma.superAdmin.count({ where: { email: newEmail } })) { response.status(409).json({ error: 'Another super admin already uses that email.' }); return }
+    const updated = await prisma.superAdmin.update({ where: { id: userId }, data: { ...(typeof name === 'string' ? { name: name.trim() } : {}), email: newEmail, ...(typeof newPassword === 'string' ? { passwordHash: hashPassword(newPassword) } : {}) } })
+    if (typeof newPassword === 'string') await prisma.session.deleteMany({ where: { superAdminId: userId, id: { not: sessionId } } })
+    response.json({ admin: toPublicSuperAdmin(updated) })
+  } catch (error) {
+    console.error('Account update failed:', error)
+    response.status(503).json({ error: 'Your account could not be updated.' })
+  }
 })

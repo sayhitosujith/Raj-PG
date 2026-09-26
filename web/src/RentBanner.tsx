@@ -21,7 +21,7 @@ export function RentHighlight({ rent }: { rent: RentSummary }) {
   )
 }
 
-/** The resident's rent reminders: two on the 1st and 2nd, then an overdue notice from the 3rd. */
+/** The resident's rent reminders (days set in Settings), then an overdue notice after the due day. */
 export function RentBanner({ rent }: { rent: RentSummary }) {
   if (!rent.monthlyRent) return null
   if (rent.state === 'REMINDER_1' || rent.state === 'REMINDER_2') {
@@ -29,7 +29,7 @@ export function RentBanner({ rent }: { rent: RentSummary }) {
     return (
       <div className="rent-banner is-reminder" role="status">
         <BellRing size={18} />
-        <div><strong>Rent reminder {isFinal ? '2' : '1'} of 2</strong><p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due {isFinal ? 'today' : `tomorrow, ${formatDueDate(rent.currentMonth, rent.dueDay)}`}. Please pay your property owner.</p></div>
+        <div><strong>Rent reminder {isFinal ? '2' : '1'} of 2</strong><p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{isFinal ? ' This is the last reminder.' : ''} Please pay your property owner.</p></div>
       </div>
     )
   }

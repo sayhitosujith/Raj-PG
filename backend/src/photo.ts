@@ -1,29 +1,43 @@
 import type { Response } from 'express'
 
-const profilePhotoDataUrlPattern = /^data:(image\/jpeg|image\/png|image\/webp);base64,(.+)$/s
-// The browser resizes to 256×256 before upload (~20–40 KB), so this only stops raw originals.
+const imageDataUrlPattern = /^data:(image\/jpeg|image\/png|image\/webp);base64,(.+)$/s
+// The browser resizes before upload (photos 256×256, logos ≤400px), so these only stop raw originals.
 const maxProfilePhotoBytes = 300_000
+const maxLogoBytes = 600_000
 
-/** Why an uploaded profile photo is unacceptable, or null when it is fine. */
-export function findProfilePhotoProblem(dataUrl: unknown) {
-  if (typeof dataUrl !== 'string') return 'Choose a photo to upload.'
-  const match = dataUrl.match(profilePhotoDataUrlPattern)
-  if (!match) return 'Profile photo must be a JPG, PNG, or WebP image.'
-  if (Math.floor(match[2].length * 3 / 4) > maxProfilePhotoBytes) return 'Profile photo is too large.'
+/** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
+function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
+  if (typeof dataUrl !== 'string') return `Choose ${label} to upload.`
+  const match = dataUrl.match(imageDataUrlPattern)
+  if (!match) return `${label[0].toUpperCase()}${label.slice(1)} must be a JPG, PNG, or WebP image.`
+  // Base64 encodes 3 bytes in 4 characters, so the size is known without decoding.
+  if (Math.floor(match[2].length * 3 / 4) > maxBytes) return `${label[0].toUpperCase()}${label.slice(1)} is too large.`
   return null
 }
 
 /**
- * Sends a stored profile photo, or 404 when there is none. Photo URLs carry a version query
- * (`?v=<updatedAt>`), so a long private cache is safe: a new photo gets a new URL.
+ * Sends a stored image, or 404 when there is none. Image URLs carry a version query
+ * (`?v=<updatedAt>`), so a long cache is safe: a new upload gets a new URL.
  */
-export function sendProfilePhoto(response: Response, dataUrl: string | null | undefined) {
-  const match = dataUrl?.match(profilePhotoDataUrlPattern)
-  if (!match) { response.status(404).json({ error: 'No profile photo.' }); return }
-  response.set({ 'Content-Type': match[1], 'Cache-Control': 'private, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
+function sendImage(response: Response, dataUrl: string | null | undefined, cacheScope: 'private' | 'public', missing: string) {
+  const match = dataUrl?.match(imageDataUrlPattern)
+  if (!match) { response.status(404).json({ error: missing }); return }
+  response.set({ 'Content-Type': match[1], 'Cache-Control': `${cacheScope}, max-age=31536000, immutable`, 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
 }
 
-/** Version used in photo URLs; null means the resident has no photo. */
+/** Why an uploaded profile photo is unacceptable, or null when it is fine. */
+export const findProfilePhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxProfilePhotoBytes, 'a photo')
+
+/** Sends a stored profile photo (private: only signed-in owners and the resident see it). */
+export const sendProfilePhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No profile photo.')
+
+/** Why an uploaded workspace logo is unacceptable, or null when it is fine. */
+export const findLogoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxLogoBytes, 'a logo')
+
+/** Sends the workspace logo; public because the sign-in page shows it before anyone signs in. */
+export const sendLogo = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No logo.')
+
+/** Version used in image URLs; null means there is no image. */
 export function photoVersion(updatedAt: Date | null | undefined) {
   return updatedAt ? updatedAt.getTime() : null
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, CalendarPlus, Sparkles, X } from 'lucide-react'
-import { describeVisit, formatTime, isOpenRequest, slotOptions, statusDetails, type HousekeepingRequest, type HousekeepingSlot } from './housekeeping'
+import { describeVisit, formatTime, isOpenRequest, statusDetails, type HousekeepingRequest, type HousekeepingSlot } from './housekeeping'
+import type { SlotOption } from './workspaceSettings'
 import { todayDateInputValue } from './joinDate'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
@@ -25,7 +26,7 @@ function daysFromToday(days: number) {
 }
 
 /** Date + slot + note form; the server re-checks everything (date window, duplicates). */
-function RequestForm({ onCreated, onClose }: { onCreated: (request: HousekeepingRequest) => void; onClose: () => void }) {
+function RequestForm({ slots, onCreated, onClose }: { slots: SlotOption[]; onCreated: (request: HousekeepingRequest) => void; onClose: () => void }) {
   const [slot, setSlot] = useState<HousekeepingSlot>('MORNING')
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -53,7 +54,7 @@ function RequestForm({ onCreated, onClose }: { onCreated: (request: Housekeeping
         <label>Date<input name="date" type="date" required defaultValue={todayDateInputValue()} min={todayDateInputValue()} max={daysFromToday(maxDaysAhead)} /></label>
         <fieldset className="slot-options">
           <legend>Time</legend>
-          {slotOptions.map((option) => <label key={option.value} className={`slot-option${slot === option.value ? ' is-selected' : ''}`}><input type="radio" name="slot" value={option.value} checked={slot === option.value} onChange={() => setSlot(option.value)} /><strong>{option.label}</strong><small>{option.hours}</small></label>)}
+          {slots.map((option) => <label key={option.value} className={`slot-option${slot === option.value ? ' is-selected' : ''}`}><input type="radio" name="slot" value={option.value} checked={slot === option.value} onChange={() => setSlot(option.value)} /><strong>{option.label}</strong><small>{option.hours}</small></label>)}
         </fieldset>
         <label>Note <span>(optional)</span><textarea name="note" maxLength={300} placeholder="e.g. Please also clean the bathroom" /></label>
         {error && <p className="login-error" role="alert">{error}</p>}
@@ -65,7 +66,7 @@ function RequestForm({ onCreated, onClose }: { onCreated: (request: Housekeeping
 
 /** The resident's housekeeping card: request a cleaning, follow its status, cancel if plans change. */
 // While rent is overdue the server refuses new requests; the button says so instead of failing.
-export function ResidentHousekeeping({ refreshSignal, isPaused, onNotice }: { refreshSignal: number; isPaused: boolean; onNotice: (message: string) => void }) {
+export function ResidentHousekeeping({ refreshSignal, isPaused, slots, onNotice }: { refreshSignal: number; isPaused: boolean; slots: SlotOption[]; onNotice: (message: string) => void }) {
   const [requests, setRequests] = useState<HousekeepingRequest[] | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
@@ -116,7 +117,7 @@ export function ResidentHousekeeping({ refreshSignal, isPaused, onNotice }: { re
               <div className="crud-actions"><span className={`status-pill ${statusDetails[request.status].tone}`}>{statusDetails[request.status].label}</span>{canRemindNow(request, now) && <button className="secondary-button remind-button" disabled={remindingId === request.id} onClick={() => remind(request)}><BellRing size={13} /> {remindingId === request.id ? 'Sending…' : 'Not here yet? Remind'}</button>}{isOpenRequest(request) && <button className="secondary-button" disabled={cancellingId === request.id} onClick={() => cancel(request)}>{cancellingId === request.id ? 'Cancelling…' : 'Cancel'}</button>}</div>
             </div>)}</div>
           : <div className="workspace-empty"><div className="workspace-empty-icon"><Sparkles size={20} /></div><h3>No requests yet</h3><p>Tap “Request housekeeping” to book a cleaning.</p></div>}
-      {isRequesting && <RequestForm onClose={() => setIsRequesting(false)} onCreated={(created) => { setRequests((current) => [created, ...(current ?? [])]); setIsRequesting(false); onNotice(`Housekeeping requested for ${describeVisit(created)}.`) }} />}
+      {isRequesting && <RequestForm slots={slots} onClose={() => setIsRequesting(false)} onCreated={(created) => { setRequests((current) => [created, ...(current ?? [])]); setIsRequesting(false); onNotice(`Housekeeping requested for ${describeVisit(created)}.`) }} />}
     </section>
   )
 }

@@ -32,6 +32,11 @@ import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
 import { formatMonth, type RentSummary } from './rent'
 import type { AadharDecision } from './ResidentRow'
+import { SettingsView } from './SettingsView'
+import { BrandMark } from './BrandMark'
+import { refreshBranding } from './branding'
+import { ThemeToggle } from './ThemeToggle'
+import { defaultBusinessName, type WorkspaceSettings } from './workspaceSettings'
 import { readApiError, type SuperAdmin } from './superAdmin'
 import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
@@ -91,7 +96,7 @@ async function fetchResidents() {
 }
 
 /** Owner dashboard, rendered only for a signed-in super admin (see AuthGate). */
-function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut: () => Promise<void> }) {
+function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAdmin; onSignOut: () => Promise<void>; onAdminChange: (admin: SuperAdmin) => void }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [propertyFilter, setPropertyFilter] = useState('All properties')
   const [activeView, setActiveView] = useState('Overview')
@@ -99,9 +104,10 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
-  const [profileName, setProfileName] = useState(currentAdmin.name)
+  const profileName = currentAdmin.name
+  const [settings, setSettings] = useState<WorkspaceSettings | null>(null)
+  const businessName = settings?.businessName ?? defaultBusinessName
   const { greeting, dateLabel } = useGreeting()
   const profileInitials =profileName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
   const [residents, setResidents] = useState<Resident[]>([])
@@ -174,6 +180,38 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
     return null
   }
 
+  useEffect(() => {
+    fetch('/api/settings').then((response) => response.ok ? response.json() as Promise<WorkspaceSettings> : Promise.reject(new Error('Settings request failed'))).then(setSettings).catch(() => undefined)
+  }, [])
+
+  // Settings changes (rent days, slot hours) alter what residents and requests show, so reload them too.
+  async function saveSettings(changes: Partial<WorkspaceSettings>) {
+    const response = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(changes) }).catch(() => null)
+    if (!response) return 'Could not reach the server.'
+    if (!response.ok) return readApiError(response, 'Could not save settings.')
+    setSettings(await response.json() as WorkspaceSettings)
+    refreshBranding()
+    void refreshWorkspace()
+    return null
+  }
+
+  async function saveLogo(logo: string | null) {
+    const response = await fetch('/api/settings/logo', logo ? { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo }) } : { method: 'DELETE' }).catch(() => null)
+    if (!response) return 'Could not reach the server.'
+    if (!response.ok) return readApiError(response, 'Could not update the logo.')
+    setSettings(await response.json() as WorkspaceSettings)
+    refreshBranding()
+    return null
+  }
+
+  async function saveAccount(changes: Record<string, string>) {
+    const response = await fetch('/api/auth/me', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(changes) }).catch(() => null)
+    if (!response) return 'Could not reach the server.'
+    if (!response.ok) return readApiError(response, 'Could not update your account.')
+    onAdminChange((await response.json() as { admin: SuperAdmin }).admin)
+    return null
+  }
+
   function retryResidents() {
     setResidentsLoadState('loading')
     fetchResidents().then(showResidents, showResidentsError)
@@ -193,7 +231,6 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
     setActiveView(label)
     setIsSidebarOpen(false)
     // Only Settings is still a placeholder; every other page is a working module.
-    if (label === 'Settings') showNotice('Settings is coming in a later release.')
   }
 
   async function addProperty(event: React.FormEvent<HTMLFormElement>) {
@@ -289,11 +326,10 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
     <div className="app-shell">
       <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-row">
-          <div className="brand-mark"><Building2 size={19} strokeWidth={2.5} /></div>
-          <span>raj<span className="brand-accent">.</span>pg</span>
+          <BrandMark />
           <button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)}><X size={18} /></button>
         </div>
-        <div className="workspace-switcher"><span className="workspace-dot">R</span><span><strong>Raj Properties</strong><small>Owner workspace</small></span><ChevronDown size={15} /></div>
+        <div className="workspace-switcher"><span className="workspace-dot">{businessName.charAt(0).toUpperCase()}</span><span><strong>{businessName}</strong><small>Owner workspace</small></span><ChevronDown size={15} /></div>
         <nav className="primary-nav" aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
           <NavItem icon={LayoutGrid} label="Overview" active={activeView === 'Overview'} onClick={() => handleNavigation('Overview')} />
@@ -314,7 +350,7 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
         <header className="topbar">
           <button className="icon-button menu-trigger" aria-label="Open navigation" onClick={() => setIsSidebarOpen(true)}><Menu size={21} /></button>
           <div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div>
-          <div className="topbar-actions"><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><button className="icon-button notification-button" aria-label="View notifications" onClick={() => { setIsNotificationsOpen((open) => !open); setIsProfileOpen(false) }}><Bell size={19} /><i /></button><button className="profile" aria-expanded={isProfileOpen} onClick={() => { setIsProfileOpen((open) => !open); setIsNotificationsOpen(false) }}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isNotificationsOpen && <div className="notification-popover"><strong>Notifications</strong><p>4 residents have paid rent this week.</p><p>2 rooms are ready to list.</p></div>}{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>Super admin</small></div></div><button onClick={() => { setIsProfileOpen(false); setIsProfileModalOpen(true) }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
+          <div className="topbar-actions"><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><button className="icon-button notification-button" aria-label="View notifications" onClick={() => { setIsNotificationsOpen((open) => !open); setIsProfileOpen(false) }}><Bell size={19} /><i /></button><button className="profile" aria-expanded={isProfileOpen} onClick={() => { setIsProfileOpen((open) => !open); setIsNotificationsOpen(false) }}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isNotificationsOpen && <div className="notification-popover"><strong>Notifications</strong><p>4 residents have paid rent this week.</p><p>2 rooms are ready to list.</p></div>}{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>Super admin</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profileName.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
@@ -324,7 +360,8 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
           {['Bookings', 'Payments', 'Announcements'].includes(activeView) && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Properties' && !['Bookings', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveLogo={saveLogo} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Settings' && activeView !== 'Properties' && !['Bookings', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail="All properties active" accent="teal" />
@@ -342,7 +379,6 @@ function App({ currentAdmin, onSignOut }: { currentAdmin: SuperAdmin; onSignOut:
           </div>
         </div>
         {notice && <div className="toast" role="status">{notice}</div>}
-        {isProfileModalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsProfileModalOpen(false)}><form className="profile-modal" onSubmit={(event) => { event.preventDefault(); setIsProfileModalOpen(false); showNotice('Profile details saved.') }}><div className="modal-heading"><div><p className="eyebrow">Account</p><h2>Profile details</h2></div><button type="button" className="icon-button" aria-label="Close profile details" onClick={() => setIsProfileModalOpen(false)}><X size={18} /></button></div><label>Full name<input value={profileName} onChange={(event) => setProfileName(event.target.value)} required /></label><label>Email address<input type="email" defaultValue={currentAdmin.email} required /></label><label>Phone number<input type="tel" defaultValue="+91 98765 43210" required /></label><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setIsProfileModalOpen(false)}>Cancel</button><button type="submit" className="primary-button">Save details</button></div></form></div>}
         {isSignOutModalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsSignOutModalOpen(false)}><div className="confirm-modal"><div className="confirm-icon"><ShieldCheck size={22} /></div><h2>Sign out?</h2><p>You will return to the login screen.</p><div className="modal-actions"><button className="secondary-button" onClick={() => setIsSignOutModalOpen(false)}>Cancel</button><button className="danger-button" onClick={() => { setIsSignOutModalOpen(false); void onSignOut() }}>Sign out</button></div></div></div>}
         {residentForm && <ResidentFormModal resident={residentForm.resident} properties={properties} onClose={() => setResidentForm(null)} onSaved={saveResident} onNotice={showNotice} />}
         {isPropertyModalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsPropertyModalOpen(false)}><form className="property-modal" onSubmit={addProperty}><div className="modal-heading"><div><p className="eyebrow">Workspace</p><h2>Add property</h2></div><button type="button" className="icon-button" aria-label="Close add property dialog" onClick={() => { setIsPropertyModalOpen(false); setSelectedImage('') }}><X size={18} /></button></div><label>Property name<input name="name" required placeholder="e.g. Palm Grove PG" /></label><label>Location<input name="location" required placeholder="e.g. Whitefield, Bengaluru" /></label><PropertyFeatureFields /><div className="image-upload"><div className="upload-preview">{selectedImage ? <img src={selectedImage} alt="Selected property" /> : <Plus size={20} />}</div><div><strong>{selectedImage ? 'Image selected' : 'Property image'}</strong><small>PNG, JPG or WEBP up to 2 MB</small><label className="browse-button">Browse local image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={chooseImage} /></label></div></div><input name="imageUrl" type="url" className="image-url-input" placeholder="Or paste an image URL (optional)" /><div className="modal-actions"><button type="button" className="secondary-button" onClick={() => { setIsPropertyModalOpen(false); setSelectedImage('') }}>Cancel</button><button type="submit" className="primary-button"><Plus size={17} /> Save property</button></div></form></div>}

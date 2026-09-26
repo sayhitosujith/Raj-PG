@@ -115,7 +115,7 @@ export function ResidentFormModal({ resident, properties, onClose, onSaved, onNo
         <label className="aadhar-upload">Aadhaar card {isEdit && <span>{resident.hasAadharCard ? 'choose a file to replace the current one' : '(none on file)'}</span>}<input type="file" accept={aadharCardAccept} onChange={chooseAadharCard} /></label>
         {isEdit && resident.hasAadharCard && <a className="current-card-link" href={`/api/residents/${resident.id}/aadhar-card`} target="_blank" rel="noopener noreferrer">View current card <ExternalLink size={11} /></a>}
         <label>Room number <span>(creates the room if needed)</span><input name="roomNumber" required defaultValue={resident?.room} placeholder="e.g. 204" /></label>
-        <label>Monthly rent (₹) <span>(reminders on the 1st and 2nd; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>
+        <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>
         <label>Joining date<input name="joinedAt" type="date" required defaultValue={resident ? resident.joinedAt.slice(0, 10) : todayDateInputValue()} /></label>
         {isEdit && <label>Status<select name="status" defaultValue={resident.active ? 'active' : 'inactive'}><option value="active">Active</option><option value="inactive">Inactive — blocks app sign-in</option></select></label>}
         <div className="access-key-field">

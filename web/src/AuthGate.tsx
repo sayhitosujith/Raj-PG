@@ -11,7 +11,7 @@ type AuthState = { status: 'checking' } | { status: 'signed-out' } | { status: '
  * resident portal for residents, the login page otherwise. The dashboard is a render prop so it
  * receives the admin and sign-out action without a context layer it does not need.
  */
-export function AuthGate({ children }: { children: (admin: SuperAdmin, signOut: () => Promise<void>) => ReactNode }) {
+export function AuthGate({ children }: { children: (admin: SuperAdmin, signOut: () => Promise<void>, onAdminChange: (admin: SuperAdmin) => void) => ReactNode }) {
   const [auth, setAuth] = useState<AuthState>({ status: 'checking' })
 
   useEffect(() => {
@@ -33,5 +33,5 @@ export function AuthGate({ children }: { children: (admin: SuperAdmin, signOut: 
   if (auth.status === 'checking') return null
   if (auth.status === 'signed-out') return <LoginPage onSignedIn={applySession} />
   if (auth.status === 'resident') return <ResidentPortal onSignOut={signOut} />
-  return children(auth.admin, signOut)
+  return children(auth.admin, signOut, (admin) => setAuth({ status: 'super-admin', admin }))
 }

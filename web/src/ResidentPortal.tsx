@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Bell, Building2, KeyRound, LogOut, WalletCards, X } from 'lucide-react'
+import { Bell, KeyRound, LogOut, X } from 'lucide-react'
+import { BrandMark } from './BrandMark'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentAadharVerification } from './ResidentAadharVerification'
@@ -8,14 +9,18 @@ import { MealTimings } from './MealTimings'
 import type { MealTimes } from './meals'
 import { ProfilePhotoPicker } from './ProfilePhotoPicker'
 import type { RentSummary } from './rent'
+import type { ResidentWorkspace } from './workspaceSettings'
 import { RentBanner, RentHighlight } from './RentBanner'
+import { ResidentRentPayments } from './ResidentRentPayments'
+import { PolicyLinks } from './PolicyLinks'
+import { ThemeToggle } from './ThemeToggle'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
 import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -29,11 +34,9 @@ async function fetchList<T>(path: string) {
 }
 
 type Announcement = { id: string; title: string; message: string; createdAt: string }
-type Payment = { id: string; amount: number; status: string; createdAt: string }
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 // Amounts are stored in paise, matching how the owner dashboard records them.
-const formatRupees = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
 
 /**
  * Sets or changes the resident's password. The first password is chosen from the access-key
@@ -72,22 +75,19 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
   )
 }
 
-/** Resident's own view: their details, their property's announcements and payments. */
+/** Resident's own view: their details, their property's announcements, and their rent payments. */
 function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void }) {
   const { greeting, dateLabel, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
-  const [payments, setPayments] = useState<Payment[] | null>(null)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
     fetchList<Announcement>('/api/resident-portal/announcements').then(setAnnouncements, () => setAnnouncements([]))
-    fetchList<Payment>('/api/resident-portal/payments').then(setPayments, () => setPayments([]))
   }, [])
   // Background refreshes keep the last good list if a request fails.
   useRefreshSignal(refreshSignal, () => {
     fetchList<Announcement>('/api/resident-portal/announcements').then(setAnnouncements, () => undefined)
-    fetchList<Payment>('/api/resident-portal/payments').then(setPayments, () => undefined)
   })
 
   const showNotice = useCallback((message: string) => {
@@ -108,27 +108,28 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   return (
     <div className="portal-shell">
       <header className="topbar portal-topbar">
-        <div className="brand-row"><div className="brand-mark"><Building2 size={19} strokeWidth={2.5} /></div><span>raj<span className="brand-accent">.</span>pg</span></div>
-        <div className="view-actions"><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
+        <div className="brand-row"><BrandMark /></div>
+        <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content">
         <RentBanner rent={profile.rent} />
         <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profile.name.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.</p></div><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>
+          <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>
           <RentHighlight rent={profile.rent} /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl>
         </section>
-        <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} onNotice={showNotice} />
+        <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} onNotice={showNotice} />
         <div className="portal-grid">
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>
             {announcements === null ? <p className="portal-empty">Loading…</p> : announcements.length ? <div className="crud-list">{announcements.map((item) => <div className="crud-row" key={item.id}><div className="crud-main"><strong>{item.title}</strong><small>{item.message}</small></div><small className="portal-date">{formatDate(item.createdAt)}</small></div>)}</div> : <div className="workspace-empty"><div className="workspace-empty-icon"><Bell size={20} /></div><h3>No announcements</h3><p>Notices from your property owner will appear here.</p></div>}
           </section>
           <section className="workspace-view">
-            <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Payments</h2><p>Payments recorded for this property.</p></div></div>
-            {payments === null ? <p className="portal-empty">Loading…</p> : payments.length ? <div className="crud-list">{payments.map((payment) => <div className="crud-row" key={payment.id}><div className="crud-main"><strong>{formatRupees(payment.amount)}</strong><small>{formatDate(payment.createdAt)}</small></div><span className={`status-pill ${payment.status === 'paid' ? 'sage' : 'gold'}`}>{payment.status}</span></div>)}</div> : <div className="workspace-empty"><div className="workspace-empty-icon"><WalletCards size={20} /></div><h3>No payments yet</h3><p>Recorded payments will appear here.</p></div>}
+            <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
+            <ResidentRentPayments rent={profile.rent} />
           </section>
         </div>
+        <PolicyLinks businessName={profile.workspace.businessName} termsAndConditions={profile.workspace.termsAndConditions} privacyPolicy={profile.workspace.privacyPolicy} />
       </main>
       {isChangingPassword && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div>}
       {notice && <div className="toast" role="status">{notice}</div>}
@@ -173,7 +174,7 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
     return (
       <main className="login-shell">
         <div className="login-card">
-          <div className="brand-row"><div className="brand-mark"><Building2 size={19} strokeWidth={2.5} /></div><span>raj<span className="brand-accent">.</span>pg</span></div>
+          <div className="brand-row"><BrandMark /></div>
           <p className="eyebrow">Welcome, {profile.name.split(' ')[0]}</p>
           <h1>Choose your password</h1>
           <p className="login-hint">Your access key was for your first sign-in only. From now on, sign in with your email or phone and this password.</p>

@@ -31,8 +31,8 @@ export const rentBadges: Record<RentState, { label: string; tone: string } | nul
   NOT_TRACKED: null,
   NOT_DUE: null,
   PAID: null,
-  REMINDER_1: { label: 'Rent due tomorrow', tone: 'gold' },
-  REMINDER_2: { label: 'Rent due today', tone: 'gold' },
+  REMINDER_1: { label: 'Rent reminder 1', tone: 'gold' },
+  REMINDER_2: { label: 'Rent reminder 2', tone: 'gold' },
   LOCK_DUE: { label: 'Rent overdue · access lock due', tone: 'coral' },
 }
 
@@ -42,8 +42,8 @@ export function rentChip(rent: RentSummary): { text: string; tone: string } {
   const amount = formatRupees(rent.monthlyRent)
   switch (rent.state) {
     case 'LOCK_DUE': return { text: `${formatRupees(rent.amountDue)} overdue`, tone: 'coral' }
-    case 'REMINDER_2': return { text: `${amount} · due today`, tone: 'gold' }
-    case 'REMINDER_1': return { text: `${amount} · due tomorrow`, tone: 'gold' }
+    case 'REMINDER_2':
+    case 'REMINDER_1': return { text: `${amount} · due ${formatDueDate(rent.currentMonth, rent.dueDay)}`, tone: 'gold' }
     case 'PAID': return { text: `${amount} · paid`, tone: 'sage' }
     case 'NOT_TRACKED': return { text: `${amount} · paused`, tone: 'muted' }
     default: return { text: `${amount} · due ${formatDueDate(nextMonthToRecord(rent), rent.dueDay)}`, tone: 'muted' }

@@ -6,6 +6,7 @@ import { parseDateOnly } from './dates.js'
 import { prisma, withDatabaseRetry } from './db.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { parseMonthlyRent, rentStatus } from './rent.js'
+import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 // Omits the access key hash (never leaves the server) and the Aadhaar card data URL (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card instead).
@@ -19,10 +20,10 @@ type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'ac
 class RoomOccupiedError extends Error {}
 class RentInputError extends Error {}
 
-function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, hasAadharCard: boolean) {
+function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, hasAadharCard: boolean, rules: RentRules) {
   const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
-  const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month)), payments: rentPayments.slice(0, 6) }
+  const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month), rules), payments: rentPayments.slice(0, 6) }
   return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
 }
 
@@ -31,7 +32,7 @@ async function findResidentSummary(id: string) {
     prisma.resident.findUniqueOrThrow({ where: { id }, ...residentSummaryQuery }),
     prisma.resident.count({ where: { id, ...hasAadharCardWhere } }),
   ])
-  return toResidentSummary(resident, cardCount > 0)
+  return toResidentSummary(resident, cardCount > 0, rentRulesOf(await getSettings()))
 }
 
 // Only fields present in the body are returned, so PUT can apply partial updates.
@@ -94,7 +95,8 @@ residentRouter.get('/residents', async (_request, response) => {
       prisma.resident.findMany({ where: hasAadharCardWhere, select: { id: true } }),
     ]))
     const cardIds = new Set(withCards.map(({ id }) => id))
-    response.json(residents.map((resident) => toResidentSummary(resident, cardIds.has(resident.id))))
+    const rules = rentRulesOf(await getSettings())
+    response.json(residents.map((resident) => toResidentSummary(resident, cardIds.has(resident.id), rules)))
   } catch (error) {
     console.error('Resident query failed:', error)
     response.status(503).json({ error: 'Residents could not be loaded.' })

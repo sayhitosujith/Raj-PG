@@ -1,14 +1,14 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
+import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 /**
- * Rent cycle: each month's rent is due by the 2nd. Reminder 1 shows on the 1st, reminder 2 on the
- * 2nd, and from the 3rd an unpaid month flags the resident "access lock due" for the owner to act on.
+ * Rent cycle (days set in Settings, default due the 2nd): reminder 1 shows from its day, reminder 2
+ * from its day until the due day, and after the due day an unpaid month flags the resident
+ * "access lock due" for the owner to act on.
  * Reminders are shown in the app (no SMS/email provider is set up); nothing is locked automatically.
  */
-const dueDay = 2
-const reminderOneDay = 1
 const maxMonthlyRent = 10_00_000
 // Properties are in India (IST, UTC+5:30, no daylight saving), so "which day is it" is decided there.
 const propertyUtcOffsetMs = 5.5 * 60 * 60 * 1000
@@ -28,7 +28,7 @@ const monthKey = (year: number, month: number) => `${year}-${String(month).padSt
 
 // The first month billed from a start date: that month if it began on or before the due day,
 // otherwise the next one (someone moving in on the 20th has already settled that month on arrival).
-function firstBilledMonth(start: Date) {
+function firstBilledMonth(start: Date, dueDay: number) {
   const { year, month, day } = propertyToday(start)
   return day <= dueDay ? { year, month } : month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 }
 }
@@ -43,7 +43,8 @@ function monthsBetween(from: { year: number; month: number }, to: { year: number
  * Computes a resident's rent position. Billing starts at the later of their joining date and the
  * date rent was first set, so turning rent on for an existing resident never invents back-rent.
  */
-export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean }, paidMonths: string[], now = new Date()) {
+export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean }, paidMonths: string[], rules: RentRules, now = new Date()) {
+  const { dueDay } = rules
   const today = propertyToday(now)
   const currentMonth = monthKey(today.year, today.month)
   if (!resident.monthlyRent || !resident.rentTrackedFrom || !resident.active) {
@@ -51,13 +52,13 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   }
   const start = resident.rentTrackedFrom > resident.joinedAt ? resident.rentTrackedFrom : resident.joinedAt
   const paid = new Set(paidMonths)
-  const outstandingMonths = monthsBetween(firstBilledMonth(start), today).filter((month) => !paid.has(month))
-  // A month is overdue once its due day has passed: any earlier month, or this one from the 3rd.
+  const outstandingMonths = monthsBetween(firstBilledMonth(start, dueDay), today).filter((month) => !paid.has(month))
+  // A month is overdue once its due day has passed: any earlier month, or this one after the due day.
   const overdueMonths = outstandingMonths.filter((month) => month < currentMonth || today.day > dueDay)
   const owesCurrent = outstandingMonths.includes(currentMonth)
   const state: RentState = overdueMonths.length ? 'LOCK_DUE'
-    : owesCurrent && today.day === reminderOneDay ? 'REMINDER_1'
-    : owesCurrent && today.day === dueDay ? 'REMINDER_2'
+    : owesCurrent && today.day >= rules.reminderTwoDay ? 'REMINDER_2'
+    : owesCurrent && today.day >= rules.reminderOneDay ? 'REMINDER_1'
     : paid.has(currentMonth) ? 'PAID'
     : 'NOT_DUE'
   return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue: outstandingMonths.length * resident.monthlyRent, dueDay }
@@ -66,7 +67,7 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
 /** True when the resident is past the second reminder; used to limit their portal until paid. */
 export async function isRentLockDue(residentId: string) {
   const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
-  return resident ? rentStatus(resident, resident.rentPayments.map((payment) => payment.month)).state === 'LOCK_DUE' : false
+  return resident ? rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(await getSettings())).state === 'LOCK_DUE' : false
 }
 
 /**
@@ -87,7 +88,7 @@ const recentPayments = { orderBy: { month: 'desc' }, take: 6, select: { id: true
 export async function rentSummary(residentId: string) {
   const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
   const payments = await prisma.rentPayment.findMany({ where: { residentId }, ...recentPayments })
-  return { ...rentStatus(resident, resident.rentPayments.map((payment) => payment.month)), payments }
+  return { ...rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(await getSettings())), payments }
 }
 
 function respondToError(response: Response, error: unknown, fallback: string) {

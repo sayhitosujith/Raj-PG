@@ -6,6 +6,8 @@ import { prisma } from './db.js'
 import { photoVersion } from './photo.js'
 import { isRentLockDue } from './rent.js'
 import { requirePortalAccess } from './residentPortal.js'
+import { getSettings, slotDetails } from './settings.js'
+import type { WorkspaceSettings } from '@prisma/client'
 
 const maxNoteLength = 300
 const maxDaysAhead = 60
@@ -14,14 +16,9 @@ const msPerDay = 24 * msPerHour
 const openStatuses: HousekeepingStatus[] = [HousekeepingStatus.REQUESTED, HousekeepingStatus.SCHEDULED]
 // Residents can nudge again after this long, so one missed visit cannot flood the owner.
 const reminderCooldownMs = msPerHour
-// Slot hours are local to the properties, which are all in India (IST, UTC+5:30, no daylight
-// saving), so a fixed offset turns "Morning on the 25th" into exact instants on any server.
+// Slot hours (set in Settings) are local to the properties, which are all in India (IST, UTC+5:30,
+// no daylight saving), so a fixed offset turns "Morning on the 25th" into exact instants on any server.
 const propertyUtcOffsetMs = 5.5 * msPerHour
-const slotHours: Record<HousekeepingSlot, { start: number; end: number }> = {
-  MORNING: { start: 8, end: 12 },
-  AFTERNOON: { start: 12, end: 16 },
-  EVENING: { start: 16, end: 20 },
-}
 
 // What the owner may move a request to. DONE and CANCELLED are final so the history stays honest.
 const allowedTransitions: Record<HousekeepingStatus, HousekeepingStatus[]> = {
@@ -55,9 +52,10 @@ function isBookable(date: Date) {
 }
 
 /** Exact start and end of a request's slot; `date` is the calendar day stored at UTC midnight. */
-function slotWindow(request: Pick<RequestRecord, 'date' | 'slot'>) {
+function slotWindow(request: Pick<RequestRecord, 'date' | 'slot'>, settings: WorkspaceSettings) {
   const dayStart = request.date.getTime() - propertyUtcOffsetMs
-  return { start: new Date(dayStart + slotHours[request.slot].start * msPerHour), end: new Date(dayStart + slotHours[request.slot].end * msPerHour) }
+  const { startMinutes, endMinutes } = slotDetails(settings, request.slot)
+  return { start: new Date(dayStart + startMinutes * 60_000), end: new Date(dayStart + endMinutes * 60_000) }
 }
 
 const isOpen = (request: Pick<RequestRecord, 'status'>) => openStatuses.includes(request.status)
@@ -71,10 +69,10 @@ function hasOpenReminder(request: RequestRecord) {
  * Timing facts both sides need, computed here so the browser clock and time zone never decide
  * them: whether the slot is over, and from when the resident may send (another) reminder.
  */
-function withTiming(request: RequestRecord, now = new Date()) {
-  const { start, end } = slotWindow(request)
+function withTiming(request: RequestRecord, settings: WorkspaceSettings, now = new Date()) {
+  const { start, end } = slotWindow(request, settings)
   const canRemindAt = isOpen(request) ? new Date(Math.max(start.getTime(), (request.lastReminderAt?.getTime() ?? 0) + reminderCooldownMs)) : null
-  return { ...request, slotStartsAt: start, slotEndsAt: end, isOverdue: isOpen(request) && now > end, hasOpenReminder: hasOpenReminder(request), canRemindAt }
+  return { ...request, slotLabel: slotDetails(settings, request.slot).fullLabel, slotStartsAt: start, slotEndsAt: end, isOverdue: isOpen(request) && now > end, hasOpenReminder: hasOpenReminder(request), canRemindAt }
 }
 
 function respondToError(response: Response, error: unknown, fallback: string) {
@@ -91,7 +89,8 @@ housekeepingResidentRouter.get('/resident-portal/housekeeping', requireResident,
   const { userId } = response.locals.auth as AuthContext
   try {
     const requests = await prisma.housekeepingRequest.findMany({ where: { residentId: userId }, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 30, select: requestFields })
-    response.json(requests.map((request) => withTiming(request)))
+    const settings = await getSettings()
+    response.json(requests.map((request) => withTiming(request, settings)))
   } catch (error) {
     respondToError(response, error, 'Housekeeping requests could not be loaded.')
   }
@@ -111,7 +110,7 @@ housekeepingResidentRouter.post('/resident-portal/housekeeping', requireResident
     if (await isRentLockDue(userId)) { response.status(403).json({ error: 'Your rent is overdue. Housekeeping requests are paused until it is paid.', code: 'RENT_OVERDUE' }); return }
     const duplicate = await prisma.housekeepingRequest.count({ where: { residentId: userId, date, slot, status: { in: openStatuses } } })
     if (duplicate) { response.status(409).json({ error: 'You already have a request for that date and time.' }); return }
-    response.status(201).json(withTiming(await prisma.housekeepingRequest.create({ data: { residentId: userId, date, slot, note: note.note }, select: requestFields })))
+    response.status(201).json(withTiming(await prisma.housekeepingRequest.create({ data: { residentId: userId, date, slot, note: note.note }, select: requestFields }), await getSettings()))
   } catch (error) {
     respondToError(response, error, 'Your housekeeping request could not be saved.')
   }
@@ -130,7 +129,7 @@ housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/cancel', requ
     const existing = await findOwnRequest(id, userId)
     if (!existing) { response.status(404).json({ error: 'Housekeeping request was not found.' }); return }
     if (!isOpen(existing)) { response.status(409).json({ error: 'This request is already closed.' }); return }
-    response.json(withTiming(await prisma.housekeepingRequest.update({ where: { id }, data: { status: HousekeepingStatus.CANCELLED }, select: requestFields })))
+    response.json(withTiming(await prisma.housekeepingRequest.update({ where: { id }, data: { status: HousekeepingStatus.CANCELLED }, select: requestFields }), await getSettings()))
   } catch (error) {
     respondToError(response, error, 'The request could not be cancelled.')
   }
@@ -143,12 +142,13 @@ housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/remind', requ
   try {
     const existing = await findOwnRequest(id, userId)
     if (!existing) { response.status(404).json({ error: 'Housekeeping request was not found.' }); return }
-    const { canRemindAt } = withTiming(existing)
+    const settings = await getSettings()
+    const { canRemindAt } = withTiming(existing, settings)
     if (!canRemindAt) { response.status(409).json({ error: 'This request is already closed.' }); return }
     const now = new Date()
-    if (now < slotWindow(existing).start) { response.status(409).json({ error: 'You can send a reminder once your time slot has started.' }); return }
+    if (now < slotWindow(existing, settings).start) { response.status(409).json({ error: 'You can send a reminder once your time slot has started.' }); return }
     if (now < canRemindAt) { response.status(429).json({ error: `You already sent a reminder. You can send another after ${canRemindAt.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })}.` }); return }
-    response.json(withTiming(await prisma.housekeepingRequest.update({ where: { id }, data: { reminderCount: { increment: 1 }, lastReminderAt: now }, select: requestFields })))
+    response.json(withTiming(await prisma.housekeepingRequest.update({ where: { id }, data: { reminderCount: { increment: 1 }, lastReminderAt: now }, select: requestFields }), settings))
   } catch (error) {
     respondToError(response, error, 'The reminder could not be sent.')
   }
@@ -159,9 +159,9 @@ export const housekeepingAdminRouter = Router()
 
 const withResident = { ...requestFields, resident: { select: { id: true, name: true, profilePhotoUpdatedAt: true, room: { select: { number: true, property: { select: { name: true } } } } } } } satisfies Prisma.HousekeepingRequestSelect
 
-function toOwnerView(request: Prisma.HousekeepingRequestGetPayload<{ select: typeof withResident }>) {
+function toOwnerView(request: Prisma.HousekeepingRequestGetPayload<{ select: typeof withResident }>, settings: WorkspaceSettings) {
   const { resident, ...fields } = request
-  return { ...withTiming(fields), resident: { id: resident.id, name: resident.name, room: resident.room.number, property: resident.room.property.name, photoVersion: photoVersion(resident.profilePhotoUpdatedAt) } }
+  return { ...withTiming(fields, settings), resident: { id: resident.id, name: resident.name, room: resident.room.number, property: resident.room.property.name, photoVersion: photoVersion(resident.profilePhotoUpdatedAt) } }
 }
 
 // Unanswered reminders first, then overdue visits, then the rest by when they are due.
@@ -174,8 +174,9 @@ housekeepingAdminRouter.get('/housekeeping', async (_request, response) => {
       prisma.housekeepingRequest.findMany({ where: { status: { notIn: openStatuses } }, orderBy: { updatedAt: 'desc' }, take: 100, select: withResident }),
     ])
     // Array.sort is stable, so within each urgency level the date order from the query is kept.
-    const openViews = open.map(toOwnerView).sort((a, b) => urgency(a) - urgency(b))
-    response.json([...openViews, ...closed.map(toOwnerView)])
+    const settings = await getSettings()
+    const openViews = open.map((request) => toOwnerView(request, settings)).sort((a, b) => urgency(a) - urgency(b))
+    response.json([...openViews, ...closed.map((request) => toOwnerView(request, settings))])
   } catch (error) {
     respondToError(response, error, 'Housekeeping requests could not be loaded.')
   }
@@ -194,7 +195,7 @@ housekeepingAdminRouter.patch('/housekeeping/:id', async (request, response) => 
     if (status === undefined && !isOpen(existing)) { response.status(409).json({ error: 'This request is already closed.' }); return }
     if (status !== undefined && !allowedTransitions[existing.status].includes(status)) { response.status(409).json({ error: `A ${existing.status.toLowerCase()} request cannot be marked ${status.toLowerCase()}.` }); return }
     const updated = await prisma.housekeepingRequest.update({ where: { id: request.params.id }, data: { ...(status !== undefined ? { status } : {}), ...(rawOwnerNote !== undefined ? { ownerNote: ownerNote.note } : {}), reminderAcknowledgedAt: new Date() }, select: withResident })
-    response.json(toOwnerView(updated))
+    response.json(toOwnerView(updated, await getSettings()))
   } catch (error) {
     respondToError(response, error, 'The request could not be updated.')
   }
