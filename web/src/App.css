@@ -827,3 +827,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .upi-direct-report label.upi-direct-amount-field { flex: 0 1 140px; }
 /* The owner's own QR is often a tall merchant poster; keep its shape and enough size to scan. */
 .upi-direct-qr img.is-uploaded { width: 220px; height: auto; max-height: 360px; object-fit: contain; }
+/* A QR poster is portrait; give its preview room so the code inside stays recognisable. */
+.logo-field.is-tall .logo-preview { width: 96px; height: 128px; background: rgb(255 255 255); }
+.logo-field.is-tall .logo-preview img { max-width: 92px; max-height: 124px; }

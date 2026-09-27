@@ -37,9 +37,13 @@ export function PaymentsView({ properties, residents, refreshSignal, onBack, onN
     if (showQr) setCollecting(payment)
   }
 
-  // For a resident's UPI report, check the reference in your bank app first: this also records their rent.
+  // A resident's UPI report (rentMonths set) is money sent to your UPI ID: check it in your bank app
+  // first, since confirming it also records their rent.
   async function markPaid(payment: Payment) {
-    const question = payment.reference ? `Mark ${formatRupees(payment.amount)} from ${payment.payerName} as paid? Check UPI reference ${payment.reference} in your bank app first.${payment.rentMonths?.length ? ` Rent for ${payment.rentMonths.map((item) => formatMonth(item.month)).join(', ')} will be recorded.` : ''}` : `Mark ${formatRupees(payment.amount)} from ${payment.payerName} as paid?`
+    const isReport = payment.rentMonths !== null
+    const check = payment.reference ? ` Check UPI reference ${payment.reference} in your bank app first.` : isReport ? ' Check your bank app for this transfer first.' : ''
+    const rent = payment.rentMonths?.length ? ` Rent for ${payment.rentMonths.map((item) => formatMonth(item.month)).join(', ')} will be recorded.` : ''
+    const question = `Mark ${formatRupees(payment.amount)} from ${payment.payerName} as paid?${check}${rent}`
     if (!window.confirm(question)) return
     const { status: _status, id: _id, property: _property, createdAt: _createdAt, ...fields } = payment
     const response = await fetch(`/api/payments/${payment.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...fields, status: 'paid' }) }).catch(() => null)
@@ -69,7 +73,7 @@ export function PaymentsView({ properties, residents, refreshSignal, onBack, onN
             <div className="crud-actions">
               <span className={`status-pill ${statusTone[payment.status] ?? 'muted'}`}>{paymentStatusLabels[payment.status] ?? payment.status}</span>
               {payment.status === 'pending' && !payment.razorpayQrId && <button className="secondary-button" onClick={() => markPaid(payment)}><Check size={13} /> Mark paid</button>}
-              {payment.method === 'upi' && payment.status !== 'paid' && !payment.reference && <button className="secondary-button" onClick={() => setCollecting(payment)}><QrCode size={13} /> UPI QR</button>}
+              {payment.method === 'upi' && payment.status !== 'paid' && payment.rentMonths === null && <button className="secondary-button" onClick={() => setCollecting(payment)}><QrCode size={13} /> UPI QR</button>}
               <button className="secondary-button" onClick={() => setEditing(payment)}><Pencil size={13} /> Edit</button>
               <button className="row-delete" aria-label={`Delete payment from ${payment.payerName}`} onClick={() => remove(payment)}><Trash2 size={14} /></button>
             </div>

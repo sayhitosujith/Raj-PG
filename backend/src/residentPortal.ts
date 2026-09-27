@@ -224,8 +224,11 @@ const maxReportedAmount = 10_00_000
  */
 residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, requirePortalAccess, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
-  const reference = normalizeUtr((request.body as { reference?: unknown }).reference)
-  if (!reference) { response.status(400).json({ error: 'Enter the 12-digit UPI reference number (UTR) from your payment app.' }); return }
+  // The UTR is optional (it helps the owner match the transfer), but one that is given must be valid.
+  const rawReference = (request.body as { reference?: unknown }).reference
+  const hasReference = typeof rawReference === 'string' && rawReference.trim() !== ''
+  const reference = hasReference ? normalizeUtr(rawReference) : ''
+  if (reference === null) { response.status(400).json({ error: 'A UPI reference (UTR) has 12 digits. Check it, or leave it blank.' }); return }
   try {
     if (!residentUpiPayee(await getSettings())) { response.status(409).json({ error: 'Your property owner has not set up UPI payments.' }); return }
     if (await pendingUpiClaim(userId)) { response.status(409).json({ error: 'You already reported a payment. Your property owner will confirm it soon.' }); return }

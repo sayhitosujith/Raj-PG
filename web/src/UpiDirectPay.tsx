@@ -44,8 +44,8 @@ function payTarget(rent: RentSummary, monthlyRent: number | null) {
 
 /**
  * Pay rent straight to the owner's UPI ID: a QR and a tap-to-pay link (for the exact amount when
- * it is known), then "I've paid" with the UPI reference so the owner can match it in their bank
- * app and confirm.
+ * it is known), then "I've paid" (optionally with the UPI reference) so the owner can match it
+ * in their bank app and confirm.
  */
 export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReported, onNotice }: { payee: UpiPayee; rent: RentSummary; monthlyRent: number | null; pendingClaim: UpiClaim | null; onReported: () => Promise<void>; onNotice: (message: string) => void }) {
   const [qr, setQr] = useState<string | null>(null)
@@ -86,7 +86,7 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
     return (
       <div className="upi-direct is-reported" role="status">
         <CheckCircle2 size={22} />
-        <div><strong>{formatRupees(pendingClaim.amount)} payment reported</strong><p>UPI reference {pendingClaim.reference}. Waiting for your property owner to confirm it.</p></div>
+        <div><strong>{formatRupees(pendingClaim.amount)} payment reported</strong><p>{pendingClaim.reference ? `UPI reference ${pendingClaim.reference}. ` : ''}Waiting for your property owner to confirm it.</p></div>
       </div>
     )
   }
@@ -102,7 +102,7 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
         <a className="secondary-button upi-direct-open" href={link ?? undefined}><Smartphone size={15} /> Open UPI app</a></>}
         <form className="upi-direct-report" onSubmit={report}>
           {!amount && <label className="upi-direct-amount-field">Amount paid (₹)<input value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} type="number" min={1} step={1} inputMode="numeric" required /></label>}
-          <label>Paid already? Enter the 12-digit UPI reference (UTR)<input value={reference} onChange={(event) => setReference(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="e.g. 412345678901" required /></label>
+          <label>Paid already? UPI reference (UTR) <span>(optional, helps your owner find it)</span><input value={reference} onChange={(event) => setReference(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="12 digits, e.g. 412345678901" /></label>
           <button type="submit" className="primary-button" disabled={isSending}>{isSending ? 'Sending…' : "I've paid"}</button>
         </form>
         {error && <p className="login-error" role="alert">{error}</p>}

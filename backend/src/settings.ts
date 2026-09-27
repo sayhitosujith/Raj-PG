@@ -204,7 +204,16 @@ function imageSettingRoutes(path: string, fields: { url: 'logoUrl' | 'upiQrUrl';
 
 imageSettingRoutes('/settings/logo', { url: 'logoUrl', updatedAt: 'logoUpdatedAt' }, findLogoProblem, 'logo')
 imageSettingRoutes('/settings/upi-qr', { url: 'upiQrUrl', updatedAt: 'upiQrUpdatedAt' }, findUpiQrProblem, 'QR image')
-// The owner's preview of their QR image in Settings.settingsRouter.get('/settings/upi-qr', async (_request, response) => {  try {    sendUpiQr(response, (await getSettings()).upiQrUrl)  } catch (error) {    console.error('UPI QR lookup failed:', error)    response.status(503).json({ error: 'The QR image could not be loaded.' })  }})
+
+// The owner's preview of their QR image in Settings.
+settingsRouter.get('/settings/upi-qr', async (_request, response) => {
+  try {
+    sendUpiQr(response, (await getSettings()).upiQrUrl)
+  } catch (error) {
+    console.error('UPI QR lookup failed:', error)
+    response.status(503).json({ error: 'The QR image could not be loaded.' })
+  }
+})
 
 /**
  * Public branding for the sign-in page, which shows before anyone is signed in. Only the business

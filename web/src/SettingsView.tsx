@@ -68,11 +68,13 @@ type ImageFieldProps = {
   emptyIcon: ReactNode
   removeQuestion: string
   resize: (file: File) => Promise<{ dataUrl: string } | { error: string }>
+  /** A portrait preview, for images such as QR posters that are taller than wide. */
+  tall?: boolean
   onSave: (image: string | null) => SaveResult
 }
 
 /** An image setting (logo, UPI QR): preview plus upload/replace/remove, saved immediately (not with the section's Save). */
-function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, resize, onSave }: ImageFieldProps) {
+function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, resize, tall = false, onSave }: ImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ tone: 'error' | 'saved'; text: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -95,7 +97,7 @@ function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, 
   }
 
   return (
-    <div className="logo-field">
+    <div className={`logo-field${tall ? ' is-tall' : ''}`}>
       <div className="logo-preview">{previewUrl ? <img src={previewUrl} alt={title} /> : <span>{emptyIcon}</span>}</div>
       <div className="logo-copy">
         <strong>{title}</strong>
@@ -147,7 +149,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
           </SettingsSection>
 
           <SettingsSection icon={<QrCode size={18} />} title="UPI payments" description="Residents see your UPI ID and a QR code in their portal: your uploaded QR if you add one, otherwise one generated from the UPI ID. Money goes straight to your bank, so residents report the payment with its UPI reference and you confirm it under Payments." onSubmit={(form) => onSaveSettings({ upiId: value(form, 'upiId'), upiPayeeName: value(form, 'upiPayeeName') })}>
-            <ImageField noun="UPI QR" title="Your UPI QR" hint="Upload the QR from PhonePe, GPay, Paytm or your bank (a screenshot or photo works). Residents see it instead of the generated QR; it has no amount built in, so they type it themselves." previewUrl={settings.upiQrVersion ? `/api/settings/upi-qr?v=${settings.upiQrVersion}` : null} emptyIcon={<QrCode size={22} />} removeQuestion="Remove your QR image? Residents will see the QR generated from your UPI ID instead (if one is set)." resize={resizeUpiQr} onSave={(image) => onSaveImage('upi-qr', image)} />
+            <ImageField noun="UPI QR" tall title="Your UPI QR" hint="Upload the QR from PhonePe, GPay, Paytm or your bank (a screenshot or photo works). Residents see it instead of the generated QR; it has no amount built in, so they type it themselves." previewUrl={settings.upiQrVersion ? `/api/settings/upi-qr?v=${settings.upiQrVersion}` : null} emptyIcon={<QrCode size={22} />} removeQuestion="Remove your QR image? Residents will see the QR generated from your UPI ID instead (if one is set)." resize={resizeUpiQr} onSave={(image) => onSaveImage('upi-qr', image)} />
             <div className="settings-pair">
               <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
