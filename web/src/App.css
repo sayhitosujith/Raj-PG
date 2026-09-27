@@ -760,3 +760,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .room-select-empty { margin-top: 14px; color: #55635f; font-size: 11px; font-weight: 700; }
 .room-select-empty p { margin: 6px 0 0; padding: 9px 11px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-weight: 400; line-height: 1.5; }
 @media (max-width: 560px) { .rooms-add, .rooms-add:last-of-type { grid-template-columns: 1fr 1fr; } .rooms-add span { grid-column: 1 / -1; } }
+
+/* Resident portal: property photo beside the details grid; stacks on narrow cards. */
+.portal-details-row { display: flex; gap: 14px; align-items: stretch; margin-top: 20px; }
+.portal-details-row .portal-details { flex: 1; margin: 0; }
+.portal-property-photo { flex: none; width: 160px; min-height: 120px; border-radius: 8px; object-fit: cover; background: #f7faf8; }
+@container (max-width: 640px) {
+  .portal-details-row { flex-direction: column; }
+  .portal-property-photo { width: 100%; height: 160px; }
+}

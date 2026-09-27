@@ -35,6 +35,9 @@ export const sendProfilePhoto = (response: Response, dataUrl: string | null | un
 export const findLogoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxLogoBytes, 'a logo')
 
 /** Sends the workspace logo; public because the sign-in page shows it before anyone signs in. */
+/** Serves a property's uploaded image to its residents. */
+export const sendPropertyImage = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No property image.')
+
 export const sendLogo = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No logo.')
 
 /** Version used in image URLs; null means there is no image. */

@@ -27,8 +27,9 @@ import { useGreeting } from './useGreeting'
 import { PageLoader } from './Loader'
 import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
+import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; onlinePayment: boolean; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -130,10 +131,10 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
       <main className="page-content" inert={Boolean(pendingConsent)}>
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profile.name.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}{profile.location && <LocationLink className="portal-location" property={profile.property} location={profile.location} />}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
+        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}{profile.location && <LocationLink className="portal-location" property={profile.property} location={profile.location} />}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
         <section className="workspace-view">
           <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <RentHighlight rent={profile.rent} /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl>
+          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl></div>
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
         <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} onNotice={showNotice} />
@@ -195,7 +196,7 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
       <main className="login-shell">
         <div className="login-card">
           <div className="brand-row"><BrandMark /></div>
-          <p className="eyebrow">Welcome, {profile.name.split(' ')[0]}</p>
+          <p className="eyebrow">Welcome, {displayName(profile.name)}</p>
           <h1>Choose your password</h1>
           <p className="login-hint">Your access key was for your first sign-in only. From now on, sign in with your email or phone and this password.</p>
           <ResidentPasswordForm requireCurrent={false} submitLabel="Save password" onSaved={reloadProfile} />

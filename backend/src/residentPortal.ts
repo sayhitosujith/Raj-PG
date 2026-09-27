@@ -5,8 +5,9 @@ import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
 import { toMealTimes } from './meals.js'
-import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
+import { findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage } from './photo.js'
 import { rentSummary } from './rent.js'
+import { createHash } from 'node:crypto'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
@@ -41,6 +42,16 @@ async function residentWorkspace() {
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
 export const residentPortalRouter = Router()
 
+/**
+ * Where the resident's browser loads the property photo from. Uploaded images (data URLs, often
+ * tens of KB) are served by their own route so the profile, re-fetched every minute, stays small;
+ * a short content hash in the URL lets the browser cache it until the owner changes the photo.
+ */
+function propertyImageUrl(imageUrl: string) {
+  if (!imageUrl.startsWith('data:')) return imageUrl
+  return `/api/resident-portal/property-image?v=${createHash('sha1').update(imageUrl).digest('hex').slice(0, 10)}`
+}
+
 residentPortalRouter.post('/resident-portal/login', async (request, response) => {
   // `accessKey` is still accepted for callers written before residents had passwords.
   const { identifier, password, accessKey } = request.body as { identifier?: string; password?: string; accessKey?: string }
@@ -65,7 +76,7 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -188,5 +199,15 @@ residentPortalRouter.post('/resident-portal/food-request', requireResident, requ
   } catch (error) {
     console.error('Food request failed:', error)
     response.status(503).json({ error: 'Your request could not be sent. Please try again.' })
+  }
+})
+
+residentPortalRouter.get('/resident-portal/property-image', requireResident, requirePortalAccess, async (_request, response) => {
+  try {
+    const property = await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { imageUrl: true } })
+    sendPropertyImage(response, property?.imageUrl)
+  } catch (error) {
+    console.error('Property image lookup failed:', error)
+    response.status(503).json({ error: 'The property image could not be loaded.' })
   }
 })
