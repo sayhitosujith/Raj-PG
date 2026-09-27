@@ -6,6 +6,8 @@ import { todayDateInputValue } from './joinDate'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
+import { Pagination } from './Pagination'
+import { portalListPageSize, usePagination } from './usePagination'
 
 const maxDaysAhead = 60
 
@@ -107,16 +109,17 @@ export function ResidentHousekeeping({ refreshSignal, isPaused, slots, weeklyLim
     onNotice('Housekeeping request cancelled.')
   }
 
+  const pager = usePagination(requests ?? [], portalListPageSize)
   return (
     <section className="workspace-view housekeeping-card">
       <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Housekeeping</h2><p>Request a room cleaning at a time that suits you.{weeklyLimit ? ` Up to ${weeklyLimit} ${weeklyLimit === 1 ? 'cleaning' : 'cleanings'} a week.` : ''}</p></div><div className="view-actions"><button className="primary-button" disabled={isPaused} title={isPaused ? 'Paused until your overdue rent is paid' : undefined} onClick={() => setIsRequesting(true)}><Sparkles size={16} /> Request housekeeping</button>{isPaused && <small className="paused-note">Paused until overdue rent is paid</small>}</div></div>
       {requests === null
         ? <InlineLoader />
         : requests.length
-          ? <div className="crud-list">{requests.map((request) => <div className="crud-row housekeeping-row" key={request.id}>
+          ? <><div className="crud-list">{pager.pageItems.map((request) => <div className="crud-row housekeeping-row" key={request.id}>
               <div className="crud-main"><strong>{describeVisit(request)}</strong>{request.note && <small>Your note: {request.note}</small>}{request.ownerNote && <small className="owner-note">From your property owner: {request.ownerNote}</small>}{isOpenRequest(request) && request.lastReminderAt && <small className="reminder-note"><BellRing size={11} /> Reminder sent at {formatTime(request.lastReminderAt)}{request.canRemindAt && new Date(request.canRemindAt).getTime() > now ? ` · you can send another after ${formatTime(request.canRemindAt)}` : ''}</small>}{request.isOverdue && !request.lastReminderAt && <small className="reminder-note">Your time slot has ended. If no one came, send a reminder.</small>}</div>
               <div className="crud-actions"><span className={`status-pill ${statusDetails[request.status].tone}`}>{statusDetails[request.status].label}</span>{canRemindNow(request, now) && <button className="secondary-button remind-button" disabled={remindingId === request.id} onClick={() => remind(request)}><BellRing size={13} /> {remindingId === request.id ? 'Sending…' : 'Not here yet? Remind'}</button>}{isOpenRequest(request) && <button className="secondary-button" disabled={cancellingId === request.id} onClick={() => cancel(request)}>{cancellingId === request.id ? 'Cancelling…' : 'Cancel'}</button>}</div>
-            </div>)}</div>
+            </div>)}</div><Pagination state={pager} label="Housekeeping requests" /></>
           : <div className="workspace-empty"><div className="workspace-empty-icon"><Sparkles size={20} /></div><h3>No requests yet</h3><p>Tap “Request housekeeping” to book a cleaning.</p></div>}
       {isRequesting && <RequestForm slots={slots} onClose={() => setIsRequesting(false)} onCreated={(created) => { setRequests((current) => [created, ...(current ?? [])]); setIsRequesting(false); onNotice(`Housekeeping requested for ${describeVisit(created)}.`) }} />}
     </section>

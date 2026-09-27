@@ -4,6 +4,8 @@ import { formatShortDate, weekdayNames, type FoodSummary, type MenuDay } from '.
 import { mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
+import { Pagination } from './Pagination'
+import { listPageSize, usePagination } from './usePagination'
 import { InlineLoader } from './Loader'
 
 type PropertyOption = { id: string; name: string }
@@ -75,6 +77,8 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
 
   const data = summary?.propertyId === propertyId ? summary.data : null
   const liked = data?.feedback.filter((item) => item.liked).length ?? 0
+  // Each property has its own feedback, so switching property starts at page 1.
+  const feedbackPager = usePagination(data?.feedback ?? [], listPageSize, propertyId ?? '')
 
   return (
     <section className="workspace-view food-view">
@@ -98,9 +102,9 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
 
         <div className="settings-section">
           <div className="settings-section-head"><span className="settings-section-icon"><MessageSquareText size={18} /></span><div><h3>Feedback</h3><p>{data ? (data.feedback.length ? `Last 7 days: ${liked} liked, ${data.feedback.length - liked} not liked.` : 'No feedback in the last 7 days.') : 'Loading…'}</p></div></div>
-          {data && data.feedback.length > 0 && <ul className="food-feedback">{data.feedback.map((item) => (
+          {data && data.feedback.length > 0 && <><ul className="food-feedback">{feedbackPager.pageItems.map((item) => (
             <li key={item.id}><span className={`feedback-thumb ${item.liked ? 'is-up' : 'is-down'}`}>{item.liked ? <ThumbsUp size={13} /> : <ThumbsDown size={13} />}</span><div><strong>{mealLabel(item.meal)} · {formatShortDate(item.date)}</strong><small>{item.residentName}{item.comment ? `: “${item.comment}”` : ''}</small></div></li>
-          ))}</ul>}
+          ))}</ul><Pagination state={feedbackPager} label="Feedback" /></>}
         </div>
 
         <div className="settings-section wide">

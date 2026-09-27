@@ -4,6 +4,8 @@ import { Avatar } from './Avatar'
 import { describeVisit, formatTime, isOpenRequest, statusDetails, type HousekeepingStatus, type OwnerHousekeepingRequest } from './housekeeping'
 import { todayDateInputValue } from './joinDate'
 import type { ResidentsLoadState } from './ResidentsView'
+import { Pagination } from './Pagination'
+import { listPageSize, usePagination } from './usePagination'
 
 type Filter = 'open' | 'reminders' | HousekeepingStatus | 'all'
 const filters: Array<[Filter, string]> = [['open', 'Open'], ['reminders', 'Reminders'], ['REQUESTED', 'Requested'], ['SCHEDULED', 'Scheduled'], ['DONE', 'Done'], ['CANCELLED', 'Cancelled'], ['all', 'All']]
@@ -72,6 +74,7 @@ export function HousekeepingView({ requests, loadState, onRetry, onUpdate, onBac
   const [filter, setFilter] = useState<Filter>('open')
   const today = todayDateInputValue()
   const visible = useMemo(() => requests.filter((request) => filter === 'all' || (filter === 'open' ? isOpenRequest(request) : filter === 'reminders' ? request.hasOpenReminder : request.status === filter)), [requests, filter])
+  const pager = usePagination(visible, listPageSize, filter)
   const tiles = [
     { label: 'Reminders', value: requests.filter((r) => r.hasOpenReminder).length, filter: 'reminders' as Filter },
     { label: 'New requests', value: requests.filter((r) => r.status === 'REQUESTED').length, filter: 'REQUESTED' as Filter },
@@ -88,7 +91,7 @@ export function HousekeepingView({ requests, loadState, onRetry, onUpdate, onBac
       {loadState === 'loading' && <div className="resident-list" aria-busy="true">{[0, 1, 2].map((index) => <div className="resident-skeleton" key={index}><span className="skeleton-circle" /><span className="skeleton-lines"><span /><span /></span><span className="skeleton-pill" /></div>)}</div>}
       {loadState === 'error' && <div className="workspace-empty"><div className="workspace-empty-icon"><RotateCw size={22} /></div><h3>Requests could not be loaded</h3><p>Check your connection and try again.</p><button className="primary-button" onClick={onRetry}><RotateCw size={16} /> Retry</button></div>}
       {loadState === 'ready' && (visible.length
-        ? <div className="housekeeping-list">{visible.map((request, index) => <HousekeepingRow key={request.id} request={request} index={index} onUpdate={(status, note) => onUpdate(request, status, note)} />)}</div>
+        ? <><div className="housekeeping-list">{pager.pageItems.map((request, index) => <HousekeepingRow key={request.id} request={request} index={index} onUpdate={(status, note) => onUpdate(request, status, note)} />)}</div><Pagination state={pager} label="Housekeeping requests" /></>
         : <div className="workspace-empty"><div className="workspace-empty-icon"><Sparkles size={22} /></div><h3>{filter === 'open' ? 'Nothing waiting' : 'No requests here'}</h3><p>{filter === 'open' ? 'New housekeeping requests from residents will appear here.' : 'Try another filter.'}</p></div>)}
     </section>
   )

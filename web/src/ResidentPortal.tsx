@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Bell, KeyRound, LogOut, X } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
+import { Pagination } from './Pagination'
+import { portalListPageSize, usePagination } from './usePagination'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentAadharVerification } from './ResidentAadharVerification'
@@ -91,6 +93,7 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void }) {
   const { greeting, dateLabel, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
+  const announcementsPager = usePagination(announcements ?? [], portalListPageSize)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   // Hides the consent prompt as soon as acceptance succeeds, before the profile re-fetch lands.
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)
@@ -144,7 +147,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <div className="portal-grid">
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>
-            {announcements === null ? <p className="portal-empty">Loading…</p> : announcements.length ? <div className="crud-list">{announcements.map((item) => <div className="crud-row" key={item.id}><div className="crud-main"><strong>{item.title}</strong><small>{item.message}</small></div><small className="portal-date">{formatDate(item.createdAt)}</small></div>)}</div> : <div className="workspace-empty"><div className="workspace-empty-icon"><Bell size={20} /></div><h3>No announcements</h3><p>Notices from your property owner will appear here.</p></div>}
+            {announcements === null ? <p className="portal-empty">Loading…</p> : announcements.length ? <><div className="crud-list">{announcementsPager.pageItems.map((item) => <div className="crud-row" key={item.id}><div className="crud-main"><strong>{item.title}</strong><small>{item.message}</small></div><small className="portal-date">{formatDate(item.createdAt)}</small></div>)}</div><Pagination state={announcementsPager} label="Announcements" /></> : <div className="workspace-empty"><div className="workspace-empty-icon"><Bell size={20} /></div><h3>No announcements</h3><p>Notices from your property owner will appear here.</p></div>}
           </section>
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>

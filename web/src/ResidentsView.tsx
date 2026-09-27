@@ -3,6 +3,8 @@ import { RotateCw, Search, UserPlus, Users } from 'lucide-react'
 import type { Resident } from './resident'
 import { applyResidentQuery, defaultResidentQuery, summarizeResidents, type ResidentQuery, type ResidentSort, type ResidentStatusFilter } from './residentFilters'
 import { ResidentRow, type AadharDecision } from './ResidentRow'
+import { Pagination } from './Pagination'
+import { listPageSize, usePagination } from './usePagination'
 
 /** Where the resident list is in its lifecycle; drives skeleton, error, and empty states. */
 export type ResidentsLoadState = 'loading' | 'ready' | 'error'
@@ -17,6 +19,8 @@ export function ResidentsView({ residents, loadState, onRetry, onAdd, onEdit, on
   const [query, setQuery] = useState<ResidentQuery>(defaultResidentQuery)
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set())
   const visibleResidents = useMemo(() => applyResidentQuery(residents, query), [residents, query])
+  // A new search, filter or sort starts again at page 1.
+  const pager = usePagination(visibleResidents, listPageSize, JSON.stringify(query))
   const summary = useMemo(() => summarizeResidents(residents), [residents])
   // Only properties that actually have residents are worth filtering by.
   const propertyOptions = useMemo(() => [...new Map(residents.map((resident) => [resident.propertyId, resident.property])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [residents])
@@ -57,7 +61,7 @@ export function ResidentsView({ residents, loadState, onRetry, onAdd, onEdit, on
     if (!visibleResidents.length) {
       return <div className="workspace-empty"><div className="workspace-empty-icon"><Search size={22} /></div><h3>No residents match</h3><p>Try a different search or clear the filters.</p><button className="secondary-button" onClick={() => setQuery(defaultResidentQuery)}>Clear filters</button></div>
     }
-    return <div className="resident-list">{visibleResidents.map((resident, index) => <ResidentRow key={resident.id} resident={resident} index={index} isExpanded={expandedIds.has(resident.id)} onToggle={() => toggleExpanded(resident.id)} onEdit={() => onEdit(resident)} onDelete={() => onDelete(resident)} onVerify={(decision) => onVerify(resident, decision)} onRecordRent={(month) => onRecordRent(resident, month)} onUndoRent={(paymentId) => onUndoRent(resident, paymentId)} onChanged={onChanged} onNotice={onNotice} />)}</div>
+    return <><div className="resident-list">{pager.pageItems.map((resident, index) => <ResidentRow key={resident.id} resident={resident} index={index} isExpanded={expandedIds.has(resident.id)} onToggle={() => toggleExpanded(resident.id)} onEdit={() => onEdit(resident)} onDelete={() => onDelete(resident)} onVerify={(decision) => onVerify(resident, decision)} onRecordRent={(month) => onRecordRent(resident, month)} onUndoRent={(paymentId) => onUndoRent(resident, paymentId)} onChanged={onChanged} onNotice={onNotice} />)}</div><Pagination state={pager} label="Residents" /></>
   }
 
   return (

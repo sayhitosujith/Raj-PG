@@ -91,6 +91,7 @@ model Resident {
   housekeepingRequests    HousekeepingRequest[]
   rentPayments            RentPayment[]
   payments                Payment[]
+  bookings                Booking[]
   rentOrders              RentOrder[]
   mealSkips               MealSkip[]
   // The policy version (latest update timestamp) this resident accepted, and when they did.
@@ -150,14 +151,27 @@ model Activity {
   createdAt   DateTime @default(now())
 }
 
+// A booking request, mostly from the public /book form shared on social media. residentName is
+// the requester's name (kept from the original column); source is where the link was shared
+// (instagram, facebook, whatsapp, google, direct, or phone/walk-in for owner-added ones).
+// Status runs new -> contacted -> accepted | declined; residentId links the resident it became.
 model Booking {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   residentName String
-  roomNumber   String
-  status       String   @default("pending")
+  phone        String    @default("")
+  email        String?
+  roomNumber   String    @default("")
+  status       String    @default("new")
   propertyId   String
-  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  moveInDate   DateTime?
+  foodOpted    Boolean?
+  message      String    @default("")
+  source       String    @default("direct")
+  residentId   String?
+  resident     Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
 }
 
 model Announcement {

@@ -3,6 +3,7 @@ import 'dotenv/config'
 import express from 'express'
 import { UserRole } from '@prisma/client'
 import { authRouter, requireRole } from './auth.js'
+import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
 import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
@@ -30,6 +31,7 @@ app.use(express.json({ limit: '6mb' }))
 app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
+app.use('/api', bookingPublicRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)
 app.use('/api', razorpayResidentRouter)
@@ -55,6 +57,7 @@ app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
+app.use('/api', bookingAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
@@ -147,28 +150,6 @@ app.put('/api/properties/:id', async (request, response) => {
   } catch { response.status(404).json({ error: 'Property could not be updated.' }) }
 })
 
-
-app.get('/api/bookings', async (_request, response) => {
-  if (!process.env.DATABASE_URL) { response.json([]); return }
-  const bookings = await prisma.booking.findMany({ include: { property: true }, orderBy: { createdAt: 'desc' } })
-  response.json(bookings.map((booking) => ({ ...booking, property: booking.property.name })))
-})
-
-app.post('/api/bookings', async (request, response) => {
-  const { residentName, roomNumber, propertyId, status } = request.body as { residentName?: string; roomNumber?: string; propertyId?: string; status?: string }
-  if (!residentName?.trim() || !roomNumber?.trim() || !propertyId) { response.status(400).json({ error: 'Resident, room, and property are required.' }); return }
-  try { response.status(201).json(await prisma.booking.create({ data: { residentName: residentName.trim(), roomNumber: roomNumber.trim(), propertyId, status: status?.trim() || 'pending' } })) } catch { response.status(400).json({ error: 'Booking could not be created.' }) }
-})
-
-app.put('/api/bookings/:id', async (request, response) => {
-  const { residentName, roomNumber, status } = request.body as { residentName?: string; roomNumber?: string; status?: string }
-  try { response.json(await prisma.booking.update({ where: { id: request.params.id }, data: { ...(residentName?.trim() ? { residentName: residentName.trim() } : {}), ...(roomNumber?.trim() ? { roomNumber: roomNumber.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}) } })) } catch { response.status(404).json({ error: 'Booking could not be updated.' }) }
-})
-
-app.delete('/api/bookings/:id', async (request, response) => {
-  try { await prisma.booking.delete({ where: { id: request.params.id } }); response.status(204).send() } catch { response.status(404).json({ error: 'Booking could not be deleted.' }) }
-})
-
 app.get('/api/announcements', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   const announcements = await prisma.announcement.findMany({ include: { property: true }, orderBy: { createdAt: 'desc' } })
@@ -197,11 +178,12 @@ app.get('/api/dashboard', async (_request, response) => {
   }
 
   try {
-    const [properties, residents, payments, openRequests, activities] = await prisma.$transaction([
+    const [properties, residents, payments, openRequests, pendingBookings, activities] = await prisma.$transaction([
       prisma.property.findMany({ include: { rooms: true } }),
       prisma.resident.count({ where: { active: true } }),
       prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'paid' } }),
       prisma.maintenanceRequest.count({ where: { status: 'open' } }),
+      prisma.booking.count({ where: { status: 'new' } }),
       prisma.activity.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
     ])
 
@@ -212,6 +194,8 @@ app.get('/api/dashboard', async (_request, response) => {
         residents: String(residents),
         collected: `₹${((payments._sum.amount ?? 0) / 100000).toFixed(2)}L`,
         openRequests: String(openRequests),
+        // Drives the Bookings badge in the sidebar: requests still waiting for a decision.
+        pendingBookings,
       },
       properties: properties.map((property) => {
         return {

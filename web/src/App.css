@@ -847,3 +847,74 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 480px) {
   .logo-field { flex-direction: column; align-items: flex-start; }
 }
+
+/* Pager under paged lists: "Showing 11–20 of 45" on the left, page buttons on the right. */
+.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 16px; }
+.pagination-summary { color: var(--muted); font-size: 11px; }
+.pagination-controls { display: flex; align-items: center; gap: 4px; }
+.pagination-button { display: grid; place-items: center; min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; color: #45544f; background: white; font: 600 12px 'DM Sans', sans-serif; cursor: pointer; transition: border-color .15s, background .15s; }
+.pagination-button:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+.pagination-button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.pagination-button.is-current { border-color: var(--teal); color: white; background: var(--teal); }
+.pagination-button:disabled { opacity: .45; cursor: not-allowed; }
+.pagination-gap { min-width: 20px; color: var(--muted); text-align: center; }
+/* Phones: the summary sits above and the buttons fill the width, so they stay easy to tap. */
+@media (max-width: 480px) {
+  .pagination { flex-direction: column; align-items: stretch; }
+  .pagination-summary { text-align: center; }
+  .pagination-controls { justify-content: center; }
+}
+
+/* Public booking page (/book): one centred card, full width on phones. */
+.booking-page { display: grid; place-items: start center; min-height: 100vh; padding: clamp(16px, 5vw, 56px) 16px; background: var(--paper); color: var(--ink); }
+.booking-card { width: min(100%, 560px); padding: clamp(20px, 4vw, 34px); border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 18px 50px #18352f14; }
+.booking-brand { padding: 0; margin-bottom: 22px; }
+.booking-card h1 { margin: 0 0 6px; color: #1f3036; font: 700 clamp(22px, 4vw, 28px)/1.2 Manrope, sans-serif; letter-spacing: -.6px; }
+.booking-intro { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.booking-submit, .booking-call { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; text-decoration: none; }
+.booking-call { margin-top: 10px; }
+.booking-done { display: grid; justify-items: center; text-align: center; }
+.booking-done > svg { margin-bottom: 12px; color: var(--teal); }
+/* Off-screen rather than display:none, which some bots detect and skip. */
+.booking-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+/* Booking fields (public form and the owner's Add request dialog). */
+.booking-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.booking-fields label, .booking-fields legend { display: grid; gap: 6px; color: #55635f; font-size: 11px; font-weight: 700; }
+.booking-fields label span { color: #9da7a3; font-weight: 400; }
+.booking-fields input, .booking-fields select, .booking-fields textarea { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 13px; font-weight: 400; }
+.booking-fields textarea { resize: vertical; }
+.booking-fields input:focus, .booking-fields select:focus, .booking-fields textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+.booking-wide { grid-column: 1 / -1; }
+.booking-food { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.booking-food legend { margin-bottom: 6px; }
+.booking-food label { display: flex; flex: 1 1 120px; align-items: center; gap: 8px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; }
+.booking-food label:has(input:checked) { border-color: var(--teal); background: var(--teal-soft); }
+.booking-food input { width: auto; accent-color: var(--teal); }
+.booking-food small { margin-left: auto; color: var(--muted); font-weight: 400; }
+@media (max-width: 480px) { .booking-fields { grid-template-columns: 1fr; } }
+
+/* Owner's Booking requests: share links, source chips, and request rows. */
+.booking-share { margin: 18px 0 4px; padding: 14px 16px; border: 1px dashed #cddbd4; border-radius: 10px; background: #f8fbf8; }
+.booking-share p { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+.booking-share ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.booking-share li { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 12px; }
+.booking-share code { overflow: hidden; padding: 6px 9px; border-radius: 6px; color: #45544f; background: white; font: 12px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.booking-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 6px; }
+.booking-source-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.booking-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; color: #45544f; background: white; font: 600 11px 'DM Sans', sans-serif; cursor: pointer; }
+.booking-chip b { color: var(--muted); font-weight: 700; }
+.booking-chip.is-selected { border-color: var(--teal); color: white; background: var(--teal); }
+.booking-chip.is-selected b { color: #d8efe9; }
+.booking-filters select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.booking-source { margin-left: 6px; padding: 2px 7px; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-size: 9px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; vertical-align: 1px; }
+.booking-message { margin: 2px 0 0; color: #55635f; font-size: 11px; font-style: italic; overflow-wrap: anywhere; }
+.booking-row .crud-actions { flex-wrap: wrap; justify-content: flex-end; }
+.booking-row .crud-actions a.icon-button { display: grid; place-items: center; color: var(--teal); }
+.booking-row .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
+.booking-status { padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; font: 600 11px 'DM Sans', sans-serif; cursor: pointer; }
+.booking-status.is-blue { color: #3f6fb3; background: #e5eefa; }
+.booking-status.is-gold { color: #9a6a16; background: #fbf1dc; }
+.booking-status.is-sage { color: var(--teal); background: var(--teal-soft); }
+.booking-status.is-muted { color: #6f7c78; background: #eef2ef; }
+@container (max-width: 560px) { .booking-share li { grid-template-columns: minmax(0, 1fr) auto; } .booking-share strong { grid-column: 1 / -1; } }
