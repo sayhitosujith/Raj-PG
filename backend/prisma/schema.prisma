@@ -294,6 +294,10 @@ model WorkspaceSettings {
   // Payments to it are not visible to the app, so residents report them for the owner to confirm.
   upiId                   String?
   upiPayeeName            String?
+  // The owner's own QR image (e.g. a PhonePe/GPay/merchant QR) as a data URL; when set, residents
+  // see it instead of the QR generated from upiId. The timestamp versions its URL for caching.
+  upiQrUrl                String?
+  upiQrUpdatedAt          DateTime?
   // Workspace logo as a data URL (resized in the browser); the timestamp versions its URL for caching.
   logoUrl                 String?
   logoUpdatedAt           DateTime?

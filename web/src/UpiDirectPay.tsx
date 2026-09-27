@@ -12,7 +12,7 @@ export type UpiClaim = { amount: number; reference: string; createdAt: string }
  * tapped link and as a scanned QR. Without an amount the payer's app asks for one. Encoded by
  * hand: URLSearchParams writes spaces as "+", which some UPI apps show literally in the payee name.
  */
-function upiPayLink(payee: UpiPayee, amount: number | null, note: string) {
+function upiPayLink(payee: UpiPayee & { id: string }, amount: number | null, note: string) {
   const params = { pa: payee.id, pn: payee.payeeName, ...(amount ? { am: amount.toFixed(2) } : {}), cu: 'INR', tn: note }
   return `upi://pay?${Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')}`
 }
@@ -21,6 +21,15 @@ function upiPayLink(payee: UpiPayee, amount: number | null, note: string) {
 async function qrDataUrl(text: string) {
   const { toDataURL } = await import('qrcode')
   return toDataURL(text, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+}
+
+/**
+ * What to tell the payer. A generated QR carries the amount; the owner's uploaded one usually does
+ * not, so they must type it (and a known amount is spelled out so they type the right one).
+ */
+function scanHint(amount: number | null, payeeName: string, isUploadedQr: boolean) {
+  if (!amount) return `Scan the QR with any UPI app and enter the amount you are paying to ${payeeName}.`
+  return isUploadedQr ? `Scan the QR with any UPI app and enter ${formatRupees(amount)} for ${payeeName}.` : `to ${payeeName}. Scan the QR with any UPI app.`
 }
 
 /**
@@ -45,15 +54,19 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
   const [error, setError] = useState('')
   const [isSending, setIsSending] = useState(false)
   const { amount, caption } = payTarget(rent, monthlyRent)
-  const link = upiPayLink(payee, amount, 'Rent')
+  const link = payee.id ? upiPayLink({ ...payee, id: payee.id }, amount, 'Rent') : null
+  // The owner's uploaded QR wins; otherwise one is drawn from the UPI link (with the amount in it).
+  const uploadedQr = payee.qrVersion ? `/api/resident-portal/upi-qr?v=${payee.qrVersion}` : null
+  const qrSrc = uploadedQr ?? qr
 
   useEffect(() => {
     let isCurrent = true
-    qrDataUrl(link).then((url) => { if (isCurrent) setQr(url) }, () => undefined)
+    if (link && !uploadedQr) qrDataUrl(link).then((url) => { if (isCurrent) setQr(url) }, () => undefined)
     return () => { isCurrent = false }
-  }, [link])
+  }, [link, uploadedQr])
 
   async function copyId() {
+    if (!payee.id) return
     try { await navigator.clipboard.writeText(payee.id); onNotice('UPI ID copied.') } catch { onNotice(`UPI ID: ${payee.id}`) }
   }
 
@@ -80,13 +93,13 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
 
   return (
     <div className="upi-direct">
-      <div className="upi-direct-qr">{qr ? <img src={qr} alt={`UPI QR code to pay ${amount ? `${formatRupees(amount)} ` : ''}to ${payee.payeeName}`} /> : <span className="upi-direct-qr-placeholder" />}</div>
+      <div className="upi-direct-qr">{qrSrc ? <img className={uploadedQr ? 'is-uploaded' : undefined} src={qrSrc} alt={`UPI QR code to pay ${amount ? `${formatRupees(amount)} ` : ''}to ${payee.payeeName}`} /> : <span className="upi-direct-qr-placeholder" />}</div>
       <div className="upi-direct-body">
         <p className="eyebrow">{caption}</p>
         {amount ? <strong className="upi-direct-amount">{formatRupees(amount)}</strong> : <strong className="upi-direct-amount">{payee.payeeName}</strong>}
-        <p>{amount ? `to ${payee.payeeName}. ` : 'Enter the amount in your UPI app. '}Scan with any UPI app, or pay to this UPI ID:</p>
-        <div className="upi-direct-id"><code>{payee.id}</code><button type="button" className="icon-button" aria-label="Copy UPI ID" title="Copy UPI ID" onClick={copyId}><Copy size={15} /></button></div>
-        <a className="secondary-button upi-direct-open" href={link}><Smartphone size={15} /> Open UPI app</a>
+        <p>{scanHint(amount, payee.payeeName, Boolean(uploadedQr))}{payee.id ? ' Or pay to this UPI ID:' : ''}</p>
+        {payee.id && <><div className="upi-direct-id"><code>{payee.id}</code><button type="button" className="icon-button" aria-label="Copy UPI ID" title="Copy UPI ID" onClick={copyId}><Copy size={15} /></button></div>
+        <a className="secondary-button upi-direct-open" href={link ?? undefined}><Smartphone size={15} /> Open UPI app</a></>}
         <form className="upi-direct-report" onSubmit={report}>
           {!amount && <label className="upi-direct-amount-field">Amount paid (₹)<input value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} type="number" min={1} step={1} inputMode="numeric" required /></label>}
           <label>Paid already? Enter the 12-digit UPI reference (UTR)<input value={reference} onChange={(event) => setReference(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="e.g. 412345678901" required /></label>

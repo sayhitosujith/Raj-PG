@@ -9,6 +9,8 @@ export type WorkspaceSettings = {
   upiId: string | null
   /** The name shown in the resident's UPI app; falls back to the business name. */
   upiPayeeName: string | null
+  /** null when no QR image is uploaded; otherwise a version for its URL. */
+  upiQrVersion: number | null
   rentDueDay: number
   rentReminderOneDay: number
   rentReminderTwoDay: number
@@ -44,6 +46,6 @@ export type SlotOption = { value: 'MORNING' | 'AFTERNOON' | 'EVENING'; label: st
 export type HouseRules = { visitingHours: string; quietHours: string; noticePeriodDays: number; securityDeposit: number | null }
 
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
-/** The owner's UPI ID and display name, as residents see it. */
-export type UpiPayee = { id: string; payeeName: string }
+/** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
+export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
 export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

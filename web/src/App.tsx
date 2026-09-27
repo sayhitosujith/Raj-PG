@@ -34,7 +34,7 @@ import { HousekeepingView } from './HousekeepingView'
 import { FoodView } from './FoodView'
 import { formatMonth, type RentSummary } from './rent'
 import type { AadharDecision } from './ResidentRow'
-import { SettingsView } from './SettingsView'
+import { SettingsView, type SettingImage } from './SettingsView'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { ThemeToggle } from './ThemeToggle'
@@ -203,12 +203,12 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     return null
   }
 
-  async function saveLogo(logo: string | null) {
-    const response = await fetch('/api/settings/logo', logo ? { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo }) } : { method: 'DELETE' }).catch(() => null)
+  async function saveImage(kind: SettingImage, image: string | null) {
+    const response = await fetch(`/api/settings/${kind}`, image ? { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image }) } : { method: 'DELETE' }).catch(() => null)
     if (!response) return 'Could not reach the server.'
-    if (!response.ok) return readApiError(response, 'Could not update the logo.')
+    if (!response.ok) return readApiError(response, 'Could not update the image.')
     setSettings(await response.json() as WorkspaceSettings)
-    refreshBranding()
+    if (kind === 'logo') refreshBranding()
     return null
   }
 
@@ -373,7 +373,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
-          {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveLogo={saveLogo} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onBack={() => handleNavigation('Overview')} />}
           {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Bookings', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">

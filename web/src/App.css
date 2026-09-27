@@ -825,3 +825,5 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .upi-direct-qr { align-self: center; }
 }
 .upi-direct-report label.upi-direct-amount-field { flex: 0 1 140px; }
+/* The owner's own QR is often a tall merchant poster; keep its shape and enough size to scan. */
+.upi-direct-qr img.is-uploaded { width: 220px; height: auto; max-height: 360px; object-fit: contain; }

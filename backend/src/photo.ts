@@ -1,9 +1,11 @@
 import type { Response } from 'express'
 
 const imageDataUrlPattern = /^data:(image\/jpeg|image\/png|image\/webp);base64,(.+)$/s
-// The browser resizes before upload (photos 256×256, logos ≤400px), so these only stop raw originals.
+// The browser resizes before upload (photos 256×256, logos ≤400px, QR images ≤1000px), so these
+// only stop raw originals.
 const maxProfilePhotoBytes = 300_000
 const maxLogoBytes = 600_000
+const maxUpiQrBytes = 1_500_000
 
 /** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
 function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
@@ -34,11 +36,17 @@ export const sendProfilePhoto = (response: Response, dataUrl: string | null | un
 /** Why an uploaded workspace logo is unacceptable, or null when it is fine. */
 export const findLogoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxLogoBytes, 'a logo')
 
-/** Sends the workspace logo; public because the sign-in page shows it before anyone signs in. */
 /** Serves a property's uploaded image to its residents. */
 export const sendPropertyImage = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No property image.')
 
+/** Sends the workspace logo; public because the sign-in page shows it before anyone signs in. */
 export const sendLogo = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No logo.')
+
+/** Why an uploaded UPI QR image is unacceptable, or null when it is fine. */
+export const findUpiQrProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxUpiQrBytes, 'a QR image')
+
+/** Sends the owner's UPI QR image (private: only signed-in residents and owners see it). */
+export const sendUpiQr = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No UPI QR image.')
 
 /** Version used in image URLs; null means there is no image. */
 export function photoVersion(updatedAt: Date | null | undefined) {

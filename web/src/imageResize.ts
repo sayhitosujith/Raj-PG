@@ -4,6 +4,8 @@ const maxOriginalBytes = 15_000_000
 const photoSize = 256
 /** Longest side of a stored logo, in pixels; enough for a crisp 2× sidebar mark. */
 const logoMaxSide = 400
+/** Longest side of a stored UPI QR image; enough for a phone to scan it off another screen. */
+const upiQrMaxSide = 1000
 
 type Result = { dataUrl: string } | { error: string }
 
@@ -44,10 +46,18 @@ export async function resizeToSquareJpeg(file: File): Promise<Result> {
  * Shrinks a logo to fit 400px on its longest side without cropping, as PNG so transparent
  * backgrounds survive. Smaller images are kept at their size.
  */
-export async function resizeLogo(file: File): Promise<Result> {
+export const resizeLogo = (file: File) => resizeToFitPng(file, logoMaxSide)
+
+/**
+ * Shrinks an owner's UPI QR image (often a full-page merchant poster) to 1000px on its longest
+ * side, as PNG: lossless keeps the QR's sharp edges scannable, and flat images compress well.
+ */
+export const resizeUpiQr = (file: File) => resizeToFitPng(file, upiQrMaxSide)
+
+async function resizeToFitPng(file: File, maxSide: number): Promise<Result> {
   const bitmap = await decode(file)
   if ('error' in bitmap) return bitmap
-  const scale = Math.min(1, logoMaxSide / Math.max(bitmap.width, bitmap.height))
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
   const canvas = draw(bitmap, Math.round(bitmap.width * scale), Math.round(bitmap.height * scale), [0, 0, bitmap.width, bitmap.height])
   return canvas ? { dataUrl: canvas.toDataURL('image/png') } : { error: 'Your browser could not process the image.' }
 }

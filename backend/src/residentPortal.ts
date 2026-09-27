@@ -1,11 +1,11 @@
-import { AadharVerificationStatus, UserRole } from '@prisma/client'
+import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { findAadharCardProblem, isValidAadharNumber } from './aadhar.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
 import { toMealTimes } from './meals.js'
-import { findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage } from './photo.js'
+import { findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage, sendUpiQr } from './photo.js'
 import { rentSummary } from './rent.js'
 import { createHash } from 'node:crypto'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
@@ -36,9 +36,18 @@ export async function requirePortalAccess(_request: Request, response: Response,
 }
 
 /** Workspace details a resident needs: contacts, house rules, housekeeping slots and limit, and the policies. */
+/**
+ * How residents can pay the owner directly: a UPI ID, an uploaded QR image, or both; null hides
+ * the panel. The QR image is served by its own route, referenced by version.
+ */
+function residentUpiPayee(settings: WorkspaceSettings) {
+  if (!settings.upiId && !settings.upiQrUrl) return null
+  return { id: settings.upiId, payeeName: settings.upiPayeeName || settings.businessName, qrVersion: photoVersion(settings.upiQrUpdatedAt) }
+}
+
 async function residentWorkspace() {
   const settings = await getSettings()
-  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), upi: settings.upiId ? { id: settings.upiId, payeeName: settings.upiPayeeName || settings.businessName } : null, ...policiesOf(settings) }
+  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
@@ -218,7 +227,7 @@ residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, re
   const reference = normalizeUtr((request.body as { reference?: unknown }).reference)
   if (!reference) { response.status(400).json({ error: 'Enter the 12-digit UPI reference number (UTR) from your payment app.' }); return }
   try {
-    if (!(await getSettings()).upiId) { response.status(409).json({ error: 'Your property owner has not set up a UPI ID.' }); return }
+    if (!residentUpiPayee(await getSettings())) { response.status(409).json({ error: 'Your property owner has not set up UPI payments.' }); return }
     if (await pendingUpiClaim(userId)) { response.status(409).json({ error: 'You already reported a payment. Your property owner will confirm it soon.' }); return }
     // With no rent set up there are no months to record, so the resident says what they sent; the
     // empty month list still marks it as a claim for the owner to confirm.
@@ -241,5 +250,15 @@ residentPortalRouter.get('/resident-portal/property-image', requireResident, req
   } catch (error) {
     console.error('Property image lookup failed:', error)
     response.status(503).json({ error: 'The property image could not be loaded.' })
+  }
+})
+
+// The owner's uploaded UPI QR image, shown in the resident's pay panel.
+residentPortalRouter.get('/resident-portal/upi-qr', requireResident, requirePortalAccess, async (_request, response) => {
+  try {
+    sendUpiQr(response, (await getSettings()).upiQrUrl)
+  } catch (error) {
+    console.error('UPI QR lookup failed:', error)
+    response.status(503).json({ error: 'The QR image could not be loaded.' })
   }
 })

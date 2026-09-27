@@ -1,13 +1,15 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
-import { resizeLogo } from './imageResize'
+import { resizeLogo, resizeUpiQr } from './imageResize'
 import { ordinal } from './rent'
 import type { SuperAdmin } from './superAdmin'
 import type { WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
 
 type SaveResult = Promise<string | null>
+/** Image settings saved through PUT/DELETE /api/settings/<kind>. */
+export type SettingImage = 'logo' | 'upi-qr'
 const policySections = [{ field: 'termsAndConditions', title: 'Terms and conditions' }, { field: 'privacyPolicy', title: 'Privacy policy' }] as const
 const dayOptions = Array.from({ length: 28 }, (_, index) => index + 1)
 
@@ -57,37 +59,50 @@ function TimeWindowRow({ name, label, settings }: { name: WindowKey; label: stri
   )
 }
 
-/** Workspace logo: preview plus upload/replace/remove, saved immediately (not with the section's Save). */
-function LogoField({ logoVersion, onSave }: { logoVersion: number | null; onSave: (logo: string | null) => SaveResult }) {
+type ImageFieldProps = {
+  /** What the image is, lower case, as used in button labels ("logo", "UPI QR"). */
+  noun: string
+  title: string
+  hint: string
+  previewUrl: string | null
+  emptyIcon: ReactNode
+  removeQuestion: string
+  resize: (file: File) => Promise<{ dataUrl: string } | { error: string }>
+  onSave: (image: string | null) => SaveResult
+}
+
+/** An image setting (logo, UPI QR): preview plus upload/replace/remove, saved immediately (not with the section's Save). */
+function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, resize, onSave }: ImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ tone: 'error' | 'saved'; text: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const label = `${noun[0].toUpperCase()}${noun.slice(1)}`
 
-  async function save(logo: string | null) {
+  async function save(image: string | null) {
     setIsSaving(true)
-    const error = await onSave(logo)
+    const error = await onSave(image)
     setIsSaving(false)
-    setMessage(error ? { tone: 'error', text: error } : { tone: 'saved', text: logo ? 'Logo updated.' : 'Logo removed.' })
+    setMessage(error ? { tone: 'error', text: error } : { tone: 'saved', text: image ? `${label} updated.` : `${label} removed.` })
   }
 
   async function choose(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    const result = await resizeLogo(file)
+    const result = await resize(file)
     if ('error' in result) { setMessage({ tone: 'error', text: result.error }); return }
     await save(result.dataUrl)
   }
 
   return (
     <div className="logo-field">
-      <div className="logo-preview">{logoVersion ? <img src={logoUrl(logoVersion)} alt="Workspace logo" /> : <span><Building2 size={22} /></span>}</div>
+      <div className="logo-preview">{previewUrl ? <img src={previewUrl} alt={title} /> : <span>{emptyIcon}</span>}</div>
       <div className="logo-copy">
-        <strong>Logo</strong>
-        <small>Replaces the raj.pg mark in the sidebar, the resident portal and the sign-in page. PNG with a transparent background works best.</small>
+        <strong>{title}</strong>
+        <small>{hint}</small>
         <div className="logo-actions">
-          <button type="button" className="secondary-button" disabled={isSaving} onClick={() => inputRef.current?.click()}><ImageUp size={14} /> {isSaving ? 'Saving…' : logoVersion ? 'Replace logo' : 'Upload logo'}</button>
-          {logoVersion && <button type="button" className="icon-button" aria-label="Remove logo" title="Remove logo" disabled={isSaving} onClick={() => { if (window.confirm('Remove the logo and show the raj.pg mark again?')) void save(null) }}><Trash2 size={14} /></button>}
+          <button type="button" className="secondary-button" disabled={isSaving} onClick={() => inputRef.current?.click()}><ImageUp size={14} /> {isSaving ? 'Saving…' : previewUrl ? `Replace ${noun}` : `Upload ${noun}`}</button>
+          {previewUrl && <button type="button" className="icon-button" aria-label={`Remove ${noun}`} title={`Remove ${noun}`} disabled={isSaving} onClick={() => { if (window.confirm(removeQuestion)) void save(null) }}><Trash2 size={14} /></button>}
           {message && <span className={`settings-message ${message.tone}`} role={message.tone === 'error' ? 'alert' : 'status'}>{message.tone === 'saved' && <Check size={13} />}{message.text}</span>}
         </div>
       </div>
@@ -97,7 +112,7 @@ function LogoField({ logoVersion, onSave }: { logoVersion: number | null; onSave
 }
 
 /** Settings page: the owner's account, workspace details, rent rules, deposit and notice, house rules, housekeeping, and resident policies. */
-export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveLogo, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveLogo: (logo: string | null) => SaveResult; onBack: () => void }) {
+export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onBack: () => void }) {
   return (
     <section className="workspace-view settings-view">
       <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Settings</h2><p>Your account and how the workspace runs.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
@@ -123,7 +138,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
 
         {settings ? <>
           <SettingsSection icon={<Building2 size={18} />} title="Workspace details" description="Your business name appears in the sidebar; contact details are shown to residents." onSubmit={(form) => onSaveSettings({ businessName: value(form, 'businessName'), contactPhone: value(form, 'contactPhone'), contactEmail: value(form, 'contactEmail') })}>
-            <LogoField logoVersion={settings.logoVersion} onSave={onSaveLogo} />
+            <ImageField noun="logo" title="Logo" hint="Replaces the raj.pg mark in the sidebar, the resident portal and the sign-in page. PNG with a transparent background works best." previewUrl={settings.logoVersion ? logoUrl(settings.logoVersion) : null} emptyIcon={<Building2 size={22} />} removeQuestion="Remove the logo and show the raj.pg mark again?" resize={resizeLogo} onSave={(image) => onSaveImage('logo', image)} />
             <label>Business name<input name="businessName" required maxLength={60} defaultValue={settings.businessName} /></label>
             <div className="settings-pair">
               <label>Contact phone<input name="contactPhone" type="tel" defaultValue={settings.contactPhone ?? ''} placeholder="e.g. +91 98765 43210" /></label>
@@ -131,7 +146,8 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             </div>
           </SettingsSection>
 
-          <SettingsSection icon={<QrCode size={18} />} title="UPI payments" description="Residents with rent due see this UPI ID and a QR code for it. Money goes straight to your bank, so residents report the payment with its UPI reference and you confirm it under Payments." onSubmit={(form) => onSaveSettings({ upiId: value(form, 'upiId'), upiPayeeName: value(form, 'upiPayeeName') })}>
+          <SettingsSection icon={<QrCode size={18} />} title="UPI payments" description="Residents see your UPI ID and a QR code in their portal: your uploaded QR if you add one, otherwise one generated from the UPI ID. Money goes straight to your bank, so residents report the payment with its UPI reference and you confirm it under Payments." onSubmit={(form) => onSaveSettings({ upiId: value(form, 'upiId'), upiPayeeName: value(form, 'upiPayeeName') })}>
+            <ImageField noun="UPI QR" title="Your UPI QR" hint="Upload the QR from PhonePe, GPay, Paytm or your bank (a screenshot or photo works). Residents see it instead of the generated QR; it has no amount built in, so they type it themselves." previewUrl={settings.upiQrVersion ? `/api/settings/upi-qr?v=${settings.upiQrVersion}` : null} emptyIcon={<QrCode size={22} />} removeQuestion="Remove your QR image? Residents will see the QR generated from your UPI ID instead (if one is set)." resize={resizeUpiQr} onSave={(image) => onSaveImage('upi-qr', image)} />
             <div className="settings-pair">
               <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>

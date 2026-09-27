@@ -1,7 +1,7 @@
 import type { HousekeepingSlot, WorkspaceSettings } from '@prisma/client'
-import { Router } from 'express'
+import { Router, type Response } from 'express'
 import { prisma } from './db.js'
-import { findLogoProblem, photoVersion, sendLogo } from './photo.js'
+import { findLogoProblem, findUpiQrProblem, photoVersion, sendLogo, sendUpiQr } from './photo.js'
 import { policiesOf, policyFields, policyMaxLength, policyVersionChanges, type PolicyField } from './policies.js'
 import { isValidEmail, isValidUpiId } from './validation.js'
 
@@ -145,10 +145,10 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
   return { data }
 }
 
-/** Settings as sent to browsers: the logo is served separately, referenced by version. */
+/** Settings as sent to browsers: the logo and UPI QR image are served separately, referenced by version. */
 export function toClientSettings(settings: WorkspaceSettings) {
-  const { logoUrl: _logoUrl, logoUpdatedAt, ...fields } = settings
-  return { ...fields, ...policiesOf(settings), logoVersion: photoVersion(logoUpdatedAt) }
+  const { logoUrl: _logoUrl, logoUpdatedAt, upiQrUrl: _upiQrUrl, upiQrUpdatedAt, ...fields } = settings
+  return { ...fields, ...policiesOf(settings), logoVersion: photoVersion(logoUpdatedAt), upiQrVersion: photoVersion(upiQrUpdatedAt) }
 }
 
 /** Owner routes for the Settings page; must be mounted behind the super admin guard. */
@@ -177,32 +177,34 @@ settingsRouter.put('/settings', async (request, response) => {
   }
 })
 
-settingsRouter.put('/settings/logo', async (request, response) => {
-  const { logo } = request.body as { logo?: unknown }
-  const problem = findLogoProblem(logo)
-  if (problem) { response.status(400).json({ error: problem }); return }
-  try {
-    await getSettings()
-    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: { logoUrl: logo as string, logoUpdatedAt: new Date() } })
-    response.json(toClientSettings(cached))
-  } catch (error) {
-    cached = null
-    console.error('Logo upload failed:', error)
-    response.status(503).json({ error: 'The logo could not be saved.' })
+/**
+ * PUT (upload, body `{ image }`) and DELETE (remove) for an image kept on the settings row as a
+ * data URL plus an updated-at that versions its URL. Shared by the logo and the UPI QR image.
+ */
+function imageSettingRoutes(path: string, fields: { url: 'logoUrl' | 'upiQrUrl'; updatedAt: 'logoUpdatedAt' | 'upiQrUpdatedAt' }, findProblem: (image: unknown) => string | null, noun: string) {
+  const save = async (response: Response, image: string | null, failure: string) => {
+    try {
+      await getSettings()
+      cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: { [fields.url]: image, [fields.updatedAt]: image ? new Date() : null } })
+      response.json(toClientSettings(cached))
+    } catch (error) {
+      cached = null
+      console.error(`${failure}:`, error)
+      response.status(503).json({ error: `${failure}.` })
+    }
   }
-})
+  settingsRouter.put(path, async (request, response) => {
+    const { image } = request.body as { image?: unknown }
+    const problem = findProblem(image)
+    if (problem) { response.status(400).json({ error: problem }); return }
+    await save(response, image as string, `The ${noun} could not be saved`)
+  })
+  settingsRouter.delete(path, async (_request, response) => { await save(response, null, `The ${noun} could not be removed`) })
+}
 
-settingsRouter.delete('/settings/logo', async (_request, response) => {
-  try {
-    await getSettings()
-    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: { logoUrl: null, logoUpdatedAt: null } })
-    response.json(toClientSettings(cached))
-  } catch (error) {
-    cached = null
-    console.error('Logo removal failed:', error)
-    response.status(503).json({ error: 'The logo could not be removed.' })
-  }
-})
+imageSettingRoutes('/settings/logo', { url: 'logoUrl', updatedAt: 'logoUpdatedAt' }, findLogoProblem, 'logo')
+imageSettingRoutes('/settings/upi-qr', { url: 'upiQrUrl', updatedAt: 'upiQrUpdatedAt' }, findUpiQrProblem, 'QR image')
+// The owner's preview of their QR image in Settings.settingsRouter.get('/settings/upi-qr', async (_request, response) => {  try {    sendUpiQr(response, (await getSettings()).upiQrUrl)  } catch (error) {    console.error('UPI QR lookup failed:', error)    response.status(503).json({ error: 'The QR image could not be loaded.' })  }})
 
 /**
  * Public branding for the sign-in page, which shows before anyone is signed in. Only the business
