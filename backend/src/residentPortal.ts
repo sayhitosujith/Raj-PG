@@ -14,6 +14,7 @@ import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
+import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -263,5 +264,18 @@ residentPortalRouter.get('/resident-portal/upi-qr', requireResident, requirePort
   } catch (error) {
     console.error('UPI QR lookup failed:', error)
     response.status(503).json({ error: 'The QR image could not be loaded.' })
+  }
+})
+
+// A PDF receipt for one of the resident's own recorded rent months.
+residentPortalRouter.get('/resident-portal/rent/receipts/:rentPaymentId', requireResident, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const receipt = await loadRentReceipt(userId, (request.params as { rentPaymentId: string }).rentPaymentId)
+    if (!receipt) { response.status(404).json({ error: 'Receipt was not found.' }); return }
+    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="rent-receipt-${receipt.number}.pdf"`, 'Cache-Control': 'private, no-store' }).send(await renderRentReceipt(receipt))
+  } catch (error) {
+    console.error('Rent receipt failed:', error)
+    response.status(503).json({ error: 'The receipt could not be created. Please try again.' })
   }
 })

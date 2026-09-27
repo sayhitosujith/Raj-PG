@@ -127,7 +127,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     <div className="portal-shell">
       <PortalScenery />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
+        <div className="brand-row"><img className="portal-brand-photo" src={profile.propertyImage} alt={profile.property} /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content" inert={Boolean(pendingConsent)}>

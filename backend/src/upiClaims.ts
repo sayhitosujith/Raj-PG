@@ -20,7 +20,7 @@ export const isUpiClaim = (payment: Pick<Payment, 'rentMonths' | 'razorpayQrId'>
 
 /** The resident's report still waiting for the owner, if any; shown instead of the form. */
 export async function pendingUpiClaim(residentId: string) {
-  return prisma.payment.findFirst({ where: { residentId, status: 'pending', razorpayQrId: null, rentMonths: { not: Prisma.DbNull } }, orderBy: { createdAt: 'desc' }, select: { amount: true, reference: true, createdAt: true } })
+  return prisma.payment.findFirst({ where: { residentId, status: 'pending', razorpayQrId: null, rentMonths: { not: Prisma.DbNull } }, orderBy: { createdAt: 'desc' }, select: { amount: true, reference: true, rentMonths: true, createdAt: true } })
 }
 
 /**

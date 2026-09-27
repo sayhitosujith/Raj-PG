@@ -830,3 +830,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* A QR poster is portrait; give its preview room so the code inside stays recognisable. */
 .logo-field.is-tall .logo-preview { width: 96px; height: 128px; background: rgb(255 255 255); }
 .logo-field.is-tall .logo-preview img { max-width: 92px; max-height: 124px; }
+
+/* Resident's paid months: status and a PDF receipt download side by side. */
+.rent-payment-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+.receipt-button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; font-size: 11px; text-decoration: none; }
+
+/* Resident portal header: the resident's own property photo in place of the workspace logo. */
+.portal-brand-photo { flex: none; width: 64px; height: 44px; border-radius: 9px; object-fit: cover; background: #f4f8f5; box-shadow: 0 0 0 1px var(--line); }

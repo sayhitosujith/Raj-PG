@@ -5,7 +5,7 @@ import { readApiError } from './superAdmin'
 import type { UpiPayee } from './workspaceSettings'
 
 /** A payment the resident reported that the owner has not confirmed yet. */
-export type UpiClaim = { amount: number; reference: string; createdAt: string }
+export type UpiClaim = { amount: number; reference: string; rentMonths: Array<{ month: string; amount: number }> | null; createdAt: string }
 
 /**
  * The standard UPI payment link (NPCI "upi://pay"), which every UPI app understands both as a
@@ -86,7 +86,7 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
     return (
       <div className="upi-direct is-reported" role="status">
         <CheckCircle2 size={22} />
-        <div><strong>{formatRupees(pendingClaim.amount)} payment reported</strong><p>{pendingClaim.reference ? `UPI reference ${pendingClaim.reference}. ` : ''}Waiting for your property owner to confirm it.</p></div>
+        <div><strong>{formatRupees(pendingClaim.amount)} payment reported{pendingClaim.rentMonths?.length ? ` for ${pendingClaim.rentMonths.map((item) => formatMonth(item.month)).join(", ")}` : ''}</strong><p>{pendingClaim.reference ? `UPI reference ${pendingClaim.reference}. ` : ''}Waiting for your property owner to confirm it.</p></div>
       </div>
     )
   }

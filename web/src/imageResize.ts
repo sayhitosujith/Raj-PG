@@ -6,6 +6,8 @@ const photoSize = 256
 const logoMaxSide = 400
 /** Longest side of a stored UPI QR image; enough for a phone to scan it off another screen. */
 const upiQrMaxSide = 1000
+/** Longest side of a stored property photo. Kept modest: the owner dashboard, refreshed every minute, embeds every property photo. */
+const propertyPhotoMaxSide = 1200
 
 type Result = { dataUrl: string } | { error: string }
 
@@ -53,6 +55,18 @@ export const resizeLogo = (file: File) => resizeToFitPng(file, logoMaxSide)
  * side, as PNG: lossless keeps the QR's sharp edges scannable, and flat images compress well.
  */
 export const resizeUpiQr = (file: File) => resizeToFitPng(file, upiQrMaxSide)
+
+/**
+ * Shrinks a property photo to 1200px on its longest side, without cropping, as JPEG: phone photos
+ * of 5–10 MB upload as roughly 150–250 KB and still look sharp on the property cards.
+ */
+export async function resizePropertyPhoto(file: File): Promise<Result> {
+  const bitmap = await decode(file)
+  if ('error' in bitmap) return bitmap
+  const scale = Math.min(1, propertyPhotoMaxSide / Math.max(bitmap.width, bitmap.height))
+  const canvas = draw(bitmap, Math.round(bitmap.width * scale), Math.round(bitmap.height * scale), [0, 0, bitmap.width, bitmap.height])
+  return canvas ? { dataUrl: canvas.toDataURL('image/jpeg', 0.8) } : { error: 'Your browser could not process the image.' }
+}
 
 async function resizeToFitPng(file: File, maxSide: number): Promise<Result> {
   const bitmap = await decode(file)
