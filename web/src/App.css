@@ -842,8 +842,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-payment-actions { display: flex; flex: none; align-items: center; gap: 8px; }
 .receipt-button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; font-size: 11px; text-decoration: none; }
 
-/* Resident portal header: the resident's own property photo in place of the workspace logo. */
-.portal-brand-photo { flex: none; width: 64px; height: 44px; border-radius: 9px; object-fit: cover; background: #f4f8f5; box-shadow: 0 0 0 1px var(--line); }
 
 /* Settings image fields (logo, UPI QR): on phones the preview sits above the text, not beside it. */
 @media (max-width: 480px) {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Bell, KeyRound, LogOut, X } from 'lucide-react'
 import { BrandMark } from './BrandMark'
+import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentAadharVerification } from './ResidentAadharVerification'
@@ -127,7 +128,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     <div className="portal-shell">
       <PortalScenery />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        <div className="brand-row"><img className="portal-brand-photo" src={profile.propertyImage} alt={profile.property} /><span className="home-title portal-title">Resident Home</span></div>
+        <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content" inert={Boolean(pendingConsent)}>
@@ -186,6 +187,8 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
   // attempt is ignored rather than replacing the screen with an error.
   async function refreshPortal() {
     setRefreshSignal((signal) => signal + 1)
+    // The owner may have changed the workspace logo since this page loaded.
+    refreshBranding()
     await fetchProfile().then(setProfile, () => undefined)
     setLastRefreshedAt(new Date())
   }
