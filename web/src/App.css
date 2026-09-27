@@ -360,7 +360,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-badge.coral svg { vertical-align: -1px; }
 
 /* Meal timings: resident tiles beside "My details", owner fields in Edit property. */
-.meal-timings { display: grid; flex: 0 1 540px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; min-width: 0; }
+/* Tiles never shrink below their content (the time label is nowrap); instead the whole
+   actions block wraps under the heading text when the row runs out of room. */
+.meal-timings { display: grid; flex: 0 0 auto; grid-template-columns: repeat(3, minmax(max-content, 1fr)); gap: 10px; }
 .meal-tile { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; animation: rise-in .35s ease both; transition: border-color .2s, background .2s; }
 .meal-tile:nth-child(2) { animation-delay: 50ms; }
 .meal-tile:nth-child(3) { animation-delay: 100ms; }
@@ -381,11 +383,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-field-label svg { color: var(--teal); }
 .meal-field-to { color: var(--muted); font-size: 10px; }
 .property-modal .meal-fields input { padding: 7px 8px; }
-@container (max-width: 820px) {
-  .residents-view .meal-timings, .workspace-view .meal-timings { flex-basis: auto; }
-}
 @container (max-width: 620px) {
-  .meal-timings { grid-template-columns: 1fr; }
+  .meal-timings { flex: 1 1 100%; grid-template-columns: 1fr; }
 }
 @media (max-width: 420px) {
   .meal-field-row { grid-template-columns: 1fr 1fr; }
@@ -662,7 +661,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .consent-check input { flex: none; width: 16px; height: 16px; margin-top: 1px; accent-color: var(--teal); }
 
 /* Weekly menu: button beside the meal timings, and the modal that holds the menu. */
-.details-heading-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+.portal-details-heading { flex-wrap: wrap; }
+.portal-details-heading > :first-child { flex: 1 1 320px; min-width: 0; }
+.details-heading-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; max-width: 100%; align-items: center; justify-content: flex-end; gap: 12px; }
 .weekly-menu-button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .menu-modal { width: min(100%, 640px); max-height: calc(100vh - 48px); overflow-y: auto; }
 .menu-modal-hint { margin: 8px 0 14px; color: var(--muted); font-size: 11px; }
