@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { AlertTriangle, BellRing, IndianRupee } from 'lucide-react'
 import { formatDueDate, formatMonth, formatRupees, ordinal, type RentSummary } from './rent'
 
@@ -21,8 +22,8 @@ export function RentHighlight({ rent }: { rent: RentSummary }) {
   )
 }
 
-/** The resident's rent reminders (days set in Settings), then an overdue notice after the due day. */
-export function RentBanner({ rent }: { rent: RentSummary }) {
+/** The resident's rent reminders (days set in Settings), then an overdue notice after the due day. `action` (e.g. Pay online) sits at the end. */
+export function RentBanner({ rent, action }: { rent: RentSummary; action?: ReactNode }) {
   if (!rent.monthlyRent) return null
   if (rent.state === 'REMINDER_1' || rent.state === 'REMINDER_2') {
     const isFinal = rent.state === 'REMINDER_2'
@@ -30,6 +31,7 @@ export function RentBanner({ rent }: { rent: RentSummary }) {
       <div className="rent-banner is-reminder" role="status">
         <BellRing size={18} />
         <div><strong>Rent reminder {isFinal ? '2' : '1'} of 2</strong><p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{isFinal ? ' This is the last reminder.' : ''}{rent.lateFee ? ` A late fee of ${formatRupees(rent.lateFee)} applies after that.` : ''} Please pay your property owner.</p></div>
+        {action}
       </div>
     )
   }
@@ -38,6 +40,7 @@ export function RentBanner({ rent }: { rent: RentSummary }) {
       <div className="rent-banner is-overdue" role="alert">
         <AlertTriangle size={18} />
         <div><strong>Your rent is overdue</strong><p>{formatRupees(rent.amountDue)} outstanding for {rent.overdueMonths.map(formatMonth).join(', ')}{rent.lateFee ? ', including late fees' : ''}. Please pay your property owner today. Until the payment is recorded, new housekeeping requests are paused and your property owner may restrict door access.</p></div>
+        {action}
       </div>
     )
   }

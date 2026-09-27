@@ -4,6 +4,7 @@ import { relativeDayLabel, type ResidentMeal, type ResidentMenuDay } from './foo
 import { formatMealWindow, mealDetails } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
+import { InlineLoader } from './Loader'
 
 async function fetchMenu() {
   const response = await fetch('/api/resident-portal/food')
@@ -80,7 +81,7 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
 
   return (
     <>
-      {!days ? <p className="portal-empty">{loadError ? 'The menu could not be loaded. It will retry on the next refresh.' : 'Loading…'}</p> : <>
+      {!days ? (loadError ? <p className="portal-empty">The menu could not be loaded. It will retry on the next refresh.</p> : <InlineLoader label="Loading menu…" />) : <>
         <div className="menu-days" role="tablist" aria-label="Choose a day">
           {days.map((item) => <button key={item.date} type="button" role="tab" aria-selected={item.date === day?.date} className={`menu-day${item.date === day?.date ? ' is-selected' : ''}`} onClick={() => setSelectedDate(item.date)}>{relativeDayLabel(item.date, today!)}</button>)}
         </div>

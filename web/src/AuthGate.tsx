@@ -3,6 +3,7 @@ import { LoginPage } from './LoginPage'
 import { ResidentPortal } from './ResidentPortal'
 import type { SessionResponse } from './session'
 import type { SuperAdmin } from './superAdmin'
+import { PageLoader } from './Loader'
 
 type AuthState = { status: 'checking' } | { status: 'signed-out' } | { status: 'super-admin'; admin: SuperAdmin } | { status: 'resident' }
 
@@ -30,7 +31,7 @@ export function AuthGate({ children }: { children: (admin: SuperAdmin, signOut: 
     setAuth({ status: 'signed-out' })
   }
 
-  if (auth.status === 'checking') return null
+  if (auth.status === 'checking') return <PageLoader />
   if (auth.status === 'signed-out') return <LoginPage onSignedIn={applySession} />
   if (auth.status === 'resident') return <ResidentPortal onSignOut={signOut} />
   return children(auth.admin, signOut, (admin) => setAuth({ status: 'super-admin', admin }))

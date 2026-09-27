@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Bell, KeyRound, LogOut, X } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
@@ -11,6 +11,7 @@ import { ProfilePhotoPicker } from './ProfilePhotoPicker'
 import type { RentSummary } from './rent'
 import type { ResidentWorkspace } from './workspaceSettings'
 import { RentBanner, RentHighlight } from './RentBanner'
+import { PayRentButton } from './PayRentButton'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PolicyLinks } from './PolicyLinks'
 import { HouseRules } from './HouseRules'
@@ -23,8 +24,11 @@ import { ResidentHousekeeping } from './ResidentHousekeeping'
 import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
+import { PageLoader } from './Loader'
+import { LocationLink } from './LocationLink'
+import { FoodOptIn } from './FoodOptIn'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; onlinePayment: boolean; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -102,14 +106,18 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     window.setTimeout(() => setNotice(''), 3200)
   }, [])
 
-  const details: Array<[string, string]> = [
-    ['Property', `${profile.property} · ${profile.location}`],
+  // Offered only when Razorpay keys are configured and something is actually owed.
+  const payAction = profile.onlinePayment && profile.rent.monthlyRent && profile.rent.outstandingMonths.length ? <PayRentButton rent={profile.rent} onPaid={onRefresh} onNotice={showNotice} /> : null
+
+  const details: Array<[string, ReactNode]> = [
+    ['Property', profile.location ? <>{profile.property} · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></> : profile.property],
     ['Room', profile.room],
     ['Phone', profile.phone || '—'],
     ['Email', profile.email || '—'],
     ['Aadhaar number', profile.aadharLast4 ? `XXXX XXXX ${profile.aadharLast4}` : '—'],
     ['Joining date', formatJoinDate(profile.joinedAt)],
     ['Days stayed', daysStayedLabel(profile.joinedAt)],
+    ['Food plan', profile.foodOpted ? 'With food' : 'Without food'],
   ]
 
   return (
@@ -120,11 +128,11 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content" inert={Boolean(pendingConsent)}>
-        <RentBanner rent={profile.rent} />
-        <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />
-        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profile.name.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
+        <RentBanner rent={profile.rent} action={payAction} />
+        {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
+        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profile.name.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}{profile.location && <LocationLink className="portal-location" property={profile.property} location={profile.location} />}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><div className="details-heading-actions"><WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div></div>
+          <div className="workspace-view-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl>
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
@@ -136,6 +144,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           </section>
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
+            {payAction && <div className="pay-rent-row">{payAction}</div>}
             <ResidentRentPayments rent={profile.rent} />
           </section>
         </div>
@@ -180,7 +189,7 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
   useAutoRefresh(() => { void refreshPortal() })
 
   if (loadError) return <main className="login-shell"><div className="login-card"><h1>Something went wrong</h1><p className="login-error" role="alert">{loadError}</p><button className="secondary-button portal-signout" onClick={onSignOut}>Back to sign in</button></div></main>
-  if (!profile) return null
+  if (!profile) return <PageLoader label="Loading your home…" />
   if (profile.mustSetPassword) {
     return (
       <main className="login-shell">

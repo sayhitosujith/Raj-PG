@@ -1,15 +1,23 @@
-import { DoorOpen, Users } from 'lucide-react'
+import { DoorOpen, IndianRupee, Users } from 'lucide-react'
 import { amenityOptions, tenantOptions, type AmenityCode, type TenantType } from './propertyFeatureOptions'
 
 /**
- * Number of rooms, "PG for" (required, one of three) and amenity checkboxes for the add/edit
- * property forms. Uncontrolled inputs named totalRooms, tenantType and amenities; read them back
- * with readPropertyFeatures.
+ * Number of rooms, rent with/without food, "PG for" (required, one of three) and amenity
+ * checkboxes for the add/edit property forms. Uncontrolled inputs; read them back with
+ * readPropertyFeatures.
  */
-export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [] }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[] }) {
+export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null }) {
   return (
     <div className="property-features">
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Number of rooms</span><input name="totalRooms" type="number" inputMode="numeric" min={1} max={1000} step={1} required defaultValue={totalRooms || undefined} placeholder="e.g. 20" /></label>
+      <fieldset className="feature-group">
+        <legend><IndianRupee size={13} /> Monthly rent</legend>
+        <div className="rent-prices">
+          <label>With food<input name="rentWithFood" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithFood ?? undefined} placeholder="e.g. 15000" /></label>
+          <label>Without food<input name="rentWithoutFood" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithoutFood ?? undefined} placeholder="e.g. 12000" /></label>
+        </div>
+        <small className="feature-hint">Residents' rent follows their food plan. Leave both blank to set rent per resident instead.</small>
+      </fieldset>
       <fieldset className="feature-group">
         <legend>PG for</legend>
         <div className="tenant-options">

@@ -7,18 +7,23 @@ import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
+import { parsePropertyRents, syncPropertyRents } from './propertyRent.js'
 import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
+import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
 import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
+import { roomsAdminRouter } from './rooms.js'
 import { superAdminRouter } from './superAdmins.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
 
 app.use(cors())
+// Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.
+app.post('/api/razorpay/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
 app.use(express.json({ limit: '6mb' }))
 
 app.use('/api', authRouter)
@@ -26,6 +31,7 @@ app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)
+app.use('/api', razorpayResidentRouter)
 
 app.get('/api/health', async (_request, response) => {
   if (!process.env.DATABASE_URL) {
@@ -49,6 +55,7 @@ app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
+app.use('/api', roomsAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered
@@ -60,7 +67,7 @@ function occupancySummary(property: { totalRooms: number | null; rooms: Array<{ 
 }
 
 app.post('/api/properties', async (request, response) => {
-  const { name, location, imageUrl, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms } = request.body as { name?: string; location?: string; imageUrl?: string; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown }
+  const { name, location, imageUrl, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms, rentWithFood, rentWithoutFood } = request.body as { name?: string; location?: string; imageUrl?: string; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown; rentWithFood?: unknown; rentWithoutFood?: unknown }
   if (!name?.trim() || !location?.trim()) {
     response.status(400).json({ error: 'Name and location are required.' })
     return
@@ -71,6 +78,8 @@ app.post('/api/properties', async (request, response) => {
   if ('error' in amenities) { response.status(400).json({ error: amenities.error }); return }
   const totalRooms = parseTotalRooms(rawTotalRooms, true)
   if ('error' in totalRooms) { response.status(400).json({ error: totalRooms.error }); return }
+  const rents = parsePropertyRents({ rentWithFood, rentWithoutFood })
+  if ('error' in rents) { response.status(400).json({ error: rents.error }); return }
 
   if (!process.env.DATABASE_URL) {
     response.status(201).json({
@@ -82,7 +91,7 @@ app.post('/api/properties', async (request, response) => {
 
   try {
     const property = await prisma.property.create({
-      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...tenantType, ...amenities, ...totalRooms },
+      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...tenantType, ...amenities, ...totalRooms, ...rents.data },
     })
     response.status(201).json({ source: 'postgresql', property: { ...property, image: property.imageUrl, ...occupancySummary({ ...property, rooms: [] }), tone: 'sage', mealTimes: toMealTimes(property) } })
   } catch (error) {
@@ -107,7 +116,7 @@ app.delete('/api/properties/:id', async (request, response) => {
 })
 
 app.put('/api/properties/:id', async (request, response) => {
-  const { name, location, imageUrl, status, mealTimes, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms } = request.body as { name?: string; location?: string; imageUrl?: string; status?: string; mealTimes?: unknown; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown }
+  const { name, location, imageUrl, status, mealTimes, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms, rentWithFood, rentWithoutFood } = request.body as { name?: string; location?: string; imageUrl?: string; status?: string; mealTimes?: unknown; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown; rentWithFood?: unknown; rentWithoutFood?: unknown }
   const meals = mealTimes === undefined ? undefined : parseMealTimes(mealTimes)
   if (meals && 'error' in meals) { response.status(400).json({ error: meals.error }); return }
   const tenantType = parseTenantType(rawTenantType, false)
@@ -116,14 +125,21 @@ app.put('/api/properties/:id', async (request, response) => {
   if ('error' in amenities) { response.status(400).json({ error: amenities.error }); return }
   const totalRooms = parseTotalRooms(rawTotalRooms, false)
   if ('error' in totalRooms) { response.status(400).json({ error: totalRooms.error }); return }
+  const rents = parsePropertyRents({ rentWithFood, rentWithoutFood })
+  if ('error' in rents) { response.status(400).json({ error: rents.error }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Property updates require a database connection.' }); return }
   try {
-    // Capacity cannot drop below the rooms residents are living in right now.
+    // Capacity cannot drop below the rooms the owner has defined.
     if (totalRooms.totalRooms !== undefined) {
-      const occupied = await prisma.room.count({ where: { propertyId: request.params.id, occupied: true } })
-      if (totalRooms.totalRooms < occupied) { response.status(400).json({ error: `This property has ${occupied} occupied ${occupied === 1 ? 'room' : 'rooms'}, so it needs at least ${occupied}.` }); return }
+      const defined = await prisma.room.count({ where: { propertyId: request.params.id } })
+      if (totalRooms.totalRooms < defined) { response.status(400).json({ error: `This property has ${defined} ${defined === 1 ? 'room' : 'rooms'} defined, so it needs at least ${defined}. Remove free rooms under Rooms first.` }); return }
     }
-    const property = await prisma.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms }, include: { rooms: { select: { occupied: true } } } })
+    // Price and residents' rents change together, so a resident never shows a stale rent.
+    const property = await prisma.$transaction(async (transaction) => {
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
+      if (Object.keys(rents.data).length) await syncPropertyRents(transaction, updated.id)
+      return updated
+    })
     const { rooms: _rooms, ...fields } = property
     response.json({ ...fields, ...occupancySummary(property), mealTimes: toMealTimes(property) })
   } catch { response.status(404).json({ error: 'Property could not be updated.' }) }
@@ -227,6 +243,8 @@ app.get('/api/dashboard', async (_request, response) => {
           mealTimes: toMealTimes(property),
           tenantType: property.tenantType,
           amenities: property.amenities,
+          rentWithFood: property.rentWithFood,
+          rentWithoutFood: property.rentWithoutFood,
         }
       }),
       activity: activities.map((activity) => ({

@@ -27,6 +27,9 @@ model Property {
   // Room capacity the owner declared; occupancy is measured against it. Null for older properties,
   // which fall back to the number of Room rows that exist.
   totalRooms          Int?
+  // Optional pricing: when both are set, residents' rent follows their food choice (see propertyRent.ts).
+  rentWithFood        Int?
+  rentWithoutFood     Int?
   rooms               Room[]
   payments            Payment[]
   activities          Activity[]
@@ -45,6 +48,9 @@ model Room {
   propertyId String
   property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   resident   Resident?
+
+  // Room numbers are defined by the owner and must be unique within a property.
+  @@unique([propertyId, number])
 }
 
 model Resident {
@@ -77,9 +83,14 @@ model Resident {
   // When rent was first set: billing starts from here, so adding rent for an existing resident
   // never produces surprise arrears for months before the owner started tracking.
   rentTrackedFrom         DateTime?
+  // Food plan chosen by the owner; residents without it get no menu, skips, or headcount entry.
+  foodOpted               Boolean                  @default(true)
+  // Set when a resident without food asks to join the food plan; cleared when the owner decides.
+  foodRequestedAt         DateTime?
   sessions                Session[]
   housekeepingRequests    HousekeepingRequest[]
   rentPayments            RentPayment[]
+  rentOrders              RentOrder[]
   mealSkips               MealSkip[]
   // The policy version (latest update timestamp) this resident accepted, and when they did.
   policiesAcceptedVersion DateTime?
@@ -216,14 +227,39 @@ enum TenantType {
 
 // One month of rent recorded as paid by the owner. `month` is "YYYY-MM" (the month the rent is for).
 model RentPayment {
-  id         String   @id @default(cuid())
-  residentId String
-  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
-  month      String
-  amount     Int
-  paidAt     DateTime @default(now())
+  id                String   @id @default(cuid())
+  residentId        String
+  resident          Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  month             String
+  amount            Int
+  paidAt            DateTime @default(now())
+  // Set when paid online through Razorpay; null means the owner recorded it (cash, UPI to owner, ...).
+  razorpayPaymentId String?
 
   @@unique([residentId, month])
+}
+
+enum RentOrderStatus {
+  CREATED
+  PAID
+}
+
+// One online payment attempt: the months and amounts owed when the resident pressed Pay, frozen so
+// the recorded payment matches exactly what Razorpay charged.
+model RentOrder {
+  id                String          @id @default(cuid())
+  residentId        String
+  resident          Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String          @unique
+  amount            Int
+  // [{ month: "2026-10", amount: 15000 }, ...]
+  items             Json
+  status            RentOrderStatus @default(CREATED)
+  razorpayPaymentId String?
+  createdAt         DateTime        @default(now())
+  paidAt            DateTime?
+
+  @@index([residentId])
 }
 
 // Single row (id "workspace") of owner-editable settings; defaults match the original fixed behaviour.

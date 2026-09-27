@@ -1,5 +1,5 @@
 import { MealType, Prisma, UserRole } from '@prisma/client'
-import { Router, type Response } from 'express'
+import { Router, type NextFunction, type Request, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
@@ -46,8 +46,16 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 export const foodResidentRouter = Router()
 const requireResident = requireRole(UserRole.RESIDENT)
 
+// Residents without a food plan have no menu to skip or rate.
+async function requireFoodPlan(_request: Request, response: Response, next: NextFunction) {
+  const { userId } = response.locals.auth as AuthContext
+  const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { foodOpted: true } })
+  if (!resident?.foodOpted) { response.status(403).json({ error: 'Your plan does not include food.', code: 'NO_FOOD_PLAN' }); return }
+  next()
+}
+
 // The next seven days starting today, each meal with its menu, timing, and what the resident may do.
-foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAccess, async (_request, response) => {
+foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAccess, requireFoodPlan, async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const propertyId = response.locals.propertyId as string
   try {
@@ -90,7 +98,7 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
   }
 })
 
-foodResidentRouter.put('/resident-portal/food/skips', requireResident, requirePortalAccess, async (request, response) => {
+foodResidentRouter.put('/resident-portal/food/skips', requireResident, requirePortalAccess, requireFoodPlan, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { date: rawDate, meal, skipped } = request.body as { date?: string; meal?: unknown; skipped?: unknown }
   const date = parseDateOnly(rawDate)
@@ -110,7 +118,7 @@ foodResidentRouter.put('/resident-portal/food/skips', requireResident, requirePo
   }
 })
 
-foodResidentRouter.put('/resident-portal/food/feedback', requireResident, requirePortalAccess, async (request, response) => {
+foodResidentRouter.put('/resident-portal/food/feedback', requireResident, requirePortalAccess, requireFoodPlan, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const propertyId = response.locals.propertyId as string
   const { meal, liked, comment: rawComment } = request.body as { meal?: unknown; liked?: unknown; comment?: unknown }
@@ -177,15 +185,15 @@ foodAdminRouter.put('/properties/:id/menu', async (request, response) => {
   }
 })
 
-// Headcounts for today and tomorrow (active residents minus skips) and the last week's feedback.
+// Headcounts for today and tomorrow (active residents on a food plan, minus skips) and the last week's feedback.
 foodAdminRouter.get('/properties/:id/food-summary', async (request, response) => {
   const { id } = request.params as { id: string }
   try {
     const today = parseDateOnly(propertyNow().date) as Date
     const tomorrow = addDays(today, 1)
     const [residents, skips, feedback] = await Promise.all([
-      prisma.resident.count({ where: { active: true, room: { propertyId: id } } }),
-      prisma.mealSkip.groupBy({ by: ['date', 'meal'], where: { date: { in: [today, tomorrow] }, resident: { active: true, room: { propertyId: id } } }, _count: { _all: true } }),
+      prisma.resident.count({ where: { active: true, foodOpted: true, room: { propertyId: id } } }),
+      prisma.mealSkip.groupBy({ by: ['date', 'meal'], where: { date: { in: [today, tomorrow] }, resident: { active: true, foodOpted: true, room: { propertyId: id } } }, _count: { _all: true } }),
       prisma.mealFeedback.findMany({ where: { propertyId: id, date: { gt: addDays(today, -feedbackDays) } }, orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }], take: 100, select: { id: true, date: true, meal: true, liked: true, comment: true, resident: { select: { name: true } } } }),
     ])
     const headcounts = [today, tomorrow].map((date) => ({

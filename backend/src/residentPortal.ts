@@ -8,6 +8,7 @@ import { toMealTimes } from './meals.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { rentSummary } from './rent.js'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
+import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 
@@ -62,9 +63,9 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
-    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, room } = resident
+    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -172,5 +173,20 @@ residentPortalRouter.post('/resident-portal/policies/accept', requireResident, r
   } catch (error) {
     console.error('Policy acceptance failed:', error)
     response.status(503).json({ error: 'Your acceptance could not be saved. Please try again.' })
+  }
+})
+
+// A resident without food asks to join the food plan. The owner decides (plan and rent only change
+// on approval), so this just records the request; asking again keeps the original date.
+residentPortalRouter.post('/resident-portal/food-request', requireResident, requirePortalAccess, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { foodOpted: true, foodRequestedAt: true } })
+    if (resident.foodOpted) { response.status(409).json({ error: 'Your plan already includes food.' }); return }
+    const updated = resident.foodRequestedAt ? resident : await prisma.resident.update({ where: { id: userId }, data: { foodRequestedAt: new Date() }, select: { foodRequestedAt: true } })
+    response.json({ foodRequestedAt: updated.foodRequestedAt })
+  } catch (error) {
+    console.error('Food request failed:', error)
+    response.status(503).json({ error: 'Your request could not be sent. Please try again.' })
   }
 })

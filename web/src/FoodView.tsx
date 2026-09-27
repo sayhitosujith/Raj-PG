@@ -4,6 +4,7 @@ import { formatShortDate, weekdayNames, type FoodSummary, type MenuDay } from '.
 import { mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
+import { InlineLoader } from './Loader'
 
 type PropertyOption = { id: string; name: string }
 
@@ -40,7 +41,7 @@ function MenuEditor({ propertyId, onNotice }: { propertyId: string; onNotice: (m
     }
   }
 
-  if (!menu) return <p className="portal-empty">Loading menu…</p>
+  if (!menu) return <InlineLoader label="Loading menu…" />
   return (
     <form className="menu-editor" onSubmit={save}>
       <div className="menu-grid" role="table" aria-label="Weekly menu">

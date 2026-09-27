@@ -10,7 +10,8 @@ import { getSettings, rentRulesOf, type RentRules } from './settings.js'
  * "access lock due" for the owner to act on.
  * Reminders are shown in the app (no SMS/email provider is set up); nothing is locked automatically.
  */
-const maxMonthlyRent = 10_00_000
+/** Upper bound for any rent amount, in whole rupees. */
+export const maxMonthlyRent = 10_00_000
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /** Where a resident stands for rent right now. */
@@ -83,7 +84,7 @@ export function parseMonthlyRent(value: unknown, alreadyTrackedFrom: Date | null
   return { data: { monthlyRent: rent, ...(alreadyTrackedFrom ? {} : { rentTrackedFrom: new Date() }) } }
 }
 
-const recentPayments = { orderBy: { month: 'desc' }, take: 6, select: { id: true, month: true, amount: true, paidAt: true } } satisfies Prisma.Resident$rentPaymentsArgs
+const recentPayments = { orderBy: { month: 'desc' }, take: 6, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } satisfies Prisma.Resident$rentPaymentsArgs
 
 /** Rent summary for API responses: status plus the latest recorded payments. */
 export async function rentSummary(residentId: string) {
@@ -124,6 +125,8 @@ rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) =
 rentAdminRouter.delete('/residents/:id/rent-payments/:paymentId', async (request, response) => {
   const { id, paymentId } = request.params
   try {
+    const payment = await prisma.rentPayment.findFirst({ where: { id: paymentId, residentId: id }, select: { razorpayPaymentId: true } })
+    if (payment?.razorpayPaymentId) { response.status(409).json({ error: 'This was paid online, so it cannot be undone here. Refund it from the Razorpay dashboard if needed.' }); return }
     const removed = await prisma.rentPayment.deleteMany({ where: { id: paymentId, residentId: id } })
     if (!removed.count) { response.status(404).json({ error: 'Payment was not found.' }); return }
     response.json(await rentSummary(id))

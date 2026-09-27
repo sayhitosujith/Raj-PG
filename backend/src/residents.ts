@@ -5,26 +5,28 @@ import { aadharCardDataUrlPattern, findAadharCardProblem, hasCompleteAadhar, isV
 import { parseDateOnly } from './dates.js'
 import { prisma, withDatabaseRetry } from './db.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
-import { parseMonthlyRent, rentStatus } from './rent.js'
+import { residentRentWrite } from './propertyRent.js'
+import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
+import { normalizePhone } from './validation.js'
 
 // Omits the access key hash (never leaves the server) and the Aadhaar card data URL (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true } } } } satisfies Prisma.ResidentDefaultArgs
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const textFields = ['name', 'phone', 'email', 'aadharNumber', 'permanentAddress', 'aadharCardUrl'] as const
 
 type TextField = (typeof textFields)[number]
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown }
 
-class RoomOccupiedError extends Error {}
+class RoomUnavailableError extends Error {}
 class RentInputError extends Error {}
 
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, hasAadharCard: boolean, rules: RentRules) {
-  const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, room, rentPayments } = resident
+  const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, foodRequestedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month), rules), payments: rentPayments.slice(0, 6) }
-  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), foodOpted, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
 }
 
 async function findResidentSummary(id: string) {
@@ -42,26 +44,29 @@ function pickTextFields(body: ResidentBody) {
     const value = body[field]
     if (typeof value === 'string') data[field] = value.trim()
   }
+  // Stored as its 10 digits when valid; an invalid number is left as typed for findInvalidField to reject.
+  if (data.phone) data.phone = normalizePhone(data.phone) ?? data.phone
   return data
 }
 
 function findInvalidField(data: Partial<Record<TextField, string>>) {
   if (data.name !== undefined && !data.name) return 'Name is required.'
+  if (data.phone && !/^\d{10}$/.test(data.phone)) return 'Phone number must be 10 digits.'
   if (data.aadharNumber && !isValidAadharNumber(data.aadharNumber)) return 'Aadhaar number must be 12 digits.'
   if (data.aadharCardUrl) return findAadharCardProblem(data.aadharCardUrl)
   return null
 }
 
 /**
- * Reserves a room for a resident: a free room with that number, else a new one. Rooms are keyed
- * by (property, number) in practice, so an occupied number is a conflict rather than a duplicate.
- * Without a number, the lowest-numbered free room is taken, matching the original add flow.
+ * Reserves one of the owner's rooms for a resident: the free room with that number, or without a
+ * number the lowest-numbered free room. Rooms are never created here; the owner defines them under
+ * Properties, so a typo can never invent a room.
  */
 async function claimRoom(transaction: Prisma.TransactionClient, propertyId: string, roomNumber?: string) {
   const freeRoom = await transaction.room.findFirst({ where: { propertyId, resident: { is: null }, ...(roomNumber ? { number: roomNumber } : {}) }, orderBy: { number: 'asc' } })
   if (freeRoom) return transaction.room.update({ where: { id: freeRoom.id }, data: { occupied: true } })
-  if (roomNumber && await transaction.room.count({ where: { propertyId, number: roomNumber } })) throw new RoomOccupiedError(`Room ${roomNumber} is already occupied.`)
-  return transaction.room.create({ data: { propertyId, number: roomNumber || `Room-${Date.now()}`, occupied: true } })
+  if (roomNumber && await transaction.room.count({ where: { propertyId, number: roomNumber } })) throw new RoomUnavailableError(`Room ${roomNumber} is already occupied.`)
+  throw new RoomUnavailableError(roomNumber ? `Room ${roomNumber} does not exist in this property. Add it under Properties, then Rooms.` : 'This property has no free rooms. Add rooms under Properties, then Rooms.')
 }
 
 /**
@@ -76,7 +81,7 @@ function parseProfilePhoto(value: ResidentBody['profilePhoto']): { data: { profi
 }
 
 function respondToWriteError(response: Response, error: unknown, fallback: string) {
-  if (error instanceof RoomOccupiedError) { response.status(409).json({ error: error.message }); return }
+  if (error instanceof RoomUnavailableError) { response.status(409).json({ error: error.message }); return }
   if (error instanceof RentInputError) { response.status(400).json({ error: error.message }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') { response.status(400).json({ error: 'Property was not found.' }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Resident was not found.' }); return }
@@ -138,8 +143,8 @@ residentRouter.post('/residents', async (request, response) => {
   if (invalidField) { response.status(400).json({ error: invalidField }); return }
   const photo = parseProfilePhoto(body.profilePhoto)
   if ('error' in photo) { response.status(400).json({ error: photo.error }); return }
-  const rent = parseMonthlyRent(body.monthlyRent, null)
-  if (rent && 'error' in rent) { response.status(400).json({ error: rent.error }); return }
+  if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
+  const foodOpted = body.foodOpted ?? true
   if (body.accessKey && !isValidAccessKey(body.accessKey)) { response.status(400).json({ error: 'Access key is not in the generated format.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
@@ -150,8 +155,10 @@ residentRouter.post('/residents', async (request, response) => {
     const accessKey = body.accessKey || createAccessKey()
     const residentId = await prisma.$transaction(async (transaction) => {
       const room = await claimRoom(transaction, propertyId, body.roomNumber?.trim())
+      const rent = await residentRentWrite(transaction, { propertyId, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
+      if ('error' in rent) throw new RentInputError(rent.error)
       const readyForReview = hasCompleteAadhar(data.aadharNumber, Boolean(data.aadharCardUrl))
-      const resident = await transaction.resident.create({ data: { ...data, ...photo.data, ...(rent ? rent.data : {}), name, ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
+      const resident = await transaction.resident.create({ data: { ...data, ...photo.data, ...rent.data, foodOpted, name, ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey })
@@ -169,22 +176,24 @@ residentRouter.put('/residents/:id', async (request, response) => {
   const photo = parseProfilePhoto(body.profilePhoto)
   if ('error' in photo) { response.status(400).json({ error: photo.error }); return }
   if (body.active !== undefined && typeof body.active !== 'boolean') { response.status(400).json({ error: 'Status must be true or false.' }); return }
+  if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
   try {
     await prisma.$transaction(async (transaction) => {
-      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, aadharStatus: true, aadharNumber: true, rentTrackedFrom: true, room: { select: { propertyId: true, number: true } } } })
-      const rent = parseMonthlyRent(body.monthlyRent, current.rentTrackedFrom)
-      if (rent && 'error' in rent) throw new RentInputError(rent.error)
+      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, aadharStatus: true, aadharNumber: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
       const targetPropertyId = body.propertyId || current.room.propertyId
+      const foodOpted = (body.foodOpted as boolean | undefined) ?? current.foodOpted
+      const rent = await residentRentWrite(transaction, { propertyId: targetPropertyId, foodOpted, trackedFrom: current.rentTrackedFrom, typedRent: body.monthlyRent })
+      if ('error' in rent) throw new RentInputError(rent.error)
       const targetRoomNumber = body.roomNumber?.trim() || current.room.number
       const isMoving = targetPropertyId !== current.room.propertyId || targetRoomNumber !== current.room.number
       const roomId = isMoving ? (await claimRoom(transaction, targetPropertyId, targetRoomNumber)).id : current.roomId
       // Completing the details on an unsubmitted resident queues them for review; it never verifies.
       const hasCard = Boolean(data.aadharCardUrl) || await transaction.resident.count({ where: { id, ...hasAadharCardWhere } }) > 0
       const becomesReviewable = current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED && hasCompleteAadhar(data.aadharNumber ?? current.aadharNumber, hasCard)
-      await transaction.resident.update({ where: { id }, data: { ...data, ...photo.data, ...(rent ? rent.data : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), ...(becomesReviewable ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), roomId } })
+      await transaction.resident.update({ where: { id }, data: { ...data, ...photo.data, ...rent.data, foodOpted, ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), ...(becomesReviewable ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), roomId } })
       if (isMoving) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
@@ -192,6 +201,16 @@ residentRouter.put('/residents/:id', async (request, response) => {
     response.json(await findResidentSummary(id))
   } catch (error) {
     respondToWriteError(response, error, 'Resident could not be updated.')
+  }
+})
+
+// Declines a resident's request to join the food plan; approving is a normal update with foodOpted: true.
+residentRouter.delete('/residents/:id/food-request', async (request, response) => {
+  try {
+    await prisma.resident.update({ where: { id: request.params.id }, data: { foodRequestedAt: null } })
+    response.json(await findResidentSummary(request.params.id))
+  } catch (error) {
+    respondToWriteError(response, error, 'The food request could not be declined.')
   }
 })
 

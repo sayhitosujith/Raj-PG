@@ -6,6 +6,9 @@ import type { AadharStatus, Resident } from './resident'
 import { rentBadges, rentChip } from './rent'
 import { RentPanel } from './RentPanel'
 import { isAwaitingSignIn } from './residentFilters'
+import { LocationLink } from './LocationLink'
+import { AccessKeyReset } from './AccessKeyReset'
+import { FoodRequestReview } from './FoodRequestReview'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -76,7 +79,7 @@ function formatAadhar(aadharNumber: string, isRevealed: boolean) {
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
-export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onDelete, onVerify, onRecordRent, onUndoRent }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
+export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
   const rentBadge = rentBadges[resident.rent.state]
   const [isAadharRevealed, setIsAadharRevealed] = useState(false)
   const detailsId = `resident-details-${resident.id}`
@@ -86,11 +89,12 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onD
     onToggle()
   }
 
+  const hasFoodRequest = !resident.foodOpted && Boolean(resident.foodRequestedAt)
   return (
     <article className={`resident-card${isExpanded ? ' is-expanded' : ''}`} style={{ '--stagger': Math.min(index, maxStaggerSteps) } as CSSProperties}>
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
-        <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}</strong><small>{resident.property} · {resident.location}</small></div>
+        <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
         <div className="resident-room"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
         <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>
@@ -108,9 +112,10 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onD
             <div><dt>Aadhaar number</dt><dd>{resident.aadharNumber ? <span className="aadhar-value">{formatAadhar(resident.aadharNumber, isAadharRevealed)}<button type="button" className="icon-button" aria-label={isAadharRevealed ? 'Hide Aadhaar number' : 'Show Aadhaar number'} title={isAadharRevealed ? 'Hide' : 'Show'} onClick={() => setIsAadharRevealed((revealed) => !revealed)}>{isAadharRevealed ? <EyeOff size={13} /> : <Eye size={13} />}</button></span> : '—'}</dd></div>
             <div><dt>Aadhaar card</dt><dd>{resident.hasAadharCard ? <a href={`/api/residents/${resident.id}/aadhar-card`} target="_blank" rel="noopener noreferrer">View card <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
-            <div><dt>Portal sign-in</dt><dd>{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}</dd></div>
+            <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}<AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} /></dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
             <div><dt>Days stayed</dt><dd>{daysStayedLabel(resident.joinedAt)}</dd></div>
+            <div><dt>Food plan</dt><dd className="sign-in-cell">{resident.foodOpted ? 'With food' : 'Without food'}{resident.rentFromProperty ? ' · rent from property prices' : ''}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>
           </dl>
         </div>
       </div>

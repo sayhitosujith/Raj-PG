@@ -5,6 +5,7 @@ import { resizeLogo } from './imageResize'
 import { ordinal } from './rent'
 import type { SuperAdmin } from './superAdmin'
 import type { WorkspaceSettings } from './workspaceSettings'
+import { InlineLoader } from './Loader'
 
 type SaveResult = Promise<string | null>
 const policySections = [{ field: 'termsAndConditions', title: 'Terms and conditions' }, { field: 'privacyPolicy', title: 'Privacy policy' }] as const
@@ -164,7 +165,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <p className="settings-hint">This starts as a general PG template, so review it and change anything that does not match your property. Up to 5,000 characters. Clear it and save to hide the link from residents.</p>
             </SettingsSection>
           ))}
-        </> : <p className="portal-empty">Loading workspace settings…</p>}
+        </> : <InlineLoader label="Loading workspace settings…" />}
       </div>
     </section>
   )

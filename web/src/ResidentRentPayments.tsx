@@ -19,7 +19,7 @@ export function ResidentRentPayments({ rent }: { rent: RentSummary }) {
         const overdue = rent.overdueMonths.includes(month)
         return <div className="crud-row" key={`due-${month}`}><div className="crud-main"><strong>{formatMonth(month)} · {formatRupees(monthlyRent + (overdue ? rent.lateFee : 0))}</strong><small>{overdue ? `Not paid yet${rent.lateFee ? ` · includes ${formatRupees(rent.lateFee)} late fee` : ''}` : `Due by ${formatDueDate(month, rent.dueDay)}`}</small></div><span className={`status-pill ${overdue ? 'coral' : 'gold'}`}>{overdue ? 'Overdue' : 'Due'}</span></div>
       })}
-      {rent.payments.map((payment) => <div className="crud-row" key={payment.id}><div className="crud-main"><strong>{formatMonth(payment.month)} · {formatRupees(payment.amount)}</strong><small>Recorded {new Date(payment.paidAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</small></div><span className="status-pill sage">Paid</span></div>)}
+      {rent.payments.map((payment) => <div className="crud-row" key={payment.id}><div className="crud-main"><strong>{formatMonth(payment.month)} · {formatRupees(payment.amount)}</strong><small>{payment.razorpayPaymentId ? 'Paid online' : 'Recorded'} {new Date(payment.paidAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</small></div><span className="status-pill sage">Paid</span></div>)}
     </div>
   )
 }

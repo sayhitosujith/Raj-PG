@@ -1,6 +1,7 @@
 /** Where a resident stands for rent, computed by the server in India time (see backend rent.ts). */
 export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'LOCK_DUE'
-export type RentPaymentRecord = { id: string; month: string; amount: number; paidAt: string }
+/** razorpayPaymentId is set for online payments; null when the owner recorded it. */
+export type RentPaymentRecord = { id: string; month: string; amount: number; paidAt: string; razorpayPaymentId?: string | null }
 
 /** A resident's rent position; months are "YYYY-MM", amounts whole rupees. amountDue includes late fees. */
 export type RentSummary = { state: RentState; monthlyRent: number | null; currentMonth: string; outstandingMonths: string[]; overdueMonths: string[]; amountDue: number; dueDay: number; lateFee: number; payments: RentPaymentRecord[] }
