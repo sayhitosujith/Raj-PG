@@ -90,6 +90,7 @@ model Resident {
   sessions                Session[]
   housekeepingRequests    HousekeepingRequest[]
   rentPayments            RentPayment[]
+  payments                Payment[]
   rentOrders              RentOrder[]
   mealSkips               MealSkip[]
   // The policy version (latest update timestamp) this resident accepted, and when they did.
@@ -99,13 +100,33 @@ model Resident {
   createdAt               DateTime                 @default(now())
 }
 
+// A payment the owner records by hand. Amount is in whole rupees. Payer name and phone are copied
+// from the resident at entry time (and editable), so the record still reads correctly after the
+// resident moves out or their details change; residentId is only a link back.
 model Payment {
-  id         String   @id @default(cuid())
-  amount     Int
-  status     String   @default("paid")
-  propertyId String
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
+  id                String    @id @default(cuid())
+  amount            Int
+  status            String    @default("paid")
+  payerName         String    @default("")
+  phone             String    @default("")
+  bankName          String    @default("")
+  method            String    @default("cash")
+  propertyId        String
+  property          Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  residentId        String?
+  resident          Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  // Set when the payment is collected through a Razorpay UPI QR code; Razorpay then decides the
+  // status (paid on credit, failed when the code closes unpaid), not the owner.
+  razorpayQrId      String?   @unique
+  qrImageUrl        String?
+  qrExpiresAt       DateTime?
+  razorpayPaymentId String?
+  // A resident's "I've paid" report for a payment to the owner's UPI ID: the UPI reference (UTR)
+  // they entered, and the rent months it covers ([{ month, amount }]), recorded when the owner
+  // marks it paid.
+  reference         String    @default("")
+  rentMonths        Json?
+  createdAt         DateTime  @default(now())
 }
 
 model MaintenanceRequest {
@@ -250,6 +271,7 @@ model RentOrder {
   id                String          @id @default(cuid())
   residentId        String
   resident          Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  // The Razorpay order id for Checkout payments, or the QR code id (qr_...) for UPI QR payments.
   razorpayOrderId   String          @unique
   amount            Int
   // [{ month: "2026-10", amount: 15000 }, ...]
@@ -268,6 +290,10 @@ model WorkspaceSettings {
   businessName            String    @default("Raj Properties")
   contactPhone            String?
   contactEmail            String?
+  // The owner's own UPI ID (VPA) shown to residents with rent due, plus the name UPI apps display.
+  // Payments to it are not visible to the app, so residents report them for the owner to confirm.
+  upiId                   String?
+  upiPayeeName            String?
   // Workspace logo as a data URL (resized in the browser); the timestamp versions its URL for caching.
   logoUrl                 String?
   logoUpdatedAt           DateTime?

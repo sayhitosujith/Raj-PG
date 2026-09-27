@@ -51,10 +51,22 @@ export function rentChip(rent: RentSummary): { text: string; tone: string } {
   }
 }
 
-/** The month "Mark paid" will record: the oldest unpaid one, else this month, else next month (advance). */
+/**
+ * The month "Mark paid" will record: the oldest unpaid one, else next month (advance). Every billed
+ * month up to now is in outstandingMonths, so when that is empty this month is either paid or was
+ * never billed (moved in after the due day) — either way the next rent is next month's.
+ * Mirrors rentItemsToPay on the server.
+ */
 export function nextMonthToRecord(rent: RentSummary) {
   if (rent.outstandingMonths.length) return rent.outstandingMonths[0]
-  if (!rent.payments.some((payment) => payment.month === rent.currentMonth)) return rent.currentMonth
-  const [year, month] = rent.currentMonth.split('-').map(Number)
+  // Skip months already paid in advance; the recent payments include them, being the latest.
+  const paid = new Set(rent.payments.map((payment) => payment.month))
+  let month = monthAfter(rent.currentMonth)
+  while (paid.has(month)) month = monthAfter(month)
+  return month
+}
+
+function monthAfter(key: string) {
+  const [year, month] = key.split('-').map(Number)
   return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`
 }

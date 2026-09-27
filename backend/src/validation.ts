@@ -15,3 +15,10 @@ export function normalizePhone(value: string) {
   const local = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits.length === 11 && digits.startsWith('0') ? digits.slice(1) : digits
   return /^\d{10}$/.test(local) ? local : null
 }
+
+const upiIdPattern = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9]{1,63}$/
+
+/** A UPI ID (VPA) shape check: handle@provider, e.g. rajpg@okhdfcbank or 9876543210@ybl. */
+export function isValidUpiId(value: string) {
+  return upiIdPattern.test(value)
+}

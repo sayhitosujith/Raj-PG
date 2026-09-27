@@ -1,11 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { Prisma, RentOrderStatus, UserRole } from '@prisma/client'
+import { Prisma, UserRole } from '@prisma/client'
 import { Router, type Request, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
 import { prisma } from './db.js'
 import { rentSummary } from './rent.js'
+import { razorpayRequest } from './razorpayClient.js'
 import { isOnlinePaymentEnabled, razorpayKeyId as keyId, razorpayKeySecret as keySecret } from './razorpayConfig.js'
+import { fulfilOrder, outstandingRentItems } from './rentOrders.js'
 import { requirePortalAccess } from './residentPortal.js'
+import { createUpiQr, refreshQrPayment, settleQr, toQrView } from './upiQr.js'
 
 /**
  * Online rent payments through Razorpay (orders API + Checkout). The server alone decides what is
@@ -17,7 +20,6 @@ import { requirePortalAccess } from './residentPortal.js'
  * Needs RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET (and RAZORPAY_WEBHOOK_SECRET for the webhook).
  * Without the keys online payment is simply switched off.
  */
-type OrderItem = { month: string; amount: number }
 
 // Constant-time comparison of a hex HMAC against the signature Razorpay sent.
 function signatureMatches(payload: string, secret: string, signature: unknown) {
@@ -25,33 +27,6 @@ function signatureMatches(payload: string, secret: string, signature: unknown) {
   const expected = createHmac('sha256', secret).update(payload).digest()
   const received = Buffer.from(signature, 'hex')
   return received.length === expected.length && timingSafeEqual(received, expected)
-}
-
-async function createRazorpayOrder(amountRupees: number, receipt: string, notes: Record<string, string>) {
-  const response = await fetch('https://api.razorpay.com/v1/orders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Basic ${Buffer.from(`${keyId()}:${keySecret()}`).toString('base64')}` },
-    // Razorpay amounts are in paise.
-    body: JSON.stringify({ amount: amountRupees * 100, currency: 'INR', receipt, notes }),
-  })
-  if (!response.ok) throw new Error(`Razorpay order failed (${response.status}): ${await response.text()}`)
-  return await response.json() as { id: string; amount: number; currency: string }
-}
-
-/**
- * Records a verified payment against its order: one RentPayment per month in the snapshot. Months
- * the owner already marked paid in the meantime are skipped (and logged, as that is an
- * overpayment to settle by hand). Safe to call twice for the same order.
- */
-async function fulfilOrder(razorpayOrderId: string, razorpayPaymentId: string) {
-  await prisma.$transaction(async (transaction) => {
-    const order = await transaction.rentOrder.findUnique({ where: { razorpayOrderId } })
-    if (!order || order.status === RentOrderStatus.PAID) return
-    const items = order.items as OrderItem[]
-    const created = await transaction.rentPayment.createMany({ data: items.map((item) => ({ residentId: order.residentId, month: item.month, amount: item.amount, razorpayPaymentId })), skipDuplicates: true })
-    if (created.count < items.length) console.warn(`Razorpay order ${razorpayOrderId}: ${items.length - created.count} month(s) were already marked paid; payment ${razorpayPaymentId} includes an overpayment.`)
-    await transaction.rentOrder.update({ where: { id: order.id }, data: { status: RentOrderStatus.PAID, razorpayPaymentId, paidAt: new Date() } })
-  })
 }
 
 /** Resident routes; mounted before the super admin guard, so each checks the resident role itself. */
@@ -64,12 +39,12 @@ razorpayResidentRouter.post('/resident-portal/rent/order', requireResident, requ
   const { userId } = response.locals.auth as AuthContext
   try {
     const rent = await rentSummary(userId)
-    if (!rent.monthlyRent || !rent.outstandingMonths.length) { response.status(409).json({ error: 'You have no rent due right now.' }); return }
-    const items: OrderItem[] = rent.outstandingMonths.map((month) => ({ month, amount: rent.monthlyRent! + (rent.overdueMonths.includes(month) ? rent.lateFee : 0) }))
+    const items = outstandingRentItems(rent)
+    if (!items) { response.status(409).json({ error: 'You have no rent due right now.' }); return }
     const amount = items.reduce((sum, item) => sum + item.amount, 0)
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true, phone: true } })
     // Receipts are limited to 40 characters by Razorpay.
-    const razorpayOrder = await createRazorpayOrder(amount, `rent-${userId.slice(-12)}-${Date.now()}`, { residentId: userId, months: items.map((item) => item.month).join(',') })
+    const razorpayOrder = await razorpayRequest<{ id: string; amount: number; currency: string }>('/orders', { amount: amount * 100, currency: 'INR', receipt: `rent-${userId.slice(-12)}-${Date.now()}`, notes: { residentId: userId, months: items.map((item) => item.month).join(',') } })
     await prisma.rentOrder.create({ data: { residentId: userId, razorpayOrderId: razorpayOrder.id, amount, items } })
     response.status(201).json({ keyId: keyId(), orderId: razorpayOrder.id, amount: razorpayOrder.amount, currency: razorpayOrder.currency, months: items.map((item) => item.month), prefill: { name: resident.name, email: resident.email ?? undefined, contact: resident.phone ?? undefined } })
   } catch (error) {
@@ -96,7 +71,47 @@ razorpayResidentRouter.post('/resident-portal/rent/verify', requireResident, req
 })
 
 /**
- * Razorpay webhook (payment.captured / order.paid). Mounted with a raw body parser because the
+ * Shows a UPI QR for everything owed. The amount is snapshotted into a RentOrder keyed by the QR
+ * id, plus a pending Payment so the owner's Payments list shows it; an open code for the same
+ * amount is reused, so refreshing the page does not pile up pending rows.
+ */
+razorpayResidentRouter.post('/resident-portal/rent/upi-qr', requireResident, requirePortalAccess, async (_request, response) => {
+  if (!isOnlinePaymentEnabled()) { response.status(503).json({ error: 'Online payment is not set up yet. Please pay your property owner directly.' }); return }
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const items = outstandingRentItems(await rentSummary(userId))
+    if (!items) { response.status(409).json({ error: 'You have no rent due right now.' }); return }
+    const amount = items.reduce((sum, item) => sum + item.amount, 0)
+    const open = await prisma.payment.findFirst({ where: { residentId: userId, status: 'pending', amount, razorpayQrId: { not: null }, qrExpiresAt: { gt: new Date() } } })
+    if (open) { response.json(toQrView(open)); return }
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, phone: true, room: { select: { propertyId: true } } } })
+    const qr = await createUpiQr(amount, `Rent - ${resident.name}`, { residentId: userId, months: items.map((item) => item.month).join(',') })
+    const [, payment] = await prisma.$transaction([
+      prisma.rentOrder.create({ data: { residentId: userId, razorpayOrderId: qr.razorpayQrId, amount, items } }),
+      prisma.payment.create({ data: { ...qr, amount, status: 'pending', method: 'upi', payerName: resident.name, phone: resident.phone ?? '', propertyId: resident.room.propertyId, residentId: userId } }),
+    ])
+    response.status(201).json(toQrView(payment))
+  } catch (error) {
+    console.error('Rent UPI QR failed:', error)
+    response.status(502).json({ error: 'Could not create the UPI QR code. Please try again in a moment.' })
+  }
+})
+
+// Polled by the QR screen until the code is paid or expires.
+razorpayResidentRouter.get('/resident-portal/rent/upi-qr/:paymentId', requireResident, requirePortalAccess, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const payment = await prisma.payment.findUnique({ where: { id: (request.params as { paymentId: string }).paymentId } })
+    if (!payment || payment.residentId !== userId) { response.status(404).json({ error: 'Payment was not found.' }); return }
+    response.json(toQrView(await refreshQrPayment(payment)))
+  } catch (error) {
+    console.error('Rent UPI QR status failed:', error)
+    response.status(502).json({ error: 'Could not check the payment right now.' })
+  }
+})
+
+/**
+ * Razorpay webhook (payment.captured / order.paid for Checkout, qr_code.credited for UPI QR). Mounted with a raw body parser because the
  * signature covers the exact bytes Razorpay sent. Always 200s once verified so Razorpay does not
  * retry events we deliberately ignore.
  */
@@ -105,9 +120,11 @@ export async function razorpayWebhook(request: Request, response: Response) {
   const body = request.body as Buffer
   if (!secret || !Buffer.isBuffer(body) || !signatureMatches(body.toString('utf8'), secret, request.header('x-razorpay-signature'))) { response.status(400).send('invalid signature'); return }
   try {
-    const event = JSON.parse(body.toString('utf8')) as { event?: string; payload?: { payment?: { entity?: { id?: string; order_id?: string } } } }
+    const event = JSON.parse(body.toString('utf8')) as { event?: string; payload?: { payment?: { entity?: { id?: string; order_id?: string } }; qr_code?: { entity?: { id?: string } } } }
     const payment = event.payload?.payment?.entity
+    const qrId = event.payload?.qr_code?.entity?.id
     if ((event.event === 'payment.captured' || event.event === 'order.paid') && payment?.id && payment.order_id) await fulfilOrder(payment.order_id, payment.id)
+    if (event.event === 'qr_code.credited' && qrId && payment?.id) await settleQr(qrId, payment.id)
     response.status(200).send('ok')
   } catch (error) {
     // A 5xx makes Razorpay retry, which is what we want if recording failed.

@@ -5,6 +5,10 @@ export type WorkspaceSettings = {
   logoVersion: number | null
   contactPhone: string | null
   contactEmail: string | null
+  /** The owner's own UPI ID shown to residents with rent due; payments to it are confirmed by hand. */
+  upiId: string | null
+  /** The name shown in the resident's UPI app; falls back to the business name. */
+  upiPayeeName: string | null
   rentDueDay: number
   rentReminderOneDay: number
   rentReminderTwoDay: number
@@ -40,4 +44,6 @@ export type SlotOption = { value: 'MORNING' | 'AFTERNOON' | 'EVENING'; label: st
 export type HouseRules = { visitingHours: string; quietHours: string; noticePeriodDays: number; securityDeposit: number | null }
 
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
-export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+/** The owner's UPI ID and display name, as residents see it. */
+export type UpiPayee = { id: string; payeeName: string }
+export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

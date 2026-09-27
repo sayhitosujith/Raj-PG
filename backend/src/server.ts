@@ -11,6 +11,7 @@ import { parsePropertyRents, syncPropertyRents } from './propertyRent.js'
 import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
+import { paymentsAdminRouter } from './payments.js'
 import { rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
 import { residentPortalRouter } from './residentPortal.js'
@@ -53,6 +54,7 @@ app.use('/api', superAdminRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
+app.use('/api', paymentsAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
@@ -145,26 +147,6 @@ app.put('/api/properties/:id', async (request, response) => {
   } catch { response.status(404).json({ error: 'Property could not be updated.' }) }
 })
 
-app.get('/api/payments', async (_request, response) => {
-  if (!process.env.DATABASE_URL) { response.json([]); return }
-  const payments = await prisma.payment.findMany({ include: { property: true }, orderBy: { createdAt: 'desc' } })
-  response.json(payments.map((payment) => ({ id: payment.id, amount: payment.amount, status: payment.status, propertyId: payment.propertyId, property: payment.property.name, createdAt: payment.createdAt })))
-})
-
-app.post('/api/payments', async (request, response) => {
-  const { amount, propertyId, status } = request.body as { amount?: number; propertyId?: string; status?: string }
-  if (!amount || amount <= 0 || !propertyId) { response.status(400).json({ error: 'Positive amount and property are required.' }); return }
-  try { response.status(201).json(await prisma.payment.create({ data: { amount: Math.round(amount), propertyId, status: status?.trim() || 'paid' } })) } catch { response.status(400).json({ error: 'Payment could not be created.' }) }
-})
-
-app.put('/api/payments/:id', async (request, response) => {
-  const { amount, status } = request.body as { amount?: number; status?: string }
-  try { response.json(await prisma.payment.update({ where: { id: request.params.id }, data: { ...(amount && amount > 0 ? { amount: Math.round(amount) } : {}), ...(status?.trim() ? { status: status.trim() } : {}) } })) } catch { response.status(404).json({ error: 'Payment could not be updated.' }) }
-})
-
-app.delete('/api/payments/:id', async (request, response) => {
-  try { await prisma.payment.delete({ where: { id: request.params.id } }); response.status(204).send() } catch { response.status(404).json({ error: 'Payment could not be deleted.' }) }
-})
 
 app.get('/api/bookings', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }

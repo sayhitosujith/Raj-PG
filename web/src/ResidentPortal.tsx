@@ -12,6 +12,8 @@ import type { RentSummary } from './rent'
 import type { ResidentWorkspace } from './workspaceSettings'
 import { RentBanner, RentHighlight } from './RentBanner'
 import { PayRentButton } from './PayRentButton'
+import { UpiQrRentButton } from './UpiQrRentButton'
+import { UpiDirectPay, type UpiClaim } from './UpiDirectPay'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PolicyLinks } from './PolicyLinks'
 import { HouseRules } from './HouseRules'
@@ -29,7 +31,7 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -108,7 +110,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   }, [])
 
   // Offered only when Razorpay keys are configured and something is actually owed.
-  const payAction = profile.onlinePayment && profile.rent.monthlyRent && profile.rent.outstandingMonths.length ? <PayRentButton rent={profile.rent} onPaid={onRefresh} onNotice={showNotice} /> : null
+  const payAction = profile.onlinePayment && profile.rent.monthlyRent && profile.rent.outstandingMonths.length ? <div className="pay-rent-actions"><PayRentButton rent={profile.rent} onPaid={onRefresh} onNotice={showNotice} /><UpiQrRentButton onPaid={onRefresh} onNotice={showNotice} /></div> : null
 
   const details: Array<[string, ReactNode]> = [
     ['Property', profile.location ? <>{profile.property} · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></> : profile.property],
@@ -145,6 +147,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           </section>
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
+            {profile.workspace.upi ? <UpiDirectPay payee={profile.workspace.upi} rent={profile.rent} monthlyRent={profile.rent.monthlyRent} pendingClaim={profile.pendingUpiClaim} onReported={onRefresh} onNotice={showNotice} /> : null}
             {payAction && <div className="pay-rent-row">{payAction}</div>}
             <ResidentRentPayments rent={profile.rent} />
           </section>

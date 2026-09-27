@@ -12,6 +12,8 @@ import { pendingPolicyConsent, policiesOf } from './policies.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
 import { findResidentByCredentials } from './residentCredentials.js'
+import { rentItemsToPay } from './rentOrders.js'
+import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -36,7 +38,7 @@ export async function requirePortalAccess(_request: Request, response: Response,
 /** Workspace details a resident needs: contacts, house rules, housekeeping slots and limit, and the policies. */
 async function residentWorkspace() {
   const settings = await getSettings()
-  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), ...policiesOf(settings) }
+  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), upi: settings.upiId ? { id: settings.upiId, payeeName: settings.upiPayeeName || settings.businessName } : null, ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
@@ -76,7 +78,7 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -199,6 +201,36 @@ residentPortalRouter.post('/resident-portal/food-request', requireResident, requ
   } catch (error) {
     console.error('Food request failed:', error)
     response.status(503).json({ error: 'Your request could not be sent. Please try again.' })
+  }
+})
+
+// Upper bound for an amount the resident types in themselves (no rent set up).
+const maxReportedAmount = 10_00_000
+
+/**
+ * "I've paid" after sending rent to the owner's UPI ID. The server, not the browser, decides the
+ * amount and months (rentItemsToPay: what is owed, else next month in advance); with no rent set
+ * up it takes the amount the resident typed, with no months. The owner confirms it against their
+ * bank app. One open report at a time, so a double tap cannot file two.
+ */
+residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, requirePortalAccess, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  const reference = normalizeUtr((request.body as { reference?: unknown }).reference)
+  if (!reference) { response.status(400).json({ error: 'Enter the 12-digit UPI reference number (UTR) from your payment app.' }); return }
+  try {
+    if (!(await getSettings()).upiId) { response.status(409).json({ error: 'Your property owner has not set up a UPI ID.' }); return }
+    if (await pendingUpiClaim(userId)) { response.status(409).json({ error: 'You already reported a payment. Your property owner will confirm it soon.' }); return }
+    // With no rent set up there are no months to record, so the resident says what they sent; the
+    // empty month list still marks it as a claim for the owner to confirm.
+    const items = rentItemsToPay(await rentSummary(userId)) ?? []
+    const amount = items.length ? items.reduce((sum, item) => sum + item.amount, 0) : Number((request.body as { amount?: unknown }).amount)
+    if (!Number.isInteger(amount) || amount < 1 || amount > maxReportedAmount) { response.status(400).json({ error: 'Enter the amount you paid, in whole rupees.' }); return }
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, phone: true, room: { select: { propertyId: true } } } })
+    await prisma.payment.create({ data: { amount, status: 'pending', method: 'upi', payerName: resident.name, phone: resident.phone ?? '', reference, rentMonths: items, propertyId: resident.room.propertyId, residentId: userId } })
+    response.status(201).json({ pendingUpiClaim: await pendingUpiClaim(userId) })
+  } catch (error) {
+    console.error('UPI payment report failed:', error)
+    response.status(503).json({ error: 'Your payment could not be reported. Please try again.' })
   }
 })
 

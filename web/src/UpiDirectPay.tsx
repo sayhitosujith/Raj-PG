@@ -1,0 +1,99 @@
+import { useEffect, useState } from 'react'
+import { CheckCircle2, Copy, Smartphone } from 'lucide-react'
+import { formatMonth, formatRupees, nextMonthToRecord, type RentSummary } from './rent'
+import { readApiError } from './superAdmin'
+import type { UpiPayee } from './workspaceSettings'
+
+/** A payment the resident reported that the owner has not confirmed yet. */
+export type UpiClaim = { amount: number; reference: string; createdAt: string }
+
+/**
+ * The standard UPI payment link (NPCI "upi://pay"), which every UPI app understands both as a
+ * tapped link and as a scanned QR. Without an amount the payer's app asks for one. Encoded by
+ * hand: URLSearchParams writes spaces as "+", which some UPI apps show literally in the payee name.
+ */
+function upiPayLink(payee: UpiPayee, amount: number | null, note: string) {
+  const params = { pa: payee.id, pn: payee.payeeName, ...(amount ? { am: amount.toFixed(2) } : {}), cu: 'INR', tn: note }
+  return `upi://pay?${Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')}`
+}
+
+// Loaded on first use so residents who never see this panel never download the QR encoder.
+async function qrDataUrl(text: string) {
+  const { toDataURL } = await import('qrcode')
+  return toDataURL(text, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+}
+
+/**
+ * What the panel asks for, matching what the server will record (rentItemsToPay): everything
+ * owed; else next month in advance; else, with no rent set up, whatever amount the resident sends.
+ */
+function payTarget(rent: RentSummary, monthlyRent: number | null) {
+  if (rent.outstandingMonths.length) return { amount: rent.amountDue, caption: 'Rent due · pay by UPI' }
+  if (rent.state !== 'NOT_TRACKED' && monthlyRent) return { amount: monthlyRent, caption: `Next rent · ${formatMonth(nextMonthToRecord(rent))} · pay in advance` }
+  return { amount: null, caption: 'Pay by UPI' }
+}
+
+/**
+ * Pay rent straight to the owner's UPI ID: a QR and a tap-to-pay link (for the exact amount when
+ * it is known), then "I've paid" with the UPI reference so the owner can match it in their bank
+ * app and confirm.
+ */
+export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReported, onNotice }: { payee: UpiPayee; rent: RentSummary; monthlyRent: number | null; pendingClaim: UpiClaim | null; onReported: () => Promise<void>; onNotice: (message: string) => void }) {
+  const [qr, setQr] = useState<string | null>(null)
+  const [reference, setReference] = useState('')
+  const [paidAmount, setPaidAmount] = useState('')
+  const [error, setError] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const { amount, caption } = payTarget(rent, monthlyRent)
+  const link = upiPayLink(payee, amount, 'Rent')
+
+  useEffect(() => {
+    let isCurrent = true
+    qrDataUrl(link).then((url) => { if (isCurrent) setQr(url) }, () => undefined)
+    return () => { isCurrent = false }
+  }, [link])
+
+  async function copyId() {
+    try { await navigator.clipboard.writeText(payee.id); onNotice('UPI ID copied.') } catch { onNotice(`UPI ID: ${payee.id}`) }
+  }
+
+  async function report(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsSending(true)
+    // The server ignores `amount` when it knows what is owed; it is only for the no-rent case.
+    const response = await fetch('/api/resident-portal/rent/upi-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference, ...(amount ? {} : { amount: Number(paidAmount) }) }) }).catch(() => null)
+    setIsSending(false)
+    if (!response?.ok) { setError(response ? await readApiError(response, 'Your payment could not be reported.') : 'Could not reach the server.'); return }
+    setError('')
+    onNotice('Thanks! Your property owner will confirm the payment.')
+    await onReported()
+  }
+
+  if (pendingClaim) {
+    return (
+      <div className="upi-direct is-reported" role="status">
+        <CheckCircle2 size={22} />
+        <div><strong>{formatRupees(pendingClaim.amount)} payment reported</strong><p>UPI reference {pendingClaim.reference}. Waiting for your property owner to confirm it.</p></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="upi-direct">
+      <div className="upi-direct-qr">{qr ? <img src={qr} alt={`UPI QR code to pay ${amount ? `${formatRupees(amount)} ` : ''}to ${payee.payeeName}`} /> : <span className="upi-direct-qr-placeholder" />}</div>
+      <div className="upi-direct-body">
+        <p className="eyebrow">{caption}</p>
+        {amount ? <strong className="upi-direct-amount">{formatRupees(amount)}</strong> : <strong className="upi-direct-amount">{payee.payeeName}</strong>}
+        <p>{amount ? `to ${payee.payeeName}. ` : 'Enter the amount in your UPI app. '}Scan with any UPI app, or pay to this UPI ID:</p>
+        <div className="upi-direct-id"><code>{payee.id}</code><button type="button" className="icon-button" aria-label="Copy UPI ID" title="Copy UPI ID" onClick={copyId}><Copy size={15} /></button></div>
+        <a className="secondary-button upi-direct-open" href={link}><Smartphone size={15} /> Open UPI app</a>
+        <form className="upi-direct-report" onSubmit={report}>
+          {!amount && <label className="upi-direct-amount-field">Amount paid (₹)<input value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} type="number" min={1} step={1} inputMode="numeric" required /></label>}
+          <label>Paid already? Enter the 12-digit UPI reference (UTR)<input value={reference} onChange={(event) => setReference(event.target.value)} inputMode="numeric" autoComplete="off" placeholder="e.g. 412345678901" required /></label>
+          <button type="submit" className="primary-button" disabled={isSending}>{isSending ? 'Sending…' : "I've paid"}</button>
+        </form>
+        {error && <p className="login-error" role="alert">{error}</p>}
+      </div>
+    </div>
+  )
+}

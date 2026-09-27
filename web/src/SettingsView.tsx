@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, House, ImageUp, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { resizeLogo } from './imageResize'
 import { ordinal } from './rent'
@@ -128,6 +128,13 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             <div className="settings-pair">
               <label>Contact phone<input name="contactPhone" type="tel" defaultValue={settings.contactPhone ?? ''} placeholder="e.g. +91 98765 43210" /></label>
               <label>Contact email<input name="contactEmail" type="email" defaultValue={settings.contactEmail ?? ''} placeholder="e.g. owner@example.com" /></label>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection icon={<QrCode size={18} />} title="UPI payments" description="Residents with rent due see this UPI ID and a QR code for it. Money goes straight to your bank, so residents report the payment with its UPI reference and you confirm it under Payments." onSubmit={(form) => onSaveSettings({ upiId: value(form, 'upiId'), upiPayeeName: value(form, 'upiPayeeName') })}>
+            <div className="settings-pair">
+              <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
+              <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
           </SettingsSection>
 

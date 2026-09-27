@@ -3,7 +3,7 @@ import { Router } from 'express'
 import { prisma } from './db.js'
 import { findLogoProblem, photoVersion, sendLogo } from './photo.js'
 import { policiesOf, policyFields, policyMaxLength, policyVersionChanges, type PolicyField } from './policies.js'
-import { isValidEmail } from './validation.js'
+import { isValidEmail, isValidUpiId } from './validation.js'
 
 const settingsId = 'workspace'
 // Settings change rarely but are read on every rent/housekeeping calculation, so they are cached
@@ -61,7 +61,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -94,6 +94,18 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     const email = input.contactEmail?.trim() || null
     if (email && !isValidEmail(email)) return { error: 'Enter a valid contact email.' }
     data.contactEmail = email
+  }
+  if (input.upiId !== undefined) {
+    if (input.upiId !== null && typeof input.upiId !== 'string') return { error: 'UPI ID must be text.' }
+    const upiId = input.upiId?.trim() || null
+    if (upiId && !isValidUpiId(upiId)) return { error: 'Enter a valid UPI ID, e.g. rajpg@okhdfcbank.' }
+    data.upiId = upiId
+  }
+  if (input.upiPayeeName !== undefined) {
+    if (input.upiPayeeName !== null && typeof input.upiPayeeName !== 'string') return { error: 'Payee name must be text.' }
+    const payeeName = input.upiPayeeName?.trim() || null
+    if (payeeName && payeeName.length > 50) return { error: 'Payee name can be up to 50 characters.' }
+    data.upiPayeeName = payeeName
   }
   for (const [field, { label }] of Object.entries(policyFields) as [PolicyField, (typeof policyFields)[PolicyField]][]) {
     const text = input[field]

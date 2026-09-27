@@ -765,8 +765,63 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident portal: property photo beside the details grid; stacks on narrow cards. */
 .portal-details-row { display: flex; gap: 14px; align-items: stretch; margin-top: 20px; }
 .portal-details-row .portal-details { flex: 1; margin: 0; }
-.portal-property-photo { flex: none; width: 160px; min-height: 120px; border-radius: 8px; object-fit: cover; background: #f7faf8; }
+/* A fixed landscape box, not stretched to the row height: stretching a 160px-wide cover box
+   cropped landscape photos to a thin strip and upscaled it ~2×, which is what made them blurry. */
+.portal-property-photo { flex: none; align-self: center; width: 260px; aspect-ratio: 4 / 3; border-radius: 8px; object-fit: cover; background: #f7faf8; }
 @container (max-width: 640px) {
   .portal-details-row { flex-direction: column; }
-  .portal-property-photo { width: 100%; height: 160px; }
+  .portal-property-photo { width: 100%; aspect-ratio: 16 / 9; }
 }
+
+/* Payments: two-column add/edit form that collapses to one column on phones. */
+.payment-modal { width: min(100%, 540px); max-height: calc(100dvh - 24px); overflow-y: auto; }
+.payment-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.payment-form-wide { grid-column: 1 / -1; }
+.payment-form-grid input:disabled, .payment-form-grid select:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 520px) { .payment-form-grid { grid-template-columns: 1fr; } }
+
+/* UPI QR: resident's pay buttons side by side, and the QR panel shared with the owner's screen. */
+.pay-rent-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
+.rent-banner .pay-rent-actions .pay-rent-button { margin-left: 0; }
+@media (max-width: 560px) { .pay-rent-actions { width: 100%; margin-left: 0; } .pay-rent-actions .pay-rent-button { flex: 1 1 100%; justify-content: center; } }
+.upi-qr-panel { display: grid; justify-items: center; gap: 8px; padding: 8px 0 4px; text-align: center; }
+.upi-qr-panel strong { color: var(--ink); font: 700 16px Manrope; }
+.upi-qr-panel p { max-width: 340px; margin: 0; color: var(--muted); font-size: 12px; }
+.upi-qr-panel > svg { color: var(--muted); }
+.upi-qr-panel.is-paid > svg { color: var(--teal); }
+/* Razorpay's image is a printable card with the QR in the middle; rgb() keeps it white in dark mode (see .upi-direct-qr). */
+.upi-qr-image { width: min(100%, 280px); border-radius: 10px; background: rgb(255 255 255); }
+.upi-qr-waiting { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+.upi-qr-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); animation: upi-qr-pulse 1.4s ease-in-out infinite; }
+@keyframes upi-qr-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .upi-qr-dot { animation: none; } }
+.upi-qr-loading { margin: 18px 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+/* Pay to the owner's UPI ID: QR beside the ID, tap-to-pay link and the "I've paid" form. */
+.upi-direct { display: flex; gap: 22px; align-items: flex-start; margin-top: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--teal-soft); }
+.upi-direct-qr { flex: none; padding: 8px; border-radius: 10px; background: rgb(255 255 255); }
+/* The QR stays black on white in both themes so every scanner can read it; rgb() rather than
+   white or hex, because the dark-theme plugin only remaps those. */
+.upi-direct-qr img, .upi-direct-qr-placeholder { display: block; width: 168px; height: 168px; }
+.upi-direct-body { display: grid; flex: 1; gap: 8px; min-width: 0; }
+.upi-direct-body .eyebrow { margin: 0; }
+.upi-direct-body > p { margin: 0; color: var(--muted); font-size: 12px; }
+.upi-direct-amount { color: var(--ink); font: 700 24px Manrope; }
+.upi-direct-id { display: flex; align-items: center; gap: 6px; }
+.upi-direct-id code { overflow-wrap: anywhere; padding: 6px 10px; border: 1px dashed var(--teal); border-radius: 7px; color: var(--ink); background: white; font: 600 13px ui-monospace, monospace; }
+.upi-direct-open { display: none; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+.upi-direct-report { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 4px; }
+.upi-direct-report label { display: grid; flex: 1 1 220px; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.upi-direct-report input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 13px; letter-spacing: .5px; }
+.upi-direct-report input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+.upi-direct-report .primary-button { width: auto; }
+.upi-direct.is-reported { align-items: center; gap: 12px; }
+.upi-direct.is-reported > svg { flex: none; color: var(--teal); }
+.upi-direct.is-reported p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+/* A phone cannot scan its own screen, so there the tap-to-pay link leads and the QR shrinks. */
+@media (pointer: coarse) { .upi-direct-open { display: inline-flex; } }
+@container (max-width: 560px) {
+  .upi-direct { flex-direction: column; align-items: stretch; }
+  .upi-direct-qr { align-self: center; }
+}
+.upi-direct-report label.upi-direct-amount-field { flex: 0 1 140px; }
