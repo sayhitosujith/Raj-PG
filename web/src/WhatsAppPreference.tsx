@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { readApiError } from './superAdmin'
 
 /** The resident's switch for WhatsApp updates (rent reminders, receipts, notices); on by default. */
@@ -17,7 +17,7 @@ export function WhatsAppPreference({ optIn, onChanged, onNotice }: { optIn: bool
 
   return (
     <div className="whatsapp-preference">
-      <span className="whatsapp-preference-icon"><MessageCircle size={17} /></span>
+      <span className="whatsapp-preference-icon"><WhatsAppIcon size={18} /></span>
       <div><strong>WhatsApp updates</strong><small>Rent reminders, payment receipts and notices from your property owner.</small></div>
       <button type="button" role="switch" aria-checked={optIn} className={`switch${optIn ? ' is-on' : ''}`} disabled={isSaving} onClick={toggle}><span className="sr-only">WhatsApp updates</span></button>
     </div>

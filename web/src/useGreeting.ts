@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { propertyMinutesIntoDay } from './propertyTime'
 
 /** Maps an hour (0–23, local time) to a greeting: morning 5–11, afternoon 12–16, evening otherwise. */
 export function greetingFor(hour: number) {
@@ -8,8 +9,9 @@ export function greetingFor(hour: number) {
 }
 
 /**
- * Current greeting and date from the device clock. Re-evaluates every minute because the
- * dashboard is often left open across a morning/afternoon/evening boundary.
+ * Current greeting and date from the device clock (the viewer's own day), and the time of day at
+ * the property for meal status. Re-evaluates every minute because the dashboard is often left
+ * open across a morning/afternoon/evening boundary.
  */
 export function useGreeting() {
   const [now, setNow] = useState(() => new Date())
@@ -22,7 +24,7 @@ export function useGreeting() {
   return {
     greeting: greetingFor(now.getHours()),
     dateLabel: now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-    // Exposed so other time-of-day UI (e.g. "Now serving" meals) shares this one-minute clock.
-    minutesIntoDay: now.getHours() * 60 + now.getMinutes(),
+    // At the property (IST), not the device: meal times are IST, so "Now serving" must be too.
+    minutesIntoDay: propertyMinutesIntoDay(now),
   }
 }

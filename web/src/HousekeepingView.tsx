@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { BellRing, CalendarCheck, CheckCircle2, MessageSquare, RotateCw, Sparkles, XCircle } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { describeVisit, formatTime, isOpenRequest, statusDetails, type HousekeepingStatus, type OwnerHousekeepingRequest } from './housekeeping'
@@ -69,8 +69,11 @@ function HousekeepingRow({ request, index, onUpdate }: { request: OwnerHousekeep
   )
 }
 
-/** Owner's Housekeeping page: what is due, who asked, and the buttons to move each request along. */
-export function HousekeepingView({ requests, loadState, onRetry, onUpdate, onBack }: { requests: OwnerHousekeepingRequest[]; loadState: ResidentsLoadState; onRetry: () => void; onUpdate: (request: OwnerHousekeepingRequest, status: HousekeepingStatus | null, ownerNote: string) => Promise<string | null>; onBack: () => void }) {
+/**
+ * Owner's Housekeeping page: what is due, who asked, and the buttons to move each request along.
+ * `staff` is the staff panel, passed in so this view stays about requests.
+ */
+export function HousekeepingView({ requests, loadState, staff, onRetry, onUpdate, onBack }: { requests: OwnerHousekeepingRequest[]; staff?: ReactNode; loadState: ResidentsLoadState; onRetry: () => void; onUpdate: (request: OwnerHousekeepingRequest, status: HousekeepingStatus | null, ownerNote: string) => Promise<string | null>; onBack: () => void }) {
   const [filter, setFilter] = useState<Filter>('open')
   const today = todayDateInputValue()
   const visible = useMemo(() => requests.filter((request) => filter === 'all' || (filter === 'open' ? isOpenRequest(request) : filter === 'reminders' ? request.hasOpenReminder : request.status === filter)), [requests, filter])
@@ -86,6 +89,7 @@ export function HousekeepingView({ requests, loadState, onRetry, onUpdate, onBac
   return (
     <section className="workspace-view housekeeping-view">
       <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Housekeeping</h2><p>Cleaning requests from residents, soonest first.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      {staff}
       <div className="workspace-summary residents-summary">{tiles.map((tile, index) => <button key={tile.label} type="button" className={`summary-tile${filter === tile.filter && tile.label !== 'Due today' ? ' is-selected' : ''}`} style={{ '--stagger': index } as React.CSSProperties} onClick={() => setFilter(tile.filter)}><span>{tile.label}</span><strong>{loadState === 'ready' ? tile.value : '–'}</strong></button>)}</div>
       <div className="filter-tabs" role="tablist" aria-label="Filter requests">{filters.map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={filter === value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div>
       {loadState === 'loading' && <div className="resident-list" aria-busy="true">{[0, 1, 2].map((index) => <div className="resident-skeleton" key={index}><span className="skeleton-circle" /><span className="skeleton-lines"><span /><span /></span><span className="skeleton-pill" /></div>)}</div>}

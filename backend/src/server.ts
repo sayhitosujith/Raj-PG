@@ -7,6 +7,7 @@ import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
 import { notifyAnnouncement, notifyInBackground } from './notifications.js'
 import { cronRouter } from './rentReminders.js'
 import { whatsappAdminRouter } from './whatsappAdmin.js'
+import { financeAdminRouter } from './finance.js'
 import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
@@ -63,6 +64,7 @@ app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
 app.use('/api', whatsappAdminRouter)
+app.use('/api', financeAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
@@ -215,6 +217,7 @@ app.get('/api/dashboard', async (_request, response) => {
           status: property.status,
           tone: property.status === 'Healthy' ? 'sage' : 'gold',
           image: property.imageUrl,
+          housekeepingStaff: property.housekeepingStaff,
           mealTimes: toMealTimes(property),
           tenantType: property.tenantType,
           amenities: property.amenities,

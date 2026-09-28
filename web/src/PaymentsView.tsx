@@ -4,6 +4,7 @@ import type { Resident } from './resident'
 import { formatRupees, paymentMethodLabels, paymentStatusLabels, type Payment } from './payment'
 import { PaymentFormModal } from './PaymentFormModal'
 import { PaymentQrModal } from './PaymentQrModal'
+import { FinanceOverview } from './FinanceOverview'
 import { Pagination } from './Pagination'
 import { usePagination } from './usePagination'
 import { formatMonth } from './rent'
@@ -23,12 +24,14 @@ async function fetchPayments() {
 /** The owner's hand-recorded payments: who paid, how, how much, for which property. */
 export function PaymentsView({ properties, residents, refreshSignal, onBack, onNotice }: { properties: PropertyOption[]; residents: Resident[]; refreshSignal: number; onBack: () => void; onNotice: (message: string) => void }) {
   const [payments, setPayments] = useState<Payment[]>([])
+  // Bumped on every payment change so the finance summary below follows the list.
+  const [financeVersion, setFinanceVersion] = useState(0)
   // undefined: closed; null: adding; a payment: editing it.
   const [editing, setEditing] = useState<Payment | null | undefined>(undefined)
   const pager = usePagination(payments)
   const [collecting, setCollecting] = useState<Payment | null>(null)
 
-  const upsert = useCallback((payment: Payment) => setPayments((current) => current.some((item) => item.id === payment.id) ? current.map((item) => item.id === payment.id ? payment : item) : [payment, ...current]), [])
+  const upsert = useCallback((payment: Payment) => { setFinanceVersion((value) => value + 1); setPayments((current) => current.some((item) => item.id === payment.id) ? current.map((item) => item.id === payment.id ? payment : item) : [payment, ...current]) }, [])
 
   useEffect(() => { fetchPayments().then(setPayments).catch(() => onNotice('Payments could not be loaded.')) }, [onNotice])
   useRefreshSignal(refreshSignal, () => { fetchPayments().then(setPayments).catch(() => undefined) })
@@ -60,6 +63,7 @@ export function PaymentsView({ properties, residents, refreshSignal, onBack, onN
     const response = await fetch(`/api/payments/${payment.id}`, { method: 'DELETE' }).catch(() => null)
     if (!response?.ok) { onNotice('Payment could not be deleted.'); return }
     setPayments((current) => current.filter((item) => item.id !== payment.id))
+    setFinanceVersion((value) => value + 1)
     onNotice('Payment deleted.')
   }
 
@@ -84,6 +88,7 @@ export function PaymentsView({ properties, residents, refreshSignal, onBack, onN
         )) : <div className="workspace-empty"><div className="workspace-empty-icon"><ClipboardList size={22} /></div><h3>No payments yet</h3><p>Add the first payment to start tracking what has been collected.</p></div>}
       </div>
       <Pagination state={pager} label="Payments" />
+      <FinanceOverview properties={properties} version={financeVersion} refreshSignal={refreshSignal} onNotice={onNotice} />
       {collecting && <PaymentQrModal payment={collecting} onClose={() => setCollecting(null)} onUpdated={upsert} />}
       {editing !== undefined && <PaymentFormModal payment={editing ?? undefined} properties={properties} residents={residents} onClose={() => setEditing(undefined)} onSaved={saved} />}
     </section>

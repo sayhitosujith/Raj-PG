@@ -32,6 +32,9 @@ model Property {
   rentWithoutFood     Int?
   rooms               Room[]
   payments            Payment[]
+  // Housekeeping staff names, shown to the property's residents; the count is the list's length.
+  housekeepingStaff   String[]             @default([])
+  expenses            Expense[]
   activities          Activity[]
   maintenanceRequests MaintenanceRequest[]
   bookings            Booking[]
@@ -418,4 +421,20 @@ model WhatsAppMessage {
   createdAt   DateTime  @default(now())
 
   @@index([createdAt])
+}
+
+// Money the owner spends running the PGs, for the Payments page's monthly profit/loss. Whole
+// rupees. date is a calendar day (UTC midnight, like joining dates); propertyId is optional, since
+// some costs (e.g. an accountant) are shared across properties.
+model Expense {
+  id         String    @id @default(cuid())
+  category   String
+  amount     Int
+  date       DateTime
+  note       String    @default("")
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+
+  @@index([date])
 }

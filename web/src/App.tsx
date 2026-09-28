@@ -33,6 +33,7 @@ import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
 import { readPropertyFeatures, tenantHint, type TenantType } from './propertyFeatureOptions'
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
+import { HousekeepingStaffPanel } from './HousekeepingStaffPanel'
 import { FoodView } from './FoodView'
 import { formatMonth, type RentSummary } from './rent'
 import type { AadharDecision } from './ResidentRow'
@@ -69,6 +70,7 @@ type Property = {
   totalRooms?: number
   rentWithFood?: number | null
   rentWithoutFood?: number | null
+  housekeepingStaff?: string[]
 }
 
 const propertyCardsPerPage = 12
@@ -295,6 +297,10 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setResidentForm(null)
   }
 
+  function saveStaff(propertyId: string, names: string[]) {
+    setDashboard((current) => ({ ...current, properties: current.properties.map((property) => property.id === propertyId ? { ...property, housekeepingStaff: names } : property) }))
+  }
+
   // Opens "Add resident" filled in from a booking request; saving it marks the request accepted.
   function convertBooking(booking: BookingRequest, onConverted: (residentId: string) => void) {
     setResidentForm({ prefill: { name: booking.name, phone: booking.phone, email: booking.email, propertyId: booking.propertyId, foodOpted: booking.foodOpted, joinedAt: booking.moveInDate }, onCreated: onConverted })
@@ -389,7 +395,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Booking requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Announcements' && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
-          {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Booking requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}

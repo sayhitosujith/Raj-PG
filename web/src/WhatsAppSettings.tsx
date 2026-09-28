@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2, MessageCircle, Send, XCircle } from 'lucide-react'
+import { CheckCircle2, Send, XCircle } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { readApiError } from './superAdmin'
 
 type Message = { id: string; residentName: string | null; to: string; template: string; status: 'pending' | 'sent' | 'failed'; error: string | null; createdAt: string }
@@ -34,7 +35,7 @@ export function WhatsAppSettings({ onNotice }: { onNotice: (message: string) => 
 
   return (
     <section className="settings-section wide whatsapp-settings">
-      <div className="settings-section-head"><span className="settings-section-icon"><MessageCircle size={18} /></span><div><h3>WhatsApp messages</h3><p>Rent reminders, payment receipts, announcements and housekeeping updates are sent to residents who have WhatsApp updates on.</p></div></div>
+      <div className="settings-section-head"><span className="settings-section-icon whatsapp-green"><WhatsAppIcon size={18} /></span><div><h3>WhatsApp messages</h3><p>Rent reminders, payment receipts, announcements and housekeeping updates are sent to residents who have WhatsApp updates on.</p></div></div>
       {!status ? <p className="settings-hint">Loading…</p> : <>
         <ul className="whatsapp-checks">
           <li className={status.enabled ? 'is-ok' : 'is-missing'}>{status.enabled ? <CheckCircle2 size={15} /> : <XCircle size={15} />} {status.enabled ? 'Connected to WhatsApp' : 'Not connected: add WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID on the server'}</li>

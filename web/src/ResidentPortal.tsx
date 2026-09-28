@@ -18,6 +18,9 @@ import { PayRentButton } from './PayRentButton'
 import { UpiQrRentButton } from './UpiQrRentButton'
 import { UpiDirectPay, type UpiClaim } from './UpiDirectPay'
 import { WhatsAppPreference } from './WhatsAppPreference'
+import { NightSkyBackdrop } from './NightSkyBackdrop'
+import { VerifiedBadge } from './VerifiedBadge'
+import { LocalClock } from './LocalClock'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PolicyLinks } from './PolicyLinks'
 import { HouseRules } from './HouseRules'
@@ -35,7 +38,7 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -117,12 +120,14 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   // Offered only when Razorpay keys are configured and something is actually owed.
   const payAction = profile.onlinePayment && profile.rent.monthlyRent && profile.rent.outstandingMonths.length ? <div className="pay-rent-actions"><PayRentButton rent={profile.rent} onPaid={onRefresh} onNotice={showNotice} /><UpiQrRentButton onPaid={onRefresh} onNotice={showNotice} /></div> : null
 
+  // Only the Aadhaar number and address are checked (by the owner, against the card); phone and email are as typed.
+  const isAadharVerified = profile.aadharStatus === 'VERIFIED'
   const details: Array<[string, ReactNode]> = [
     ['Property', profile.location ? <>{profile.property} · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></> : profile.property],
     ['Room', profile.room],
     ['Phone', profile.phone || '—'],
     ['Email', profile.email || '—'],
-    ['Aadhaar number', profile.aadharLast4 ? `XXXX XXXX ${profile.aadharLast4}` : '—'],
+    ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—'],
     ['Joining date', formatJoinDate(profile.joinedAt)],
     ['Days stayed', daysStayedLabel(profile.joinedAt)],
     ['Food plan', profile.foodOpted ? 'With food' : 'Without food'],
@@ -131,6 +136,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   return (
     <div className="portal-shell">
       <PortalScenery />
+      <NightSkyBackdrop />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
@@ -138,14 +144,14 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
       <main className="page-content" inert={Boolean(pendingConsent)}>
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1><p className="subtitle">Room {profile.room} at {profile.property}{profile.location && <LocationLink className="portal-location" property={profile.property} location={profile.location} />}</p></div><ResidentAmenities amenities={profile.amenities} /><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></section>
+        <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /><LocalClock />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && <VerifiedBadge />}</dd></div></dl></div>
           <WhatsAppPreference optIn={profile.whatsappOptIn} onChanged={onRefresh} onNotice={showNotice} />
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
-        <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} onNotice={showNotice} />
+        <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
         <div className="portal-grid">
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>

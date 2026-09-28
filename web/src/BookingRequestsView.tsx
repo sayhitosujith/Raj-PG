@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ClipboardList, Copy, MessageCircle, Phone, Plus, Share2, Trash2, UserPlus, X } from 'lucide-react'
+import { ClipboardList, Copy, Phone, Plus, Share2, Trash2, UserPlus, X } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { BookingFields } from './BookingFields'
 import { bookingLink, bookingSourceLabels, readBookingFields, bookingStatusLabels, bookingStatusTones, shareableSources, type BookableProperty, type BookingRequest, type BookingSource, type BookingStatus } from './booking'
 import { Pagination } from './Pagination'
@@ -88,7 +89,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
             <div className="crud-actions">
               <select className={`booking-status is-${bookingStatusTones[booking.status]}`} aria-label={`Status of ${booking.name}'s request`} value={booking.status} onChange={(event) => void changeStatus(booking, event.target.value as BookingStatus)}>{Object.entries(bookingStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
               <a className="icon-button" href={`tel:${booking.phone}`} aria-label={`Call ${booking.name}`} title="Call"><Phone size={15} /></a>
-              <a className="icon-button" href={whatsappLink(booking)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${booking.name}`} title="WhatsApp"><MessageCircle size={15} /></a>
+              <a className="icon-button whatsapp-green" href={whatsappLink(booking)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${booking.name}`} title="WhatsApp"><WhatsAppIcon size={15} /></a>
               {booking.residentId ? <span className="status-pill sage">Resident added</span> : <button type="button" className="secondary-button" onClick={() => onConvert(booking, (residentId) => void changeStatus(booking, 'accepted', residentId))}><UserPlus size={13} /> Convert to resident</button>}
               <button className="row-delete" aria-label={`Delete request from ${booking.name}`} onClick={() => remove(booking)}><Trash2 size={14} /></button>
             </div>
