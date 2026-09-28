@@ -1,5 +1,6 @@
 import { RentOrderStatus } from '@prisma/client'
 import { prisma } from './db.js'
+import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import type { rentSummary } from './rent.js'
 
 /** One month in a rent order's snapshot: the month and what was owed for it, late fee included. */
@@ -39,12 +40,15 @@ export function rentItemsToPay(rent: Awaited<ReturnType<typeof rentSummary>>): O
  * no rent order (e.g. an owner's QR code for a one-off payment).
  */
 export async function fulfilOrder(razorpayOrderId: string, razorpayPaymentId: string) {
-  await prisma.$transaction(async (transaction) => {
+  const fulfilled = await prisma.$transaction(async (transaction) => {
     const order = await transaction.rentOrder.findUnique({ where: { razorpayOrderId } })
-    if (!order || order.status === RentOrderStatus.PAID) return
+    if (!order || order.status === RentOrderStatus.PAID) return null
     const items = order.items as OrderItem[]
     const created = await transaction.rentPayment.createMany({ data: items.map((item) => ({ residentId: order.residentId, month: item.month, amount: item.amount, razorpayPaymentId })), skipDuplicates: true })
     if (created.count < items.length) console.warn(`Razorpay order ${razorpayOrderId}: ${items.length - created.count} month(s) were already marked paid; payment ${razorpayPaymentId} includes an overpayment.`)
     await transaction.rentOrder.update({ where: { id: order.id }, data: { status: RentOrderStatus.PAID, razorpayPaymentId, paidAt: new Date() } })
+    return { residentId: order.residentId, months: items.map((item) => item.month) }
   })
+  // Only the call that actually recorded the months sends the confirmation (webhook and callback race).
+  if (fulfilled) notifyInBackground(() => notifyRentRecorded(fulfilled.residentId, fulfilled.months))
 }

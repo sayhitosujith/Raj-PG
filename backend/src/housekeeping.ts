@@ -3,6 +3,7 @@ import { Router, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
+import { notifyHousekeeping, notifyInBackground } from './notifications.js'
 import { photoVersion } from './photo.js'
 import { isRentLockDue } from './rent.js'
 import { requirePortalAccess } from './residentPortal.js'
@@ -207,6 +208,7 @@ housekeepingAdminRouter.patch('/housekeeping/:id', async (request, response) => 
     if (status === undefined && !isOpen(existing)) { response.status(409).json({ error: 'This request is already closed.' }); return }
     if (status !== undefined && !allowedTransitions[existing.status].includes(status)) { response.status(409).json({ error: `A ${existing.status.toLowerCase()} request cannot be marked ${status.toLowerCase()}.` }); return }
     const updated = await prisma.housekeepingRequest.update({ where: { id: request.params.id }, data: { ...(status !== undefined ? { status } : {}), ...(rawOwnerNote !== undefined ? { ownerNote: ownerNote.note } : {}), reminderAcknowledgedAt: new Date() }, select: withResident })
+    if (status !== undefined) notifyInBackground(() => notifyHousekeeping({ ...updated, residentId: updated.resident.id }))
     response.json(toOwnerView(updated, await getSettings()))
   } catch (error) {
     respondToError(response, error, 'The request could not be updated.')

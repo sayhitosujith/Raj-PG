@@ -4,6 +4,9 @@ import express from 'express'
 import { UserRole } from '@prisma/client'
 import { authRouter, requireRole } from './auth.js'
 import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
+import { notifyAnnouncement, notifyInBackground } from './notifications.js'
+import { cronRouter } from './rentReminders.js'
+import { whatsappAdminRouter } from './whatsappAdmin.js'
 import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
@@ -32,6 +35,7 @@ app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
 app.use('/api', bookingPublicRouter)
+app.use('/api', cronRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)
 app.use('/api', razorpayResidentRouter)
@@ -58,6 +62,7 @@ app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
+app.use('/api', whatsappAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
@@ -159,7 +164,11 @@ app.get('/api/announcements', async (_request, response) => {
 app.post('/api/announcements', async (request, response) => {
   const { title, message, propertyId } = request.body as { title?: string; message?: string; propertyId?: string }
   if (!title?.trim() || !message?.trim() || !propertyId) { response.status(400).json({ error: 'Title, message, and property are required.' }); return }
-  try { response.status(201).json(await prisma.announcement.create({ data: { title: title.trim(), message: message.trim(), propertyId } })) } catch { response.status(400).json({ error: 'Announcement could not be created.' }) }
+  try {
+    const announcement = await prisma.announcement.create({ data: { title: title.trim(), message: message.trim(), propertyId } })
+    notifyInBackground(() => notifyAnnouncement(announcement))
+    response.status(201).json(announcement)
+  } catch { response.status(400).json({ error: 'Announcement could not be created.' }) }
 })
 
 app.put('/api/announcements/:id', async (request, response) => {

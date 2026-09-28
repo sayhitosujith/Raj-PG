@@ -23,3 +23,9 @@ export function propertyNow(now = new Date()) {
   const local = new Date(now.getTime() + propertyUtcOffsetMs)
   return { date: local.toISOString().slice(0, 10), minutes: local.getUTCHours() * 60 + local.getUTCMinutes() }
 }
+
+/** "October 2026" from a "YYYY-MM" month key, as receipts and messages write it. */
+export function formatMonthLabel(key: string) {
+  const [year, month] = key.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', year: 'numeric' })
+}

@@ -92,6 +92,9 @@ model Resident {
   rentPayments            RentPayment[]
   payments                Payment[]
   bookings                Booking[]
+  // WhatsApp updates (rent reminders, receipts, notices); on by default, the resident can turn it off.
+  whatsappOptIn           Boolean                  @default(true)
+  whatsappMessages        WhatsAppMessage[]
   rentOrders              RentOrder[]
   mealSkips               MealSkip[]
   // The policy version (latest update timestamp) this resident accepted, and when they did.
@@ -397,4 +400,22 @@ model MealFeedback {
 
   @@unique([residentId, date, meal])
   @@index([propertyId, date])
+}
+
+// One WhatsApp message the app sent (or tried to). dedupeKey names the event it was for (e.g.
+// "rent:<resident>:2026-10:reminder1"), so a re-run of the daily job never sends it twice; a
+// failed attempt may be retried under the same key.
+model WhatsAppMessage {
+  id          String    @id @default(cuid())
+  residentId  String?
+  resident    Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  to          String
+  template    String
+  dedupeKey   String?   @unique
+  status      String    @default("pending")
+  waMessageId String?
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
 }

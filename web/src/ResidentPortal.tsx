@@ -17,6 +17,7 @@ import { RentBanner, RentHighlight } from './RentBanner'
 import { PayRentButton } from './PayRentButton'
 import { UpiQrRentButton } from './UpiQrRentButton'
 import { UpiDirectPay, type UpiClaim } from './UpiDirectPay'
+import { WhatsAppPreference } from './WhatsAppPreference'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PolicyLinks } from './PolicyLinks'
 import { HouseRules } from './HouseRules'
@@ -34,7 +35,7 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -141,6 +142,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <section className="workspace-view">
           <div className="workspace-view-heading portal-details-heading"><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}</dd></div></dl></div>
+          <WhatsAppPreference optIn={profile.whatsappOptIn} onChanged={onRefresh} onNotice={showNotice} />
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
         <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} onNotice={showNotice} />

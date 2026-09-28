@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { resizeLogo, resizeUpiQr } from './imageResize'
+import { WhatsAppSettings } from './WhatsAppSettings'
 import { ordinal } from './rent'
 import type { SuperAdmin } from './superAdmin'
 import type { WorkspaceSettings } from './workspaceSettings'
@@ -114,7 +115,7 @@ function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, 
 }
 
 /** Settings page: the owner's account, workspace details, rent rules, deposit and notice, house rules, housekeeping, and resident policies. */
-export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onBack: () => void }) {
+export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onNotice, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onNotice: (message: string) => void; onBack: () => void }) {
   return (
     <section className="workspace-view settings-view">
       <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Settings</h2><p>Your account and how the workspace runs.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
@@ -155,6 +156,8 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
           </SettingsSection>
+
+          <WhatsAppSettings onNotice={onNotice} />
 
           <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the two reminders appear. After the due day, unpaid residents are flagged “access lock due”." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
             <div className="settings-trio">

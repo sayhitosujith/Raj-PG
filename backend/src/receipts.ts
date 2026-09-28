@@ -1,5 +1,7 @@
 import PDFDocument from 'pdfkit'
+import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
+import { displayName } from './names.js'
 import { getSettings } from './settings.js'
 
 /**
@@ -13,17 +15,6 @@ const colors = { ink: '#1f2d2b', muted: '#6b7a76', teal: '#167c70', tealSoft: '#
 
 const formatInr = (amount: number) => `INR ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const formatDate = (date: Date) => date.toLocaleDateString('en-IN', { timeZone, day: 'numeric', month: 'long', year: 'numeric' })
-function formatMonth(key: string) {
-  const [year, month] = key.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString('en-IN', { timeZone, month: 'long', year: 'numeric' })
-}
-
-/** Proper capitals for a name typed all lower or upper case; mixed case is kept as typed. Mirrors the web app's displayName. */
-function displayName(name: string) {
-  const trimmed = name.trim().replace(/\s+/g, ' ')
-  if (trimmed !== trimmed.toLowerCase() && trimmed !== trimmed.toUpperCase()) return trimmed
-  return trimmed.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_match, separator: string, letter: string) => separator + letter.toUpperCase())
-}
 
 /** Owners may paste a map link as the location; that is a link, not an address to print. */
 const mapLink = (location: string) => (/^https?:\/\//i.test(location.trim()) ? location.trim() : null)
@@ -77,7 +68,7 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
 /** Renders the receipt as a one-page A4 PDF laid out like an invoice. */
 export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: `Rent receipt ${receipt.number}`, Author: receipt.business.name, Subject: `Rent for ${formatMonth(receipt.month)}` } })
+    const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: `Rent receipt ${receipt.number}`, Author: receipt.business.name, Subject: `Rent for ${formatMonthLabel(receipt.month)}` } })
     const chunks: Buffer[] = []
     doc.on('data', (chunk: Buffer) => chunks.push(chunk))
     doc.on('end', () => resolve(Buffer.concat(chunks)))
@@ -138,7 +129,7 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     label('Amount', right - amountWidth - 12, y + 9, amountWidth, 'right')
     y += 26
     text('Monthly rent', left + 12, y + 12, { size: 10.5 })
-    text(formatMonth(receipt.month), periodX, y + 12, { size: 10.5 })
+    text(formatMonthLabel(receipt.month), periodX, y + 12, { size: 10.5 })
     text(formatInr(receipt.amount), right - amountWidth - 12, y + 12, { size: 10.5, width: amountWidth, align: 'right' })
     y += 38
     doc.moveTo(left, y).lineTo(right, y).lineWidth(1).strokeColor(colors.line).stroke()

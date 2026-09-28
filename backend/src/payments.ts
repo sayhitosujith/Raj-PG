@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
+import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { isUpiClaim, recordClaimedRent } from './upiClaims.js'
 import { closeUpiQr, ensurePaymentQr, refreshQrPayment } from './upiQr.js'
@@ -102,6 +103,11 @@ paymentsAdminRouter.put('/payments/:id', async (request, response) => {
       if (existing.status !== 'paid' && payment.status === 'paid') await recordClaimedRent(transaction, payment)
       return payment
     })
+    const claimedMonths = Array.isArray(updated.rentMonths) ? (updated.rentMonths as Array<{ month: string }>).map((item) => item.month) : []
+    if (existing.status !== 'paid' && updated.status === 'paid' && updated.residentId && claimedMonths.length) {
+      const residentId = updated.residentId
+      notifyInBackground(() => notifyRentRecorded(residentId, claimedMonths))
+    }
     response.json(toPaymentSummary(updated))
   } catch (error) { respondToError(response, error, 'Payment could not be updated.') }
 })

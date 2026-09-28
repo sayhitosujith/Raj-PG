@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
+import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 /**
@@ -115,6 +116,7 @@ rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) =
     if (!status.monthlyRent) { response.status(409).json({ error: 'Set a monthly rent for this resident first.' }); return }
     const month = (requestedMonth as string | undefined) ?? status.outstandingMonths[0] ?? status.currentMonth
     await prisma.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? status.monthlyRent + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
+    notifyInBackground(() => notifyRentRecorded(id, [month]))
     response.status(201).json(await rentSummary(id))
   } catch (error) {
     respondToError(response, error, 'The payment could not be recorded.')
