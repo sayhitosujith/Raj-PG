@@ -3,15 +3,15 @@ import { CheckCircle2, Mail, Send, TriangleAlert, XCircle } from 'lucide-react'
 import { readApiError } from './superAdmin'
 
 type Message = { id: string; residentName: string | null; to: string; kind: string; status: 'pending' | 'sent' | 'failed'; error: string | null; createdAt: string }
-type Status = { enabled: boolean; from: string; usingTestSender: boolean; alertsTo: string | null; recent: Message[] }
+type Status = { enabled: boolean; from: string; usingTestSender: boolean; alertsTo: string[]; recent: Message[] }
 
 const statusTone = { sent: 'sage', pending: 'gold', failed: 'coral' } as const
 const kindLabels: Record<string, string> = { payment_received: 'Payment receipt', rent_reminder: 'Rent reminder', rent_overdue: 'Overdue notice', announcement: 'Announcement', booking_alert: 'Booking alert' }
 
 /**
  * Email setup and health: whether the server has its Resend key, who emails come from (and a
- * warning while that is Resend's test sender), where booking alerts go, a test email, and the
- * latest emails with any errors.
+ * warning while that is Resend's test sender), who gets booking alerts (every super admin), a test
+ * email, and the latest emails with any errors.
  */
 export function EmailSettings({ onNotice }: { onNotice: (message: string) => void }) {
   const [status, setStatus] = useState<Status | null>(null)
@@ -38,7 +38,7 @@ export function EmailSettings({ onNotice }: { onNotice: (message: string) => voi
         <ul className="whatsapp-checks">
           <li className={status.enabled ? 'is-ok' : 'is-missing'}>{status.enabled ? <CheckCircle2 size={15} /> : <XCircle size={15} />} {status.enabled ? <>Connected to Resend · sending as <code>{status.from}</code></> : 'Not connected: add RESEND_API_KEY on the server'}</li>
           {status.enabled && status.usingTestSender && <li className="is-warning"><TriangleAlert size={15} /> Using Resend&apos;s test sender, which only delivers to your Resend account&apos;s address. Verify your domain in Resend and set EMAIL_FROM to email residents.</li>}
-          <li className={status.alertsTo ? 'is-ok' : 'is-missing'}>{status.alertsTo ? <CheckCircle2 size={15} /> : <XCircle size={15} />} {status.alertsTo ? <>Booking alerts go to <code>{status.alertsTo}</code> (your contact email)</> : 'Booking alerts off: add a contact email under Workspace details'}</li>
+          <li className={status.alertsTo.length ? 'is-ok' : 'is-missing'}>{status.alertsTo.length ? <CheckCircle2 size={15} /> : <XCircle size={15} />} {status.alertsTo.length ? <>Booking alerts go to every super admin: {status.alertsTo.map((address, index) => <span key={address}>{index ? ', ' : ''}<code>{address}</code></span>)}</> : 'Booking alerts off: no super admin or contact email has an email address'}</li>
         </ul>
         <div className="whatsapp-actions">
           <form onSubmit={sendTest}>

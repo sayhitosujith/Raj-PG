@@ -1,21 +1,22 @@
 import { Router } from 'express'
 import { prisma } from './db.js'
 import { emailFrom, isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
+import { bookingAlertRecipients } from './notifications.js'
 import { getSettings } from './settings.js'
 
 /** Owner routes for email setup (Settings page); must be mounted behind the super admin guard. */
 export const emailAdminRouter = Router()
 
-// Whether email is configured, who it is sent from, where booking alerts go, and the latest emails.
+// Whether email is configured, who it is sent from, who gets booking alerts, and the latest emails.
 emailAdminRouter.get('/email/status', async (_request, response) => {
   try {
-    const [settings, recent] = await Promise.all([getSettings(), prisma.outboundMessage.findMany({ where: { channel: 'email' }, orderBy: { createdAt: 'desc' }, take: 20, include: { resident: { select: { name: true } } } })])
+    const [alertsTo, recent] = await Promise.all([bookingAlertRecipients(), prisma.outboundMessage.findMany({ where: { channel: 'email' }, orderBy: { createdAt: 'desc' }, take: 20, include: { resident: { select: { name: true } } } })])
     response.json({
       enabled: isEmailEnabled(),
       from: emailFrom(),
       // Resend's shared test sender only delivers to the Resend account's own address.
       usingTestSender: !process.env.EMAIL_FROM,
-      alertsTo: isEmailAddress(settings.contactEmail) ? settings.contactEmail : null,
+      alertsTo,
       recent: recent.map(({ resident, ...message }) => ({ ...message, residentName: resident?.name ?? null })),
     })
   } catch (error) {

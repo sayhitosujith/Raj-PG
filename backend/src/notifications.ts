@@ -123,11 +123,20 @@ export async function notifyRent(resident: Recipient, stage: 'reminder1' | 'remi
   await toEmail(resident, stage === 'overdue' ? 'rent_overdue' : 'rent_reminder', rentReminderEmail({ business: businessName, name, amount: rupees(details.amount), months: monthLabel, property: details.property, dueDate: details.dueDate, overdue: stage === 'overdue', portalUrl: appUrl() }), key)
 }
 
-/** To the owner (Settings -> contact email) the moment someone submits the public booking form. */
+/**
+ * Who hears about a new booking request: every super admin, plus the contact email in Settings if
+ * it is not already one of them. Addresses are compared case-insensitively so nobody gets two.
+ */
+export async function bookingAlertRecipients() {
+  const [settings, admins] = await Promise.all([getSettings(), prisma.superAdmin.findMany({ select: { email: true }, orderBy: { createdAt: 'asc' } })])
+  const addresses = [...admins.map((admin) => admin.email), settings.contactEmail].filter(isEmailAddress)
+  return [...new Map(addresses.map((address) => [address.toLowerCase(), address])).values()]
+}
+
+/** To every super admin (and the contact email) the moment someone submits the public booking form. */
 export async function notifyNewBooking(booking: { id: string; residentName: string; phone: string; email: string | null; moveInDate: Date | null; foodOpted: boolean | null; message: string; source: string; property: { name: string } }) {
-  const settings = await getSettings()
-  if (!isEmailEnabled() || !isEmailAddress(settings.contactEmail)) return
-  const to = settings.contactEmail
+  if (!isEmailEnabled()) return
+  const [settings, recipients] = await Promise.all([getSettings(), bookingAlertRecipients()])
   const message = bookingAlertEmail({
     business: settings.businessName,
     name: booking.residentName,
@@ -140,5 +149,6 @@ export async function notifyNewBooking(booking: { id: string; residentName: stri
     message: booking.message,
     adminUrl: appUrl(),
   })
-  await deliver('email', null, to, 'booking_alert', `booking:${booking.id}`, () => sendEmail({ to, ...message }))
+  // One key per address, so a retry resends only to whoever it failed for.
+  for (const to of recipients) await deliver('email', null, to, 'booking_alert', `booking:${booking.id}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
 }

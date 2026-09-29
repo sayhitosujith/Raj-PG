@@ -52,5 +52,5 @@ export function bookingAlertEmail(input: { business: string; name: string; phone
     { kind: 'rows', rows: [['Name', input.name], ['Phone', input.phone], ...(input.email ? [['Email', input.email] as [string, string]] : []), ['Property', input.property], ['Move-in', input.moveIn ?? 'Not given'], ['Food plan', input.food ?? 'Not given'], ['Came from', input.source]] },
     ...(input.message ? [{ kind: 'p' as const, text: `Message: “${input.message}”` }] : []),
     { kind: 'button', label: 'Open booking requests', href: input.adminUrl },
-  ], 'You get this because it is the contact email in your Settings.') }
+  ], 'You get this as a super admin (or the contact email) of this workspace.') }
 }
