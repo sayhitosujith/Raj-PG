@@ -1,4 +1,19 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+
+// Day runs 6 am to 6 pm on the viewer's own clock (the device's local time zone).
+const DAY_STARTS_AT = 6
+const NIGHT_STARTS_AT = 18
+const isDaytime = (now: Date) => now.getHours() >= DAY_STARTS_AT && now.getHours() < NIGHT_STARTS_AT
+
+/** Day or night on the viewer's clock, re-checked every minute so an open tab turns over at dawn and dusk. */
+function useDaytime() {
+  const [daytime, setDaytime] = useState(() => isDaytime(new Date()))
+  useEffect(() => {
+    const timer = window.setInterval(() => setDaytime(isDaytime(new Date())), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return daytime
+}
 
 type Star = { x: number; y: number; size: number; delay: number; duration: number }
 
@@ -21,15 +36,19 @@ const clouds = [
 ]
 
 /**
- * Decorative night sky behind the top of the resident portal: a moon rising above three mountain
- * ranges, twinkling stars and drifting clouds, all fading into the page below. Drawn inline so it
- * needs no image requests; colours and motion live in App.css (.portal-sky).
+ * Decorative sky behind the top of the resident portal, following the viewer's local time: by day a
+ * sun in a blue sky, by night a moon with twinkling stars; both over three mountain ranges with
+ * drifting clouds, fading into the page below. Drawn inline so it needs no image requests; colours
+ * and motion live in App.css (.portal-sky, with .is-day / .is-night).
  */
-export function NightSkyBackdrop() {
+export function SkyBackdrop() {
+  const daytime = useDaytime()
   return (
-    <div className="portal-sky" aria-hidden="true">
-      {stars.map((star, index) => <span key={index} className="sky-star" style={{ left: `${star.x}%`, top: `${star.y}%`, width: star.size, height: star.size, animationDelay: `${star.delay}s`, animationDuration: `${star.duration}s` } as CSSProperties} />)}
-      <div className="sky-moon" />
+    <div className={`portal-sky ${daytime ? 'is-day' : 'is-night'}`} aria-hidden="true">
+      {daytime ? <div className="sky-sun" /> : <>
+        {stars.map((star, index) => <span key={index} className="sky-star" style={{ left: `${star.x}%`, top: `${star.y}%`, width: star.size, height: star.size, animationDelay: `${star.delay}s`, animationDuration: `${star.duration}s` } as CSSProperties} />)}
+        <div className="sky-moon" />
+      </>}
       {clouds.map((cloud, index) => <div key={index} className="sky-cloud" style={{ top: cloud.top, '--cloud-size': cloud.size, '--cloud-duration': `${cloud.duration}s`, '--cloud-delay': `${cloud.delay}s`, '--cloud-rest': cloud.rest } as CSSProperties} />)}
       {/* Kept in proportion and cropped at the sides on narrow screens, so peaks never turn into spikes; ranges are listed back to front so nearer ones overlap. */}
       <svg className="sky-mountains" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">

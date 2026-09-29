@@ -18,7 +18,7 @@ import { PayRentButton } from './PayRentButton'
 import { UpiQrRentButton } from './UpiQrRentButton'
 import { UpiDirectPay, type UpiClaim } from './UpiDirectPay'
 import { NotificationPreferences } from './NotificationPreferences'
-import { NightSkyBackdrop } from './NightSkyBackdrop'
+import { SkyBackdrop } from './SkyBackdrop'
 import { VerifiedBadge } from './VerifiedBadge'
 import { LocalClock } from './LocalClock'
 import { ResidentRentPayments } from './ResidentRentPayments'
@@ -136,7 +136,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   return (
     <div className="portal-shell">
       <PortalScenery />
-      <NightSkyBackdrop />
+      <SkyBackdrop />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>

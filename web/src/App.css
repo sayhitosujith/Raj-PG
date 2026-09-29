@@ -950,12 +950,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .whatsapp-log code, .whatsapp-settings code { padding: 1px 5px; border-radius: 4px; background: #eef3f0; font: 11px ui-monospace, monospace; }
 .status-pill.coral { color: #b5523f; background: #fbe6e1; }
 
-
 /*
- * Resident portal night sky: a moon rising over three mountain ranges, with twinkling stars, at the
- * top of the page and fading into the page below. Colours are rgb() on purpose: the generated dark
- * theme only remaps hex and named colours, so the dark palette below is hand-picked instead. It
- * scrolls with the page (absolute, not fixed) so it never sits behind lower sections.
+ * Resident portal sky. These default rules are the night (.is-night): a moon rising over three
+ * mountain ranges, with twinkling stars, at the top of the page and fading into the page below. The
+ * day (.is-day) overrides follow. Colours are rgb() on purpose: the generated dark theme only
+ * remaps hex and named colours, so the dark palette below is hand-picked instead. It scrolls with
+ * the page (absolute, not fixed) so it never sits behind lower sections.
  */
 .portal-sky {
   position: absolute; z-index: -1; top: 0; right: 0; left: 0; height: min(640px, 85vh); overflow: hidden; pointer-events: none;
@@ -988,8 +988,31 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .mountain-far { fill: rgb(44 50 88 / .85); }
 :root[data-theme="dark"] .mountain-mid { fill: rgb(28 34 64 / .92); }
 :root[data-theme="dark"] .mountain-near { fill: rgb(16 22 36 / .96); }
-@media (max-width: 720px) { .sky-moon { left: 84%; top: 11%; } .sky-mountains { bottom: 30%; height: 30%; } }
-@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-mountains { animation: none; } }
+/*
+ * Daytime (6 am to 6 pm on the viewer's clock): a clear blue sky with a warm sun where the moon sits,
+ * no stars, bright clouds and green-blue ranges. The dark theme keeps a deep blue day so the light
+ * text over it stays readable.
+ */
+.portal-sky.is-day { background: linear-gradient(180deg, rgb(98 166 226 / .72) 0%, rgb(140 194 238 / .55) 36%, rgb(196 224 244 / .4) 62%, rgb(232 242 248 / .25) 82%, transparent 100%); }
+.sky-sun {
+  position: absolute; left: 88%; top: 20%; width: clamp(70px, 7.5vw, 110px); aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 42% 38%, rgb(255 250 214) 0%, rgb(255 216 102) 55%, rgb(255 184 64) 100%);
+  box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3);
+  animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, sun-glow 6s ease-in-out 4s infinite alternate;
+}
+@keyframes sun-glow { from { box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3); } to { box-shadow: 0 0 55px 20px rgb(255 214 110 / .65), 0 0 160px 85px rgb(255 226 150 / .36); } }
+.is-day .mountain-far { fill: rgb(120 164 196 / .3); }
+.is-day .mountain-mid { fill: rgb(104 158 164 / .28); }
+.is-day .mountain-near { fill: rgb(96 150 132 / .26); }
+.is-day .sky-cloud { --cloud: rgb(255 255 255 / .95); opacity: .85; }
+:root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(22 58 104 / .95) 0%, rgb(32 74 122 / .82) 38%, rgb(40 72 108 / .55) 64%, rgb(30 44 60 / .3) 82%, transparent 100%); }
+:root[data-theme="dark"] .sky-sun { box-shadow: 0 0 40px 12px rgb(255 206 100 / .4), 0 0 130px 65px rgb(255 214 130 / .18); animation-name: moon-rise; }
+:root[data-theme="dark"] .is-day .mountain-far { fill: rgb(40 74 108 / .85); }
+:root[data-theme="dark"] .is-day .mountain-mid { fill: rgb(26 56 78 / .92); }
+:root[data-theme="dark"] .is-day .mountain-near { fill: rgb(16 34 42 / .96); }
+:root[data-theme="dark"] .is-day .sky-cloud { --cloud: rgb(196 212 232 / .5); opacity: .6; }
+@media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } .sky-mountains { bottom: 30%; height: 30%; } }
+@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun, .sky-mountains { animation: none; } }
 
 /* Housekeeping staff: the owner's panel on the Housekeeping page and the line residents see. */
 .housekeeping-staff { display: grid; gap: 12px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
