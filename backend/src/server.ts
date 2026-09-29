@@ -24,6 +24,7 @@ import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
 import { roomsAdminRouter } from './rooms.js'
 import { superAdminRouter } from './superAdmins.js'
+import { logIntegrations } from './startupReport.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -244,4 +245,5 @@ app.get('/api/dashboard', async (_request, response) => {
 
 app.listen(port, () => {
   console.log(`Raj-PG API listening on http://localhost:${port}`)
+  logIntegrations()
 })
