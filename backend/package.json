@@ -11,7 +11,7 @@
     "reset-super-admin-password": "tsx src/resetSuperAdminPassword.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy"
+    "migrate:deploy": "node scripts/migrate-deploy.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
