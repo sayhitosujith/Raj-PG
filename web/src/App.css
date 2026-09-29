@@ -651,6 +651,28 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (prefers-reduced-motion: reduce) {
   .portal-shell::before, .portal-shell::after, .scenery-sway { animation: none; }
 }
+/*
+ * Animals on the forest floor: fixed to the bottom with the tree line and tinted from the same
+ * teal, a shade stronger so they read in front of the trees. Walkers cross the full viewport;
+ * leftward ones start off the right edge and face left.
+ */
+.portal-animals { position: fixed; z-index: -1; right: 0; bottom: clamp(4px, 1.2vh, 12px); left: 0; height: 60px; overflow: hidden; pointer-events: none; color: color-mix(in srgb, var(--teal) 34%, transparent); }
+.animal-walker { position: absolute; bottom: 0; left: -90px; animation: animal-cross var(--walk-duration, 60s) linear var(--walk-delay, 0s) infinite; }
+.animal-walker.is-leftward { left: auto; right: -90px; animation-name: animal-cross-left; }
+.animal-walker.is-leftward .animal svg { transform: scaleX(-1); }
+.animal svg { display: block; width: 100%; height: auto; overflow: visible; fill: currentColor; }
+.animal-line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.animal-walk { animation: animal-bob .5s ease-in-out infinite alternate; }
+.animal-leg { transform-box: fill-box; transform-origin: 50% 0; animation: animal-stride .5s ease-in-out infinite alternate; }
+.animal-leg-b { animation-direction: alternate-reverse; }
+.animal-hop { animation: animal-hop .7s cubic-bezier(.3, 0, .5, 1) infinite; }
+@keyframes animal-cross { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 180px)); } }
+@keyframes animal-cross-left { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 180px)); } }
+@keyframes animal-bob { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
+@keyframes animal-stride { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+@keyframes animal-hop { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-14px); } 70% { transform: translateY(0); } }
+@media (max-width: 720px) { .portal-animals { scale: .75; transform-origin: 50% 100%; } }
+@media (prefers-reduced-motion: reduce) { .animal-walker, .animal-walker.is-leftward { animation: none; left: var(--walk-rest, 50%); right: auto; } .animal-walk, .animal-hop, .animal-leg { animation: none; } }
 
 /* Policy consent prompt: blocks the portal until accepted, so it sits above other modals. */
 .consent-backdrop { z-index: 60; }
@@ -973,10 +995,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, moon-glow 7s ease-in-out 4s infinite alternate;
 }
 .sky-mountains { position: absolute; right: 0; bottom: 12%; left: 0; width: 100%; height: 46%; animation: mountains-in 2.4s ease-out both; }
-/* Light theme ranges stay pale so the grey text over them (room, location) keeps its contrast. */
-.mountain-far { fill: rgb(156 162 204 / .32); }
-.mountain-mid { fill: rgb(132 142 190 / .3); }
-.mountain-near { fill: rgb(118 138 168 / .26); }
+/* Light theme ranges stay pale so the text over them keeps its contrast; solid, not translucent,
+   so a far range's shading never shows through the ranges in front of it. */
+.mountain-far { fill: rgb(166 170 208); }
+.mountain-mid { fill: rgb(148 156 198); }
+.mountain-near { fill: rgb(142 158 184); }
+/* Snow caps on the far peaks (bright by day, moonlit at night), and each slope's shaded face. */
+.mountain-snow { fill: rgb(255 255 255 / .85); }
+.is-night .mountain-snow { fill: rgb(214 222 244 / .5); }
+:root[data-theme="dark"] .is-day .mountain-snow { fill: rgb(234 240 250 / .5); }
+:root[data-theme="dark"] .is-night .mountain-snow { fill: rgb(188 200 232 / .32); }
+.mountain-shade { fill: rgb(28 40 72 / .13); }
+:root[data-theme="dark"] .mountain-shade { fill: rgb(0 0 10 / .28); }
 @keyframes sky-fade { from { opacity: .3; } to { opacity: 1; } }
 @keyframes star-twinkle { from { opacity: .25; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
 @keyframes moon-rise { from { transform: translate(-50%, 60%); opacity: .3; } to { transform: translate(-50%, -50%); opacity: 1; } }
@@ -1001,9 +1031,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, sun-glow 6s ease-in-out 4s infinite alternate;
 }
 @keyframes sun-glow { from { box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3); } to { box-shadow: 0 0 55px 20px rgb(255 214 110 / .65), 0 0 160px 85px rgb(255 226 150 / .36); } }
-.is-day .mountain-far { fill: rgb(120 164 196 / .3); }
-.is-day .mountain-mid { fill: rgb(104 158 164 / .28); }
-.is-day .mountain-near { fill: rgb(96 150 132 / .26); }
+.is-day .mountain-far { fill: rgb(186 210 230); }
+.is-day .mountain-mid { fill: rgb(168 198 208); }
+.is-day .mountain-near { fill: rgb(170 200 190); }
 .is-day .sky-cloud { --cloud: rgb(255 255 255 / .95); opacity: .85; }
 :root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(22 58 104 / .95) 0%, rgb(32 74 122 / .82) 38%, rgb(40 72 108 / .55) 64%, rgb(30 44 60 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-sun { box-shadow: 0 0 40px 12px rgb(255 206 100 / .4), 0 0 130px 65px rgb(255 214 130 / .18); animation-name: moon-rise; }

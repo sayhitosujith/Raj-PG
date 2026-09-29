@@ -18,6 +18,7 @@ import { PayRentButton } from './PayRentButton'
 import { UpiQrRentButton } from './UpiQrRentButton'
 import { UpiDirectPay, type UpiClaim } from './UpiDirectPay'
 import { NotificationPreferences } from './NotificationPreferences'
+import { PortalAnimals } from './PortalAnimals'
 import { SkyBackdrop } from './SkyBackdrop'
 import { VerifiedBadge } from './VerifiedBadge'
 import { LocalClock } from './LocalClock'
@@ -136,6 +137,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   return (
     <div className="portal-shell">
       <PortalScenery />
+      <PortalAnimals />
       <SkyBackdrop />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>

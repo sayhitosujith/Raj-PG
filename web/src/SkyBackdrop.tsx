@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { ranges, snowRegion } from './mountainRidges'
 
 // Day runs 6 am to 6 pm on the viewer's own clock (the device's local time zone).
 const DAY_STARTS_AT = 6
@@ -68,9 +69,19 @@ export function SkyBackdrop() {
       </div>
       {/* Kept in proportion and cropped at the sides on narrow screens, so peaks never turn into spikes; ranges are listed back to front so nearer ones overlap. */}
       <svg className="sky-mountains" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
-        <path className="mountain-far" d="M0 170 L90 120 L170 150 L270 70 L360 130 L450 95 L560 150 L660 60 L760 125 L860 90 L960 140 L1080 50 L1180 115 L1280 80 L1370 120 L1440 95 L1440 320 L0 320 Z" />
-        <path className="mountain-mid" d="M0 215 L110 160 L200 195 L320 120 L430 185 L540 150 L640 200 L760 130 L880 190 L990 150 L1110 200 L1230 115 L1340 170 L1440 140 L1440 320 L0 320 Z" />
-        <path className="mountain-near" d="M0 260 L130 205 L250 245 L380 185 L500 240 L620 210 L760 255 L900 195 L1030 245 L1160 205 L1300 250 L1440 215 L1440 320 L0 320 Z" />
+        <defs>
+          <clipPath id="sky-clip-far"><path d={ranges.far.ridge} /></clipPath>
+          <clipPath id="sky-clip-mid"><path d={ranges.mid.ridge} /></clipPath>
+        </defs>
+        {/* Each range: its body, then its shaded faces and (far range only) snow, clipped to the body; the low near range stays plain. */}
+        <path className="mountain-far" d={ranges.far.ridge} />
+        <g clipPath="url(#sky-clip-far)">
+          <path className="mountain-snow" d={snowRegion} />
+          <path className="mountain-shade" d={ranges.far.shade} />
+        </g>
+        <path className="mountain-mid" d={ranges.mid.ridge} />
+        <path className="mountain-shade" d={ranges.mid.shade} clipPath="url(#sky-clip-mid)" />
+        <path className="mountain-near" d={ranges.near.ridge} />
       </svg>
     </div>
   )
