@@ -1,23 +1,24 @@
 import { timingSafeEqual } from 'node:crypto'
 import { Router, type Request } from 'express'
 import { prisma } from './db.js'
-import { notifyRent } from './notifications.js'
+import { isEmailEnabled } from './emailClient.js'
+import { notifyRent, recipientSelect } from './notifications.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf } from './settings.js'
 import { isWhatsAppEnabled } from './whatsappClient.js'
 
 /**
- * The daily rent-reminder run. Render's free plan sleeps, so nothing inside the app can wake it
- * on schedule; an external cron (cron-job.org) calls /api/cron/rent-reminders once a day with
- * the CRON_SECRET. Each resident gets reminder 1, reminder 2 and the overdue notice at most once
- * per month (notifyRent's dedupe key), so calling it more often is harmless.
+ * The daily rent-reminder run (WhatsApp and email). Render's free plan sleeps, so nothing inside
+ * the app can wake it on schedule; an external cron (cron-job.org) calls /api/cron/rent-reminders
+ * once a day with the CRON_SECRET. Each resident gets reminder 1, reminder 2 and the overdue notice
+ * at most once per month and channel (notifyRent's dedupe key), so calling it more often is harmless.
  */
 const dueDateLabel = (month: string, dueDay: number) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, dueDay)).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' })
 
 export async function runRentReminders() {
-  if (!isWhatsAppEnabled()) return { skipped: 'WhatsApp is not configured.' }
+  if (!isWhatsAppEnabled() && !isEmailEnabled()) return { skipped: 'Neither WhatsApp nor email is configured.' }
   const rules = rentRulesOf(await getSettings())
-  const residents = await prisma.resident.findMany({ where: { active: true, whatsappOptIn: true, phone: { not: null }, monthlyRent: { not: null } }, select: { id: true, name: true, phone: true, whatsappOptIn: true, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, room: { select: { property: { select: { name: true } } } } } })
+  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, room: { select: { property: { select: { name: true } } } } } })
   const sent = { reminder1: 0, reminder2: 0, overdue: 0 }
   for (const resident of residents) {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)

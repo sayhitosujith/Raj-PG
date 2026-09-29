@@ -11,7 +11,7 @@ export const whatsappAdminRouter = Router()
 // Whether WhatsApp is configured, the template names to create, and the latest messages sent.
 whatsappAdminRouter.get('/whatsapp/status', async (_request, response) => {
   try {
-    const recent = await prisma.whatsAppMessage.findMany({ orderBy: { createdAt: 'desc' }, take: 20, include: { resident: { select: { name: true } } } })
+    const recent = await prisma.outboundMessage.findMany({ where: { channel: 'whatsapp' }, orderBy: { createdAt: 'desc' }, take: 20, include: { resident: { select: { name: true } } } })
     response.json({
       enabled: isWhatsAppEnabled(),
       cronConfigured: Boolean(process.env.CRON_SECRET),

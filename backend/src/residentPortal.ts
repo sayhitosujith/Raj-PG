@@ -86,9 +86,9 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
-    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, room } = resident
+    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
     // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ emailOptIn, id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -280,16 +280,17 @@ residentPortalRouter.get('/resident-portal/rent/receipts/:rentPaymentId', requir
   }
 })
 
-// The resident turns WhatsApp updates (rent reminders, receipts, notices) on or off.
-residentPortalRouter.put('/resident-portal/whatsapp', requireResident, async (request, response) => {
+
+// The resident turns WhatsApp and/or email updates on or off; send only the channels that change.
+residentPortalRouter.put('/resident-portal/preferences', requireResident, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
-  const { optIn } = request.body as { optIn?: unknown }
-  if (typeof optIn !== 'boolean') { response.status(400).json({ error: 'Choose on or off.' }); return }
+  const { whatsappOptIn, emailOptIn } = request.body as { whatsappOptIn?: unknown; emailOptIn?: unknown }
+  if ((whatsappOptIn !== undefined && typeof whatsappOptIn !== 'boolean') || (emailOptIn !== undefined && typeof emailOptIn !== 'boolean') || (whatsappOptIn === undefined && emailOptIn === undefined)) { response.status(400).json({ error: 'Choose on or off.' }); return }
   try {
-    const { whatsappOptIn } = await prisma.resident.update({ where: { id: userId }, data: { whatsappOptIn: optIn }, select: { whatsappOptIn: true } })
-    response.json({ whatsappOptIn })
+    const saved = await prisma.resident.update({ where: { id: userId }, data: { ...(whatsappOptIn !== undefined ? { whatsappOptIn } : {}), ...(emailOptIn !== undefined ? { emailOptIn } : {}) }, select: { whatsappOptIn: true, emailOptIn: true } })
+    response.json(saved)
   } catch (error) {
-    console.error('WhatsApp preference update failed:', error)
+    console.error('Notification preference update failed:', error)
     response.status(503).json({ error: 'Your preference could not be saved. Please try again.' })
   }
 })

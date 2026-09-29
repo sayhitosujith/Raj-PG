@@ -3,7 +3,7 @@ import { CheckCircle2, Send, XCircle } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { readApiError } from './superAdmin'
 
-type Message = { id: string; residentName: string | null; to: string; template: string; status: 'pending' | 'sent' | 'failed'; error: string | null; createdAt: string }
+type Message = { id: string; residentName: string | null; to: string; kind: string; status: 'pending' | 'sent' | 'failed'; error: string | null; createdAt: string }
 type Status = { enabled: boolean; cronConfigured: boolean; language: string; templates: string[]; recent: Message[] }
 
 const statusTone = { sent: 'sage', pending: 'gold', failed: 'coral' } as const
@@ -52,7 +52,7 @@ export function WhatsAppSettings({ onNotice }: { onNotice: (message: string) => 
         {status.recent.length > 0 && (
           <div className="crud-list whatsapp-log">{status.recent.map((message) => (
             <div className="crud-row" key={message.id}>
-              <div className="crud-main"><strong>{message.residentName ?? message.to} · <code>{message.template}</code></strong><small>{new Date(message.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}{message.error ? ` · ${message.error}` : ''}</small></div>
+              <div className="crud-main"><strong>{message.residentName ?? message.to} · <code>{message.kind}</code></strong><small>{new Date(message.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}{message.error ? ` · ${message.error}` : ''}</small></div>
               <span className={`status-pill ${statusTone[message.status]}`}>{message.status}</span>
             </div>
           ))}</div>

@@ -17,16 +17,16 @@ const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCar
 const textFields = ['name', 'phone', 'email', 'aadharNumber', 'permanentAddress', 'aadharCardUrl'] as const
 
 type TextField = (typeof textFields)[number]
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 class RoomUnavailableError extends Error {}
 class RentInputError extends Error {}
 
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, hasAadharCard: boolean, rules: RentRules) {
-  const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, foodRequestedAt, room, rentPayments } = resident
+  const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month), rules), payments: rentPayments.slice(0, 6) }
-  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), foodOpted, whatsappOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
 }
 
 async function findResidentSummary(id: string) {
@@ -145,6 +145,7 @@ residentRouter.post('/residents', async (request, response) => {
   if ('error' in photo) { response.status(400).json({ error: photo.error }); return }
   if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
   if (body.whatsappOptIn !== undefined && typeof body.whatsappOptIn !== 'boolean') { response.status(400).json({ error: 'WhatsApp updates must be true or false.' }); return }
+  if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const foodOpted = body.foodOpted ?? true
   if (body.accessKey && !isValidAccessKey(body.accessKey)) { response.status(400).json({ error: 'Access key is not in the generated format.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
@@ -159,7 +160,7 @@ residentRouter.post('/residents', async (request, response) => {
       const rent = await residentRentWrite(transaction, { propertyId, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
       if ('error' in rent) throw new RentInputError(rent.error)
       const readyForReview = hasCompleteAadhar(data.aadharNumber, Boolean(data.aadharCardUrl))
-      const resident = await transaction.resident.create({ data: { ...data, ...photo.data, ...rent.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
+      const resident = await transaction.resident.create({ data: { ...data, ...photo.data, ...rent.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey })
@@ -179,6 +180,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
   if (body.active !== undefined && typeof body.active !== 'boolean') { response.status(400).json({ error: 'Status must be true or false.' }); return }
   if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
   if (body.whatsappOptIn !== undefined && typeof body.whatsappOptIn !== 'boolean') { response.status(400).json({ error: 'WhatsApp updates must be true or false.' }); return }
+  if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
@@ -195,7 +197,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
       // Completing the details on an unsubmitted resident queues them for review; it never verifies.
       const hasCard = Boolean(data.aadharCardUrl) || await transaction.resident.count({ where: { id, ...hasAadharCardWhere } }) > 0
       const becomesReviewable = current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED && hasCompleteAadhar(data.aadharNumber ?? current.aadharNumber, hasCard)
-      await transaction.resident.update({ where: { id }, data: { ...data, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), ...(becomesReviewable ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), roomId } })
+      await transaction.resident.update({ where: { id }, data: { ...data, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), ...(becomesReviewable ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), roomId } })
       if (isMoving) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })

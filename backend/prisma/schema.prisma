@@ -97,7 +97,9 @@ model Resident {
   bookings                Booking[]
   // WhatsApp updates (rent reminders, receipts, notices); on by default, the resident can turn it off.
   whatsappOptIn           Boolean                  @default(true)
-  whatsappMessages        WhatsAppMessage[]
+  outboundMessages        OutboundMessage[]
+  // Email updates (reminders, notices); on by default. Receipts are sent regardless: they are records.
+  emailOptIn              Boolean                  @default(true)
   rentOrders              RentOrder[]
   mealSkips               MealSkip[]
   // The policy version (latest update timestamp) this resident accepted, and when they did.
@@ -405,22 +407,25 @@ model MealFeedback {
   @@index([propertyId, date])
 }
 
-// One WhatsApp message the app sent (or tried to). dedupeKey names the event it was for (e.g.
-// "rent:<resident>:2026-10:reminder1"), so a re-run of the daily job never sends it twice; a
-// failed attempt may be retried under the same key.
-model WhatsAppMessage {
-  id          String    @id @default(cuid())
-  residentId  String?
-  resident    Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
-  to          String
-  template    String
-  dedupeKey   String?   @unique
-  status      String    @default("pending")
-  waMessageId String?
-  error       String?
-  createdAt   DateTime  @default(now())
+// One message the app sent (or tried to), by WhatsApp or email. dedupeKey names the event it was
+// for (e.g. "rent:<resident>:2026-10:reminder1"; email keys start "email:"), so a re-run of the
+// daily job never sends it twice; a failed attempt may be retried under the same key. `to` is the
+// phone (91XXXXXXXXXX) or email address; `kind` is the WhatsApp template or email type.
+model OutboundMessage {
+  id                String    @id @default(cuid())
+  channel           String    @default("whatsapp")
+  residentId        String?
+  resident          Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  to                String
+  kind              String
+  dedupeKey         String?   @unique
+  status            String    @default("pending")
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime  @default(now())
 
   @@index([createdAt])
+  @@index([channel, createdAt])
 }
 
 // Money the owner spends running the PGs, for the Payments page's monthly profit/loss. Whole

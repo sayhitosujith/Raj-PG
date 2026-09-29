@@ -97,7 +97,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     const form = new FormData(event.currentTarget)
     const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'aadharNumber', 'permanentAddress', 'joinedAt', 'monthlyRent'].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current card", so the field is only sent when replaced.
-    const payload = { ...fields, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), ...(aadharCard ? { aadharCardUrl: aadharCard } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
+    const payload = { ...fields, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), ...(aadharCard ? { aadharCardUrl: aadharCard } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
     setIsSaving(true)
     setError('')
     try {
@@ -140,6 +140,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
           </div>
         </fieldset>
         <label className="whatsapp-optin"><input type="checkbox" name="whatsappOptIn" defaultChecked={resident?.whatsappOptIn ?? true} /><span>WhatsApp updates <small>Rent reminders, receipts and notices on WhatsApp. The resident can turn this off in their portal.</small></span></label>
+        <label className="whatsapp-optin"><input type="checkbox" name="emailOptIn" defaultChecked={resident?.emailOptIn ?? true} /><span>Email updates <small>Rent reminders and notices by email. Payment receipts are always emailed when there is an email address.</small></span></label>
         {pricedRent !== null
           ? <p className="priced-rent">Monthly rent <strong>₹{pricedRent.toLocaleString('en-IN')}</strong> <span>set by {selectedProperty?.name} for {foodOpted ? 'with food' : 'without food'}; change it in the property's prices</span></p>
           : <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>}

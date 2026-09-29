@@ -8,6 +8,7 @@ import { notifyAnnouncement, notifyInBackground } from './notifications.js'
 import { cronRouter } from './rentReminders.js'
 import { whatsappAdminRouter } from './whatsappAdmin.js'
 import { financeAdminRouter } from './finance.js'
+import { emailAdminRouter } from './emailAdmin.js'
 import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
@@ -65,6 +66,7 @@ app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
 app.use('/api', whatsappAdminRouter)
 app.use('/api', financeAdminRouter)
+app.use('/api', emailAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)

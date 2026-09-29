@@ -103,3 +103,18 @@ create a job: URL `https://raj-pg-api.onrender.com/api/cron/rent-reminders`, met
 day at 09:00 **Asia/Kolkata**, header `x-cron-key: <CRON_SECRET>`, and a 60 s timeout (the first
 call may wake the server). Reminder 1, reminder 2 and the overdue notice each go once per month;
 **Run rent reminders now** in Settings does the same run on demand.
+
+## Email
+
+The backend emails residents their **payment receipts** (PDF attached; always sent, since they are
+records), **rent reminders** and **announcements**, and emails **you** each new **booking
+request** (to the contact email in Settings -> Workspace details). Residents can turn email updates
+off in their portal. Every email is logged with WhatsApp messages in `OutboundMessage` and sent at
+most once per event.
+
+1. Create a free account at resend.com and an API key (API Keys -> Create).
+2. Domains -> Add domain (e.g. `rajpg.in`), add the DNS records it shows at your domain registrar,
+   and wait for "Verified". Without a verified domain Resend only delivers to your own address.
+3. On Render -> Environment add `RESEND_API_KEY`, `EMAIL_FROM` (e.g.
+   `Raj Properties <noreply@rajpg.in>`) and optionally `APP_URL`.
+4. Settings -> Email shows "Connected"; **Send test** sends a test email.

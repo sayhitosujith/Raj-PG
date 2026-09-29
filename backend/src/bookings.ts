@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { Router, type Request, type Response } from 'express'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
+import { notifyInBackground, notifyNewBooking } from './notifications.js'
 import { getSettings } from './settings.js'
 import { isValidEmail, normalizePhone } from './validation.js'
 
@@ -92,7 +93,9 @@ bookingPublicRouter.post('/public/booking-requests', async (request, response) =
   try {
     const parsed = await parseBooking(body, publicSources)
     if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }
-    await prisma.booking.create({ data: parsed.data })
+    const booking = await prisma.booking.create({ data: parsed.data, include: { property: { select: { name: true } } } })
+    // Email the owner straight away; never delays or fails the visitor's submission.
+    notifyInBackground(() => notifyNewBooking(booking))
     response.status(201).json({ ok: true })
   } catch (error) { respondToError(response, error, 'Your request could not be sent. Please try again.') }
 })

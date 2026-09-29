@@ -3,6 +3,7 @@ import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Spar
 import { logoUrl } from './branding'
 import { resizeLogo, resizeUpiQr } from './imageResize'
 import { WhatsAppSettings } from './WhatsAppSettings'
+import { EmailSettings } from './EmailSettings'
 import { ordinal } from './rent'
 import type { SuperAdmin } from './superAdmin'
 import type { WorkspaceSettings } from './workspaceSettings'
@@ -158,6 +159,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
           </SettingsSection>
 
           <WhatsAppSettings onNotice={onNotice} />
+          <EmailSettings onNotice={onNotice} />
 
           <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the two reminders appear. After the due day, unpaid residents are flagged “access lock due”." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
             <div className="settings-trio">
