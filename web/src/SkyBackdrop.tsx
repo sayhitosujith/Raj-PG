@@ -35,10 +35,19 @@ const clouds = [
   { top: '40%', size: 0.9, duration: 190, delay: -62, rest: '34%' },
 ]
 
+// A loose V of four birds: offset from the lead bird (px), size, and a flap phase so the wings
+// don't beat in unison.
+const birds = [
+  { x: 0, y: 0, size: 1, flap: 0 },
+  { x: -30, y: 8, size: 0.85, flap: -0.25 },
+  { x: -28, y: -7, size: 0.8, flap: -0.5 },
+  { x: -58, y: 14, size: 0.7, flap: -0.15 },
+]
+
 /**
  * Decorative sky behind the top of the resident portal, following the viewer's local time: by day a
  * sun in a blue sky, by night a moon with twinkling stars; both over three mountain ranges with
- * drifting clouds, fading into the page below. Drawn inline so it needs no image requests; colours
+ * drifting clouds and a small flock of birds, fading into the page below. Drawn inline so it needs no image requests; colours
  * and motion live in App.css (.portal-sky, with .is-day / .is-night).
  */
 export function SkyBackdrop() {
@@ -50,6 +59,13 @@ export function SkyBackdrop() {
         <div className="sky-moon" />
       </>}
       {clouds.map((cloud, index) => <div key={index} className="sky-cloud" style={{ top: cloud.top, '--cloud-size': cloud.size, '--cloud-duration': `${cloud.duration}s`, '--cloud-delay': `${cloud.delay}s`, '--cloud-rest': cloud.rest } as CSSProperties} />)}
+      <div className="sky-flock">
+        {birds.map((bird, index) => (
+          <svg key={index} className="sky-bird" viewBox="0 0 40 16" style={{ left: bird.x, top: bird.y, width: 30 * bird.size, animationDelay: `${bird.flap}s` }}>
+            <path d="M2 11 Q11 2 20 10 Q29 2 38 11" />
+          </svg>
+        ))}
+      </div>
       {/* Kept in proportion and cropped at the sides on narrow screens, so peaks never turn into spikes; ranges are listed back to front so nearer ones overlap. */}
       <svg className="sky-mountains" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
         <path className="mountain-far" d="M0 170 L90 120 L170 150 L270 70 L360 130 L450 95 L560 150 L660 60 L760 125 L860 90 L960 140 L1080 50 L1180 115 L1280 80 L1370 120 L1440 95 L1440 320 L0 320 Z" />

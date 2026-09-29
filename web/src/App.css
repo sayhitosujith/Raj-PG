@@ -1058,6 +1058,27 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Moonlit clouds at night: dim blue-grey rather than white. */
 :root[data-theme="dark"] .sky-cloud { --cloud: rgb(110 122 160 / .5); opacity: .55; }
 @media (prefers-reduced-motion: reduce) { .sky-cloud { animation: none; left: var(--cloud-rest, 60%); } }
+/*
+ * A flock of four birds crossing the sky left to right (against the clouds' drift) with a gentle
+ * rise and fall; each bird beats its wings on its own phase. It flies in the strip of sky between
+ * the top bar and the first banner, the one band no card ever covers. Dark silhouettes in the light
+ * day sky; pale ones in the dark theme's day and at night, so they still read against a dark sky.
+ */
+.sky-flock { position: absolute; left: -120px; top: 92px; color: rgb(38 50 68 / .7); animation: flock-fly 42s linear -14s infinite; }
+.sky-bird { position: absolute; height: auto; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transform-origin: 50% 60%; animation: bird-flap .8s ease-in-out infinite alternate; }
+.is-night .sky-flock { color: rgb(214 222 240 / .5); }
+:root[data-theme="dark"] .is-day .sky-flock { color: rgb(226 234 246 / .6); }
+@keyframes flock-fly {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(calc(25vw + 60px), -14px); }
+  50% { transform: translate(calc(50vw + 120px), 6px); }
+  75% { transform: translate(calc(75vw + 180px), -10px); }
+  100% { transform: translate(calc(100vw + 240px), 0); }
+}
+@keyframes bird-flap { from { transform: scaleY(1); } to { transform: scaleY(.3) translateY(3px); } }
+/* The phone strip is only ~30px tall, so the flock flies smaller there. */
+@media (max-width: 720px) { .sky-flock { top: 74px; scale: .7; } }
+@media (prefers-reduced-motion: reduce) { .sky-flock { animation: none; left: 30%; } .sky-bird { animation: none; } }
 
 /* Resident's photo beside "My details": the card is about them, so their photo leads it. */
 .portal-details-identity { display: flex; align-items: center; gap: 18px; }
