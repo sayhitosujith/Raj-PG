@@ -15,8 +15,10 @@ async function fetchBookings() {
 }
 
 const formatDay = (value: string) => new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-// WhatsApp's click-to-chat wants the number with its country code and no "+".
-const whatsappLink = (booking: BookingRequest) => `https://wa.me/91${booking.phone}?text=${encodeURIComponent(`Hi ${booking.name}, thanks for your booking request for ${booking.property}.`)}`
+// WhatsApp's click-to-chat wants the number with its country code and no "+". Numbers are stored
+// in E.164 form; a bare 10-digit one predates that and is Indian.
+const whatsappDigits = (phone: string) => { const digits = phone.replace(/\D/g, ''); return digits.length === 10 ? `91${digits}` : digits }
+const whatsappLink = (booking: BookingRequest) => `https://wa.me/${whatsappDigits(booking.phone)}?text=${encodeURIComponent(`Hi ${booking.name}, thanks for your booking request for ${booking.property}.`)}`
 
 /**
  * Booking requests from the public /book form (shared on social media) plus the owner's own

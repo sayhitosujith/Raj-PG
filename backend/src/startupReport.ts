@@ -1,5 +1,6 @@
 import { emailFrom, isEmailEnabled } from './emailClient.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
+import { isWeatherEnabled } from './weather.js'
 import { isWhatsAppEnabled } from './whatsappClient.js'
 
 /**
@@ -12,4 +13,5 @@ export function logIntegrations() {
   line('WhatsApp', isWhatsAppEnabled(), 'connected', 'off, WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID not set')
   line('Daily reminders', Boolean(process.env.CRON_SECRET), 'CRON_SECRET set', 'off, CRON_SECRET not set')
   line('Razorpay', isOnlinePaymentEnabled(), 'connected', 'off, RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set')
+  line('Weather', isWeatherEnabled(), 'Open-Meteo (no key needed)', 'off')
 }

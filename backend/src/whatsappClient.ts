@@ -5,7 +5,9 @@
  * message is a pre-approved template (WHATSAPP_TEMPLATE_LANGUAGE, default "en").
  * https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates
  */
-const graphUrl = 'https://graph.facebook.com/v21.0'
+import { normalizePhone } from './validation.js'
+
+const graphUrl ='https://graph.facebook.com/v21.0'
 
 const accessToken = () => process.env.WHATSAPP_ACCESS_TOKEN
 const phoneNumberId = () => process.env.WHATSAPP_PHONE_NUMBER_ID
@@ -14,8 +16,11 @@ export const templateLanguage = () => process.env.WHATSAPP_TEMPLATE_LANGUAGE || 
 /** True when the keys are configured, so notifications are sent. */
 export const isWhatsAppEnabled = () => Boolean(accessToken() && phoneNumberId())
 
-/** An Indian mobile stored as 10 digits, in the international form WhatsApp expects. */
-export const whatsappNumber = (phone: string) => `91${phone.replace(/\D/g, '').slice(-10)}`
+/**
+ * A stored phone number in the form WhatsApp expects (country code and number, no "+"), or null
+ * when it is not a valid number, so a message is never sent to a guessed recipient.
+ */
+export const whatsappNumber = (phone: string) => normalizePhone(phone)?.slice(1) ?? null
 
 /**
  * Template variables may not contain new lines, tabs or runs of spaces, and may not be empty,

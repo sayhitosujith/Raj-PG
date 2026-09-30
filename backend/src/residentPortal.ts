@@ -1,6 +1,7 @@
 import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
-import { findAadharCardProblem, isValidAadharNumber } from './aadhar.js'
+import { findDuplicate } from './duplicates.js'
+import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
@@ -15,11 +16,12 @@ import { findResidentByCredentials } from './residentCredentials.js'
 import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
+import { currentWeather } from './weather.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
 // Portal data stays locked until the resident has (1) replaced the handed-over access key with
-// their own password and (2) had their Aadhaar details approved by the owner. Enforced here rather
+// their own password and (2) had their identity documents approved by the owner. Enforced here rather
 // than only in the UI so the API cannot be used to skip either step.
 export async function requirePortalAccess(_request: Request, response: Response, next: NextFunction) {
   const { userId } = response.locals.auth as AuthContext
@@ -27,7 +29,7 @@ export async function requirePortalAccess(_request: Request, response: Response,
     const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { active: true, passwordHash: true, aadharStatus: true, room: { select: { propertyId: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     if (!resident.passwordHash) { response.status(403).json({ error: 'Choose a password to continue.', code: 'PASSWORD_REQUIRED' }); return }
-    if (resident.aadharStatus !== AadharVerificationStatus.VERIFIED) { response.status(403).json({ error: 'Your Aadhaar verification must be approved first.', code: 'AADHAR_VERIFICATION_REQUIRED' }); return }
+    if (resident.aadharStatus !== AadharVerificationStatus.VERIFIED) { response.status(403).json({ error: 'Your ID verification must be approved first.', code: 'AADHAR_VERIFICATION_REQUIRED' }); return }
     response.locals.propertyId = resident.room.propertyId
     next()
   } catch (error) {
@@ -86,9 +88,10 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
+    const { nationality, passportNumber } = resident
     const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
-    // Only the last four Aadhaar digits leave the server for the resident's own view.
-    response.json({ emailOptIn, id, name, phone, email, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    // Only the last four document characters leave the server for the resident's own view.
+    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -115,26 +118,47 @@ residentPortalRouter.post('/resident-portal/password', requireResident, async (r
   }
 })
 
-// The resident's own submission; replaces whatever is on file and joins the owner's review queue.
-// Allowed while not yet verified (including resubmitting a pending or rejected one).
-residentPortalRouter.post('/resident-portal/aadhar', requireResident, async (request, response) => {
+// The resident's own submission: their nationality and the matching document set (Aadhaar, or
+// passport and visa), all required. Replaces whatever is on file, clears the other set, and joins
+// the owner's review queue. Allowed while not yet verified (including resubmitting a pending or
+// rejected one).
+residentPortalRouter.post('/resident-portal/identity', requireResident, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
-  const { aadharNumber, aadharCardUrl } = request.body as { aadharNumber?: string; aadharCardUrl?: string }
-  const number = aadharNumber?.replace(/\s/g, '') ?? ''
-  if (!isValidAadharNumber(number)) { response.status(400).json({ error: 'Aadhaar number must be 12 digits.' }); return }
-  if (!aadharCardUrl) { response.status(400).json({ error: 'Upload a photo or PDF of your Aadhaar card.' }); return }
-  const cardProblem = findAadharCardProblem(aadharCardUrl)
-  if (cardProblem) { response.status(400).json({ error: cardProblem }); return }
+  const parsed = parseIdentityFields(request.body as IdentityInput)
+  if (!parsed.ok) { response.status(400).json({ error: parsed.error }); return }
+  const { fields } = parsed
+  const nationality = fields.nationality ?? indianNationality
+  const isComplete = hasCompleteIdentity({ ...fields, nationality, hasAadharCard: Boolean(fields.aadharCardUrl), hasPassportScan: Boolean(fields.passportScanUrl) })
+  if (!isComplete) { response.status(400).json({ error: identityDocumentName(nationality) === 'Aadhaar' ? 'Enter your Aadhaar number and upload a photo or PDF of your card.' : 'Enter your passport and visa details and upload a photo or PDF of your passport photo page.' }); return }
+  const expired = findExpiredDocument(fields)
+  if (expired) { response.status(400).json({ error: expired }); return }
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { passwordHash: true, aadharStatus: true } })
     if (!resident) { response.status(401).json({ error: 'Sign in required.' }); return }
     if (!resident.passwordHash) { response.status(403).json({ error: 'Choose a password to continue.', code: 'PASSWORD_REQUIRED' }); return }
-    if (resident.aadharStatus === AadharVerificationStatus.VERIFIED) { response.status(409).json({ error: 'Your Aadhaar is already verified.' }); return }
-    await prisma.resident.update({ where: { id: userId }, data: { aadharNumber: number, aadharCardUrl, aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date(), aadharRejectionReason: null, aadharReviewedAt: null } })
+    if (resident.aadharStatus === AadharVerificationStatus.VERIFIED) { response.status(409).json({ error: 'Your ID is already verified.' }); return }
+    // Residents are not told whose account holds the number, only that it is taken.
+    const duplicate = await findDuplicate(prisma, { aadharNumber: fields.aadharNumber, passportNumber: fields.passportNumber }, { residentId: userId }, { revealOwner: false })
+    if (duplicate) { response.status(409).json({ error: duplicate }); return }
+    await prisma.resident.update({ where: { id: userId }, data: { nationality, ...identityWrite(nationality, fields), aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date(), aadharRejectionReason: null, aadharReviewedAt: null } })
     response.status(204).send()
   } catch (error) {
-    console.error('Aadhaar submission failed:', error)
-    response.status(503).json({ error: 'Your Aadhaar details could not be submitted.' })
+    console.error('ID submission failed:', error)
+    response.status(503).json({ error: 'Your details could not be submitted.' })
+  }
+})
+
+// Current weather in the resident's property city; 204 when there is none to show (no city set,
+// weather not configured, or the lookup failed), so the portal just leaves it out.
+residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (_request, response) => {
+  try {
+    const property = await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
+    const weather = property?.city ? await currentWeather(property.city) : null
+    if (!weather) { response.status(204).send(); return }
+    response.json(weather)
+  } catch (error) {
+    console.error('Weather lookup failed:', error)
+    response.status(204).send()
   }
 })
 

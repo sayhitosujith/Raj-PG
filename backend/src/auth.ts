@@ -5,7 +5,8 @@ import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword
 import { prisma } from './db.js'
 import { isValidEmail } from './validation.js'
 import { findResidentByCredentials } from './residentCredentials.js'
-import { normalizeEmail, toPublicSuperAdmin } from './superAdmins.js'
+import { findDuplicate } from './duplicates.js'
+import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
 
 const sessionCookieName = 'raj_pg_session'
 const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000
@@ -131,19 +132,25 @@ authRouter.get('/auth/me', requireRole(UserRole.SUPER_ADMIN), async (_request, r
 // The signed-in super admin edits their own account. A name change needs nothing more; changing
 // the sign-in email or password needs the current password, so an unattended session cannot be
 // used to take the account over. Other sessions are signed out when the password changes.
+// Identity details are all-or-nothing: the Settings form always sends them (and must fill them all),
+// while a body that omits them leaves the stored ones untouched.
 authRouter.put('/auth/me', requireRole(UserRole.SUPER_ADMIN), async (request, response) => {
   const { userId, sessionId } = response.locals.auth as AuthContext
   const { name, email, currentPassword, newPassword } = request.body as { name?: unknown; email?: unknown; currentPassword?: unknown; newPassword?: unknown }
   if (name !== undefined && (typeof name !== 'string' || !name.trim() || name.trim().length > 60)) { response.status(400).json({ error: 'Name is required (up to 60 characters).' }); return }
   if (email !== undefined && (typeof email !== 'string' || !isValidEmail(email.trim()))) { response.status(400).json({ error: 'Enter a valid email address.' }); return }
   if (newPassword !== undefined && (typeof newPassword !== 'string' || !isAcceptablePassword(newPassword))) { response.status(400).json({ error: passwordRequirement }); return }
+  const identityInput = request.body as IdentityInput
+  const identity = identityInput.phone === undefined ? null : parseSuperAdminIdentity(identityInput)
+  if (identity && !identity.ok) { response.status(400).json({ error: identity.error }); return }
   try {
     const admin = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId } })
     const newEmail = typeof email === 'string' ? normalizeEmail(email) : admin.email
     const changesCredentials = newEmail !== admin.email || newPassword !== undefined
     if (changesCredentials && !(typeof currentPassword === 'string' && verifyPassword(currentPassword, admin.passwordHash))) { response.status(400).json({ error: 'Enter your current password to change your email or password.' }); return }
-    if (newEmail !== admin.email && await prisma.superAdmin.count({ where: { email: newEmail } })) { response.status(409).json({ error: 'Another super admin already uses that email.' }); return }
-    const updated = await prisma.superAdmin.update({ where: { id: userId }, data: { ...(typeof name === 'string' ? { name: name.trim() } : {}), email: newEmail, ...(typeof newPassword === 'string' ? { passwordHash: hashPassword(newPassword) } : {}) } })
+    const duplicate = await findDuplicate(prisma, { email: newEmail !== admin.email ? newEmail : null, aadharNumber: identity?.ok ? identity.identity.aadharNumber : null }, { superAdminId: userId })
+    if (duplicate) { response.status(409).json({ error: duplicate }); return }
+    const updated = await prisma.superAdmin.update({ where: { id: userId }, data: { ...(identity?.ok ? identity.identity : {}), ...(typeof name === 'string' ? { name: name.trim() } : {}), email: newEmail, ...(typeof newPassword === 'string' ? { passwordHash: hashPassword(newPassword) } : {}) } })
     if (typeof newPassword === 'string') await prisma.session.deleteMany({ where: { superAdminId: userId, id: { not: sessionId } } })
     response.json({ admin: toPublicSuperAdmin(updated) })
   } catch (error) {

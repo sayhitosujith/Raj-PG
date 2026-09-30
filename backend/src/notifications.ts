@@ -46,6 +46,7 @@ async function deliver(channel: Channel, residentId: string | null, to: string, 
 function toWhatsApp(resident: Recipient, template: string, params: string[], key: string, attachment?: () => Promise<{ id: string; filename: string }>) {
   if (!isWhatsAppEnabled() || !resident.whatsappOptIn || !resident.phone) return Promise.resolve()
   const to = whatsappNumber(resident.phone)
+  if (!to) return Promise.resolve()
   return deliver('whatsapp', resident.id, to, template, key, async () => sendTemplate(to, template, params, attachment ? await attachment() : undefined))
 }
 

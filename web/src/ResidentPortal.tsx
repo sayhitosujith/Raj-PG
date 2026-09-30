@@ -6,7 +6,8 @@ import { Pagination } from './Pagination'
 import { portalListPageSize, usePagination } from './usePagination'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus } from './resident'
-import { ResidentAadharVerification } from './ResidentAadharVerification'
+import { ResidentIdVerification } from './ResidentIdVerification'
+import { isIndian } from './identity'
 import { readApiError } from './superAdmin'
 import { MealTimings } from './MealTimings'
 import type { MealTimes } from './meals'
@@ -22,6 +23,8 @@ import { PortalAnimals } from './PortalAnimals'
 import { SkyBackdrop } from './SkyBackdrop'
 import { VerifiedBadge } from './VerifiedBadge'
 import { LocalClock } from './LocalClock'
+import { WeatherNow } from './WeatherNow'
+import { previewSkyCondition, useWeather } from './weather'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PolicyLinks } from './PolicyLinks'
 import { HouseRules } from './HouseRules'
@@ -39,7 +42,7 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; aadharLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
@@ -104,6 +107,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)
   const pendingConsent = profile.policyConsent && profile.policyConsent.version !== acceptedVersion ? profile.policyConsent : null
   const [notice, setNotice] = useState('')
+  const weather = useWeather(refreshSignal)
 
   useEffect(() => {
     fetchList<Announcement>('/api/resident-portal/announcements').then(setAnnouncements, () => setAnnouncements([]))
@@ -121,14 +125,16 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   // Offered only when Razorpay keys are configured and something is actually owed.
   const payAction = profile.onlinePayment && profile.rent.monthlyRent && profile.rent.outstandingMonths.length ? <div className="pay-rent-actions"><PayRentButton rent={profile.rent} onPaid={onRefresh} onNotice={showNotice} /><UpiQrRentButton onPaid={onRefresh} onNotice={showNotice} /></div> : null
 
-  // Only the Aadhaar number and address are checked (by the owner, against the card); phone and email are as typed.
+  // Only the ID document number and address are checked (by the owner, against the upload); phone and email are as typed.
   const isAadharVerified = profile.aadharStatus === 'VERIFIED'
   const details: Array<[string, ReactNode]> = [
     ['Property', profile.location ? <>{profile.property} · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></> : profile.property],
     ['Room', profile.room],
     ['Phone', profile.phone || '—'],
     ['Email', profile.email || '—'],
-    ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—'],
+    isIndian(profile.nationality)
+      ? ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—']
+      : ['Passport number', profile.passportLast4 ? <>{`•••• ${profile.passportLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—'],
     ['Joining date', formatJoinDate(profile.joinedAt)],
     ['Days stayed', daysStayedLabel(profile.joinedAt)],
     ['Food plan', profile.foodOpted ? 'With food' : 'Without food'],
@@ -138,7 +144,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     <div className="portal-shell">
       <PortalScenery />
       <PortalAnimals />
-      <SkyBackdrop />
+      <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
@@ -148,7 +154,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /><LocalClock />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /><LocalClock /><WeatherNow weather={weather} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && <VerifiedBadge />}</dd></div></dl></div>
           <NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} />
         </section>
@@ -224,6 +230,6 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
       </main>
     )
   }
-  if (profile.aadharStatus !== 'VERIFIED') return <ResidentAadharVerification profile={profile} lastRefreshedAt={lastRefreshedAt} onRefresh={refreshPortal} onChanged={reloadProfile} onSignOut={onSignOut} />
+  if (profile.aadharStatus !== 'VERIFIED') return <ResidentIdVerification profile={profile} lastRefreshedAt={lastRefreshedAt} onRefresh={refreshPortal} onChanged={reloadProfile} onSignOut={onSignOut} />
   return <ResidentHome profile={profile} refreshSignal={refreshSignal} lastRefreshedAt={lastRefreshedAt} onRefresh={refreshPortal} onSignOut={onSignOut} />
 }

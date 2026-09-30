@@ -11,6 +11,8 @@ model Property {
   id                  String               @id @default(cuid())
   name                String
   location            String
+  // City for the resident portal's weather (e.g. "Bengaluru"); location is often a map link.
+  city                String?
   imageUrl            String
   status              String               @default("Healthy")
   // Meal service windows shown to residents, as 24-hour "HH:MM" local (IST) times.
@@ -61,9 +63,19 @@ model Resident {
   name                    String
   phone                   String?
   email                   String?
+  // ISO 3166-1 alpha-2. Indian residents are verified on Aadhaar; everyone else on passport and
+  // visa, which also feed Form C reporting to the FRRO. A resident holds one set or the other.
+  nationality             String                   @default("IN")
   aadharNumber            String?
   permanentAddress        String?
   aadharCardUrl           String?
+  passportNumber          String?
+  passportExpiry          DateTime?                @db.Date
+  // Scan of the passport photo page, as a data URL like aadharCardUrl.
+  passportScanUrl         String?
+  visaNumber              String?
+  visaType                String?
+  visaExpiry              DateTime?                @db.Date
   accessKeyHash           String?
   // Set by the resident after their first access-key sign-in; from then on the access key is retired.
   passwordHash            String?
@@ -72,7 +84,8 @@ model Resident {
   active                  Boolean                  @default(true)
   // Move-in date, separate from createdAt because residents are often added after they arrive.
   joinedAt                DateTime                 @default(now()) @db.Date
-  // Portal content stays locked until an owner approves the resident's Aadhaar details.
+  // Portal content stays locked until an owner approves the resident's identity documents: Aadhaar,
+  // or passport and visa for non-Indians. Named before passports were supported.
   aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)
   aadharRejectionReason   String?
   aadharSubmittedAt       DateTime?

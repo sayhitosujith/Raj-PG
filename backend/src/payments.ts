@@ -5,7 +5,7 @@ import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { isUpiClaim, recordClaimedRent } from './upiClaims.js'
 import { closeUpiQr, ensurePaymentQr, refreshQrPayment } from './upiQr.js'
-import { normalizePhone } from './validation.js'
+import { normalizePhone, phoneRequirement } from './validation.js'
 
 /**
  * Payments the owner records by hand (cash, UPI, bank transfer, ...), separate from the monthly
@@ -33,7 +33,7 @@ async function parsePayment(body: PaymentBody): Promise<PaymentFields | { error:
   // Optional (a resident may have no phone on file), but a number that is given must be valid.
   const rawPhone = text(body.phone)
   const phone = rawPhone ? normalizePhone(rawPhone) : ''
-  if (phone === null) return { error: 'Enter a valid 10-digit phone number, or leave it blank.' }
+  if (phone === null) return { error: `${phoneRequirement} Or leave it blank.` }
   // A bank only means something for non-cash payments; drop any leftover value for cash.
   const bankName = method === 'cash' ? '' : text(body.bankName)
   if (bankName.length > 100) return { error: 'Bank name must be up to 100 characters.' }

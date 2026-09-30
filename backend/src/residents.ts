@@ -1,40 +1,66 @@
 import { AadharVerificationStatus, Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { createAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
-import { aadharCardDataUrlPattern, findAadharCardProblem, hasCompleteAadhar, isValidAadharNumber } from './aadhar.js'
 import { parseDateOnly } from './dates.js'
+import { findDuplicate } from './duplicates.js'
+import { documentDataUrlPattern, findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
 import { prisma, withDatabaseRetry } from './db.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
-import { normalizePhone } from './validation.js'
+import { normalizePhone, phoneRequirement } from './validation.js'
 
-// Omits the access key hash (never leaves the server) and the Aadhaar card data URL (up to 2 MB
-// each; served on demand by GET /api/residents/:id/aadhar-card instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
+// Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
+// each; served on demand by GET /api/residents/:id/aadhar-card and /passport-scan instead).
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
-const textFields = ['name', 'phone', 'email', 'aadharNumber', 'permanentAddress', 'aadharCardUrl'] as const
+const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
+const textFields = ['name', 'phone', 'email', 'permanentAddress'] as const
 
 type TextField = (typeof textFields)[number]
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & IdentityInput & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 class RoomUnavailableError extends Error {}
-class RentInputError extends Error {}
+// Another active resident or a super admin already has one of these identifying details.
+class DuplicateError extends Error {}
+// Bad input found inside a transaction (rent rules, expired documents), answered with a 400.
+class InputError extends Error {}
 
-function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, hasAadharCard: boolean, rules: RentRules) {
+function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules) {
+  const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
   const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month), rules), payments: rentPayments.slice(0, 6) }
-  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, hasAadharCard, hasPassword: Boolean(passwordHash), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+}
+
+type DocumentsOnFile = { hasAadharCard: boolean; hasPassportScan: boolean }
+
+// Counted rather than selected, so checking for an upload never loads the 2 MB data URL.
+async function findDocumentsOnFile(client: Prisma.TransactionClient, id: string): Promise<DocumentsOnFile> {
+  const [aadharCards, passportScans] = await Promise.all([
+    client.resident.count({ where: { id, ...hasAadharCardWhere } }),
+    client.resident.count({ where: { id, ...hasPassportScanWhere } }),
+  ])
+  return { hasAadharCard: aadharCards > 0, hasPassportScan: passportScans > 0 }
 }
 
 async function findResidentSummary(id: string) {
-  const [resident, cardCount] = await Promise.all([
+  const [resident, documents] = await Promise.all([
     prisma.resident.findUniqueOrThrow({ where: { id }, ...residentSummaryQuery }),
-    prisma.resident.count({ where: { id, ...hasAadharCardWhere } }),
+    findDocumentsOnFile(prisma, id),
   ])
-  return toResidentSummary(resident, cardCount > 0, rentRulesOf(await getSettings()))
+  return toResidentSummary(resident, documents, rentRulesOf(await getSettings()))
+}
+
+const resetVerification = { aadharStatus: AadharVerificationStatus.NOT_SUBMITTED, aadharRejectionReason: null, aadharSubmittedAt: null, aadharReviewedAt: null }
+const queueForReview = () => ({ aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() })
+
+/** Validates the identity fields of a create or update body, or returns why they are invalid. */
+function parseResidentIdentity(body: ResidentBody): { fields: IdentityFields } | { error: string } {
+  const parsed = parseIdentityFields(body)
+  return parsed.ok ? { fields: parsed.fields } : { error: parsed.error }
 }
 
 // Only fields present in the body are returned, so PUT can apply partial updates.
@@ -44,16 +70,17 @@ function pickTextFields(body: ResidentBody) {
     const value = body[field]
     if (typeof value === 'string') data[field] = value.trim()
   }
-  // Stored as its 10 digits when valid; an invalid number is left as typed for findInvalidField to reject.
-  if (data.phone) data.phone = normalizePhone(data.phone) ?? data.phone
+  // Stored in E.164 form when valid; an invalid number is marked for findInvalidField to reject.
+  if (data.phone) data.phone = normalizePhone(data.phone) ?? invalidPhone
   return data
 }
 
+// Never a real number (E.164 always starts with "+"), so it cannot collide with valid input.
+const invalidPhone = 'invalid'
+
 function findInvalidField(data: Partial<Record<TextField, string>>) {
   if (data.name !== undefined && !data.name) return 'Name is required.'
-  if (data.phone && !/^\d{10}$/.test(data.phone)) return 'Phone number must be 10 digits.'
-  if (data.aadharNumber && !isValidAadharNumber(data.aadharNumber)) return 'Aadhaar number must be 12 digits.'
-  if (data.aadharCardUrl) return findAadharCardProblem(data.aadharCardUrl)
+  if (data.phone === invalidPhone) return phoneRequirement
   return null
 }
 
@@ -81,8 +108,8 @@ function parseProfilePhoto(value: ResidentBody['profilePhoto']): { data: { profi
 }
 
 function respondToWriteError(response: Response, error: unknown, fallback: string) {
-  if (error instanceof RoomUnavailableError) { response.status(409).json({ error: error.message }); return }
-  if (error instanceof RentInputError) { response.status(400).json({ error: error.message }); return }
+  if (error instanceof RoomUnavailableError || error instanceof DuplicateError) { response.status(409).json({ error: error.message }); return }
+  if (error instanceof InputError) { response.status(400).json({ error: error.message }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') { response.status(400).json({ error: 'Property was not found.' }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Resident was not found.' }); return }
   console.error(fallback, error)
@@ -95,13 +122,15 @@ export const residentRouter = Router()
 residentRouter.get('/residents', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   try {
-    const [residents, withCards] = await withDatabaseRetry(() => Promise.all([
+    const [residents, withCards, withScans] = await withDatabaseRetry(() => Promise.all([
       prisma.resident.findMany({ ...residentSummaryQuery, orderBy: { createdAt: 'desc' } }),
       prisma.resident.findMany({ where: hasAadharCardWhere, select: { id: true } }),
+      prisma.resident.findMany({ where: hasPassportScanWhere, select: { id: true } }),
     ]))
     const cardIds = new Set(withCards.map(({ id }) => id))
+    const scanIds = new Set(withScans.map(({ id }) => id))
     const rules = rentRulesOf(await getSettings())
-    response.json(residents.map((resident) => toResidentSummary(resident, cardIds.has(resident.id), rules)))
+    response.json(residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules)))
   } catch (error) {
     console.error('Resident query failed:', error)
     response.status(503).json({ error: 'Residents could not be loaded.' })
@@ -112,16 +141,30 @@ residentRouter.get('/residents/access-key', (_request, response) => {
   response.json({ accessKey: createAccessKey() })
 })
 
+function sendDocument(response: Response, dataUrl: string | null | undefined, documentName: string) {
+  const match = dataUrl?.match(documentDataUrlPattern)
+  if (!match) { response.status(404).json({ error: `No ${documentName.toLowerCase()} on file.` }); return }
+  // Identity documents must not be cached by the browser or content-sniffed into something executable.
+  response.set({ 'Content-Type': match[1], 'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
+}
+
 residentRouter.get('/residents/:id/aadhar-card', async (request, response) => {
   try {
     const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { aadharCardUrl: true } })
-    const match = resident?.aadharCardUrl?.match(aadharCardDataUrlPattern)
-    if (!match) { response.status(404).json({ error: 'No Aadhaar card on file.' }); return }
-    // Identity documents must not be cached by the browser or content-sniffed into something executable.
-    response.set({ 'Content-Type': match[1], 'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
+    sendDocument(response, resident?.aadharCardUrl, 'Aadhaar card')
   } catch (error) {
     console.error('Aadhaar card lookup failed:', error)
     response.status(503).json({ error: 'Aadhaar card could not be loaded.' })
+  }
+})
+
+residentRouter.get('/residents/:id/passport-scan', async (request, response) => {
+  try {
+    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { passportScanUrl: true } })
+    sendDocument(response, resident?.passportScanUrl, 'Passport scan')
+  } catch (error) {
+    console.error('Passport scan lookup failed:', error)
+    response.status(503).json({ error: 'Passport scan could not be loaded.' })
   }
 })
 
@@ -141,12 +184,17 @@ residentRouter.post('/residents', async (request, response) => {
   if (!data.name || !body.propertyId) { response.status(400).json({ error: 'Name and property are required.' }); return }
   const invalidField = findInvalidField(data)
   if (invalidField) { response.status(400).json({ error: invalidField }); return }
+  const identity = parseResidentIdentity(body)
+  if ('error' in identity) { response.status(400).json({ error: identity.error }); return }
+  const expired = findExpiredDocument(identity.fields)
+  if (expired) { response.status(400).json({ error: expired }); return }
   const photo = parseProfilePhoto(body.profilePhoto)
   if ('error' in photo) { response.status(400).json({ error: photo.error }); return }
   if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
   if (body.whatsappOptIn !== undefined && typeof body.whatsappOptIn !== 'boolean') { response.status(400).json({ error: 'WhatsApp updates must be true or false.' }); return }
   if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const foodOpted = body.foodOpted ?? true
+  const nationality = identity.fields.nationality ?? indianNationality
   if (body.accessKey && !isValidAccessKey(body.accessKey)) { response.status(400).json({ error: 'Access key is not in the generated format.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
@@ -156,11 +204,13 @@ residentRouter.post('/residents', async (request, response) => {
   try {
     const accessKey = body.accessKey || createAccessKey()
     const residentId = await prisma.$transaction(async (transaction) => {
+      const duplicate = await findDuplicate(transaction, { email: data.email, phone: data.phone, ...(isIndian(nationality) ? { aadharNumber: identity.fields.aadharNumber } : { passportNumber: identity.fields.passportNumber }) })
+      if (duplicate) throw new DuplicateError(duplicate)
       const room = await claimRoom(transaction, propertyId, body.roomNumber?.trim())
       const rent = await residentRentWrite(transaction, { propertyId, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
-      if ('error' in rent) throw new RentInputError(rent.error)
-      const readyForReview = hasCompleteAadhar(data.aadharNumber, Boolean(data.aadharCardUrl))
-      const resident = await transaction.resident.create({ data: { ...data, ...photo.data, ...rent.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
+      if ('error' in rent) throw new InputError(rent.error)
+      const readyForReview = hasCompleteIdentity({ ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl), hasPassportScan: Boolean(identity.fields.passportScanUrl) })
+      const resident = await transaction.resident.create({ data: { ...data, nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey })
@@ -175,6 +225,8 @@ residentRouter.put('/residents/:id', async (request, response) => {
   const data = pickTextFields(body)
   const invalidField = findInvalidField(data)
   if (invalidField) { response.status(400).json({ error: invalidField }); return }
+  const identity = parseResidentIdentity(body)
+  if ('error' in identity) { response.status(400).json({ error: identity.error }); return }
   const photo = parseProfilePhoto(body.profilePhoto)
   if ('error' in photo) { response.status(400).json({ error: photo.error }); return }
   if (body.active !== undefined && typeof body.active !== 'boolean') { response.status(400).json({ error: 'Status must be true or false.' }); return }
@@ -186,18 +238,36 @@ residentRouter.put('/residents/:id', async (request, response) => {
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
   try {
     await prisma.$transaction(async (transaction) => {
-      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, aadharStatus: true, aadharNumber: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
+      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
+      const expired = findExpiredDocument(identity.fields, current)
+      if (expired) throw new InputError(expired)
+      const nationality = identity.fields.nationality ?? current.nationality
+      // Verification covered the old nationality's document; a different document needs a fresh review.
+      const isNationalityChange = nationality !== current.nationality
+      // The saved values (current plus changes) must be free whenever the resident will be active,
+      // which also catches a clash when an inactive resident is reactivated.
+      if (body.active ?? current.active) {
+        const keptDocument = (value: string | null) => (isNationalityChange ? null : value)
+        const duplicate = await findDuplicate(transaction, {
+          email: data.email ?? current.email,
+          phone: data.phone ?? current.phone,
+          ...(isIndian(nationality) ? { aadharNumber: identity.fields.aadharNumber ?? keptDocument(current.aadharNumber) } : { passportNumber: identity.fields.passportNumber ?? keptDocument(current.passportNumber) }),
+        }, { residentId: id })
+        if (duplicate) throw new DuplicateError(duplicate)
+      }
       const targetPropertyId = body.propertyId || current.room.propertyId
       const foodOpted = (body.foodOpted as boolean | undefined) ?? current.foodOpted
       const rent = await residentRentWrite(transaction, { propertyId: targetPropertyId, foodOpted, trackedFrom: current.rentTrackedFrom, typedRent: body.monthlyRent })
-      if ('error' in rent) throw new RentInputError(rent.error)
+      if ('error' in rent) throw new InputError(rent.error)
       const targetRoomNumber = body.roomNumber?.trim() || current.room.number
       const isMoving = targetPropertyId !== current.room.propertyId || targetRoomNumber !== current.room.number
       const roomId = isMoving ? (await claimRoom(transaction, targetPropertyId, targetRoomNumber)).id : current.roomId
       // Completing the details on an unsubmitted resident queues them for review; it never verifies.
-      const hasCard = Boolean(data.aadharCardUrl) || await transaction.resident.count({ where: { id, ...hasAadharCardWhere } }) > 0
-      const becomesReviewable = current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED && hasCompleteAadhar(data.aadharNumber ?? current.aadharNumber, hasCard)
-      await transaction.resident.update({ where: { id }, data: { ...data, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), ...(becomesReviewable ? { aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() } : {}), roomId } })
+      const onFile = await findDocumentsOnFile(transaction, id)
+      const isComplete = hasCompleteIdentity({ ...current, ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl) || (onFile.hasAadharCard && !isNationalityChange), hasPassportScan: Boolean(identity.fields.passportScanUrl) || (onFile.hasPassportScan && !isNationalityChange) })
+      const isUnsubmitted = isNationalityChange || current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED
+      const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
+      await transaction.resident.update({ where: { id }, data: { ...data, nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
       if (isMoving) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
@@ -253,21 +323,24 @@ residentRouter.post('/residents/:id/password', async (request, response) => {
 
 const maxRejectionReasonLength = 300
 
-// The owner's decision on a resident's Aadhaar details. Approval needs both the number and the
-// card on file, because that is what the owner is attesting to having checked.
+// The owner's decision on a resident's identity documents (Aadhaar, or passport and visa). Approval
+// needs every detail and the upload on file, because that is what the owner attests to having checked.
 residentRouter.post('/residents/:id/aadhar-verification', async (request, response) => {
   const { id } = request.params
   const { decision, reason } = request.body as { decision?: string; reason?: string }
   if (decision !== 'approve' && decision !== 'reject') { response.status(400).json({ error: 'Decision must be approve or reject.' }); return }
   const trimmedReason = reason?.trim() ?? ''
-  if (decision === 'reject' && !trimmedReason) { response.status(400).json({ error: 'Tell the resident why their Aadhaar details were rejected.' }); return }
+  if (decision === 'reject' && !trimmedReason) { response.status(400).json({ error: 'Tell the resident why their details were rejected.' }); return }
   if (trimmedReason.length > maxRejectionReasonLength) { response.status(400).json({ error: `Keep the reason under ${maxRejectionReasonLength} characters.` }); return }
   try {
-    const [resident, cardCount] = await Promise.all([
-      prisma.resident.findUniqueOrThrow({ where: { id }, select: { aadharNumber: true } }),
-      prisma.resident.count({ where: { id, ...hasAadharCardWhere } }),
+    const [resident, documents] = await Promise.all([
+      prisma.resident.findUniqueOrThrow({ where: { id }, select: { nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true } }),
+      findDocumentsOnFile(prisma, id),
     ])
-    if (decision === 'approve' && !hasCompleteAadhar(resident.aadharNumber, cardCount > 0)) { response.status(409).json({ error: 'Both the Aadhaar number and the card must be on file before approving.' }); return }
+    if (decision === 'approve' && !hasCompleteIdentity({ ...resident, ...documents })) {
+      const missing = identityDocumentName(resident.nationality) === 'Aadhaar' ? 'Both the Aadhaar number and the card' : 'The passport number, expiry and scan, and the visa number, type and expiry,'
+      response.status(409).json({ error: `${missing} must be on file before approving.` }); return
+    }
     await prisma.resident.update({ where: { id }, data: decision === 'approve'
       ? { aadharStatus: AadharVerificationStatus.VERIFIED, aadharRejectionReason: null, aadharReviewedAt: new Date() }
       : { aadharStatus: AadharVerificationStatus.REJECTED, aadharRejectionReason: trimmedReason, aadharReviewedAt: new Date() } })

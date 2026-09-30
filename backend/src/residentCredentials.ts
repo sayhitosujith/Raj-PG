@@ -1,23 +1,23 @@
 import { matchesAccessKey, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
+import { normalizePhone, phoneDigitVariants } from './validation.js'
 
 // Emails and phones are not unique across residents, so a handful of candidates are checked
 // rather than trusting the first match.
 const maxCandidates = 5
-// Indian mobile numbers are 10 digits; comparing the last 10 digits makes "+91 98765 43210",
-// "09876543210" and "9876543210" the same number, however the owner typed it in.
-const significantPhoneDigits = 10
-
 async function findCandidateIds(identifier: string) {
   if (identifier.includes('@')) {
     const byEmail = await prisma.resident.findMany({ where: { active: true, email: { equals: identifier, mode: 'insensitive' } }, select: { id: true }, take: maxCandidates })
     return byEmail.map(({ id }) => id)
   }
-  const digits = identifier.replace(/\D/g, '')
-  if (digits.length < significantPhoneDigits) return []
+  // Normalising makes "+91 98765 43210", "09876543210" and "9876543210" the same number; a
+  // foreign number must be typed with its country code.
+  const phone = normalizePhone(identifier)
+  if (!phone) return []
+  const [digits, legacyDigits] = phoneDigitVariants(phone)
   const byPhone = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT "id" FROM "Resident"
-    WHERE "active" AND right(regexp_replace(coalesce("phone", ''), '\\D', '', 'g'), ${significantPhoneDigits}::int) = ${digits.slice(-significantPhoneDigits)}
+    WHERE "active" AND regexp_replace(coalesce("phone", ''), '\\D', '', 'g') IN (${digits}, ${legacyDigits})
     LIMIT ${maxCandidates}`
   return byPhone.map(({ id }) => id)
 }

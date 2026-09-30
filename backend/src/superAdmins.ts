@@ -4,8 +4,9 @@ import { isValidAadharNumber } from './aadhar.js'
 import type { AuthContext } from './auth.js'
 import { createTemporaryPassword, hashPassword, isAcceptablePassword, passwordRequirement } from './credentials.js'
 import { isCountryCode } from './countries.js'
+import { findDuplicate } from './duplicates.js'
 import { prisma } from './db.js'
-import { isValidEmail, normalizePhone } from './validation.js'
+import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
 
 
 /**
@@ -21,7 +22,8 @@ export type CreateSuperAdminResult = { ok: true; admin: PublicSuperAdmin } | { o
 /** Identity details every admin added from the dashboard must provide. */
 export type SuperAdminIdentity = Pick<Prisma.SuperAdminCreateInput, 'phone' | 'aadharNumber' | 'sex' | 'nationality' | 'permanentAddress'>
 
-type IdentityInput = { phone?: string; aadharNumber?: string; sex?: string; nationality?: string; permanentAddress?: string }
+/** The identity fields as they arrive in a request body, before validation. */
+export type IdentityInput = { phone?: string; aadharNumber?: string; sex?: string; nationality?: string; permanentAddress?: string }
 
 /** Validates and normalises the identity fields of a new super admin, all of which are required. */
 export function parseSuperAdminIdentity(input: IdentityInput): { ok: true; identity: SuperAdminIdentity } | { ok: false; error: string } {
@@ -29,7 +31,7 @@ export function parseSuperAdminIdentity(input: IdentityInput): { ok: true; ident
   const aadharNumber = input.aadharNumber?.replace(/\s/g, '') ?? ''
   const nationality = input.nationality?.trim().toUpperCase() ?? ''
   const permanentAddress = input.permanentAddress?.trim()
-  if (!phone) return { ok: false, error: 'Phone number must be 10 digits.' }
+  if (!phone) return { ok: false, error: phoneRequirement }
   if (!isValidAadharNumber(aadharNumber)) return { ok: false, error: 'Aadhaar number must be 12 digits.' }
   if (!Object.values(Sex).includes(input.sex as Sex)) return { ok: false, error: 'Choose male, female, or other for sex.' }
   if (!isCountryCode(nationality)) return { ok: false, error: 'Choose a nationality from the list.' }
@@ -57,6 +59,8 @@ export async function createSuperAdmin(input: { name?: string; email?: string; p
   if (!name) return { ok: false, status: 400, error: 'Name is required.' }
   if (!isValidEmail(email)) return { ok: false, status: 400, error: 'A valid email address is required.' }
   if (!isAcceptablePassword(input.password)) return { ok: false, status: 400, error: passwordRequirement }
+  const duplicate = await findDuplicate(prisma, { email, aadharNumber: identity.aadharNumber })
+  if (duplicate) return { ok: false, status: 409, error: duplicate }
   try {
     const admin = await prisma.superAdmin.create({ data: { ...identity, name, email, passwordHash: hashPassword(input.password) } })
     return { ok: true, admin: toPublicSuperAdmin(admin) }
@@ -104,16 +108,46 @@ superAdminRouter.post('/super-admins', async (request, response) => {
   }
 })
 
+// Edits another admin's name, email and identity details. An admin's own email is refused here: it
+// is a sign-in credential, and Settings → My account asks for the current password before changing it.
 superAdminRouter.patch('/super-admins/:id', async (request, response) => {
-  const parsed = parseSuperAdminIdentity(request.body as IdentityInput)
+  const { userId } = response.locals.auth as AuthContext
+  const body = request.body as { name?: string; email?: string } & IdentityInput
+  const name = body.name?.trim()
+  const email = normalizeEmail(body.email ?? '')
+  if (!name || name.length > 60) { response.status(400).json({ error: 'Name is required (up to 60 characters).' }); return }
+  if (!isValidEmail(email)) { response.status(400).json({ error: 'A valid email address is required.' }); return }
+  const parsed = parseSuperAdminIdentity(body)
   if (!parsed.ok) { response.status(400).json({ error: parsed.error }); return }
   try {
-    const admin = await prisma.superAdmin.update({ where: { id: request.params.id }, data: parsed.identity })
+    if (request.params.id === userId) {
+      const self = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId }, select: { email: true } })
+      if (self.email !== email) { response.status(403).json({ error: 'Change your own email under Settings → My account; it needs your current password.' }); return }
+    }
+    const duplicate = await findDuplicate(prisma, { email, aadharNumber: parsed.identity.aadharNumber }, { superAdminId: request.params.id })
+    if (duplicate) { response.status(409).json({ error: duplicate }); return }
+    const admin = await prisma.superAdmin.update({ where: { id: request.params.id }, data: { ...parsed.identity, name, email } })
     response.json(toPublicSuperAdmin(admin))
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Super admin was not found.' }); return }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') { response.status(409).json({ error: 'Another super admin already uses that email.' }); return }
     console.error('Super admin update failed:', error)
     response.status(503).json({ error: 'Details could not be saved.' })
+  }
+})
+
+// Removes another admin; their sessions go with them (cascade), so they are signed out at once.
+// Deleting yourself is refused, which also guarantees at least one admin always remains.
+superAdminRouter.delete('/super-admins/:id', async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  if (request.params.id === userId) { response.status(403).json({ error: 'You cannot delete your own account.' }); return }
+  try {
+    await prisma.superAdmin.delete({ where: { id: request.params.id } })
+    response.status(204).send()
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Super admin was not found.' }); return }
+    console.error('Super admin deletion failed:', error)
+    response.status(503).json({ error: 'Super admin could not be deleted.' })
   }
 })
 

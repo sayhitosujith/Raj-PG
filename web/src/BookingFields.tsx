@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { BookableProperty } from './booking'
 import { todayDateInputValue } from './joinDate'
+import { PhoneField } from './PhoneField'
 import { tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 
@@ -19,7 +20,7 @@ export function BookingFields({ properties }: { properties: BookableProperty[] }
   return (
     <div className="booking-fields">
       <label>Your name<input name="name" required maxLength={80} autoComplete="name" /></label>
-      <label>Mobile number<input name="phone" type="tel" inputMode="numeric" required autoComplete="tel" placeholder="10-digit mobile" /></label>
+      <PhoneField name="phone" label="Mobile number" required />
       <label className="booking-wide">Email <span>(optional)</span><input name="email" type="email" maxLength={120} autoComplete="email" /></label>
       <label className="booking-wide">Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}>
         <option value="" disabled>Choose a property</option>

@@ -65,7 +65,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
         <div className="finance-kpis">
           <div className="finance-kpi"><span>Rent collected · {formatMonth(month)}</span><strong>{formatRupees(summary.rentCollected)}</strong><small>of {formatRupees(summary.rentExpected)} expected{summary.rentExpected > summary.rentCollected ? ` · ${formatRupees(summary.rentExpected - summary.rentCollected)} still due` : ''}</small></div>
           <div className="finance-kpi"><span>Other income</span><strong>{formatRupees(summary.otherIncome)}</strong><small>Payments not linked to rent</small></div>
-          <div className="finance-kpi"><span>Expenses</span><strong>{formatRupees(summary.expenses)}</strong><small>{expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}</small></div>
+          <div className="finance-kpi is-expense"><span>Expenses</span><strong>{formatRupees(summary.expenses)}</strong><small>{expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}</small></div>
           <div className={`finance-kpi ${isLoss ? 'is-loss' : 'is-profit'}`}><span>{isLoss ? 'Loss' : 'Profit'} · {formatMonth(month)}</span><strong>{isLoss ? <TrendingDown size={18} aria-hidden="true" /> : <TrendingUp size={18} aria-hidden="true" />}{isLoss ? '−' : ''}{formatRupees(Math.abs(summary.profit))}</strong><small>income − expenses</small></div>
           <div className="finance-kpi is-hero"><span>Total income till now</span><strong>{formatRupees(summary.totals.income)}</strong><small>{totalsLoss ? 'Loss' : 'Profit'} so far {totalsLoss ? '−' : ''}{formatRupees(Math.abs(summary.totals.profit))} after {formatRupees(summary.totals.expenses)} expenses</small></div>
         </div>
@@ -86,7 +86,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
         )}
         {expenses.length ? <div className="crud-list">{pager.pageItems.map((expense) => (
           <div className="crud-row" key={expense.id}>
-            <div className="crud-main"><strong>{expenseCategoryLabels[expense.category] ?? expense.category} · {formatRupees(expense.amount)}</strong><small>{[new Date(expense.date).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }), expense.property ?? 'All properties', expense.note].filter(Boolean).join(' · ')}</small></div>
+            <div className="crud-main"><strong>{expenseCategoryLabels[expense.category] ?? expense.category} · <span className="expense-amount">{formatRupees(expense.amount)}</span></strong><small>{[new Date(expense.date).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }), expense.property ?? 'All properties', expense.note].filter(Boolean).join(' · ')}</small></div>
             <div className="crud-actions"><button className="row-delete" aria-label={`Delete ${formatRupees(expense.amount)} expense`} onClick={() => removeExpense(expense)}><Trash2 size={14} /></button></div>
           </div>
         ))}</div> : <p className="portal-empty">No expenses recorded for {formatMonth(month)}.</p>}

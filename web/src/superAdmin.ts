@@ -21,6 +21,14 @@ export type SuperAdmin = {
   createdAt: string
 }
 
+/** Form field names of the identity details, matching the API's body keys. */
+export const identityFieldNames = ['phone', 'aadharNumber', 'sex', 'nationality', 'permanentAddress'] as const
+
+/** The identity details from a form containing {@link identityFieldNames} inputs, as API body fields. */
+export function readIdentityFields(form: FormData): Record<string, string> {
+  return Object.fromEntries(identityFieldNames.map((field) => [field, String(form.get(field) ?? '')]))
+}
+
 /** Reads the API's `{ error }` body, falling back when the response has none. */
 export async function readApiError(response: Response, fallback: string) {
   const body = await response.json().catch(() => ({})) as { error?: string }

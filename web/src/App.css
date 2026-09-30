@@ -27,7 +27,7 @@ button { cursor: pointer; }
 .resident-modal textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); font: inherit; font-size: 12px; }
 .resident-modal textarea { resize: vertical; }
 .resident-modal input:focus, .resident-modal select:focus, .resident-modal textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
-.resident-modal .aadhar-upload input { background: #f8fbf8; }
+.resident-modal .document-upload input { background: #f8fbf8; }
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }.stat-card { position: relative; min-height: 151px; padding: 19px 20px; border: 1px solid var(--line); border-radius: 11px; background: white; overflow: hidden; }.stat-card::after { content: ''; position: absolute; right: -17px; bottom: -25px; width: 78px; height: 78px; border: 15px solid currentColor; border-radius: 50%; opacity: .08; }.stat-card p { margin: 0 0 14px; color: var(--muted); font-size: 11px; font-weight: 600; }.stat-card strong { display: block; color: var(--ink); font: 700 28px/1 Manrope, sans-serif; letter-spacing: -1px; }.stat-card small { display: block; margin-top: 13px; color: #8c9794; font-size: 10px; }.stat-icon { width: 30px; height: 30px; display: grid; place-items: center; margin-bottom: 13px; border-radius: 8px; }.teal { color: var(--teal); }.coral { color: var(--coral); }.blue { color: var(--blue); }.gold { color: var(--gold); }.stat-icon { background: currentColor; color: #fff; }.stat-card.teal .stat-icon { background: #dcefe8; color: var(--teal); }.stat-card.coral .stat-icon { background: #fae6df; color: var(--coral); }.stat-card.blue .stat-icon { background: #e4edf9; color: var(--blue); }.stat-card.gold .stat-icon { background: #f7edd9; color: var(--gold); }
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .9fr); gap: 16px; }.panel { min-width: 0; padding: 24px 23px 21px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }.panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 15px; margin-bottom: 23px; }.panel-heading h2 { margin: 0 0 5px; color: #27373b; font: 700 16px/1.2 Manrope, sans-serif; letter-spacing: -.3px; }.panel-heading p { margin: 0; color: #99a29e; font-size: 11px; }.filter-wrap { position: relative; display: flex; align-items: center; }.filter-wrap select { appearance: none; border: 1px solid var(--line); border-radius: 6px; padding: 7px 28px 7px 9px; background: #fff; color: #6f7d78; font-size: 10px; outline: 0; }.filter-wrap svg { position: absolute; right: 8px; pointer-events: none; color: #93a09a; }
 .property-list { display: grid; gap: 0; }.property-row { display: grid; grid-template-columns: 42px minmax(130px, 1fr) 90px 58px 57px 39px; gap: 12px; align-items: center; padding: 13px 0; border-top: 1px solid #edf0ed; }.property-row:first-child { border-top: 0; }.property-row img { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; }.property-info h3, .activity-copy h3 { margin: 0 0 4px; font-size: 11px; font-weight: 700; color: #344449; }.property-info p, .activity-copy p { margin: 0; color: #98a09d; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.occupancy, .rooms { display: grid; gap: 4px; }.occupancy span, .rooms span { color: #a5aeaa; font-size: 9px; }.occupancy strong, .rooms strong { color: #45544f; font-size: 10px; }.progress { height: 4px; margin-top: 2px; overflow: hidden; border-radius: 3px; background: #e8eeea; }.progress i { display: block; height: 100%; border-radius: inherit; background: var(--teal); }.status-pill { display: inline-block; padding: 4px 6px; border-radius: 5px; font-size: 9px; text-align: center; font-weight: 700; }.status-pill.sage { color: #4d977c; background: #e5f3ed; }.status-pill.gold { color: #ad7c2c; background: #fbf0db; }.row-actions { display: flex; align-items: center; justify-content: end; gap: 2px; }.row-arrow, .arrow-button, .row-delete { border: 0; background: transparent; color: #a1aaa7; font-size: 17px; padding: 2px; }.row-delete { display: grid; place-items: center; color: #b6a19b; border-radius: 5px; }.row-delete:hover { color: #c85e4e; background: #f9e7e2; }.row-arrow:hover, .arrow-button:hover { color: var(--teal); }.text-button { display: flex; gap: 6px; padding: 15px 0 0; border: 0; border-top: 1px solid #edf0ed; width: 100%; background: transparent; color: var(--teal); font-size: 10px; font-weight: 700; }.text-button span { font-size: 14px; line-height: 10px; }
@@ -51,7 +51,7 @@ button { cursor: pointer; }
 .resident-modal label > span { color: #9da7a3; font-weight: 400; }
 .resident-modal input, .resident-modal select, .resident-modal textarea { padding: 7px 10px; }
 .resident-modal textarea { min-height: 44px; }
-.resident-modal .aadhar-upload input { padding: 5px 8px; }
+.resident-modal .document-upload input { padding: 5px 8px; }
 .current-card-link { display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 5px; color: var(--teal); font-size: 11px; text-decoration: none; }
 .current-card-link:hover { text-decoration: underline; }
 .resident-modal .access-key-control { margin-top: 4px; }
@@ -139,9 +139,10 @@ button { cursor: pointer; }
   .property-row img { width: 38px; height: 38px; }
   .property-row .rooms, .property-row .status-pill { display: none; }
   /* Resident header wraps to two lines: identity + actions, then room + status. */
-  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px; grid-template-areas: 'avatar info edit delete' 'avatar room status status'; row-gap: 6px; }
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px; grid-template-areas: 'avatar info edit delete' 'avatar phone phone phone' 'avatar room status status'; row-gap: 6px; }
   .resident-card .resident-avatar { grid-area: avatar; align-self: start; }
   .resident-card .resident-info { grid-area: info; }
+  .resident-card .resident-phone { grid-area: phone; }
   .resident-card .resident-room { grid-area: room; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; min-width: 0; }
   .resident-card .status-pill { grid-area: status; justify-self: end; }
   .resident-card .row-edit { grid-area: edit; }
@@ -186,12 +187,17 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .residents-count { margin: 0 0 6px; color: var(--muted); font-size: 11px; }
 
 .resident-card { padding-bottom: 0; animation: rise-in .35s ease both; animation-delay: calc(var(--stagger, 0) * 40ms); }
-.resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) auto auto 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
+.resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1.4fr) auto auto 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
 .resident-card .resident-row:hover { background: #f5f9f6; }
 .resident-card.is-expanded .resident-row { background: #f2f7f4; }
 .resident-avatar { transition: transform .25s ease; }
 .resident-card .resident-row:hover .resident-avatar { transform: scale(1.06); }
 .resident-room small { color: #98a09d; font-size: 9px; white-space: nowrap; }
+/* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
+.resident-phone { min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; }
+.resident-card .resident-room { display: flex; align-items: center; gap: 10px; }
+.resident-room-meta { display: grid; gap: 4px; }
+.resident-room .rent-chip { margin-top: 0; }
 .resident-badge { display: inline-block; margin-left: 7px; padding: 2px 6px; border-radius: 999px; color: #ad7c2c; background: #fbf0db; font-size: 8px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; vertical-align: 1px; }
 .row-toggle { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 7px; color: #7d898b; background: transparent; cursor: pointer; transition: background .2s, color .2s; }
 .row-toggle:hover { color: var(--teal); background: #e3efe9; }
@@ -227,8 +233,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .residents-toolbar select { flex: 1 1 140px; }
 }
 @container (max-width: 560px) {
-  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px; grid-template-areas: 'avatar info edit delete toggle' 'avatar room status status status'; }
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px; grid-template-areas: 'avatar info edit delete toggle' 'avatar phone phone phone phone' 'avatar room status status status'; }
   .resident-card .row-toggle { grid-area: toggle; }
+  .resident-card .resident-phone { grid-area: phone; }
+  /* Only here, where the phone has its own named row; on desktop the empty cell keeps the columns aligned. */
+  .resident-card .resident-phone:empty { display: none; }
+  .resident-card .resident-room { grid-area: room; flex-wrap: wrap; gap: 4px 8px; }
+  .resident-card .resident-room-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
   .resident-badge { display: table; margin: 4px 0 0; }
 }
 
@@ -264,7 +275,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .verification-callout.is-pending { color: #7b5a20; background: #fbf3e2; }
 .verification-callout.is-rejected { color: #9a4231; background: #fbe9e5; }
 .verification-card .modal-actions { margin-top: 18px; }
-.aadhar-file-label input[type='file'] { padding: 8px; background: #f8fbf8; }
+.resident-password-form .document-upload input[type='file'] { padding: 8px; background: #f8fbf8; }
 .verification-card .modal-actions { flex-wrap: wrap; align-items: stretch; }
 .verification-card .modal-actions > button { flex: 1 1 150px; justify-content: center; }
 
@@ -1069,6 +1080,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .local-clock svg { color: var(--teal); }
 .local-clock strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
 @container (max-width: 640px) { .local-clock { justify-content: flex-start; } }
+/* Weather in the property's city, on its own line under the local clock and styled to match it. */
+.local-weather { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin: 0; color: var(--muted); font-size: 11px; }
+.local-weather svg { color: var(--teal); }
+.local-weather strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+@container (max-width: 640px) { .local-weather { justify-content: flex-start; } }
 /*
  * Clouds: puffs built from overlapping soft ovals, drifting slowly right to left across the sky
  * (some pass in front of the moon). Each has its own speed and a negative delay, so the sky is
@@ -1109,6 +1125,23 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The phone strip is only ~30px tall, so the flock flies smaller there. */
 @media (max-width: 720px) { .sky-flock { top: 74px; scale: .7; } }
 @media (prefers-reduced-motion: reduce) { .sky-flock { animation: none; left: 30%; } .sky-bird { animation: none; } }
+/* Rain in the property's city: an overcast grey sky, heavy clouds, slanting rain and lightning. */
+.portal-sky.is-rainy { background: linear-gradient(180deg, rgb(62 70 86 / .82) 0%, rgb(92 100 118 / .62) 38%, rgb(140 148 162 / .42) 66%, rgb(196 200 208 / .25) 84%, transparent 100%); }
+:root[data-theme="dark"] .portal-sky.is-rainy { background: linear-gradient(180deg, rgb(12 16 24 / .96) 0%, rgb(24 30 42 / .86) 38%, rgb(36 42 56 / .6) 64%, rgb(30 34 44 / .3) 82%, transparent 100%); }
+.portal-sky.is-rainy .sky-cloud { --cloud: rgb(112 120 136 / .95); opacity: .92; filter: blur(4px); }
+:root[data-theme="dark"] .portal-sky.is-rainy .sky-cloud { --cloud: rgb(58 66 82 / .9); opacity: .85; }
+.sky-rain { position: absolute; inset: 0; }
+.rain-drop { position: absolute; top: -40px; width: 1px; border-radius: 1px; background: linear-gradient(180deg, transparent, rgb(214 226 244 / .85)); animation: rain-fall .8s linear infinite; }
+@keyframes rain-fall { from { transform: translate3d(0, 0, 0) rotate(12deg); } to { transform: translate3d(-150px, 720px, 0) rotate(12deg); } }
+/* Lightning: a soft glow that flickers twice then rests for seconds, far below the three-flashes-a-second
+   photosensitivity limit (WCAG 2.3.1); a thunderstorm only brings the flashes closer together. */
+.sky-lightning { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse 70% 55% at 62% 8%, rgb(226 234 255 / .6), rgb(196 210 255 / .18) 55%, transparent 80%); animation: lightning-flash 12s linear 3s infinite; }
+.sky-lightning.is-storm { animation-duration: 7s; animation-delay: 1s; }
+@keyframes lightning-flash { 0%, 90% { opacity: 0; } 91% { opacity: .85; } 92.5% { opacity: .15; } 94% { opacity: .65; } 97%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .rain-drop { top: var(--rain-rest); animation: none; transform: rotate(12deg); }
+  .sky-lightning { display: none; }
+}
 
 /* Resident's photo beside "My details": the card is about them, so their photo leads it. */
 .portal-details-identity { display: flex; align-items: center; gap: 18px; }
@@ -1202,7 +1235,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .profile-modal textarea { width: 100%; min-height: 66px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; resize: vertical; }
 .country-combobox { position: relative; margin-top: 7px; }
 .country-combobox > .country-flag { position: absolute; top: 50%; left: 11px; transform: translateY(-50%); pointer-events: none; }
-.profile-modal .country-combobox input { padding-left: 38px; padding-right: 32px; }
+/* Placed after the modal and Settings input rules so this padding wins in both. */
+.country-combobox > input { padding-left: 38px; padding-right: 32px; }
 .country-combobox input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
 .country-chevron { position: absolute; top: 50%; right: 11px; transform: translateY(-50%); color: #93a09a; pointer-events: none; }
 .country-flag { flex: none; display: block; width: 20px; height: 15px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px #0000001f; }
@@ -1217,3 +1251,31 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .country-label { display: inline-flex; align-items: center; gap: 6px; }
 .country-label .country-flag { width: 16px; height: 12px; }
 .crud-main .identity-missing { color: #9a6a16; }
+/* Edit super admin and My account: a note beside a label, the read-only own email, a short address box. */
+.profile-modal label:has(> .field-hint) { grid-template-columns: auto 1fr; align-items: baseline; }
+.profile-modal label:has(> .field-hint) > input { grid-column: 1 / -1; }
+.profile-modal .field-hint { color: var(--muted); font-weight: 400; }
+.profile-modal input[readonly] { color: var(--muted); background: #f4f7f5; cursor: default; }
+.settings-fields textarea.address-input { min-height: 66px; line-height: 1.45; }
+/* Serial number at the start of a list row; continues across pages (page 2 starts at 11). */
+.crud-row .row-number { flex: none; min-width: 26px; height: 26px; display: grid; place-items: center; padding: 0 6px; border-radius: 7px; color: var(--teal); background: var(--teal-soft); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.crud-row .row-number + .crud-main { flex: 1; }
+/* Money going out reads red: the Expenses tile and each expense's amount. The dark theme needs a
+   lighter red to keep text contrast above 4.5:1 on its dark surfaces. */
+.finance-kpi.is-expense strong, .finance-expenses .expense-amount { color: var(--critical); }
+:root[data-theme="dark"] .finance-overview { --critical: rgb(236 98 92); }
+/* Phone field: a flag and calling-code picker beside the number, placed under its label like any input. */
+.phone-input { display: flex; gap: 6px; margin-top: 6px; }
+.resident-modal .phone-input { margin-top: 4px; }
+.phone-input .country-combobox { flex: 0 0 112px; margin-top: 0; }
+.phone-input > input { flex: 1; min-width: 0; }
+.phone-input .country-listbox { right: auto; width: min(300px, 80vw); }
+.country-option-detail { margin-left: auto; padding-left: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* A stored phone number with its flag, in list rows and resident details. */
+.phone-label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.phone-label .country-flag { width: 16px; height: 12px; }
+/* ID documents: the note when nationality changes, flagged expiry dates, and the resident form's visa select. */
+.identity-change-note { margin: 8px 0 0; padding: 8px 10px; border: 1px solid #f0e2c4; border-radius: 7px; color: #9a6a16; background: #fffaf0; font-size: 11px; line-height: 1.4; }
+.expired-note { color: #b5523f; font-weight: 700; }
+.resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }

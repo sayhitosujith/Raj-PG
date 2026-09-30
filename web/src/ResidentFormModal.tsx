@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, ExternalLink, Eye, EyeOff, KeyRound, RefreshCw, Save, UserPlus, X } from 'lucide-react'
-import { aadharCardAccept, readAadharCard } from './aadharCard'
+import { Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, Save, UserPlus, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
+import { readIdentityFields, type DocumentUploads } from './identity'
+import { IdentityDocumentFields } from './IdentityDocumentFields'
 import { todayDateInputValue } from './joinDate'
 import type { Resident } from './resident'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
+import { PhoneField } from './PhoneField'
 import { readApiError } from './superAdmin'
 import { RoomSelect } from './RoomSelect'
 
 const minimumPasswordLength = 10
-
-// Older records may hold "+91…"; the form edits the 10-digit number the server now stores.
-const tenDigitPhone = (phone: string | null | undefined) => phone ? phone.replace(/\D/g, '').slice(-10) : ''
 
 // The server owns key generation so the format and randomness source live in one place.
 async function fetchAccessKeyPreview() {
@@ -30,7 +29,7 @@ export type ResidentPrefill = { name: string; phone: string; email: string | nul
 export function ResidentFormModal({ resident, prefill, properties, onClose, onSaved, onNotice }: { resident?: Resident; prefill?: ResidentPrefill; properties: Array<{ id?: string; name: string; rentWithFood?: number | null; rentWithoutFood?: number | null }>; onClose: () => void; onSaved: (resident: Resident) => void; onNotice: (message: string) => void }) {
   const isEdit = resident !== undefined
   const [accessKey, setAccessKey] = useState('')
-  const [aadharCard, setAadharCard] = useState('')
+  const [uploads, setUploads] = useState<DocumentUploads>({})
   const [photoChange, setPhotoChange] = useState<PhotoChange>(undefined)
   // Initials in the preview follow the name as it is typed.
   const [previewName, setPreviewName] = useState(resident?.name ?? prefill?.name ?? '')
@@ -82,22 +81,12 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     onNotice(`Password set. ${resident.name} can now sign in with it; their access key no longer works.`)
   }
 
-  async function chooseAadharCard(event: React.ChangeEvent<HTMLInputElement>) {
-    const input = event.target
-    const file = input.files?.[0]
-    if (!file) { setAadharCard(''); return }
-    const result = await readAadharCard(file)
-    if ('error' in result) { setError(result.error); input.value = ''; return }
-    setError('')
-    setAadharCard(result.dataUrl)
-  }
-
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'aadharNumber', 'permanentAddress', 'joinedAt', 'monthlyRent'].map((field) => [field, String(form.get(field) ?? '')]))
-    // An untouched file input means "keep the current card", so the field is only sent when replaced.
-    const payload = { ...fields, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), ...(aadharCard ? { aadharCardUrl: aadharCard } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
+    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', 'joinedAt', 'monthlyRent'].map((field) => [field, String(form.get(field) ?? '')]))
+    // An untouched file input means "keep the current upload", so only chosen files are sent.
+    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
     setIsSaving(true)
     setError('')
     try {
@@ -120,12 +109,10 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <ResidentPhotoField name={previewName} currentUrl={resident?.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} change={photoChange} onChange={setPhotoChange} onError={setError} />
         <label>Resident name<input name="name" required onChange={(event) => setPreviewName(event.target.value)} defaultValue={resident?.name ?? prefill?.name} placeholder="e.g. Ananya Sharma" /></label>
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-        <label>Phone number <span>(10 digits)</span><input name="phone" type="tel" inputMode="numeric" pattern="[0-9]{10}" maxLength={10} title="Enter the 10-digit mobile number" required={!isEdit} defaultValue={tenDigitPhone(resident?.phone ?? prefill?.phone)} placeholder="e.g. 9876543210" /></label>
+        <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
-        <label>Aadhaar number <span>(12 digits)</span><input name="aadharNumber" inputMode="numeric" pattern="[0-9]{12}" maxLength={12} title="Enter the 12-digit Aadhaar number" required={!isEdit} defaultValue={resident?.aadharNumber ?? ''} placeholder="12-digit Aadhaar number" /></label>
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
-        <label className="aadhar-upload">Aadhaar card {isEdit && <span>{resident.hasAadharCard ? 'choose a file to replace the current one' : '(none on file)'}</span>}<input type="file" accept={aadharCardAccept} onChange={chooseAadharCard} /></label>
-        {isEdit && resident.hasAadharCard && <a className="current-card-link" href={`/api/residents/${resident.id}/aadhar-card`} target="_blank" rel="noopener noreferrer">View current card <ExternalLink size={11} /></a>}
+        <IdentityDocumentFields details={resident} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
         <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
         <fieldset className="food-plan">
           <legend>Food plan</legend>

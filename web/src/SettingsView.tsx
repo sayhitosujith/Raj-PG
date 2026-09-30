@@ -5,7 +5,8 @@ import { resizeLogo, resizeUpiQr } from './imageResize'
 import { WhatsAppSettings } from './WhatsAppSettings'
 import { EmailSettings } from './EmailSettings'
 import { ordinal } from './rent'
-import type { SuperAdmin } from './superAdmin'
+import { readIdentityFields, type SuperAdmin } from './superAdmin'
+import { SuperAdminIdentityFields } from './SuperAdminIdentityFields'
 import type { WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
 
@@ -122,8 +123,8 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
       <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Settings</h2><p>Your account and how the workspace runs.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
 
       <div className="settings-grid">
-        <SettingsSection icon={<UserRound size={18} />} title="My account" description="Your name and sign-in details. Changing email or password needs your current password." onSubmit={(form) => {
-          const changes: Record<string, string> = { name: value(form, 'name'), email: value(form, 'email') }
+        <SettingsSection icon={<UserRound size={18} />} title="My account" description="Your name, sign-in and identity details. Changing email or password needs your current password." onSubmit={(form) => {
+          const changes: Record<string, string> = { name: value(form, 'name'), email: value(form, 'email'), ...readIdentityFields(form) }
           if (value(form, 'newPassword')) {
             if (value(form, 'newPassword') !== value(form, 'confirmPassword')) return Promise.resolve('New passwords do not match.')
             changes.newPassword = value(form, 'newPassword')
@@ -133,6 +134,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
         }}>
           <label>Full name<input name="name" required maxLength={60} defaultValue={admin.name} /></label>
           <label>Email address<input name="email" type="email" required defaultValue={admin.email} autoComplete="username" /></label>
+          <SuperAdminIdentityFields admin={admin} />
           <label>Current password <span>(only to change email or password)</span><input name="currentPassword" type="password" autoComplete="current-password" /></label>
           <div className="settings-pair">
             <label>New password<input name="newPassword" type="password" minLength={10} autoComplete="new-password" placeholder="Leave blank to keep" /></label>

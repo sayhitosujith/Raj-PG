@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { ranges, snowRegion } from './mountainRidges'
+import { isRainy, type WeatherCondition } from './weather'
 
 // Day runs 6 am to 6 pm on the viewer's own clock (the device's local time zone).
 const DAY_STARTS_AT = 6
@@ -17,14 +18,27 @@ function useDaytime() {
 }
 
 type Star = { x: number; y: number; size: number; delay: number; duration: number }
+type RainDrop = { x: number; rest: number; length: number; delay: number; duration: number; opacity: number }
 
-// A fixed pseudo-random sky (seeded), so the stars sit in the same places on every visit and render.
-function makeStars(count: number, seed = 7): Star[] {
+// A seeded pseudo-random sequence, so stars and raindrops sit in the same places on every visit and render.
+function seededRandom(seed: number) {
   let state = seed
-  const next = () => { state = (state * 16807) % 2147483647; return (state - 1) / 2147483646 }
+  return () => { state = (state * 16807) % 2147483647; return (state - 1) / 2147483646 }
+}
+
+function makeStars(count: number, seed = 7): Star[] {
+  const next = seededRandom(seed)
   return Array.from({ length: count }, () => ({ x: next() * 100, y: next() * 58, size: 1 + next() * 2.2, delay: next() * 6, duration: 2.5 + next() * 4 }))
 }
 const stars = makeStars(70)
+
+// Drops start a little past the right edge because they fall slanting left; `rest` places each
+// streak when motion is reduced and the rain is drawn still.
+function makeRain(count: number, seed = 11): RainDrop[] {
+  const next = seededRandom(seed)
+  return Array.from({ length: count }, () => ({ x: next() * 115, rest: next() * 90, length: 14 + next() * 12, delay: -next() * 1.2, duration: 0.55 + next() * 0.45, opacity: 0.35 + next() * 0.45 }))
+}
+const rain = makeRain(110)
 
 // Hand-placed clouds: height in the sky, size, drift time, a head start (negative delay) and where
 // each rests when motion is reduced.
@@ -48,25 +62,35 @@ const birds = [
 /**
  * Decorative sky behind the top of the resident portal, following the viewer's local time: by day a
  * sun in a blue sky, by night a moon with twinkling stars; both over three mountain ranges with
- * drifting clouds and a small flock of birds, fading into the page below. Drawn inline so it needs no image requests; colours
- * and motion live in App.css (.portal-sky, with .is-day / .is-night).
+ * drifting clouds and a small flock of birds, fading into the page below. When it is raining in
+ * the property's city the sky turns overcast instead: no sun, moon, stars or birds, darker clouds,
+ * falling rain and occasional lightning (more often in a thunderstorm). Drawn inline so it needs no
+ * image requests; colours and motion live in App.css (.portal-sky, with .is-day / .is-night / .is-rainy).
  */
-export function SkyBackdrop() {
+export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
   const daytime = useDaytime()
+  const raining = isRainy(condition)
   return (
-    <div className={`portal-sky ${daytime ? 'is-day' : 'is-night'}`} aria-hidden="true">
-      {daytime ? <div className="sky-sun" /> : <>
+    <div className={`portal-sky ${daytime ? 'is-day' : 'is-night'}${raining ? ' is-rainy' : ''}`} aria-hidden="true">
+      {raining ? null : daytime ? <div className="sky-sun" /> : <>
         {stars.map((star, index) => <span key={index} className="sky-star" style={{ left: `${star.x}%`, top: `${star.y}%`, width: star.size, height: star.size, animationDelay: `${star.delay}s`, animationDuration: `${star.duration}s` } as CSSProperties} />)}
         <div className="sky-moon" />
       </>}
       {clouds.map((cloud, index) => <div key={index} className="sky-cloud" style={{ top: cloud.top, '--cloud-size': cloud.size, '--cloud-duration': `${cloud.duration}s`, '--cloud-delay': `${cloud.delay}s`, '--cloud-rest': cloud.rest } as CSSProperties} />)}
-      <div className="sky-flock">
-        {birds.map((bird, index) => (
-          <svg key={index} className="sky-bird" viewBox="0 0 40 16" style={{ left: bird.x, top: bird.y, width: 30 * bird.size, animationDelay: `${bird.flap}s` }}>
-            <path d="M2 11 Q11 2 20 10 Q29 2 38 11" />
-          </svg>
-        ))}
-      </div>
+      {raining
+        ? <>
+            <div className={`sky-lightning${condition === 'storm' ? ' is-storm' : ''}`} />
+            <div className="sky-rain">
+              {rain.map((drop, index) => <span key={index} className="rain-drop" style={{ left: `${drop.x}%`, '--rain-rest': `${drop.rest}%`, height: drop.length, opacity: drop.opacity, animationDelay: `${drop.delay}s`, animationDuration: `${drop.duration}s` } as CSSProperties} />)}
+            </div>
+          </>
+        : <div className="sky-flock">
+            {birds.map((bird, index) => (
+              <svg key={index} className="sky-bird" viewBox="0 0 40 16" style={{ left: bird.x, top: bird.y, width: 30 * bird.size, animationDelay: `${bird.flap}s` }}>
+                <path d="M2 11 Q11 2 20 10 Q29 2 38 11" />
+              </svg>
+            ))}
+          </div>}
       {/* Kept in proportion and cropped at the sides on narrow screens, so peaks never turn into spikes; ranges are listed back to front so nearer ones overlap. */}
       <svg className="sky-mountains" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
         <defs>

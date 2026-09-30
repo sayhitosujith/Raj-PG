@@ -4,7 +4,7 @@ import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyNewBooking } from './notifications.js'
 import { getSettings } from './settings.js'
-import { isValidEmail, normalizePhone } from './validation.js'
+import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
 
 /**
  * Booking requests. Most arrive through the public /book form, which the owner shares on social
@@ -30,7 +30,7 @@ async function parseBooking(body: BookingBody, allowedSources: readonly string[]
   const name = text(body.name)
   if (!name || name.length > 80) return { error: 'Enter your name (up to 80 characters).' } as const
   const phone = normalizePhone(text(body.phone))
-  if (!phone) return { error: 'Enter a valid 10-digit mobile number.' } as const
+  if (!phone) return { error: phoneRequirement } as const
   const email = text(body.email) || null
   if (email && (!isValidEmail(email) || email.length > 120)) return { error: 'Enter a valid email address, or leave it blank.' } as const
   const propertyId = text(body.propertyId)

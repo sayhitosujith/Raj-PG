@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { prisma } from './db.js'
 import { templates } from './notifications.js'
 import { runRentReminders } from './rentReminders.js'
-import { normalizePhone } from './validation.js'
+import { phoneRequirement } from './validation.js'
 import { isWhatsAppEnabled, sendTemplate, templateLanguage, whatsappNumber } from './whatsappClient.js'
 
 /** Owner routes for WhatsApp setup (Settings page); must be mounted behind the super admin guard. */
@@ -28,10 +28,10 @@ whatsappAdminRouter.get('/whatsapp/status', async (_request, response) => {
 // Sends Meta's pre-approved "hello_world" sample, to check the keys work before any template is approved.
 whatsappAdminRouter.post('/whatsapp/test', async (request, response) => {
   if (!isWhatsAppEnabled()) { response.status(503).json({ error: 'Add WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID on the server first.' }); return }
-  const phone = normalizePhone(String((request.body as { phone?: unknown }).phone ?? ''))
-  if (!phone) { response.status(400).json({ error: 'Enter a valid 10-digit mobile number.' }); return }
+  const to = whatsappNumber(String((request.body as { phone?: unknown }).phone ?? ''))
+  if (!to) { response.status(400).json({ error: phoneRequirement }); return }
   try {
-    await sendTemplate(whatsappNumber(phone), 'hello_world', [], undefined, 'en_US')
+    await sendTemplate(to, 'hello_world', [], undefined, 'en_US')
     response.json({ ok: true })
   } catch (error) {
     response.status(502).json({ error: error instanceof Error ? error.message : 'WhatsApp rejected the message.' })
