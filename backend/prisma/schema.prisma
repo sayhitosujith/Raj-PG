@@ -196,13 +196,27 @@ enum UserRole {
   RESIDENT
 }
 
+// Identity details are nullable because admins created before they were collected (and by the
+// bootstrap script) have none; the API requires them for every admin added from the dashboard.
 model SuperAdmin {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  sessions     Session[]
-  createdAt    DateTime  @default(now())
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  passwordHash     String
+  phone            String?
+  aadharNumber     String?
+  sex              Sex?
+  // ISO 3166-1 alpha-2 code (e.g. "IN"); names and flags are derived from it on the client.
+  nationality      String?
+  permanentAddress String?
+  sessions         Session[]
+  createdAt        DateTime  @default(now())
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
 }
 
 // A session belongs to exactly one user type; the nullable FKs keep referential

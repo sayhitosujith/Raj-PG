@@ -1197,3 +1197,23 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .notification-preferences .whatsapp-preference { margin-top: 0; }
 .whatsapp-preference-icon.is-email { color: rgb(255 255 255); background: rgb(42 120 214); }
 .whatsapp-checks .is-warning { color: #9a6a16; }
+
+/* Add super admin: address box, and the searchable nationality picker with SVG flags. */
+.profile-modal textarea { width: 100%; min-height: 66px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; resize: vertical; }
+.country-combobox { position: relative; margin-top: 7px; }
+.country-combobox > .country-flag { position: absolute; top: 50%; left: 11px; transform: translateY(-50%); pointer-events: none; }
+.profile-modal .country-combobox input { padding-left: 38px; padding-right: 32px; }
+.country-combobox input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+.country-chevron { position: absolute; top: 50%; right: 11px; transform: translateY(-50%); color: #93a09a; pointer-events: none; }
+.country-flag { flex: none; display: block; width: 20px; height: 15px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px #0000001f; }
+.country-listbox { position: absolute; top: calc(100% + 4px); right: 0; left: 0; z-index: 5; max-height: 220px; margin: 0; padding: 4px; overflow-y: auto; list-style: none; border: 1px solid var(--line); border-radius: 8px; background: white; box-shadow: 0 12px 30px #18352f24; }
+.country-listbox li { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 6px; color: var(--ink); font-size: 12px; cursor: pointer; }
+.country-listbox li.is-active { background: var(--teal-soft); }
+.country-listbox li[aria-selected='true'] { color: var(--teal); font-weight: 700; }
+.country-listbox .country-empty { color: var(--muted); cursor: default; }
+/* Super admin rows: identity line under the email, Aadhaar masked. */
+.crud-main .identity-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; white-space: normal; }
+.crud-main .identity-summary .aadhar-value { font-size: 10px; }
+.country-label { display: inline-flex; align-items: center; gap: 6px; }
+.country-label .country-flag { width: 16px; height: 12px; }
+.crud-main .identity-missing { color: #9a6a16; }

@@ -9,6 +9,7 @@ import { isAwaitingSignIn } from './residentFilters'
 import { LocationLink } from './LocationLink'
 import { AccessKeyReset } from './AccessKeyReset'
 import { FoodRequestReview } from './FoodRequestReview'
+import { formatAadhar } from './aadharNumber'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -67,13 +68,6 @@ function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; o
 
 // Entry animations are staggered per row but capped, so a long list never takes seconds to appear.
 const maxStaggerSteps = 10
-
-// Masked to the last four digits by default, following UIDAI guidance on displaying Aadhaar numbers.
-function formatAadhar(aadharNumber: string, isRevealed: boolean) {
-  const digits = aadharNumber.replace(/\D/g, '')
-  const visible = isRevealed ? digits : 'X'.repeat(Math.max(0, digits.length - 4)) + digits.slice(-4)
-  return visible.replace(/(.{4})(?=.)/g, '$1 ')
-}
 
 /**
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
