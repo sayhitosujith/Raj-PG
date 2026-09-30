@@ -16,7 +16,7 @@ import { findResidentByCredentials } from './residentCredentials.js'
 import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
-import { currentWeather } from './weather.js'
+import { currentWeather, weatherNear } from './weather.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -148,12 +148,21 @@ residentPortalRouter.post('/resident-portal/identity', requireResident, async (r
   }
 })
 
-// Current weather in the resident's property city; 204 when there is none to show (no city set,
-// weather not configured, or the lookup failed), so the portal just leaves it out.
-residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (_request, response) => {
+// Valid coordinates from a query string, or null; anything else falls back to the property's city.
+function readCoordinates(query: Request['query']) {
+  const latitude = Number(query.lat), longitude = Number(query.lon)
+  const isValid = query.lat !== undefined && query.lon !== undefined && Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+  return isValid ? { latitude, longitude } : null
+}
+
+// Current weather where the resident is (?lat=&lon=, from their device when they allow it) or else
+// in their property's city; 204 when there is none to show (no city set, or the lookup failed), so
+// the portal just leaves it out.
+residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (request, response) => {
   try {
-    const property = await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
-    const weather = property?.city ? await currentWeather(property.city) : null
+    const coordinates = readCoordinates(request.query)
+    const property = coordinates ? null : await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
+    const weather = coordinates ? await weatherNear(coordinates.latitude, coordinates.longitude) : property?.city ? await currentWeather(property.city) : null
     if (!weather) { response.status(204).send(); return }
     response.json(weather)
   } catch (error) {

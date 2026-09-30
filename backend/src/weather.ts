@@ -80,29 +80,87 @@ async function findPlace(city: string): Promise<Place | null> {
   return place
 }
 
-/**
- * The current weather in `city`, or null when the city is unknown or a lookup fails; a weather
- * outage must never break the portal.
- */
-export async function currentWeather(city: string): Promise<Weather | null> {
-  const name = city.trim()
-  const cacheKey = name.toLowerCase()
+// Weather results, cached per place for a while (failures more briefly) so a busy portal makes few calls.
+async function cachedWeather(cacheKey: string, load: () => Promise<Weather | null>) {
   const cached = weatherCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) return cached.weather
   let weather: Weather | null = null
   try {
-    const place = await findPlace(name)
-    if (place) {
-      const url = new URL(forecastUrl)
-      url.searchParams.set('latitude', String(place.latitude))
-      url.searchParams.set('longitude', String(place.longitude))
-      url.searchParams.set('current', 'temperature_2m,weather_code,is_day')
-      const body = await getJson<{ current?: { temperature_2m: number; weather_code: number; is_day: number } }>(url)
-      if (body?.current) weather = { city: name, temperature: Math.round(body.current.temperature_2m), ...describeCode(body.current.weather_code), isDay: body.current.is_day === 1 }
-    }
+    weather = await load()
   } catch (error) {
-    console.warn(`[weather] Lookup for "${name}" failed:`, error instanceof Error ? error.message : error)
+    console.warn(`[weather] Lookup for ${cacheKey} failed:`, error instanceof Error ? error.message : error)
   }
   weatherCache.set(cacheKey, { expiresAt: Date.now() + (weather ? weatherCacheMs : failureCacheMs), weather })
   return weather
+}
+
+async function readWeather(place: Place, name: string): Promise<Weather | null> {
+  const url = new URL(forecastUrl)
+  url.searchParams.set('latitude', String(place.latitude))
+  url.searchParams.set('longitude', String(place.longitude))
+  url.searchParams.set('current', 'temperature_2m,weather_code,is_day')
+  const body = await getJson<{ current?: { temperature_2m: number; weather_code: number; is_day: number } }>(url)
+  return body?.current ? { city: name, temperature: Math.round(body.current.temperature_2m), ...describeCode(body.current.weather_code), isDay: body.current.is_day === 1 } : null
+}
+
+/**
+ * The current weather in `city` (a property's City, e.g. "Bengaluru" or "Mahadevapura"), or null
+ * when it is unknown or a lookup fails; a weather outage must never break the portal.
+ */
+export async function currentWeather(city: string): Promise<Weather | null> {
+  const name = city.trim()
+  return cachedWeather(`city "${name.toLowerCase()}"`, async () => {
+    const place = await findPlace(name)
+    return place ? readWeather(place, name) : null
+  })
+}
+
+// Reverse geocoding (coordinates -> area name) from OpenStreetMap's Nominatim. Its usage policy
+// asks for an identifying User-Agent, at most one request a second and cached results, which the
+// per-area cache below keeps far inside. https://operations.osmfoundation.org/policies/nominatim/
+const reverseGeocodingUrl = 'https://nominatim.openstreetmap.org/reverse'
+const userAgent = 'raj-pg/1.0 (resident portal weather)'
+const areaNameCache = new Map<string, { expiresAt: number; name: string | null }>()
+
+type ReverseGeocodingResult = { address?: Partial<Record<'suburb' | 'neighbourhood' | 'city_district' | 'city' | 'town' | 'village' | 'county', string>> }
+
+async function findAreaName(place: Place, cacheKey: string): Promise<string | null> {
+  const cached = areaNameCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.name
+  const url = new URL(reverseGeocodingUrl)
+  url.searchParams.set('format', 'jsonv2')
+  url.searchParams.set('lat', String(place.latitude))
+  url.searchParams.set('lon', String(place.longitude))
+  url.searchParams.set('zoom', '14')
+  url.searchParams.set('accept-language', 'en')
+  let name: string | null = null
+  try {
+    const response = await fetch(url, { headers: { 'User-Agent': userAgent }, signal: AbortSignal.timeout(requestTimeoutMs) })
+    if (response.ok) {
+      const { address = {} } = await response.json() as ReverseGeocodingResult
+      // The most local name people recognise: the neighbourhood, then the city.
+      name = address.suburb ?? address.neighbourhood ?? address.city_district ?? address.city ?? address.town ?? address.village ?? address.county ?? null
+    } else {
+      console.warn(`[weather] ${url.hostname} answered HTTP ${response.status}`)
+    }
+  } catch (error) {
+    console.warn('[weather] Area name lookup failed:', error instanceof Error ? error.message : error)
+  }
+  areaNameCache.set(cacheKey, { expiresAt: Date.now() + (name ? placeCacheMs : failureCacheMs), name })
+  return name
+}
+
+/** Coordinates rounded to two decimals (about 1 km): plenty for weather, and they share the cache. */
+export function roundCoordinates(latitude: number, longitude: number): Place {
+  return { latitude: Math.round(latitude * 100) / 100, longitude: Math.round(longitude * 100) / 100 }
+}
+
+/**
+ * The current weather where the viewer is, named after their area ("Mahadevapura"), or null when a
+ * lookup fails. Coordinates are rounded before use, so only an approximate position is ever sent on.
+ */
+export async function weatherNear(latitude: number, longitude: number): Promise<Weather | null> {
+  const place = roundCoordinates(latitude, longitude)
+  const cacheKey = `${place.latitude},${place.longitude}`
+  return cachedWeather(`location ${cacheKey}`, async () => readWeather(place, await findAreaName(place, cacheKey) ?? 'Your location'))
 }

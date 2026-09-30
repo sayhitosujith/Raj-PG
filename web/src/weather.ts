@@ -20,23 +20,47 @@ export function previewSkyCondition(): WeatherCondition | undefined {
   return value === 'rain' || value === 'storm' ? value : undefined
 }
 
-// 204 means there is nothing to show (no city set, weather off, or the lookup failed).
-async function fetchWeather() {
-  const response = await fetch('/api/resident-portal/weather')
+type Coordinates = { latitude: number; longitude: number }
+
+/**
+ * The device's position rounded to two decimals (about 1 km, plenty for weather), or null when the
+ * browser has no geolocation or the resident declines. The browser asks for permission once and
+ * remembers the answer; a recent fix is reused, so refreshes do not wait on GPS.
+ */
+function findPosition(): Promise<Coordinates | null> {
+  if (!('geolocation' in navigator)) return Promise.resolve(null)
+  return new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+    ({ coords }) => resolve({ latitude: Math.round(coords.latitude * 100) / 100, longitude: Math.round(coords.longitude * 100) / 100 }),
+    () => resolve(null),
+    { enableHighAccuracy: false, timeout: 10_000, maximumAge: 10 * 60_000 },
+  ))
+}
+
+// Without a position the server uses the property's city. 204 means there is nothing to show.
+async function fetchWeather(position: Coordinates | null) {
+  const response = await fetch(`/api/resident-portal/weather${position ? `?lat=${position.latitude}&lon=${position.longitude}` : ''}`)
   return response.status === 200 ? await response.json() as Weather : null
 }
 
 /**
- * The property city's current weather, loaded once and again on each portal refresh; null while
- * loading or when there is none. One request feeds both the weather line and the sky.
+ * Current weather where the resident is, when their device shares its location, otherwise in their
+ * property's city; null while loading or when there is none. One request feeds both the weather line
+ * and the sky. On first load the city's weather shows straight away and is replaced once the
+ * resident allows location, since they may take a while to answer the prompt, or never do.
  */
 export function useWeather(refreshSignal: number) {
   const [weather, setWeather] = useState<Weather | null>(null)
   useEffect(() => {
     let isCurrent = true
-    fetchWeather().then((next) => { if (isCurrent) setWeather(next) }, () => undefined)
+    let isLocated = false
+    fetchWeather(null).then((next) => { if (isCurrent && !isLocated) setWeather(next) }, () => undefined)
+    findPosition().then(async (position) => {
+      const near = position ? await fetchWeather(position) : null
+      if (near && isCurrent) { isLocated = true; setWeather(near) }
+    }).catch(() => undefined)
     return () => { isCurrent = false }
   }, [])
-  useRefreshSignal(refreshSignal, () => { fetchWeather().then(setWeather, () => undefined) })
+  // By refresh time the resident has answered, so one request with (or without) the position is enough.
+  useRefreshSignal(refreshSignal, () => { findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
   return weather
 }
