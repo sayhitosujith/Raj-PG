@@ -138,8 +138,12 @@ async function findAreaName(place: Place, cacheKey: string): Promise<string | nu
     const response = await fetch(url, { headers: { 'User-Agent': userAgent }, signal: AbortSignal.timeout(requestTimeoutMs) })
     if (response.ok) {
       const { address = {} } = await response.json() as ReverseGeocodingResult
-      // The most local name people recognise: the neighbourhood, then the city.
-      name = address.suburb ?? address.neighbourhood ?? address.city_district ?? address.city ?? address.town ?? address.village ?? address.county ?? null
+      // "Area, City" (e.g. "Bhattrahalli, Bengaluru"): the local name people recognise, with the
+      // city so it reads clearly; just one of them when the other is missing or the same.
+      const area = address.suburb ?? address.neighbourhood ?? address.city_district ?? address.village ?? null
+      const city = address.city ?? address.town ?? address.county ?? null
+      name = area && city && area !== city ? `${area}, ${city}` : area ?? city
+
     } else {
       console.warn(`[weather] ${url.hostname} answered HTTP ${response.status}`)
     }
