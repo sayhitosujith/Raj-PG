@@ -568,6 +568,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-terms { margin-top: 28px; padding: 16px 4px 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; text-align: center; }
 .portal-terms .text-link { padding: 0; }
 .portal-terms .text-link { text-decoration: underline; text-underline-offset: 3px; }
+/* Policy sentence and "Made in India" share one centred line, wrapping to two on narrow screens. */
+.portal-terms { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; }
+.made-in-india { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.made-in-india img { border-radius: 2px; box-shadow: 0 0 0 1px rgb(0 0 0 / .12); }
 .terms-modal { width: min(100%, 620px); }
 /* pre-line keeps the owner's line breaks; the modal scrolls on long terms instead of the page. */
 .terms-text { max-height: min(60vh, 520px); margin: 14px 0 0; overflow-y: auto; color: #55635f; font-size: 12px; line-height: 1.7; white-space: pre-line; }
@@ -984,8 +988,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .status-pill.coral { color: #b5523f; background: #fbe6e1; }
 
 /*
- * Resident portal sky. These default rules are the night (.is-night): a moon rising over three
- * mountain ranges, with twinkling stars, at the top of the page and fading into the page below. The
+ * Resident portal sky. These default rules are the night (.is-night): a moon rising over a
+ * three-layer city skyline with lit windows and twinkling stars, at the top of the page and fading into the page below. The
  * day (.is-day) overrides follow. Colours are rgb() on purpose: the generated dark theme only
  * remaps hex and named colours, so the dark palette below is hand-picked instead. It scrolls with
  * the page (absolute, not fixed) so it never sits behind lower sections.
@@ -1005,30 +1009,24 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22);
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, moon-glow 7s ease-in-out 4s infinite alternate;
 }
-.sky-mountains { position: absolute; right: 0; bottom: 12%; left: 0; width: 100%; height: 46%; animation: mountains-in 2.4s ease-out both; }
+.sky-city { position: absolute; right: 0; bottom: 12%; left: 0; width: 100%; height: 46%; animation: skyline-in 2.4s ease-out both; }
 /* Light theme ranges stay pale so the text over them keeps its contrast; solid, not translucent,
    so a far range's shading never shows through the ranges in front of it. */
-.mountain-far { fill: rgb(166 170 208); }
-.mountain-mid { fill: rgb(148 156 198); }
-.mountain-near { fill: rgb(142 158 184); }
+.city-far { fill: rgb(166 170 208); }
+.city-middle { fill: rgb(148 156 198); }
+.city-near { fill: rgb(122 136 166); }
 /* Snow caps on the far peaks (bright by day, moonlit at night), and each slope's shaded face. */
-.mountain-snow { fill: rgb(255 255 255 / .85); }
-.is-night .mountain-snow { fill: rgb(214 222 244 / .5); }
-:root[data-theme="dark"] .is-day .mountain-snow { fill: rgb(234 240 250 / .5); }
-:root[data-theme="dark"] .is-night .mountain-snow { fill: rgb(188 200 232 / .32); }
-.mountain-shade { fill: rgb(28 40 72 / .13); }
-:root[data-theme="dark"] .mountain-shade { fill: rgb(0 0 10 / .28); }
 @keyframes sky-fade { from { opacity: .3; } to { opacity: 1; } }
 @keyframes star-twinkle { from { opacity: .25; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
 @keyframes moon-rise { from { transform: translate(-50%, 60%); opacity: .3; } to { transform: translate(-50%, -50%); opacity: 1; } }
 @keyframes moon-glow { from { box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22); } to { box-shadow: 0 0 55px 18px rgb(240 238 220 / .55), 0 0 150px 75px rgb(200 210 255 / .28); } }
-@keyframes mountains-in { from { transform: translateY(8%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes skyline-in { from { transform: translateY(8%); opacity: 0; } to { transform: none; opacity: 1; } }
 /* Dark theme: a deep navy night with brighter stars and near-black ranges. */
 :root[data-theme="dark"] .portal-sky { background: linear-gradient(180deg, rgb(8 14 34 / .95) 0%, rgb(18 28 58 / .85) 38%, rgb(36 40 78 / .6) 64%, rgb(30 34 56 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-moon { box-shadow: 0 0 45px 14px rgb(240 238 220 / .35), 0 0 140px 70px rgb(150 170 255 / .16); animation-name: moon-rise; }
-:root[data-theme="dark"] .mountain-far { fill: rgb(44 50 88 / .85); }
-:root[data-theme="dark"] .mountain-mid { fill: rgb(28 34 64 / .92); }
-:root[data-theme="dark"] .mountain-near { fill: rgb(16 22 36 / .96); }
+:root[data-theme="dark"] .city-far { fill: rgb(44 50 88 / .85); }
+:root[data-theme="dark"] .city-middle { fill: rgb(28 34 64 / .92); }
+:root[data-theme="dark"] .city-near { fill: rgb(16 22 36 / .96); }
 /*
  * Daytime (6 am to 6 pm on the viewer's clock): a clear blue sky with a warm sun where the moon sits,
  * no stars, bright clouds and green-blue ranges. The dark theme keeps a deep blue day so the light
@@ -1042,18 +1040,23 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, sun-glow 6s ease-in-out 4s infinite alternate;
 }
 @keyframes sun-glow { from { box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3); } to { box-shadow: 0 0 55px 20px rgb(255 214 110 / .65), 0 0 160px 85px rgb(255 226 150 / .36); } }
-.is-day .mountain-far { fill: rgb(186 210 230); }
-.is-day .mountain-mid { fill: rgb(168 198 208); }
-.is-day .mountain-near { fill: rgb(170 200 190); }
+.is-day .city-far { fill: rgb(186 210 230); }
+.is-day .city-middle { fill: rgb(160 184 204); }
+.is-day .city-near { fill: rgb(132 160 180); }
 .is-day .sky-cloud { --cloud: rgb(255 255 255 / .95); opacity: .85; }
 :root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(22 58 104 / .95) 0%, rgb(32 74 122 / .82) 38%, rgb(40 72 108 / .55) 64%, rgb(30 44 60 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-sun { box-shadow: 0 0 40px 12px rgb(255 206 100 / .4), 0 0 130px 65px rgb(255 214 130 / .18); animation-name: moon-rise; }
-:root[data-theme="dark"] .is-day .mountain-far { fill: rgb(40 74 108 / .85); }
-:root[data-theme="dark"] .is-day .mountain-mid { fill: rgb(26 56 78 / .92); }
-:root[data-theme="dark"] .is-day .mountain-near { fill: rgb(16 34 42 / .96); }
+:root[data-theme="dark"] .is-day .city-far { fill: rgb(40 74 108 / .85); }
+:root[data-theme="dark"] .is-day .city-middle { fill: rgb(26 56 78 / .92); }
+:root[data-theme="dark"] .is-day .city-near { fill: rgb(16 34 42 / .96); }
 :root[data-theme="dark"] .is-day .sky-cloud { --cloud: rgb(196 212 232 / .5); opacity: .6; }
-@media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } .sky-mountains { bottom: 30%; height: 30%; } }
-@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun, .sky-mountains { animation: none; } }
+@media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } .sky-city { bottom: 30%; height: 30%; } }
+@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun, .sky-city { animation: none; } }
+/* City windows after dark: warm lights, a few flickering slowly. */
+.city-windows rect { fill: rgb(255 214 140); opacity: .8; }
+.city-windows rect.is-twinkling { animation: city-window 6s ease-in-out infinite; }
+@keyframes city-window { 0%, 100% { opacity: .8; } 45%, 55% { opacity: .1; } }
+@media (prefers-reduced-motion: reduce) { .city-windows rect.is-twinkling { animation: none; } }
 
 /* Housekeeping staff: the owner's panel on the Housekeeping page and the line residents see. */
 .housekeeping-staff { display: grid; gap: 12px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
@@ -1124,6 +1127,27 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes bird-flap { from { transform: scaleY(1); } to { transform: scaleY(.3) translateY(3px); } }
 /* The phone strip is only ~30px tall, so the flock flies smaller there. */
 @media (max-width: 720px) { .sky-flock { top: 74px; scale: .7; } }
+/* Helicopters: cross left to right with a gentle bob; the main rotor blurs by squashing, the tail
+   rotor spins, and the red navigation light blinks (seen mostly at night). Same tones as the birds. */
+.sky-chopper { position: absolute; left: -140px; color: rgb(38 50 68 / .75); animation: chopper-fly var(--chopper-duration, 40s) linear var(--chopper-delay, 0s) infinite; }
+.is-night .sky-chopper { color: rgb(214 222 240 / .55); }
+:root[data-theme="dark"] .is-day .sky-chopper { color: rgb(226 234 246 / .62); }
+.chopper-body { display: block; width: 100%; height: auto; overflow: visible; fill: currentColor; animation: chopper-bob 3.2s ease-in-out infinite alternate; }
+.chopper-window { fill: rgb(170 210 240 / .55); }
+.chopper-skids { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.chopper-rotor { transform-box: fill-box; transform-origin: center; animation: chopper-rotor .16s linear infinite alternate; }
+.chopper-tail-rotor { transform-box: fill-box; transform-origin: center; animation: chopper-tail .3s linear infinite; }
+.chopper-light { fill: rgb(255 70 70); animation: chopper-light 1.4s steps(1, end) infinite; }
+@keyframes chopper-fly { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 300px)); } }
+@keyframes chopper-bob { from { transform: translateY(0); } to { transform: translateY(5px); } }
+@keyframes chopper-rotor { from { transform: scaleX(1); } to { transform: scaleX(.12); } }
+@keyframes chopper-tail { to { transform: rotate(360deg); } }
+@keyframes chopper-light { 0% { opacity: 1; } 15% { opacity: 0; } }
+@media (max-width: 720px) { .sky-chopper { scale: .7; } }
+@media (prefers-reduced-motion: reduce) {
+  .sky-chopper { animation: none; left: var(--chopper-rest, 40%); }
+  .chopper-body, .chopper-rotor, .chopper-tail-rotor, .chopper-light { animation: none; }
+}
 @media (prefers-reduced-motion: reduce) { .sky-flock { animation: none; left: 30%; } .sky-bird { animation: none; } }
 /* Rain in the property's city: an overcast grey sky, heavy clouds, slanting rain and lightning. */
 .portal-sky.is-rainy { background: linear-gradient(180deg, rgb(62 70 86 / .82) 0%, rgb(92 100 118 / .62) 38%, rgb(140 148 162 / .42) 66%, rgb(196 200 208 / .25) 84%, transparent 100%); }
@@ -1279,12 +1303,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .expired-note { color: #b5523f; font-weight: 700; }
 .resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
-/* Sign-in page: a city at sunset behind the card. Photo from Unsplash (photo-1480714378408-67cf0d13bc1b),
-   Unsplash License: free for commercial use. Self-hosted in public/ so sign-in depends on no third party;
+/* Sign-in page: Mt Fuji over the Tokyo skyline at sunset behind the card. Photo by Claudio Pantoni on
+   Unsplash (photo-1741230127615-8334deb6b463), Unsplash License: free for commercial use; desktop gets a
+   landscape crop around Fuji, phones the full portrait frame. Self-hosted in public/ so sign-in depends on no third party;
    a smaller copy serves phones. The overlay keeps the card readable; the gradient underneath shows
    while the photo loads. Colours are rgb() so the generated dark theme leaves them alone. */
 .login-shell.has-city { position: relative; isolation: isolate; overflow: hidden; }
-.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .22), rgb(24 18 44 / .5)), url('/login-city.jpg') center 65% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
-@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .22), rgb(24 18 44 / .5)), url('/login-city-small.jpg') center 65% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
-:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-city.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
-@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-city-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
+.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji.jpg') center 30% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
+@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji-small.jpg') center 42% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
+:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
+@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
