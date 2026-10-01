@@ -30,7 +30,9 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
   }
 
   return (
-    <main className="login-shell">
+    <main className="login-shell has-city">
+      {/* Decorative city photo at sunset behind the card; styled in App.css (.city-backdrop). */}
+      <div className="city-backdrop" aria-hidden="true" />
       <form className="login-card login-card-themed" onSubmit={signIn}>
         <ThemeToggle className="card-theme-toggle" />
         <div className="brand-row"><BrandMark /></div>

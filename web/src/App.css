@@ -1279,3 +1279,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .expired-note { color: #b5523f; font-weight: 700; }
 .resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+/* Sign-in page: a city at sunset behind the card. Photo from Unsplash (photo-1480714378408-67cf0d13bc1b),
+   Unsplash License: free for commercial use. Self-hosted in public/ so sign-in depends on no third party;
+   a smaller copy serves phones. The overlay keeps the card readable; the gradient underneath shows
+   while the photo loads. Colours are rgb() so the generated dark theme leaves them alone. */
+.login-shell.has-city { position: relative; isolation: isolate; overflow: hidden; }
+.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .22), rgb(24 18 44 / .5)), url('/login-city.jpg') center 65% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
+@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .22), rgb(24 18 44 / .5)), url('/login-city-small.jpg') center 65% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
+:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-city.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
+@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-city-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
