@@ -547,7 +547,17 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .card-theme-toggle { position: absolute; top: 14px; right: 14px; }
 
 /* Workspace logo: brand mark replacement and the Settings uploader. */
-.brand-logo { display: block; max-width: 180px; max-height: 40px; object-fit: contain; }
+/* An uploaded logo, sized per place: uploads are stored up to 400px, so these stay sharp on dense
+   screens. Square logos are limited by height, wide ones by width. */
+.brand-logo { display: block; max-width: 210px; max-height: 96px; object-fit: contain; }
+.login-card .brand-logo, .booking-brand .brand-logo { max-width: 280px; max-height: 110px; }
+/* The portal header bar is 76px tall, so the logo stops short of its edges. */
+.portal-topbar .brand-logo { max-height: 60px; }
+/* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
+   vanish on the dark theme; a soft light panel keeps them readable without altering their colours.
+   rgb() so the generated dark theme does not darken the panel again. */
+:root[data-theme="dark"] .brand-logo { padding: 6px 10px; border-radius: 10px; background: rgb(246 248 246 / .94); box-shadow: 0 4px 14px rgb(0 0 0 / .25); }
+:root[data-theme="dark"] .logo-preview { background: rgb(246 248 246); }
 .logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
 .logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
 .logo-preview img { max-width: 88px; max-height: 48px; object-fit: contain; }
