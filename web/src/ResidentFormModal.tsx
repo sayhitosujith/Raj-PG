@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, Save, UserPlus, X } from 'lucide-react'
+import { Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, Save, Send, UserPlus, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
 import { readIdentityFields, type DocumentUploads } from './identity'
 import { IdentityDocumentFields } from './IdentityDocumentFields'
@@ -11,6 +11,12 @@ import { readApiError } from './superAdmin'
 import { RoomSelect } from './RoomSelect'
 
 const minimumPasswordLength = 10
+
+// Tells the owner where the login details went, or that they must share the key themselves.
+function credentialsNotice(channels: string[] = []) {
+  const names = channels.map((channel) => (channel === 'whatsapp' ? 'WhatsApp' : 'email'))
+  return names.length ? `Login details sent by ${names.join(' and ')}.` : 'Login details could not be sent (no email or WhatsApp set up for them); share the access key yourself.'
+}
 
 // The server owns key generation so the format and randomness source live in one place.
 async function fetchAccessKeyPreview() {
@@ -61,12 +67,14 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     applyPreview(await fetchAccessKeyPreview())
   }
 
-  async function resetAccessKey() {
-    if (!resident || !window.confirm(`Issue a new access key for ${resident.name}? Their current key and any password they set stop working, and they are signed out. They will sign in with the new key and choose a new password.`)) return
-    const response = await fetch(`/api/residents/${resident.id}/access-key`, { method: 'POST' })
+// `send` also emails / WhatsApps the new key to the resident ("Send new login details").
+  async function resetAccessKey(send = false) {
+    if (!resident || !window.confirm(`Issue a new access key for ${resident.name}${send ? ' and send it to them' : ''}? Their current key and any password they set stop working, and they are signed out. They will sign in with the new key and choose a new password.`)) return
+    const response = await fetch(`/api/residents/${resident.id}/access-key`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ send }) })
     if (!response.ok) { setError(await readApiError(response, 'Could not reset the access key.')); return }
-    setAccessKey((await response.json() as { accessKey: string }).accessKey)
-    onNotice('New access key issued. Copy it now — it will not be shown again.')
+    const result = await response.json() as { accessKey: string; credentialsSent?: string[] }
+    setAccessKey(result.accessKey)
+    onNotice(send ? credentialsNotice(result.credentialsSent) : 'New access key issued. Copy it now — it will not be shown again.')
   }
 
   // Saved immediately rather than with the form, like the access key reset, so the owner knows
@@ -86,15 +94,15 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     const form = new FormData(event.currentTarget)
     const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
-    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
+    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
     setError('')
     try {
       const response = await fetch(isEdit ? `/api/residents/${resident.id}` : '/api/residents', { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!response.ok) { setError(await readApiError(response, 'Could not save the resident.')); return }
-      const { accessKey: savedKey, ...saved } = await response.json() as Resident & { accessKey?: string }
+      const { accessKey: savedKey, credentialsSent, ...saved } = await response.json() as Resident & { accessKey?: string; credentialsSent?: string[] }
       onSaved(saved)
-      onNotice(isEdit ? `${saved.name} updated.` : `Resident added with access key ${savedKey}.`)
+      onNotice(isEdit ? `${saved.name} updated.` : `Resident added with access key ${savedKey}.${credentialsSent ? ` ${credentialsNotice(credentialsSent)}` : ''}`)
     } catch {
       setError('Could not reach the server.')
     } finally {
@@ -140,10 +148,13 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
             <input id="resident-access-key" value={accessKey} readOnly required={!isEdit} placeholder={isEdit ? '•••• ••••' : 'Generating…'} />
             <button type="button" className="icon-button" aria-label="Copy access key" title="Copy access key" disabled={!accessKey} onClick={() => copyWithNotice(accessKey, 'Access key', onNotice)}><Copy size={16} /></button>
             {isEdit
-              ? <button type="button" className="icon-button" aria-label="Reset access key" title="Reset access key" onClick={resetAccessKey}><KeyRound size={16} /></button>
+              ? <button type="button" className="icon-button" aria-label="Reset access key" title="Reset access key" onClick={() => resetAccessKey()}><KeyRound size={16} /></button>
               : <button type="button" className="icon-button" aria-label="Generate a new access key" title="Generate a new access key" onClick={previewAccessKey}><RefreshCw size={16} /></button>}
           </div>
         </div>
+        {isEdit
+          ? <button type="button" className="secondary-button send-credentials-button" onClick={() => resetAccessKey(true)}><Send size={14} /> Send new login details</button>
+          : <label className="whatsapp-optin"><input type="checkbox" name="sendCredentials" defaultChecked /><span>Send login details <small>Emails and WhatsApps "Welcome to {selectedProperty?.name ?? 'the property'}" with their login and this access key.</small></span></label>}
         {isEdit && <div className="access-key-field">
           <label htmlFor="resident-portal-password">Portal password <span>(choose one to tell the resident; replaces their access key)</span></label>
           <div className="access-key-control">

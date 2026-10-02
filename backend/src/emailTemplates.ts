@@ -39,6 +39,16 @@ export function rentReminderEmail(input: { business: string; name: string; amoun
   ]) }
 }
 
+/** A new resident's sign-in details, in the owner's wording: welcome, login and temporary access key. */
+export function residentWelcomeEmail(input: { business: string; name: string; property: string; login: string; accessKey: string; portalUrl: string }) {
+  return { subject: `Welcome to ${input.property}: your login details`, ...layout(input.business, `Welcome to ${input.property}`, [
+    { kind: 'p', text: `Hi ${input.name}, your login credentials are:` },
+    { kind: 'rows', rows: [[input.login.includes('@') ? 'Email' : 'Phone', input.login], ['Temporary access key', input.accessKey]] },
+    { kind: 'p', text: 'Sign in with these, then choose your own password. Please keep the access key private.' },
+    { kind: 'button', label: 'Open the resident portal', href: input.portalUrl },
+  ]) }
+}
+
 /** A new notice from the owner. */
 export function announcementEmail(input: { business: string; name: string; title: string; message: string; property: string }) {
   return { subject: `${input.property}: ${input.title}`, ...layout(input.business, input.title, [

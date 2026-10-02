@@ -11,13 +11,28 @@ import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 import { findInvalidField, pickTextFields, type TextField } from './residentFields.js'
 import { isRentLocked } from './rentLock.js'
+import { notifyResidentCredentials } from './notifications.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card and /passport-scan instead).
 const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+
+/**
+ * Sends the sign-in details and returns the channels that delivered. A messaging outage must never
+ * undo the save, so failures come back as an empty list and the owner shares the key by hand.
+ */
+async function sendCredentials(residentId: string, accessKey: string) {
+  try {
+    const result = await notifyResidentCredentials(residentId, accessKey)
+    return (Object.keys(result) as Array<keyof typeof result>).filter((channel) => result[channel] === 'sent')
+  } catch (error) {
+    console.error('Sending login details failed:', error)
+    return []
+  }
+}
 
 class RoomUnavailableError extends Error {}
 // Another active resident or a super admin already has one of these identifying details.
@@ -191,7 +206,7 @@ residentRouter.post('/residents', async (request, response) => {
       const resident = await transaction.resident.create({ data: { ...data, nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
       return resident.id
     })
-    response.status(201).json({ ...await findResidentSummary(residentId), accessKey })
+    response.status(201).json({ ...await findResidentSummary(residentId), accessKey, ...(body.sendCredentials === true ? { credentialsSent: await sendCredentials(residentId, accessKey) } : {}) })
   } catch (error) {
     respondToWriteError(response, error, 'Resident could not be saved.')
   }
@@ -273,6 +288,7 @@ residentRouter.delete('/residents/:id/food-request', async (request, response) =
 
 // The key is only stored hashed, so "editing" it means issuing a new one. This is also the
 // forgotten-password path: the resident's password is cleared so the new key works for sign-in.
+// With { send: true } the new key is also sent to the resident by email and WhatsApp.
 residentRouter.post('/residents/:id/access-key', async (request, response) => {
   const { id } = request.params
   const accessKey = createAccessKey()
@@ -281,7 +297,8 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
       prisma.resident.update({ where: { id }, data: { accessKeyHash: hashAccessKey(accessKey), passwordHash: null } }),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])
-    response.json({ accessKey })
+    const isSending = (request.body as { send?: unknown } | undefined)?.send === true
+    response.json({ accessKey, ...(isSending ? { credentialsSent: await sendCredentials(id, accessKey) } : {}) })
   } catch (error) {
     respondToWriteError(response, error, 'Access key could not be reset.')
   }

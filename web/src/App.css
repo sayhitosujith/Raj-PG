@@ -1427,3 +1427,5 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes sos-pulse { 0% { box-shadow: 0 0 0 0 rgb(206 44 44 / .5); } 70%, 100% { box-shadow: 0 0 0 10px rgb(206 44 44 / 0); } }
 @keyframes sos-wiggle { 0%, 70%, 100% { rotate: 0deg; } 76% { rotate: -14deg; } 82% { rotate: 12deg; } 88% { rotate: -8deg; } 94% { rotate: 4deg; } }
 @media (prefers-reduced-motion: reduce) { .emergency-button.is-sos, .emergency-button.is-sos svg { animation: none; } }
+/* Edit resident: "Send new login details" under the access key. */
+.send-credentials-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; width: fit-content; }

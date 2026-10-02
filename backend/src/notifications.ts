@@ -1,8 +1,9 @@
+import { createHash } from 'node:crypto'
 import { HousekeepingStatus, type HousekeepingSlot } from '@prisma/client'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
 import { isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
-import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail } from './emailTemplates.js'
+import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail } from './emailTemplates.js'
 import { displayName } from './names.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { getSettings, slotDetails } from './settings.js'
@@ -15,9 +16,11 @@ import { isWhatsAppEnabled, sendTemplate, uploadPdf, whatsappNumber } from './wh
  * stored in OutboundMessage, so retries of the daily job or a double click never message twice.
  * Residents who turned a channel off get nothing on it, except receipts by email (they are records).
  */
-export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update' } as const
+export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update', residentWelcome: 'resident_welcome' } as const
 
 type Channel = 'whatsapp' | 'email'
+/** What happened to one message: skipped when the channel is off or the resident has no address for it. */
+type DeliveryResult = 'sent' | 'failed' | 'skipped'
 type Recipient = { id: string; name: string; phone: string | null; email: string | null; whatsappOptIn: boolean; emailOptIn: boolean }
 export const recipientSelect = { id: true, name: true, phone: true, email: true, whatsappOptIn: true, emailOptIn: true } as const
 
@@ -29,29 +32,31 @@ const appUrl = () => (process.env.APP_URL || 'https://raj-pg.netlify.app').repla
  * Sends one message unless it was already sent under `dedupeKey`, and logs the outcome. WhatsApp
  * keys stay unprefixed (as they were before email existed); email keys start "email:".
  */
-async function deliver(channel: Channel, residentId: string | null, to: string, kind: string, key: string, send: () => Promise<string | null>) {
+async function deliver(channel: Channel, residentId: string | null, to: string, kind: string, key: string, send: () => Promise<string | null>): Promise<DeliveryResult> {
   const dedupeKey = channel === 'email' ? `email:${key}` : key
   const existing = await prisma.outboundMessage.findUnique({ where: { dedupeKey } })
-  if (existing && existing.status !== 'failed') return
+  if (existing && existing.status !== 'failed') return 'sent'
   const log = existing
     ? await prisma.outboundMessage.update({ where: { id: existing.id }, data: { status: 'pending', error: null, to } })
     : await prisma.outboundMessage.create({ data: { channel, residentId, to, kind, dedupeKey } })
   try {
     await prisma.outboundMessage.update({ where: { id: log.id }, data: { status: 'sent', providerMessageId: await send() } })
+    return 'sent'
   } catch (error) {
     await prisma.outboundMessage.update({ where: { id: log.id }, data: { status: 'failed', error: error instanceof Error ? error.message.slice(0, 500) : 'Unknown error' } })
+    return 'failed'
   }
 }
 
-function toWhatsApp(resident: Recipient, template: string, params: string[], key: string, attachment?: () => Promise<{ id: string; filename: string }>) {
-  if (!isWhatsAppEnabled() || !resident.whatsappOptIn || !resident.phone) return Promise.resolve()
+function toWhatsApp(resident: Recipient, template: string, params: string[], key: string, attachment?: () => Promise<{ id: string; filename: string }>): Promise<DeliveryResult> {
+  if (!isWhatsAppEnabled() || !resident.whatsappOptIn || !resident.phone) return Promise.resolve('skipped')
   const to = whatsappNumber(resident.phone)
-  if (!to) return Promise.resolve()
+  if (!to) return Promise.resolve('skipped')
   return deliver('whatsapp', resident.id, to, template, key, async () => sendTemplate(to, template, params, attachment ? await attachment() : undefined))
 }
 
-function toEmail(resident: Recipient, kind: string, message: { subject: string; html: string; text: string }, key: string, options: { ignoreOptOut?: boolean; attachments?: () => Promise<Array<{ filename: string; content: Buffer }>> } = {}) {
-  if (!isEmailEnabled() || !isEmailAddress(resident.email) || (!resident.emailOptIn && !options.ignoreOptOut)) return Promise.resolve()
+function toEmail(resident: Recipient, kind: string, message: { subject: string; html: string; text: string }, key: string, options: { ignoreOptOut?: boolean; attachments?: () => Promise<Array<{ filename: string; content: Buffer }>> } = {}): Promise<DeliveryResult> {
+  if (!isEmailEnabled() || !isEmailAddress(resident.email) || (!resident.emailOptIn && !options.ignoreOptOut)) return Promise.resolve('skipped')
   const to = resident.email
   return deliver('email', resident.id, to, kind, key, async () => sendEmail({ to, ...message, attachments: options.attachments ? await options.attachments() : undefined }))
 }
@@ -112,6 +117,31 @@ export async function notifyHousekeeping(request: { id: string; residentId: stri
   const { label, hours } = slotDetails(settings, request.slot)
   const when = `${request.date.toLocaleDateString('en-IN', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' })}, ${label} (${hours})`
   await toWhatsApp(resident, templates.housekeeping, [displayName(resident.name), settings.businessName, when, wording, request.ownerNote || 'No notes'], `housekeeping:${request.id}:${request.status}`)
+}
+
+/**
+ * A new resident's sign-in details: "Welcome to <property>", their login (email, or phone when they
+ * have none) and the temporary access key. Sent when the owner asks (on add, or after issuing a new
+ * key); the key is only known at that moment because it is stored hashed. Email goes even if they
+ * opted out of email updates, like receipts, since it is how they get in. The WhatsApp template
+ * "resident_welcome" must be approved in Meta with five variables:
+ *   {{1}} name, {{2}} property, {{3}} login, {{4}} access key, {{5}} portal link.
+ * Returns what happened on each channel, so the owner knows whether to share the key themselves.
+ */
+export async function notifyResidentCredentials(residentId: string, accessKey: string) {
+  const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { ...recipientSelect, room: { select: { property: { select: { name: true } } } } } })
+  if (!resident) return { email: 'skipped', whatsapp: 'skipped' } satisfies Record<Channel, DeliveryResult>
+  const { businessName } = await getSettings()
+  const name = displayName(resident.name)
+  const property = resident.room.property.name
+  const login = resident.email || resident.phone || ''
+  // Unique per key, so issuing a new key always sends again while a retry of the same key does not.
+  const key = `credentials:${resident.id}:${createHash('sha256').update(accessKey).digest('hex').slice(0, 16)}`
+  const [email, whatsapp] = await Promise.all([
+    toEmail(resident, 'resident_welcome', residentWelcomeEmail({ business: businessName, name, property, login, accessKey, portalUrl: appUrl() }), key, { ignoreOptOut: true }),
+    toWhatsApp(resident, templates.residentWelcome, [name, property, login, accessKey, appUrl()], key),
+  ])
+  return { email, whatsapp }
 }
 
 /** A rent reminder or overdue notice; the key makes it once per resident, month, stage and channel. */
