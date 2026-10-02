@@ -1,5 +1,5 @@
 import { Suspense, useState, type CSSProperties } from 'react'
-import { BadgeCheck, ChevronDown, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, ShieldX, Trash2 } from 'lucide-react'
+import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, ShieldX, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus, Resident } from './resident'
@@ -86,7 +86,7 @@ const maxStaggerSteps = 10
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
-export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
+export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onClone: () => void; onDelete: () => void; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
   // Overdue residents are locked out of the app unless the owner allowed access up to a date.
   const rentBadge = resident.rent.state !== 'LOCK_DUE' ? rentBadges[resident.rent.state]
     : resident.rentLocked ? { label: 'Rent overdue · locked out', tone: 'coral' }
@@ -109,6 +109,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onD
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
         <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>
+        <button className="row-edit row-clone" aria-label={`Clone ${resident.name}`} title="Clone: add a new resident with the same property, rent and address" onClick={onClone}><CopyPlus size={14} /></button>
         <button className="row-delete" aria-label={`Remove ${resident.name}`} title="Remove resident" onClick={onDelete}><Trash2 size={14} /></button>
         <button className="row-toggle" aria-expanded={isExpanded} aria-controls={detailsId} aria-label={`${isExpanded ? 'Hide' : 'Show'} details for ${resident.name}`} title={isExpanded ? 'Hide details' : 'Show details'} onClick={onToggle}><ChevronDown size={16} /></button>
       </div>

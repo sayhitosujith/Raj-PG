@@ -21,7 +21,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import './App.css'
-import { ResidentFormModal, type ResidentPrefill } from './ResidentFormModal'
+import { clonePrefill, ResidentFormModal, type ResidentPrefill } from './ResidentFormModal'
 import { BookingRequestsView } from './BookingRequestsView'
 import type { BookableProperty, BookingRequest } from './booking'
 import type { Resident } from './resident'
@@ -395,7 +395,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         <div className="page-content">
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profileName.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
 
-          {activeView === 'Residents' && <ResidentsView residents={residents} loadState={residentsLoadState} onRetry={retryResidents} onAdd={() => setResidentForm({})} onEdit={(resident) => setResidentForm({ resident })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined) }} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Residents' && <ResidentsView residents={residents} loadState={residentsLoadState} onRetry={retryResidents} onAdd={() => setResidentForm({})} onEdit={(resident) => setResidentForm({ resident })} onClone={(resident) => setResidentForm({ prefill: clonePrefill(resident) })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined) }} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Properties' && <PropertiesView properties={properties} stats={stats} onAdd={() => setIsPropertyModalOpen(true)} onEdit={(property) => setEditingProperty(property)} onRooms={(property) => setRoomsProperty(property)} onDelete={deleteProperty} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Payments' && <PaymentsView properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} residents={residents} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Booking requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}

@@ -30,7 +30,17 @@ async function fetchAccessKeyPreview() {
  * `resident` switches it to edit mode.
  */
 /** Starting values for a new resident, e.g. from a booking request being converted. */
-export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null }
+export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null; permanentAddress?: string | null; nationality?: string; monthlyRent?: number | null; whatsappOptIn?: boolean; emailOptIn?: boolean }
+
+/**
+ * "Clone": a new resident's form started from an existing one. Copies what roommates and siblings
+ * usually share (property, food plan, rent, nationality, permanent address, message preferences)
+ * and leaves out what must be their own: name, phone, email, ID documents, photo and room, which
+ * the duplicate checks would reject anyway. The joining date starts at today.
+ */
+export function clonePrefill(resident: Resident): ResidentPrefill {
+  return { name: '', phone: '', email: null, propertyId: resident.propertyId, foodOpted: resident.foodOpted, joinedAt: null, permanentAddress: resident.permanentAddress, nationality: resident.nationality, monthlyRent: resident.rentFromProperty ? null : resident.rent.monthlyRent, whatsappOptIn: resident.whatsappOptIn, emailOptIn: resident.emailOptIn }
+}
 
 export function ResidentFormModal({ resident, prefill, properties, onClose, onSaved, onNotice }: { resident?: Resident; prefill?: ResidentPrefill; properties: Array<{ id?: string; name: string; rentWithFood?: number | null; rentWithoutFood?: number | null }>; onClose: () => void; onSaved: (resident: Resident) => void; onNotice: (message: string) => void }) {
   const isEdit = resident !== undefined
@@ -119,8 +129,8 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
-        <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
-        <IdentityDocumentFields details={resident} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
+        <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
+        <IdentityDocumentFields details={resident} defaultNationality={prefill?.nationality} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
         <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
         <fieldset className="food-plan">
           <legend>Food plan</legend>
@@ -134,11 +144,11 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
             ))}
           </div>
         </fieldset>
-        <label className="whatsapp-optin"><input type="checkbox" name="whatsappOptIn" defaultChecked={resident?.whatsappOptIn ?? true} /><span>WhatsApp updates <small>Rent reminders, receipts and notices on WhatsApp. The resident can turn this off in their portal.</small></span></label>
-        <label className="whatsapp-optin"><input type="checkbox" name="emailOptIn" defaultChecked={resident?.emailOptIn ?? true} /><span>Email updates <small>Rent reminders and notices by email. Payment receipts are always emailed when there is an email address.</small></span></label>
+        <label className="whatsapp-optin"><input type="checkbox" name="whatsappOptIn" defaultChecked={resident?.whatsappOptIn ?? prefill?.whatsappOptIn ?? true} /><span>WhatsApp updates <small>Rent reminders, receipts and notices on WhatsApp. The resident can turn this off in their portal.</small></span></label>
+        <label className="whatsapp-optin"><input type="checkbox" name="emailOptIn" defaultChecked={resident?.emailOptIn ?? prefill?.emailOptIn ?? true} /><span>Email updates <small>Rent reminders and notices by email. Payment receipts are always emailed when there is an email address.</small></span></label>
         {pricedRent !== null
           ? <p className="priced-rent">Monthly rent <strong>₹{pricedRent.toLocaleString('en-IN')}</strong> <span>set by {selectedProperty?.name} for {foodOpted ? 'with food' : 'without food'}; change it in the property's prices</span></p>
-          : <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>}
+          : <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? prefill?.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>}
         <label>Joining date<input name="joinedAt" type="date" required defaultValue={resident ? resident.joinedAt.slice(0, 10) : prefill?.joinedAt?.slice(0, 10) ?? todayDateInputValue()} /></label>
         {isEdit && <label>Allow access until <span>(optional; lets them use the app with overdue rent up to this date)</span><input name="rentAccessUntil" type="date" defaultValue={resident.rentAccessUntil?.slice(0, 10) ?? ''} /></label>}
         {isEdit && <label>Status<select name="status" defaultValue={resident.active ? 'active' : 'inactive'}><option value="active">Active</option><option value="inactive">Inactive — blocks app sign-in</option></select></label>}

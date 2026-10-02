@@ -139,7 +139,7 @@ button { cursor: pointer; }
   .property-row img { width: 38px; height: 38px; }
   .property-row .rooms, .property-row .status-pill { display: none; }
   /* Resident header wraps to two lines: identity + actions, then room + status. */
-  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px; grid-template-areas: 'avatar info edit delete' 'avatar phone phone phone' 'avatar room status status'; row-gap: 6px; }
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete' 'avatar phone phone phone phone' 'avatar room status status status'; row-gap: 6px; }
   .resident-card .resident-avatar { grid-area: avatar; align-self: start; }
   .resident-card .resident-info { grid-area: info; }
   .resident-card .resident-phone { grid-area: phone; }
@@ -147,6 +147,7 @@ button { cursor: pointer; }
   .resident-card .status-pill { grid-area: status; justify-self: end; }
   .resident-card .row-edit { grid-area: edit; }
   .resident-card .row-delete { grid-area: delete; }
+  .resident-card .row-clone { grid-area: clone; }
   .resident-details { margin-left: 0; }
   .crud-row { flex-wrap: wrap; }
   /* Row details wrap onto more lines rather than being cut off with an ellipsis. */
@@ -187,7 +188,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .residents-count { margin: 0 0 6px; color: var(--muted); font-size: 11px; }
 
 .resident-card { padding-bottom: 0; animation: rise-in .35s ease both; animation-delay: calc(var(--stagger, 0) * 40ms); }
-.resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1.4fr) auto auto 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
+.resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1.4fr) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
 .resident-card .resident-row:hover { background: #f5f9f6; }
 .resident-card.is-expanded .resident-row { background: #f2f7f4; }
 .resident-avatar { transition: transform .25s ease; }
@@ -238,7 +239,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .residents-toolbar select { flex: 1 1 140px; }
 }
 @container (max-width: 560px) {
-  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px; grid-template-areas: 'avatar info edit delete toggle' 'avatar phone phone phone phone' 'avatar room status status status'; }
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar room status status status status'; }
   .resident-card .row-toggle { grid-area: toggle; }
   .resident-card .resident-phone { grid-area: phone; }
   /* Only here, where the phone has its own named row; on desktop the empty cell keeps the columns aligned. */
