@@ -30,6 +30,7 @@ import { PortalFooter } from './PortalFooter'
 import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { TodayTile } from './TodayTile'
+import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
 import { HouseRules } from './HouseRules'
@@ -179,9 +180,10 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         </section>
         <ResidentHousekeeping holidays={holidays} refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
         <div className="portal-grid">
-          <section className="workspace-view">
+          <section className="workspace-view announcements-card">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>
             {announcements === null ? <p className="portal-empty">Loading…</p> : announcements.length ? <><div className="crud-list">{announcementsPager.pageItems.map((item) => <div className="crud-row" key={item.id}><div className="crud-main"><strong>{item.title}</strong><small>{item.message}</small></div><small className="portal-date">{formatDate(item.createdAt)}</small></div>)}</div><Pagination state={announcementsPager} label="Announcements" /></> : <div className="workspace-empty"><div className="workspace-empty-icon"><Bell size={20} /></div><h3>No announcements</h3><p>Notices from your property owner will appear here.</p></div>}
+            <AppComingSoon />
           </section>
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
