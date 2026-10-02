@@ -32,7 +32,8 @@ function SettingsSection({ icon, title, description, onSubmit, children, wide = 
   }
 
   return (
-    <form className={`settings-section${wide ? ' wide' : ''}`} onSubmit={submit}>
+    // The id lets the sidebar's workspace menu jump straight to a section (see WorkspaceMenu).
+    <form id={`settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className={`settings-section${wide ? ' wide' : ''}`} onSubmit={submit}>
       <div className="settings-section-head"><span className="settings-section-icon">{icon}</span><div><h3>{title}</h3><p>{description}</p></div></div>
       <div className="settings-fields">{children}</div>
       <div className="settings-actions">

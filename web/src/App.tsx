@@ -43,6 +43,7 @@ import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { ThemeToggle } from './ThemeToggle'
 import { defaultBusinessName, type WorkspaceSettings } from './workspaceSettings'
+import { WorkspaceMenu } from './WorkspaceMenu'
 import { readApiError, type SuperAdmin } from './superAdmin'
 import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
@@ -256,7 +257,12 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   function handleNavigation(label: string) {
     setActiveView(label)
     setIsSidebarOpen(false)
-    // Only Settings is still a placeholder; every other page is a working module.
+  }
+
+  // From the workspace menu: open Settings, then scroll to the section once it has rendered.
+  function openSettingsSection(sectionId: string) {
+    handleNavigation('Settings')
+    window.setTimeout(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
   async function addProperty(event: React.FormEvent<HTMLFormElement>) {
@@ -368,7 +374,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <BrandMark />
           <button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)}><X size={18} /></button>
         </div>
-        <div className="workspace-switcher"><span className="workspace-dot">{businessName.charAt(0).toUpperCase()}</span><span><strong>{businessName}</strong><small>Owner workspace</small></span><ChevronDown size={15} /></div>
+        <WorkspaceMenu businessName={businessName} contactPhone={settings?.contactPhone} contactEmail={settings?.contactEmail} onOpenSettings={openSettingsSection} />
         <nav className="primary-nav" aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
           <NavItem icon={LayoutGrid} label="Overview" active={activeView === 'Overview'} onClick={() => handleNavigation('Overview')} />
