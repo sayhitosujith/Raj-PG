@@ -1467,3 +1467,22 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .today-line { border-color: rgb(40 110 98); background: rgb(18 60 54); }
 :root[data-theme="dark"] .today-line .eyebrow, :root[data-theme="dark"] .today-line .local-clock, :root[data-theme="dark"] .today-line .local-weather { color: rgb(170 222 208); }
 :root[data-theme="dark"] .today-line strong, :root[data-theme="dark"] .today-line svg { color: rgb(220 245 238); }
+
+/* Public holidays: date tiles in the resident portal and the owner's overview; today's is highlighted. */
+.holiday-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.holiday-list li { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.holiday-list li.is-today { border-color: #9fd0c2; background: var(--teal-soft); }
+.holiday-date { display: grid; flex: none; place-items: center; width: 44px; padding: 5px 0; border-radius: 8px; color: var(--teal); background: var(--teal-soft); line-height: 1.05; }
+.holiday-list li.is-today .holiday-date { color: rgb(255 255 255); background: var(--teal); }
+.holiday-date strong { font: 800 17px Manrope, sans-serif; }
+.holiday-date small { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.holiday-copy { display: grid; gap: 2px; min-width: 0; }
+.holiday-copy strong { color: var(--ink); font-size: 13px; }
+.holiday-copy small { color: var(--muted); font-size: 11px; }
+.holiday-today-icon { margin-left: auto; color: var(--teal); }
+.holiday-empty { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+.holidays-panel { margin-top: 16px; }
+.today-holiday { display: inline-flex; align-items: center; gap: 5px; color: #0f5e55; font-size: 11px; }
+.today-holiday strong { color: var(--teal); }
+:root[data-theme="dark"] .today-holiday { color: rgb(170 222 208); }
+.housekeeping-holiday { display: flex; align-items: center; gap: 7px; margin: -4px 0 0; padding: 8px 10px; border-radius: 8px; color: #7b5a20; background: #fbf3e2; font-size: 11px; }

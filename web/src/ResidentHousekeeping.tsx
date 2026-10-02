@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { BellRing, CalendarPlus, Sparkles, Users, X } from 'lucide-react'
+import { BellRing, CalendarPlus, PartyPopper, Sparkles, Users, X } from 'lucide-react'
 import { describeVisit, formatTime, isOpenRequest, statusDetails, type HousekeepingRequest, type HousekeepingSlot } from './housekeeping'
 import type { SlotOption } from './workspaceSettings'
 import { todayDateInputValue } from './joinDate'
+import { holidayOn, type Holiday } from './holidays'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
@@ -29,8 +30,11 @@ function daysFromToday(days: number) {
 }
 
 /** Date + slot + note form; the server re-checks everything (date window, duplicates). */
-function RequestForm({ slots, onCreated, onClose }: { slots: SlotOption[]; onCreated: (request: HousekeepingRequest) => void; onClose: () => void }) {
+function RequestForm({ slots, holidays, onCreated, onClose }: { slots: SlotOption[]; holidays: Holiday[]; onCreated: (request: HousekeepingRequest) => void; onClose: () => void }) {
   const [slot, setSlot] = useState<HousekeepingSlot>('MORNING')
+  // Controlled only so a public holiday on the chosen date can be pointed out; booking is not blocked.
+  const [date, setDate] = useState(todayDateInputValue)
+  const holiday = holidayOn(holidays, date)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -54,7 +58,8 @@ function RequestForm({ slots, onCreated, onClose }: { slots: SlotOption[]; onCre
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal housekeeping-form" onSubmit={submit}>
         <div className="modal-heading"><div><p className="eyebrow">Housekeeping</p><h2>Request a cleaning</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
-        <label>Date<input name="date" type="date" required defaultValue={todayDateInputValue()} min={todayDateInputValue()} max={daysFromToday(maxDaysAhead)} /></label>
+        <label>Date<input name="date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} min={todayDateInputValue()} max={daysFromToday(maxDaysAhead)} /></label>
+        {holiday && <p className="housekeeping-holiday"><PartyPopper size={14} aria-hidden="true" /> {holiday} is a public holiday. Cleaning may still happen, but staff could be off.</p>}
         <fieldset className="slot-options">
           <legend>Time</legend>
           {slots.map((option) => <label key={option.value} className={`slot-option${slot === option.value ? ' is-selected' : ''}`}><input type="radio" name="slot" value={option.value} checked={slot === option.value} onChange={() => setSlot(option.value)} /><strong>{option.label}</strong><small>{option.hours}</small></label>)}
@@ -69,7 +74,7 @@ function RequestForm({ slots, onCreated, onClose }: { slots: SlotOption[]; onCre
 
 /** The resident's housekeeping card: request a cleaning, follow its status, cancel if plans change. */
 // While rent is overdue the server refuses new requests; the button says so instead of failing.
-export function ResidentHousekeeping({ refreshSignal, isPaused, slots, weeklyLimit, staff, onNotice }: { refreshSignal: number; isPaused: boolean; slots: SlotOption[]; weeklyLimit: number | null; staff: string[]; onNotice: (message: string) => void }) {
+export function ResidentHousekeeping({ holidays, refreshSignal, isPaused, slots, weeklyLimit, staff, onNotice }: { holidays: Holiday[]; refreshSignal: number; isPaused: boolean; slots: SlotOption[]; weeklyLimit: number | null; staff: string[]; onNotice: (message: string) => void }) {
   const [requests, setRequests] = useState<HousekeepingRequest[] | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
@@ -121,7 +126,7 @@ export function ResidentHousekeeping({ refreshSignal, isPaused, slots, weeklyLim
               <div className="crud-actions"><span className={`status-pill ${statusDetails[request.status].tone}`}>{statusDetails[request.status].label}</span>{canRemindNow(request, now) && <button className="secondary-button remind-button" disabled={remindingId === request.id} onClick={() => remind(request)}><BellRing size={13} /> {remindingId === request.id ? 'Sending…' : 'Not here yet? Remind'}</button>}{isOpenRequest(request) && <button className="secondary-button" disabled={cancellingId === request.id} onClick={() => cancel(request)}>{cancellingId === request.id ? 'Cancelling…' : 'Cancel'}</button>}</div>
             </div>)}</div><Pagination state={pager} label="Housekeeping requests" /></>
           : <div className="workspace-empty"><div className="workspace-empty-icon"><Sparkles size={20} /></div><h3>No requests yet</h3><p>Tap “Request housekeeping” to book a cleaning.</p></div>}
-      {isRequesting && <RequestForm slots={slots} onClose={() => setIsRequesting(false)} onCreated={(created) => { setRequests((current) => [created, ...(current ?? [])]); setIsRequesting(false); onNotice(`Housekeeping requested for ${describeVisit(created)}.`) }} />}
+      {isRequesting && <RequestForm slots={slots} holidays={holidays} onClose={() => setIsRequesting(false)} onCreated={(created) => { setRequests((current) => [created, ...(current ?? [])]); setIsRequesting(false); onNotice(`Housekeeping requested for ${describeVisit(created)}.`) }} />}
     </section>
   )
 }

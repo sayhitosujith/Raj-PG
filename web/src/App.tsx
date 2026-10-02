@@ -44,6 +44,7 @@ import { refreshBranding } from './branding'
 import { ThemeToggle } from './ThemeToggle'
 import { defaultBusinessName, type WorkspaceSettings } from './workspaceSettings'
 import { WorkspaceMenu } from './WorkspaceMenu'
+import { HolidayList, useHolidays } from './holidays'
 import { readApiError, type SuperAdmin } from './superAdmin'
 import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
@@ -132,6 +133,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const profileName = currentAdmin.name
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null)
   const businessName = settings?.businessName ?? defaultBusinessName
+  const holidays = useHolidays('/api/holidays')
   const { greeting, dateLabel } = useGreeting()
   const profileInitials =profileName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
   const [residents, setResidents] = useState<Resident[]>([])
@@ -425,6 +427,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           </section>
 
           <section className="bottom-grid"><div className="insight-banner"><div className="insight-graphic"><span>₹</span><div className="insight-line line-one" /><div className="insight-line line-two" /></div><div><p className="eyebrow">Monthly insight</p><h2>Rent collection is up <strong>12.6%</strong></h2><p>Compared to the same period last month.</p></div><button className="outline-button" onClick={() => showNotice('Monthly rent report requested.')}>View report</button></div><div className="tip-card"><div className="tip-icon"><DoorOpen size={19} /></div><div><p className="eyebrow">Quick tip</p><h3>Keep your rooms moving</h3><p>2 rooms are ready to be listed at North Star.</p></div><button className="arrow-button" aria-label="Open quick tip" onClick={() => showNotice('North Star listing tip opened.')}>↗</button></div></section>
+          <section className="panel holidays-panel"><div className="panel-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India from Google's calendar; plan meals, housekeeping and staff around them</p></div></div><HolidayList holidays={holidays} limit={6} /></section>
           </div>
         </div>
         {notice && <div className="toast" role="status">{notice}</div>}

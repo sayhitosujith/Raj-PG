@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Bell, KeyRound, LogOut, X } from 'lucide-react'
+import { Bell, KeyRound, LogOut, PartyPopper, X } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { Pagination } from './Pagination'
 import { portalListPageSize, usePagination } from './usePagination'
-import { daysStayedLabel, formatJoinDate } from './joinDate'
+import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentIdVerification } from './ResidentIdVerification'
 import { isIndian } from './identity'
@@ -29,6 +29,7 @@ import { ResidentRentPayments } from './ResidentRentPayments'
 import { PortalFooter } from './PortalFooter'
 import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
+import { HolidayList, holidayOn, useHolidays } from './holidays'
 import { HouseRules } from './HouseRules'
 import { NextMealAlert, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
@@ -117,6 +118,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   const pendingConsent = profile.policyConsent && profile.policyConsent.version !== acceptedVersion ? profile.policyConsent : null
   const [notice, setNotice] = useState('')
   const weather = useWeather(refreshSignal)
+  const holidays = useHolidays('/api/resident-portal/holidays')
+  const todayHoliday = holidayOn(holidays, todayDateInputValue())
 
   useEffect(() => {
     fetchList<Announcement>('/api/resident-portal/announcements').then(setAnnouncements, () => setAnnouncements([]))
@@ -163,12 +166,16 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div><p>Keep your contact details up to date. For anything else, ask your property owner.</p><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><EmergencyButton /></div><div className="details-heading-actions"><div className="today-row"><div className="today-line"><p className="eyebrow">{dateLabel}</p><LocalClock /><WeatherNow weather={weather} /></div></div>{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div><p>Keep your contact details up to date. For anything else, ask your property owner.</p><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><EmergencyButton /></div><div className="details-heading-actions"><div className="today-row"><div className="today-line"><p className="eyebrow">{dateLabel}</p>{todayHoliday && <span className="today-holiday"><PartyPopper size={13} aria-hidden="true" /> Holiday: <strong>{todayHoliday}</strong></span>}<LocalClock /><WeatherNow weather={weather} /></div></div>{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</dd></div></dl></div>
           <NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} />
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
-        <ResidentHousekeeping refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
+        <section className="workspace-view">
+          <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
+          <HolidayList holidays={holidays} />
+        </section>
+        <ResidentHousekeeping holidays={holidays} refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
         <div className="portal-grid">
           <section className="workspace-view">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>

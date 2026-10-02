@@ -19,6 +19,7 @@ import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { currentWeather, weatherNear } from './weather.js'
+import { upcomingHolidays } from './holidays.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -162,6 +163,11 @@ function readCoordinates(query: Request['query']) {
 // Current weather where the resident is (?lat=&lon=, from their device when they allow it) or else
 // in their property's city; 204 when there is none to show (no city set, or the lookup failed), so
 // the portal just leaves it out.
+// Upcoming public holidays for the portal's holiday card, today pill and housekeeping date picker.
+residentPortalRouter.get('/resident-portal/holidays', requireResident, requirePortalAccess, async (_request, response) => {
+  response.json({ holidays: await upcomingHolidays() })
+})
+
 residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (request, response) => {
   try {
     const coordinates = readCoordinates(request.query)
