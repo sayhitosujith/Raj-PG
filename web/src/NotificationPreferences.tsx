@@ -10,7 +10,7 @@ function PreferenceRow({ icon, iconClass, title, detail, isOn, isSaving, onToggl
   return (
     <div className="whatsapp-preference">
       <span className={`whatsapp-preference-icon ${iconClass}`}>{icon}</span>
-      <div><strong>{title}</strong><small>{detail}</small></div>
+      <div><strong>{title}<span className="beta-tag">Beta</span></strong><small>{detail}</small></div>
       <button type="button" role="switch" aria-checked={isOn} className={`switch${isOn ? ' is-on' : ''}`} disabled={isSaving} onClick={onToggle}><span className="sr-only">{title}</span></button>
     </div>
   )

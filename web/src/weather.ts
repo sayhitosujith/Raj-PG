@@ -5,7 +5,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'storm' | 'snow' | 'mist'
 
 /** Current weather in the resident's property city, as the portal API returns it. */
-export type Weather = { city: string; temperature: number; description: string; condition: WeatherCondition; isDay: boolean }
+export type Weather = { city: string; temperature: number; description: string; condition: WeatherCondition; isDay: boolean; /** Set here, not by the server: true when it is for the device's position rather than the property city. */ isCurrentLocation?: boolean }
 
 /** Whether the sky should show rain (and lightning). */
 export const isRainy = (condition: WeatherCondition | undefined) => condition === 'rain' || condition === 'storm'
@@ -39,7 +39,7 @@ function findPosition(): Promise<Coordinates | null> {
 // Without a position the server uses the property's city. 204 means there is nothing to show.
 async function fetchWeather(position: Coordinates | null) {
   const response = await fetch(`/api/resident-portal/weather${position ? `?lat=${position.latitude}&lon=${position.longitude}` : ''}`)
-  return response.status === 200 ? await response.json() as Weather : null
+  return response.status === 200 ? { ...await response.json() as Weather, isCurrentLocation: Boolean(position) } : null
 }
 
 /**

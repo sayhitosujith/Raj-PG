@@ -16,9 +16,9 @@ export async function getSettings() {
   return cached
 }
 
-/** Rent cycle days plus the late fee, e.g. { dueDay: 2, reminderOneDay: 1, reminderTwoDay: 2, lateFee: 200 }. */
-export type RentRules = { dueDay: number; reminderOneDay: number; reminderTwoDay: number; lateFee: number }
-export const rentRulesOf = (settings: WorkspaceSettings): RentRules => ({ dueDay: settings.rentDueDay, reminderOneDay: settings.rentReminderOneDay, reminderTwoDay: settings.rentReminderTwoDay, lateFee: settings.lateFee })
+/** Rent cycle days plus the late fee, e.g. { dueDay: 3, reminderOneDay: 1, reminderTwoDay: 2, reminderThreeDay: 3, lateFee: 200 }. */
+export type RentRules = { dueDay: number; reminderOneDay: number; reminderTwoDay: number; reminderThreeDay: number; lateFee: number }
+export const rentRulesOf = (settings: WorkspaceSettings): RentRules => ({ dueDay: settings.rentDueDay, reminderOneDay: settings.rentReminderOneDay, reminderTwoDay: settings.rentReminderTwoDay, reminderThreeDay: settings.rentReminderThreeDay, lateFee: settings.lateFee })
 
 const slotNames: Record<HousekeepingSlot, { key: 'morning' | 'afternoon' | 'evening'; label: string }> = {
   MORNING: { key: 'morning', label: 'Morning' },
@@ -61,7 +61,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -115,14 +115,15 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     data[field] = text.trim()
   }
   Object.assign(data, policyVersionChanges(data as Partial<Record<PolicyField, string>>, current))
-  const rentFields = ['rentDueDay', 'rentReminderOneDay', 'rentReminderTwoDay'] as const
+  const rentFields = ['rentDueDay', 'rentReminderOneDay', 'rentReminderTwoDay', 'rentReminderThreeDay'] as const
   if (rentFields.some((field) => input[field] !== undefined)) {
     const due = input.rentDueDay ?? current.rentDueDay
     const one = input.rentReminderOneDay ?? current.rentReminderOneDay
     const two = input.rentReminderTwoDay ?? current.rentReminderTwoDay
-    if (!isDay(due) || !isDay(one) || !isDay(two)) return { error: 'Rent days must be whole days from 1 to 28.' }
-    if (!(one < two && two <= due)) return { error: 'Reminder 1 must come before reminder 2, and reminder 2 cannot be after the due day.' }
-    Object.assign(data, { rentDueDay: due, rentReminderOneDay: one, rentReminderTwoDay: two })
+    const three = input.rentReminderThreeDay ?? current.rentReminderThreeDay
+    if (!isDay(due) || !isDay(one) || !isDay(two) || !isDay(three)) return { error: 'Rent days must be whole days from 1 to 28.' }
+    if (!(one < two && two < three && three <= due)) return { error: 'Reminders must be on different days in order (1, then 2, then 3), and reminder 3 cannot be after the due day.' }
+    Object.assign(data, { rentDueDay: due, rentReminderOneDay: one, rentReminderTwoDay: two, rentReminderThreeDay: three })
   }
   for (const [field, min, max, nullable, error] of numberFields) {
     const raw = input[field]

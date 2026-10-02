@@ -84,7 +84,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', 'joinedAt', 'monthlyRent'].map((field) => [field, String(form.get(field) ?? '')]))
+    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
     const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey }) }
     setIsSaving(true)
@@ -132,6 +132,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
           ? <p className="priced-rent">Monthly rent <strong>₹{pricedRent.toLocaleString('en-IN')}</strong> <span>set by {selectedProperty?.name} for {foodOpted ? 'with food' : 'without food'}; change it in the property's prices</span></p>
           : <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>}
         <label>Joining date<input name="joinedAt" type="date" required defaultValue={resident ? resident.joinedAt.slice(0, 10) : prefill?.joinedAt?.slice(0, 10) ?? todayDateInputValue()} /></label>
+        {isEdit && <label>Allow access until <span>(optional; lets them use the app with overdue rent up to this date)</span><input name="rentAccessUntil" type="date" defaultValue={resident.rentAccessUntil?.slice(0, 10) ?? ''} /></label>}
         {isEdit && <label>Status<select name="status" defaultValue={resident.active ? 'active' : 'inactive'}><option value="active">Active</option><option value="inactive">Inactive — blocks app sign-in</option></select></label>}
         <div className="access-key-field">
           <label htmlFor="resident-access-key">Access key <span>{isEdit ? (accessKey ? '(new key — copy it now)' : '(stored securely; reset to issue a new one)') : '(share with the resident for portal login)'}</span></label>

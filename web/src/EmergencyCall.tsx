@@ -1,15 +1,14 @@
 import { Phone, Siren } from 'lucide-react'
 
-/**
- * Tap-to-call buttons in the resident's "My details" heading: India's single emergency number
- * (112 reaches police, fire and ambulance) and, when the owner has set one, their contact phone.
- * Plain tel: links, so they dial straight away on a phone and hand off to a calling app elsewhere.
- */
-export function EmergencyCall({ ownerName, ownerPhone }: { ownerName: string; ownerPhone: string | null }) {
-  return (
-    <div className="emergency-call">
-      <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency 112</a>
-      {ownerPhone && <a className="emergency-button" href={`tel:${ownerPhone}`} aria-label={`Call ${ownerName} on ${ownerPhone}`}><Phone size={14} /> Call owner</a>}
-    </div>
-  )
+// Plain tel: links, so they dial straight away on a phone and hand off to a calling app elsewhere.
+
+/** India's single emergency number (112 reaches police, fire and ambulance), as a tap-to-call button. */
+export function EmergencyButton() {
+  return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency 112</a>
+}
+
+/** Tap-to-call for the property owner; renders nothing when no number is set. */
+export function CallOwnerButton({ ownerName, ownerPhone }: { ownerName: string; ownerPhone: string | null }) {
+  if (!ownerPhone) return null
+  return <a className="emergency-button call-owner" href={`tel:${ownerPhone}`} aria-label={`Call ${ownerName} on ${ownerPhone}`}><Phone size={14} /> Call PG Owner</a>
 }

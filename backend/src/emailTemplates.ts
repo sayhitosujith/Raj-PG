@@ -29,10 +29,12 @@ export function paymentReceivedEmail(input: { business: string; name: string; am
 }
 
 /** Reminder 1, reminder 2 or the overdue notice. */
-export function rentReminderEmail(input: { business: string; name: string; amount: string; months: string; property: string; dueDate: string; overdue: boolean; portalUrl: string }) {
+export function rentReminderEmail(input: { business: string; name: string; amount: string; months: string; property: string; dueDate: string; overdue: boolean; lockWarning: string | null; portalUrl: string }) {
   return { subject: input.overdue ? `Your rent for ${input.months} is overdue` : `Rent reminder: ${input.amount} due by ${input.dueDate}`, ...layout(input.business, input.overdue ? 'Your rent is overdue' : 'Rent reminder', [
     { kind: 'p', text: input.overdue ? `Hi ${input.name}, your rent was due on ${input.dueDate} and is now overdue. Please pay today to avoid further late fees.` : `Hi ${input.name}, this is a reminder that your rent is due by ${input.dueDate}.` },
     { kind: 'rows', rows: [['Amount due', input.amount], ['For', input.months], ['Property', input.property], ['Due by', input.dueDate]] },
+    // The final reminder: an email cannot count down, so it names the moment access stops.
+    ...(input.lockWarning ? [{ kind: 'p' as const, text: `This is your last reminder. If the rent is not paid, your access to the resident app will be blocked at ${input.lockWarning}.` }] : []),
     { kind: 'button', label: 'Pay in the resident portal', href: input.portalUrl },
   ]) }
 }

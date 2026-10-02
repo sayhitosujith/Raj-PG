@@ -6,6 +6,7 @@ import { prisma } from './db.js'
 import { isValidEmail } from './validation.js'
 import { findResidentByCredentials } from './residentCredentials.js'
 import { findDuplicate } from './duplicates.js'
+import { findRentLockMessage, rentLockedCode } from './rentLock.js'
 import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
 
 const sessionCookieName = 'raj_pg_session'
@@ -48,6 +49,19 @@ async function findLiveSession(request: Request) {
   return session && session.expiresAt > new Date() ? session : null
 }
 
+/**
+ * Signs a resident out everywhere and answers with why, when overdue rent locks them out. Checked
+ * on every resident request (not only at sign-in), so the lock applies to sessions already open.
+ */
+async function rejectRentLocked(residentId: string, response: Response) {
+  const message = await findRentLockMessage(residentId)
+  if (!message) return false
+  await prisma.session.deleteMany({ where: { residentId } })
+  response.clearCookie(sessionCookieName, { path: '/' })
+  response.status(401).json({ error: message, code: rentLockedCode })
+  return true
+}
+
 /** Rejects the request unless it carries a live session of the given user type. */
 export function requireRole(role: UserRole) {
   return async (request: Request, response: Response, next: NextFunction) => {
@@ -57,6 +71,7 @@ export function requireRole(role: UserRole) {
       if (!session) { response.status(401).json({ error: 'Sign in required.' }); return }
       if (session.role !== role) { response.status(403).json({ error: 'You do not have access to this resource.' }); return }
       const auth: AuthContext = { role, userId: session.superAdminId ?? session.residentId ?? '', sessionId: session.id }
+      if (session.residentId && await rejectRentLocked(session.residentId, response)) return
       response.locals.auth = auth
       next()
     } catch (error) {
@@ -87,6 +102,8 @@ authRouter.post('/auth/login', async (request, response) => {
     }
     const match = await findResidentByCredentials(identifier, password)
     if (match) {
+      const lock = await findRentLockMessage(match.resident.id)
+      if (lock) { response.status(403).json({ error: lock, code: rentLockedCode }); return }
       await startSession(response, UserRole.RESIDENT, { residentId: match.resident.id })
       response.json({ role: UserRole.RESIDENT })
       return

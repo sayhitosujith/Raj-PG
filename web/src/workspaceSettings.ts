@@ -14,6 +14,7 @@ export type WorkspaceSettings = {
   rentDueDay: number
   rentReminderOneDay: number
   rentReminderTwoDay: number
+  rentReminderThreeDay: number
   /** Whole rupees added to each month paid after the due day; 0 = none. */
   lateFee: number
   securityDeposit: number | null

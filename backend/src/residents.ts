@@ -9,17 +9,15 @@ import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo
 import { residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
-import { normalizePhone, phoneRequirement } from './validation.js'
+import { findInvalidField, pickTextFields, type TextField } from './residentFields.js'
+import { isRentLocked } from './rentLock.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card and /passport-scan instead).
 const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
-const textFields = ['name', 'phone', 'email', 'permanentAddress'] as const
-
-type TextField = (typeof textFields)[number]
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt', string>> & IdentityInput & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 class RoomUnavailableError extends Error {}
 // Another active resident or a super admin already has one of these identifying details.
@@ -31,8 +29,9 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
   const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
-  const rent = { ...rentStatus(resident, rentPayments.map((payment) => payment.month), rules), payments: rentPayments.slice(0, 6) }
-  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+  const paidMonths = rentPayments.map((payment) => payment.month)
+  const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
+  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
 }
 
 type DocumentsOnFile = { hasAadharCard: boolean; hasPassportScan: boolean }
@@ -61,27 +60,6 @@ const queueForReview = () => ({ aadharStatus: AadharVerificationStatus.PENDING, 
 function parseResidentIdentity(body: ResidentBody): { fields: IdentityFields } | { error: string } {
   const parsed = parseIdentityFields(body)
   return parsed.ok ? { fields: parsed.fields } : { error: parsed.error }
-}
-
-// Only fields present in the body are returned, so PUT can apply partial updates.
-function pickTextFields(body: ResidentBody) {
-  const data: Partial<Record<TextField, string>> = {}
-  for (const field of textFields) {
-    const value = body[field]
-    if (typeof value === 'string') data[field] = value.trim()
-  }
-  // Stored in E.164 form when valid; an invalid number is marked for findInvalidField to reject.
-  if (data.phone) data.phone = normalizePhone(data.phone) ?? invalidPhone
-  return data
-}
-
-// Never a real number (E.164 always starts with "+"), so it cannot collide with valid input.
-const invalidPhone = 'invalid'
-
-function findInvalidField(data: Partial<Record<TextField, string>>) {
-  if (data.name !== undefined && !data.name) return 'Name is required.'
-  if (data.phone === invalidPhone) return phoneRequirement
-  return null
 }
 
 /**
@@ -235,10 +213,13 @@ residentRouter.put('/residents/:id', async (request, response) => {
   if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
+  // Blank clears the override; absent leaves it alone.
+  const rentAccessUntil = body.rentAccessUntil === '' ? null : parseDateOnly(body.rentAccessUntil)
+  if (body.rentAccessUntil && rentAccessUntil === null) { response.status(400).json({ error: 'Allow access until must be a valid date.' }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
   try {
     await prisma.$transaction(async (transaction) => {
-      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
+      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
       const expired = findExpiredDocument(identity.fields, current)
       if (expired) throw new InputError(expired)
       const nationality = identity.fields.nationality ?? current.nationality
@@ -267,7 +248,9 @@ residentRouter.put('/residents/:id', async (request, response) => {
       const isComplete = hasCompleteIdentity({ ...current, ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl) || (onFile.hasAadharCard && !isNationalityChange), hasPassportScan: Boolean(identity.fields.passportScanUrl) || (onFile.hasPassportScan && !isNationalityChange) })
       const isUnsubmitted = isNationalityChange || current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED
       const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
-      await transaction.resident.update({ where: { id }, data: { ...data, nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
+      // An address the owner types is theirs to vouch for, so it is shown as verified again.
+      const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
+      await transaction.resident.update({ where: { id }, data: { ...data, ...addressCheck, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
       if (isMoving) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
@@ -342,7 +325,7 @@ residentRouter.post('/residents/:id/aadhar-verification', async (request, respon
       response.status(409).json({ error: `${missing} must be on file before approving.` }); return
     }
     await prisma.resident.update({ where: { id }, data: decision === 'approve'
-      ? { aadharStatus: AadharVerificationStatus.VERIFIED, aadharRejectionReason: null, aadharReviewedAt: new Date() }
+      ? { aadharStatus: AadharVerificationStatus.VERIFIED, aadharRejectionReason: null, aadharReviewedAt: new Date(), addressVerified: true }
       : { aadharStatus: AadharVerificationStatus.REJECTED, aadharRejectionReason: trimmedReason, aadharReviewedAt: new Date() } })
     response.json(await findResidentSummary(id))
   } catch (error) {

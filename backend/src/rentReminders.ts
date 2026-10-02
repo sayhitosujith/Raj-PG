@@ -10,7 +10,7 @@ import { isWhatsAppEnabled } from './whatsappClient.js'
 /**
  * The daily rent-reminder run (WhatsApp and email). Render's free plan sleeps, so nothing inside
  * the app can wake it on schedule; an external cron (cron-job.org) calls /api/cron/rent-reminders
- * once a day with the CRON_SECRET. Each resident gets reminder 1, reminder 2 and the overdue notice
+ * once a day with the CRON_SECRET. Each resident gets reminders 1, 2 and 3 and the overdue notice
  * at most once per month and channel (notifyRent's dedupe key), so calling it more often is harmless.
  */
 const dueDateLabel = (month: string, dueDay: number) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, dueDay)).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' })
@@ -19,12 +19,12 @@ export async function runRentReminders() {
   if (!isWhatsAppEnabled() && !isEmailEnabled()) return { skipped: 'Neither WhatsApp nor email is configured.' }
   const rules = rentRulesOf(await getSettings())
   const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, room: { select: { property: { select: { name: true } } } } } })
-  const sent = { reminder1: 0, reminder2: 0, overdue: 0 }
+  const sent = { reminder1: 0, reminder2: 0, reminder3: 0, overdue: 0 }
   for (const resident of residents) {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)
-    const stage = status.state === 'LOCK_DUE' ? 'overdue' : status.state === 'REMINDER_2' ? 'reminder2' : status.state === 'REMINDER_1' ? 'reminder1' : null
+    const stage = status.state === 'LOCK_DUE' ? 'overdue' : status.state === 'REMINDER_3' ? 'reminder3' : status.state === 'REMINDER_2' ? 'reminder2' : status.state === 'REMINDER_1' ? 'reminder1' : null
     if (!stage || !status.outstandingMonths.length) continue
-    await notifyRent(resident, stage, { amount: status.amountDue, months: status.outstandingMonths, dueDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay), property: resident.room.property.name })
+    await notifyRent(resident, stage, { amount: status.amountDue, months: status.outstandingMonths, dueDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay), lockDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay + 1), property: resident.room.property.name })
     sent[stage] += 1
   }
   return { checked: residents.length, attempted: sent }

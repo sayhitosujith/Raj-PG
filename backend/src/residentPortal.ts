@@ -1,6 +1,8 @@
 import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { findDuplicate } from './duplicates.js'
+import { findInvalidField, pickTextFields } from './residentFields.js'
+import { findRentLockMessage, rentLockedCode } from './rentLock.js'
 import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
@@ -75,6 +77,8 @@ residentPortalRouter.post('/resident-portal/login', async (request, response) =>
   try {
     const match = await findResidentByCredentials(identifier.trim(), secret)
     if (!match) { response.status(401).json({ error: 'Invalid email/phone or password.' }); return }
+    const lock = await findRentLockMessage(match.resident.id)
+    if (lock) { response.status(403).json({ error: lock, code: rentLockedCode }); return }
     const token = await startSession(response, UserRole.RESIDENT, { residentId: match.resident.id })
     response.json({ token, mustSetPassword: match.mustSetPassword })
   } catch (error) {
@@ -89,9 +93,9 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { nationality, passportNumber } = resident
-    const { id, name, phone, email, aadharNumber, permanentAddress, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
+    const { id, name, phone, email, aadharNumber, permanentAddress, addressVerified, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
     // Only the last four document characters leave the server for the resident's own view.
-    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, addressVerified, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -183,6 +187,42 @@ residentPortalRouter.get('/resident-portal/photo', requireResident, async (_requ
 })
 
 // Residents manage their own photo once they have full portal access.
+// The resident's own contact details from "My details". Saves straight away with the same checks
+// as the owner's form; a changed address loses its "Verified" badge until the owner checks it.
+residentPortalRouter.put('/resident-portal/details', requireResident, requirePortalAccess, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  const data = pickTextFields(request.body as Record<string, unknown>)
+  const invalid = findInvalidField(data)
+  if (invalid) { response.status(400).json({ error: invalid }); return }
+  // Phone or email is how they sign in, so at least one must stay.
+  if (!data.phone && !data.email) { response.status(400).json({ error: 'Enter a phone number or an email so you can still sign in.' }); return }
+  try {
+    const current = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { permanentAddress: true } })
+    // Residents are not told whose account holds a detail, only that it is taken.
+    const duplicate = await findDuplicate(prisma, { email: data.email, phone: data.phone }, { residentId: userId }, { revealOwner: false })
+    if (duplicate) { response.status(409).json({ error: duplicate }); return }
+    const isNewAddress = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '')
+    await prisma.resident.update({ where: { id: userId }, data: { ...data, phone: data.phone || null, email: data.email || null, permanentAddress: data.permanentAddress || null, ...(isNewAddress ? { addressVerified: false } : {}) } })
+    response.status(204).send()
+  } catch (error) {
+    console.error('Resident details update failed:', error)
+    response.status(503).json({ error: 'Your details could not be saved.' })
+  }
+})
+
+// "Change ID document": puts a verified resident back to unsubmitted, so the portal shows the ID
+// form (number plus scan) and the owner reviews the new document. Portal access pauses until then.
+residentPortalRouter.post('/resident-portal/identity/change', requireResident, requirePortalAccess, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    await prisma.resident.update({ where: { id: userId }, data: { aadharStatus: AadharVerificationStatus.NOT_SUBMITTED, aadharSubmittedAt: null, aadharReviewedAt: null, aadharRejectionReason: null } })
+    response.status(204).send()
+  } catch (error) {
+    console.error('ID change request failed:', error)
+    response.status(503).json({ error: 'Your ID could not be reopened.' })
+  }
+})
+
 residentPortalRouter.put('/resident-portal/photo', requireResident, requirePortalAccess, async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { photo } = request.body as { photo?: unknown }

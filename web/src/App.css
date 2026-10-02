@@ -195,6 +195,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-room small { color: #98a09d; font-size: 9px; white-space: nowrap; }
 /* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
 .resident-phone { min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; }
+/* Email under the phone; long addresses are cut with an ellipsis (full address on hover). */
+.resident-email { display: block; overflow: hidden; margin-top: 3px; color: var(--muted); font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.resident-email:hover { color: var(--teal); text-decoration: underline; }
+/* Aadhaar (in full) or passport, under the email. */
+.resident-document { display: block; margin-top: 3px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .resident-card .resident-room { display: flex; align-items: center; gap: 10px; }
 .resident-room-meta { display: grid; gap: 4px; }
 .resident-room .rent-chip { margin-top: 0; }
@@ -457,7 +462,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-panel { display: grid; gap: 8px; margin-top: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #f8faf8; color: #55635f; font-size: 11px; }
 .rent-panel.is-muted { display: flex; align-items: center; gap: 7px; color: var(--muted); }
 .rent-panel.is-lock-due { border-color: #f3d3cb; background: #fff6f3; }
-.rent-panel.is-reminder-1, .rent-panel.is-reminder-2 { border-color: #f0e2c4; background: #fffaf0; }
+.rent-panel.is-reminder-1, .rent-panel.is-reminder-2, .rent-panel.is-reminder-3 { border-color: #f0e2c4; background: #fffaf0; }
 .rent-panel.is-paid { border-color: #cfe7dc; background: #f3faf6; }
 .rent-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .rent-panel-head strong { display: inline-flex; align-items: center; gap: 5px; color: #344449; font-size: 12px; }
@@ -473,7 +478,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-banner strong { display: block; margin-bottom: 3px; font-size: 13px; }
 .rent-banner p { margin: 0; font-size: 12px; line-height: 1.5; }
 .rent-banner svg { flex: 0 0 auto; margin-top: 1px; }
-.rent-banner.is-reminder { color: #7b5a20; background: #fbf3e2; border: 1px solid #f0e2c4; }
 .rent-banner.is-overdue { color: #9a4231; background: #fbe9e5; border: 1px solid #f3d3cb; }
 .paused-note { color: #b5523f; font-size: 10px; }
 .housekeeping-card .view-actions { flex-direction: column; align-items: flex-end; }
@@ -497,7 +501,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-highlight-copy strong { color: #1f3036; font: 800 26px/1.1 Manrope, sans-serif; letter-spacing: -.5px; }
 .rent-highlight-copy strong small { color: var(--muted); font: 600 12px 'DM Sans', sans-serif; letter-spacing: 0; }
 .rent-highlight-copy > span { color: var(--muted); font-size: 11px; }
-.rent-highlight-status { margin-left: auto; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.rent-highlight-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+.rent-highlight-status { padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .rent-highlight-status.sage { color: #2f7d5c; background: #e5f3ed; }
 .rent-highlight-status.gold { color: #ad7c2c; background: #fbf0db; }
 .rent-highlight-status.coral { color: #b5523f; background: #fbe6e1; }
@@ -505,7 +510,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-chip { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; font-size: 10px; font-weight: 800; }
 @media (max-width: 480px) {
   .rent-highlight { flex-wrap: wrap; }
-  .rent-highlight-status { margin-left: 58px; }
+  .rent-highlight-badges { justify-content: flex-start; margin-left: 58px; }
 }
 
 /* Settings page. */
@@ -529,8 +534,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .settings-message { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; animation: fade-in .2s ease both; }
 .settings-message.saved { color: var(--teal); }
 .settings-message.error { color: #b5523f; }
-.owner-contact a { color: var(--teal); text-decoration: none; }
-.owner-contact a:hover { text-decoration: underline; }
 @media (max-width: 480px) {
   .settings-trio { grid-template-columns: 1fr; }
   .settings-slot-row { grid-template-columns: 1fr 1fr; }
@@ -1371,10 +1374,56 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .pagination-summary { text-align: left; }
 }
 
-/* Resident portal: emergency call buttons on their own line under the clock and weather. 112 is
-   solid red so it is findable at a glance; "Call owner" stays a quiet outline beside it. */
-.emergency-call { display: flex; flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+/* Resident portal: "Call owner" under the "My details" intro; Emergency 112 at the far right of the
+   same row, solid red so it is findable at a glance. */
+.emergency-button.call-owner { margin-top: 12px; }
+.portal-details-identity .emergency-button.is-sos { align-self: flex-start; margin-left: auto; }
 .emergency-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--teal); background: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
 .emergency-button:hover, .emergency-button:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .1); }
 .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
-@container (max-width: 640px) { .emergency-call { justify-content: flex-start; } }
+/* The meals row spans the card under the heading: Weekly menu at the left edge (under the photo),
+   meal tiles, clock and weather in the right corner. Below 620px the heading stacks and the
+   phone layout applies instead. */
+@container (min-width: 621px) {
+  .details-heading-actions { flex: 1 1 100%; }
+  .details-heading-actions .weekly-menu-button { margin-right: auto; }
+}
+
+/* Resident "Edit my details": the Edit button beside the heading, and the ID row in the modal. */
+.my-details-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.my-details-title h2 { margin-bottom: 0; }
+.my-details-edit { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font-size: 12px; }
+.my-details-note { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+.my-details-document { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
+.my-details-document strong { display: block; color: var(--ink); font-size: 12px; }
+.my-details-document small { color: var(--muted); font-size: 11px; }
+
+/* Rent rules: three reminder days plus the due day, wrapping to fewer columns as the card narrows. */
+.settings-quad { grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); }
+/* Final rent reminder: live countdown to the lockout, in the overdue red so it stands out. */
+.rent-lock-countdown { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 4px 0 2px; color: rgb(181 82 63); font-size: 12px; font-weight: 600; }
+.rent-lock-countdown b { font-variant-numeric: tabular-nums; }
+/* "Beta" beside the resident's WhatsApp and email update switches: the channels are still being rolled out. */
+.beta-tag { display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 999px; color: rgb(206 44 44); background: rgb(206 44 44 / .12); font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; vertical-align: 1px; }
+/* Rent card's right side: status chips, then on reminder days the reminder text (and countdown) under them. */
+.rent-highlight-side { display: grid; justify-items: end; gap: 6px; max-width: 420px; margin-left: auto; text-align: right; }
+.rent-highlight-side .rent-highlight-badges { margin-left: 0; }
+.rent-highlight-reminder p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.rent-highlight-reminder .rent-lock-countdown { justify-content: flex-end; }
+@media (max-width: 480px) {
+  .rent-highlight-side { justify-items: start; margin-left: 58px; text-align: left; }
+  .rent-highlight-side .rent-highlight-badges { margin-left: 0; }
+  .rent-highlight-reminder .rent-lock-countdown { justify-content: flex-start; }
+}
+/* Beta tag: a soft red ring pulses outward every couple of seconds to draw the eye, without moving
+   the text; still for anyone who prefers reduced motion. */
+.beta-tag { animation: beta-pulse 2.2s ease-out infinite; }
+@keyframes beta-pulse { 0% { box-shadow: 0 0 0 0 rgb(206 44 44 / .45); } 70%, 100% { box-shadow: 0 0 0 6px rgb(206 44 44 / 0); } }
+@media (prefers-reduced-motion: reduce) { .beta-tag { animation: none; } }
+/* Emergency 112: the same outward red ring as the Beta tag, wider and slower to suit a button, and the
+   siren icon gives a short wiggle each cycle. Still for anyone who prefers reduced motion. */
+.emergency-button.is-sos { animation: sos-pulse 2.4s ease-out infinite; }
+.emergency-button.is-sos svg { transform-origin: 50% 80%; animation: sos-wiggle 2.4s ease-in-out infinite; }
+@keyframes sos-pulse { 0% { box-shadow: 0 0 0 0 rgb(206 44 44 / .5); } 70%, 100% { box-shadow: 0 0 0 10px rgb(206 44 44 / 0); } }
+@keyframes sos-wiggle { 0%, 70%, 100% { rotate: 0deg; } 76% { rotate: -14deg; } 82% { rotate: 12deg; } 88% { rotate: -8deg; } 94% { rotate: 4deg; } }
+@media (prefers-reduced-motion: reduce) { .emergency-button.is-sos, .emergency-button.is-sos svg { animation: none; } }

@@ -163,13 +163,14 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
           <WhatsAppSettings onNotice={onNotice} />
           <EmailSettings onNotice={onNotice} />
 
-          <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the two reminders appear. After the due day, unpaid residents are flagged “access lock due”." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
-            <div className="settings-trio">
+          <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the three reminders appear. After the due day, unpaid residents are locked out of the app until you record the payment." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), rentReminderThreeDay: Number(value(form, 'rentReminderThreeDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
+            <div className="settings-trio settings-quad">
               <label>Reminder 1 on<select name="rentReminderOneDay" defaultValue={settings.rentReminderOneDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
               <label>Reminder 2 on<select name="rentReminderTwoDay" defaultValue={settings.rentReminderTwoDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
+              <label>Reminder 3 on<select name="rentReminderThreeDay" defaultValue={settings.rentReminderThreeDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
               <label>Rent due by<select name="rentDueDay" defaultValue={settings.rentDueDay}>{dayOptions.map((day) => <option key={day} value={day}>{ordinal(day)}</option>)}</select></label>
             </div>
-            <p className="settings-hint">Days go up to the 28th so every month has them. Reminder 1 must come before reminder 2, and reminder 2 no later than the due day.</p>
+            <p className="settings-hint">Days go up to the 28th so every month has them. Reminders go in order on different days (1, then 2, then 3), with reminder 3 no later than the due day; the third shows the resident a countdown to the lock.</p>
             <label>Late fee <span>(₹ added to each month paid after the due day; 0 for none)</span><input name="lateFee" type="number" min={0} max={100000} step={1} defaultValue={settings.lateFee} /></label>
           </SettingsSection>
 

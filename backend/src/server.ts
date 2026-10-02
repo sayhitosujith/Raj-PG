@@ -11,6 +11,7 @@ import { financeAdminRouter } from './finance.js'
 import { emailAdminRouter } from './emailAdmin.js'
 import { fallbackDashboard } from './data.js'
 import { prisma } from './db.js'
+import { normalizePhone } from './validation.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
 import { parsePropertyRents, syncPropertyRents } from './propertyRent.js'
@@ -90,10 +91,22 @@ function parseCity(value: unknown): { city?: string | null } | { error: string }
   return { city: city || null }
 }
 
+// Optional owner phone, stored as E.164; blank clears it, absent leaves it alone.
+function parseOwnerPhone(value: unknown): { ownerPhone?: string | null } | { error: string } {
+  if (value === undefined) return {}
+  if (value !== null && typeof value !== 'string') return { error: 'Owner number must be text.' }
+  const raw = value?.trim() ?? ''
+  if (!raw) return { ownerPhone: null }
+  const ownerPhone = normalizePhone(raw)
+  return ownerPhone ? { ownerPhone } : { error: 'Enter a valid owner number.' }
+}
+
 app.post('/api/properties', async (request, response) => {
   const { name, location, imageUrl, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms, rentWithFood, rentWithoutFood } = request.body as { name?: string; location?: string; imageUrl?: string; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown; rentWithFood?: unknown; rentWithoutFood?: unknown }
   const city = parseCity((request.body as { city?: unknown }).city)
   if ('error' in city) { response.status(400).json({ error: city.error }); return }
+  const ownerPhone = parseOwnerPhone((request.body as { ownerPhone?: unknown }).ownerPhone)
+  if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   if (!name?.trim() || !location?.trim()) {
     response.status(400).json({ error: 'Name and location are required.' })
     return
@@ -117,7 +130,7 @@ app.post('/api/properties', async (request, response) => {
 
   try {
     const property = await prisma.property.create({
-      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...tenantType, ...amenities, ...totalRooms, ...rents.data },
+      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...tenantType, ...amenities, ...totalRooms, ...rents.data },
     })
     response.status(201).json({ source: 'postgresql', property: { ...property, image: property.imageUrl, ...occupancySummary({ ...property, rooms: [] }), tone: 'sage', mealTimes: toMealTimes(property) } })
   } catch (error) {
@@ -147,6 +160,8 @@ app.put('/api/properties/:id', async (request, response) => {
   if (meals && 'error' in meals) { response.status(400).json({ error: meals.error }); return }
   const city = parseCity((request.body as { city?: unknown }).city)
   if ('error' in city) { response.status(400).json({ error: city.error }); return }
+  const ownerPhone = parseOwnerPhone((request.body as { ownerPhone?: unknown }).ownerPhone)
+  if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   const tenantType = parseTenantType(rawTenantType, false)
   if ('error' in tenantType) { response.status(400).json({ error: tenantType.error }); return }
   const amenities = rawAmenities === undefined ? {} : parseAmenities(rawAmenities)
@@ -164,7 +179,7 @@ app.put('/api/properties/:id', async (request, response) => {
     }
     // Price and residents' rents change together, so a resident never shows a stale rent.
     const property = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
       if (Object.keys(rents.data).length) await syncPropertyRents(transaction, updated.id)
       return updated
     })
@@ -230,6 +245,7 @@ app.get('/api/dashboard', async (_request, response) => {
           name: property.name,
           location: property.location,
           city: property.city,
+          ownerPhone: property.ownerPhone,
           ...occupancySummary(property),
           status: property.status,
           tone: property.status === 'Healthy' ? 'sage' : 'gold',

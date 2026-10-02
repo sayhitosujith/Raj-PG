@@ -87,7 +87,10 @@ const maxStaggerSteps = 10
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
 export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
-  const rentBadge = rentBadges[resident.rent.state]
+  // Overdue residents are locked out of the app unless the owner allowed access up to a date.
+  const rentBadge = resident.rent.state !== 'LOCK_DUE' ? rentBadges[resident.rent.state]
+    : resident.rentLocked ? { label: 'Rent overdue · locked out', tone: 'coral' }
+    : { label: `Rent overdue · access until ${formatDateTime(resident.rentAccessUntil ?? '')}`, tone: 'gold' }
   const [isAadharRevealed, setIsAadharRevealed] = useState(false)
   const detailsId = `resident-details-${resident.id}`
 
@@ -102,7 +105,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onD
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
-        <div className="resident-phone">{resident.phone && <PhoneText value={resident.phone} />}</div>
+        <div className="resident-phone">{resident.phone && <PhoneText value={resident.phone} />}{resident.email && <a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document">Aadhaar {formatAadhar(resident.aadharNumber, true)}</span> : resident.passportNumber && <span className="resident-document">Passport {resident.passportNumber}</span>}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
         <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>

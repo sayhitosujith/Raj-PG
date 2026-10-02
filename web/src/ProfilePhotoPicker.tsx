@@ -43,7 +43,7 @@ export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice }: 
         <span className="profile-photo-overlay" aria-hidden="true">{isSaving ? <LoaderCircle size={22} className="spin" /> : <Camera size={20} />}<small>{isSaving ? 'Saving…' : photoUrl ? 'Change' : 'Add photo'}</small></span>
       </button>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={choose} />
-      {photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => save(() => fetch('/api/resident-portal/photo', { method: 'DELETE' }), 'Profile photo removed.')}>Remove photo</button>}
+      {photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => save(() => fetch('/api/resident-portal/photo', { method: 'DELETE' }), 'Profile photo removed.')}>Change Photo</button>}
     </div>
   )
 }

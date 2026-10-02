@@ -1,5 +1,5 @@
 /** Where a resident stands for rent, computed by the server in India time (see backend rent.ts). */
-export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'LOCK_DUE'
+export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'REMINDER_3' | 'LOCK_DUE'
 /** razorpayPaymentId is set for online payments; null when the owner recorded it. */
 export type RentPaymentRecord = { id: string; month: string; amount: number; paidAt: string; razorpayPaymentId?: string | null }
 
@@ -34,7 +34,8 @@ export const rentBadges: Record<RentState, { label: string; tone: string } | nul
   PAID: null,
   REMINDER_1: { label: 'Rent reminder 1', tone: 'gold' },
   REMINDER_2: { label: 'Rent reminder 2', tone: 'gold' },
-  LOCK_DUE: { label: 'Rent overdue · access lock due', tone: 'coral' },
+  REMINDER_3: { label: 'Rent reminder 3 · final', tone: 'coral' },
+  LOCK_DUE: { label: 'Rent overdue · locked out', tone: 'coral' },
 }
 
 /** Always-visible one-line rent state for a resident row, so rent is not hidden behind "expand". */
@@ -43,6 +44,7 @@ export function rentChip(rent: RentSummary): { text: string; tone: string } {
   const amount = formatRupees(rent.monthlyRent)
   switch (rent.state) {
     case 'LOCK_DUE': return { text: `${formatRupees(rent.amountDue)} overdue`, tone: 'coral' }
+    case 'REMINDER_3':
     case 'REMINDER_2':
     case 'REMINDER_1': return { text: `${amount} · due ${formatDueDate(rent.currentMonth, rent.dueDay)}`, tone: 'gold' }
     case 'PAID': return { text: `${amount} · paid`, tone: 'sage' }

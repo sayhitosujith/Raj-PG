@@ -115,13 +115,13 @@ export async function notifyHousekeeping(request: { id: string; residentId: stri
 }
 
 /** A rent reminder or overdue notice; the key makes it once per resident, month, stage and channel. */
-export async function notifyRent(resident: Recipient, stage: 'reminder1' | 'reminder2' | 'overdue', details: { amount: number; months: string[]; dueDate: string; property: string }) {
+export async function notifyRent(resident: Recipient, stage: 'reminder1' | 'reminder2' | 'reminder3' | 'overdue', details: { amount: number; months: string[]; dueDate: string; lockDate: string; property: string }) {
   const { businessName } = await getSettings()
   const name = displayName(resident.name)
   const monthLabel = details.months.map(formatMonthLabel).join(', ')
   const key = `rent:${resident.id}:${details.months[0]}:${stage}`
   await toWhatsApp(resident, stage === 'overdue' ? templates.rentOverdue : templates.rentReminder, [name, businessName, rupees(details.amount), monthLabel, details.property, details.dueDate], key)
-  await toEmail(resident, stage === 'overdue' ? 'rent_overdue' : 'rent_reminder', rentReminderEmail({ business: businessName, name, amount: rupees(details.amount), months: monthLabel, property: details.property, dueDate: details.dueDate, overdue: stage === 'overdue', portalUrl: appUrl() }), key)
+  await toEmail(resident, stage === 'overdue' ? 'rent_overdue' : 'rent_reminder', rentReminderEmail({ business: businessName, name, amount: rupees(details.amount), months: monthLabel, property: details.property, dueDate: details.dueDate, overdue: stage === 'overdue', lockWarning: stage === 'reminder3' ? `12:00 am on ${details.lockDate}` : null, portalUrl: appUrl() }), key)
 }
 
 /**

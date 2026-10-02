@@ -6,17 +6,17 @@ import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 /**
- * Rent cycle (days set in Settings, default due the 2nd): reminder 1 shows from its day, reminder 2
- * from its day until the due day, and after the due day an unpaid month flags the resident
- * "access lock due" for the owner to act on.
- * Reminders are shown in the app (no SMS/email provider is set up); nothing is locked automatically.
+ * Rent cycle (days set in Settings, default due the 3rd): reminders 1, 2 and 3 show from their days
+ * until the due day, and after the due day an unpaid month flags the resident
+ * overdue, which locks them out of the app (rentLock.ts) unless the owner allowed access up to a date.
+ * Reminders are shown in the app, and sent by email or WhatsApp when those are set up.
  */
 /** Upper bound for any rent amount, in whole rupees. */
 export const maxMonthlyRent = 10_00_000
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /** Where a resident stands for rent right now. */
-export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'LOCK_DUE'
+export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REMINDER_2' | 'REMINDER_3' | 'LOCK_DUE'
 
 type Calendar = { year: number; month: number; day: number }
 
@@ -58,6 +58,7 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   const overdueMonths = outstandingMonths.filter((month) => month < currentMonth || today.day > dueDay)
   const owesCurrent = outstandingMonths.includes(currentMonth)
   const state: RentState = overdueMonths.length ? 'LOCK_DUE'
+    : owesCurrent && today.day >= rules.reminderThreeDay ? 'REMINDER_3'
     : owesCurrent && today.day >= rules.reminderTwoDay ? 'REMINDER_2'
     : owesCurrent && today.day >= rules.reminderOneDay ? 'REMINDER_1'
     : paid.has(currentMonth) ? 'PAID'
@@ -67,7 +68,7 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee }
 }
 
-/** True when the resident is past the second reminder; used to limit their portal until paid. */
+/** True when the resident is overdue (past the due day); pauses housekeeping requests during an access override. */
 export async function isRentLockDue(residentId: string) {
   const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
   return resident ? rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(await getSettings())).state === 'LOCK_DUE' : false

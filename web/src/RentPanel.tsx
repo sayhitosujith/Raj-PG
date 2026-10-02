@@ -20,9 +20,10 @@ export function RentPanel({ rent, onRecord, onUndo }: { rent: RentSummary; onRec
 
   const month = nextMonthToRecord(rent)
   const status = {
-    LOCK_DUE: `Overdue for ${rent.overdueMonths.map(formatMonth).join(', ')} (${formatRupees(rent.amountDue)} outstanding${rent.lateFee ? ', including late fees' : ''}). Both reminders were shown before the due day. Door access lock is due: this is your call. The resident's portal is limited until you record the payment.`,
-    REMINDER_2: `Reminder 2 of 2 is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}.`,
-    REMINDER_1: `Reminder 1 of 2 is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}.`,
+    LOCK_DUE: `Overdue for ${rent.overdueMonths.map(formatMonth).join(', ')} (${formatRupees(rent.amountDue)} outstanding${rent.lateFee ? ', including late fees' : ''}). All three reminders were shown before the due day. The resident is locked out of the app until you record the payment, unless you set an "Allow access until" date.`,
+    REMINDER_3: `Reminder 3 of 3 (final) is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}. The resident is locked out of the app from midnight after that if it is still unpaid.`,
+    REMINDER_2: `Reminder 2 of 3 is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}.`,
+    REMINDER_1: `Reminder 1 of 3 is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}.`,
     PAID: `Paid for ${formatMonth(rent.currentMonth)}.`,
     NOT_DUE: rent.outstandingMonths.length ? `Due by ${formatDueDate(rent.outstandingMonths[0], rent.dueDay)}.` : `Next rent is due by ${formatDueDate(month, rent.dueDay)}.`,
     NOT_TRACKED: 'Rent is not being tracked while the resident is inactive.',

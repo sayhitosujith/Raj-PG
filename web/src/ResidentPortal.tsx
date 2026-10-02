@@ -27,7 +27,8 @@ import { WeatherNow } from './WeatherNow'
 import { previewSkyCondition, useWeather } from './weather'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PortalFooter } from './PortalFooter'
-import { EmergencyCall } from './EmergencyCall'
+import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
+import { MyDetailsEditor } from './MyDetailsEditor'
 import { HouseRules } from './HouseRules'
 import { NextMealAlert, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
@@ -43,10 +44,17 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; phone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+// Overdue rent signed the resident out; its message replaces the portal, even on a background refresh.
+class RentLockedError extends Error {}
+
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
-  if (!response.ok) throw new Error(await readApiError(response, 'Could not load your details.'))
+  if (!response.ok) {
+    const body = await response.clone().json().catch(() => null) as { code?: string } | null
+    const message = await readApiError(response, 'Could not load your details.')
+    throw body?.code === 'RENT_LOCKED' ? new RentLockedError(message) : new Error(message)
+  }
   return await response.json() as ResidentProfile
 }
 
@@ -155,8 +163,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><h2>My details</h2><p>Ask your property owner if anything here needs correcting.{(profile.workspace.contactPhone || profile.workspace.contactEmail) && <span className="owner-contact"> Contact {profile.workspace.businessName}:{profile.workspace.contactPhone && <> <a href={`tel:${profile.workspace.contactPhone}`}>{profile.workspace.contactPhone}</a></>}{profile.workspace.contactPhone && profile.workspace.contactEmail && ' ·'}{profile.workspace.contactEmail && <> <a href={`mailto:${profile.workspace.contactEmail}`}>{profile.workspace.contactEmail}</a></>}</span>}</p></div></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /><LocalClock /><WeatherNow weather={weather} /><EmergencyCall ownerName={profile.workspace.businessName} ownerPhone={profile.workspace.contactPhone} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && <VerifiedBadge />}</dd></div></dl></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div><p>Keep your contact details up to date. For anything else, ask your property owner.</p><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><EmergencyButton /></div><div className="details-heading-actions">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /><LocalClock /><WeatherNow weather={weather} />{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</dd></div></dl></div>
           <NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} />
         </section>
         <HouseRules rules={profile.workspace.houseRules} />
@@ -186,10 +194,12 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
 export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
   const [profile, setProfile] = useState<ResidentProfile | null>(null)
   const [loadError, setLoadError] = useState('')
+  const [isRentLocked, setIsRentLocked] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
 
   function showLoadError(error: unknown) {
+    setIsRentLocked(error instanceof RentLockedError)
     setLoadError(error instanceof Error && error.message !== 'Failed to fetch' ? error.message : 'Could not reach the server.')
   }
 
@@ -209,13 +219,13 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
     setRefreshSignal((signal) => signal + 1)
     // The owner may have changed the workspace logo since this page loaded.
     refreshBranding()
-    await fetchProfile().then(setProfile, () => undefined)
+    await fetchProfile().then(setProfile, (error: unknown) => { if (error instanceof RentLockedError) showLoadError(error) })
     setLastRefreshedAt(new Date())
   }
 
   useAutoRefresh(() => { void refreshPortal() })
 
-  if (loadError) return <main className="login-shell"><div className="login-card"><h1>Something went wrong</h1><p className="login-error" role="alert">{loadError}</p><button className="secondary-button portal-signout" onClick={onSignOut}>Back to sign in</button></div></main>
+  if (loadError) return <main className="login-shell"><div className="login-card"><h1>{isRentLocked ? 'Access paused' : 'Something went wrong'}</h1><p className="login-error" role="alert">{loadError}</p><button className="secondary-button portal-signout" onClick={onSignOut}>Back to sign in</button></div></main>
   if (!profile) return <PageLoader label="Loading your home…" />
   if (profile.mustSetPassword) {
     return (

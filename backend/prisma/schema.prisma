@@ -13,6 +13,8 @@ model Property {
   location            String
   // City for the resident portal's weather (e.g. "Bengaluru"); location is often a map link.
   city                String?
+  // Owner's phone (E.164) for residents' "Call owner" button; falls back to the workspace contact phone.
+  ownerPhone          String?
   imageUrl            String
   status              String               @default("Healthy")
   // Meal service windows shown to residents, as 24-hour "HH:MM" local (IST) times.
@@ -68,6 +70,8 @@ model Resident {
   nationality             String                   @default("IN")
   aadharNumber            String?
   permanentAddress        String?
+  // False after the resident edits their own address: its "Verified" badge waits for the owner again.
+  addressVerified         Boolean                  @default(true)
   aadharCardUrl           String?
   passportNumber          String?
   passportExpiry          DateTime?                @db.Date
@@ -84,6 +88,8 @@ model Resident {
   active                  Boolean                  @default(true)
   // Move-in date, separate from createdAt because residents are often added after they arrive.
   joinedAt                DateTime                 @default(now()) @db.Date
+  // Overdue rent locks the resident out (see rentLock.ts) unless today is on or before this date.
+  rentAccessUntil         DateTime?                @db.Date
   // Portal content stays locked until an owner approves the resident's identity documents: Aadhaar,
   // or passport and visa for non-Indians. Named before passports were supported.
   aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)
@@ -350,10 +356,12 @@ model WorkspaceSettings {
   // Workspace logo as a data URL (resized in the browser); the timestamp versions its URL for caching.
   logoUrl                 String?
   logoUpdatedAt           DateTime?
-  // Rent is due by rentDueDay; reminders show from reminder one/two day; overdue after the due day.
-  rentDueDay              Int       @default(2)
+  // Rent is due by rentDueDay; reminders show from reminder one/two/three day; overdue (and the
+  // resident locked out) after the due day.
+  rentDueDay              Int       @default(3)
   rentReminderOneDay      Int       @default(1)
   rentReminderTwoDay      Int       @default(2)
+  rentReminderThreeDay    Int       @default(3)
   // Housekeeping slot windows as 24-hour "HH:MM" local (IST) times.
   morningFrom             String    @default("08:00")
   morningTo               String    @default("12:00")
