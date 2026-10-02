@@ -2,7 +2,7 @@ import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@pri
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { findDuplicate } from './duplicates.js'
 import { findInvalidField, pickTextFields } from './residentFields.js'
-import { findRentLockMessage, rentLockedCode } from './rentLock.js'
+import { findRentLockMessage, newAccessKeyMessage, rentLockedCode } from './rentLock.js'
 import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
-import { findResidentByCredentials } from './residentCredentials.js'
+import { findResidentByCredentials, isAwaitingNewAccessKey } from './residentCredentials.js'
 import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
@@ -77,7 +77,7 @@ residentPortalRouter.post('/resident-portal/login', async (request, response) =>
   if (!process.env.DATABASE_URL) { response.status(503).json({ error: 'Sign-in requires a database connection.' }); return }
   try {
     const match = await findResidentByCredentials(identifier.trim(), secret)
-    if (!match) { response.status(401).json({ error: 'Invalid email/phone or password.' }); return }
+    if (!match) { response.status(401).json({ error: await isAwaitingNewAccessKey(identifier) ? await newAccessKeyMessage() : 'Invalid email/phone or password.' }); return }
     const lock = await findRentLockMessage(match.resident.id)
     if (lock) { response.status(403).json({ error: lock, code: rentLockedCode }); return }
     const token = await startSession(response, UserRole.RESIDENT, { residentId: match.resident.id })

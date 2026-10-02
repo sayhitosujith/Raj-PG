@@ -27,6 +27,15 @@ async function findCandidateIds(identifier: string) {
  * the secret is their access key; afterwards only the password is accepted, so a handed-over
  * access key cannot be reused once the account has a password.
  */
+/**
+ * True when the email or phone belongs to an active resident with no password and no access key,
+ * i.e. their sign-in was cleared (after an overdue-rent lockout) and the owner must issue a new key.
+ */
+export async function isAwaitingNewAccessKey(identifier: string) {
+  const ids = await findCandidateIds(identifier.trim())
+  return ids.length > 0 && await prisma.resident.count({ where: { id: { in: ids }, passwordHash: null, accessKeyHash: null } }) > 0
+}
+
 export async function findResidentByCredentials(identifier: string, secret: string) {
   const ids = await findCandidateIds(identifier.trim())
   if (!ids.length) return null

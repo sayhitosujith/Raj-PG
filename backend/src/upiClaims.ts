@@ -1,6 +1,7 @@
 import { Prisma, type Payment } from '@prisma/client'
 import { prisma } from './db.js'
 import type { OrderItem } from './rentOrders.js'
+import { revokeCredentialsIfLocked } from './rentLock.js'
 
 /**
  * "I've paid" reports for rent sent straight to the owner's UPI ID. The app cannot see those
@@ -31,5 +32,7 @@ export async function recordClaimedRent(transaction: Prisma.TransactionClient, p
   if (!payment.residentId || !isUpiClaim(payment)) return
   const residentId = payment.residentId
   const items = payment.rentMonths as OrderItem[]
+  // A resident locked out for overdue rent gets a new access key from the owner, not their old one back.
+  await revokeCredentialsIfLocked(transaction, residentId)
   await transaction.rentPayment.createMany({ data: items.map((item) => ({ residentId, month: item.month, amount: item.amount })), skipDuplicates: true })
 }

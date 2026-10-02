@@ -1104,17 +1104,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 
 /* "Verified" beside details the owner has checked (Aadhaar number and address). */
 .verified-badge { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 1px 7px 1px 5px; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-size: 9.5px; font-weight: 700; letter-spacing: .2px; vertical-align: 1px; white-space: nowrap; }
-
-/* Resident portal: live local time under the meal tiles, on its own line at the right. */
-.local-clock { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin: 0; color: var(--muted); font-size: 11px; }
-.local-clock svg { color: var(--teal); }
-.local-clock strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-@container (max-width: 640px) { .local-clock { justify-content: flex-start; } }
-/* Weather in the property's city, on its own line under the local clock and styled to match it. */
-.local-weather { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin: 0; color: var(--muted); font-size: 11px; }
-.local-weather svg { color: var(--teal); }
-.local-weather strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-@container (max-width: 640px) { .local-weather { justify-content: flex-start; } }
 /*
  * Clouds: puffs built from overlapping soft ovals, drifting slowly right to left across the sky
  * (some pass in front of the moon). Each has its own speed and a negative delay, so the sky is
@@ -1353,8 +1342,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .meal-icon { width: 28px; height: 28px; }
   .portal-shell .meal-copy small { font-size: 10px; white-space: normal; }
   .portal-shell .meal-tag { right: 50%; translate: 50% 0; }
-  /* Local time and weather share one line under the meals instead of a line each. */
-  .portal-shell .local-clock, .portal-shell .local-weather { flex: 0 1 auto; }
   /* A short banner: a full-width 16:9 photo was the tallest block on the page. */
   .portal-shell .portal-property-photo { height: 140px; aspect-ratio: auto; }
   /* The "payment reported" notice stays a row; only the QR pay form needs to stack. */
@@ -1455,18 +1442,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .workspace-menu-panel > button svg { color: var(--teal); }
 .settings-section { scroll-margin-top: 16px; }
 
-/* Resident portal: today at a glance - date, local time and weather on one pill in the My Details
-   card, on its own line above the meal tiles and right-aligned over Dinner (left-aligned on phones). */
-.today-row { display: flex; flex: 1 1 100%; justify-content: flex-end; }
-@container (max-width: 640px) { .today-row { justify-content: flex-start; } }
-.today-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; width: fit-content; max-width: 100%; padding: 6px 12px; border: 1px solid #9fd0c2; border-radius: 999px; background: var(--teal-soft); }
-/* Brand green, like the NEXT meal tile: dark teal text, the strong values and icons in full teal. */
-.today-line .eyebrow { margin: 0; color: #0f5e55; }
-.today-line .local-clock, .today-line .local-weather { flex: 0 0 auto; justify-content: flex-start; color: #0f5e55; }
-.today-line strong, .today-line svg { color: var(--teal); }
-:root[data-theme="dark"] .today-line { border-color: rgb(40 110 98); background: rgb(18 60 54); }
-:root[data-theme="dark"] .today-line .eyebrow, :root[data-theme="dark"] .today-line .local-clock, :root[data-theme="dark"] .today-line .local-weather { color: rgb(170 222 208); }
-:root[data-theme="dark"] .today-line strong, :root[data-theme="dark"] .today-line svg { color: rgb(220 245 238); }
 
 /* Public holidays: date tiles in the resident portal and the owner's overview; today's is highlighted. */
 .holiday-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
@@ -1482,7 +1457,25 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .holiday-today-icon { margin-left: auto; color: var(--teal); }
 .holiday-empty { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
 .holidays-panel { margin-top: 16px; }
-.today-holiday { display: inline-flex; align-items: center; gap: 5px; color: #0f5e55; font-size: 11px; }
-.today-holiday strong { color: var(--teal); }
-:root[data-theme="dark"] .today-holiday { color: rgb(170 222 208); }
 .housekeeping-holiday { display: flex; align-items: center; gap: 7px; margin: -4px 0 0; padding: 8px 10px; border-radius: 8px; color: #7b5a20; background: #fbf3e2; font-size: 11px; }
+
+/* Resident "today" grid above the meal tiles: date, holiday (on holidays), local time and weather,
+   as tiles matching the meal tiles; columns fill the card and drop to two, then one, as it narrows. */
+.today-grid { display: grid; flex: 1 1 100%; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 10px; }
+.today-tile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; animation: rise-in .35s ease both; }
+.today-tile.is-highlight { border-color: #9fd0c2; background: var(--teal-soft); }
+.today-tile-icon { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: var(--teal); background: var(--teal-soft); }
+.today-tile.is-highlight .today-tile-icon { color: rgb(255 255 255); background: var(--teal); }
+.today-tile-copy { display: grid; gap: 2px; min-width: 0; }
+.today-tile-copy small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.today-tile-copy strong { overflow: hidden; color: #344449; font-size: 12px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+
+/* My Details: the "today" tiles and the meals row each sit in their own bordered group. */
+.today-grid, .meals-row { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / .5); }
+.today-grid { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+.meals-row { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.meals-row .weekly-menu-button { margin-right: auto; }
+:root[data-theme="dark"] .today-grid, :root[data-theme="dark"] .meals-row { border-color: rgb(255 255 255 / .1); background: rgb(255 255 255 / .02); }
+/* The dark-theme converter repaints .emergency-button's white background with a stronger selector,
+   which also hid the solid red of Emergency 112; restore it here. */
+:root[data-theme="dark"] .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }

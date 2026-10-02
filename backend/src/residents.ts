@@ -18,6 +18,7 @@ import { notifyResidentCredentials } from './notifications.js'
 const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
+const noCredentialsWhere = { passwordHash: null, accessKeyHash: null } satisfies Prisma.ResidentWhereInput
 type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 /**
@@ -40,13 +41,15 @@ class DuplicateError extends Error {}
 // Bad input found inside a transaction (rent rules, expired documents), answered with a 400.
 class InputError extends Error {}
 
-function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules) {
+// `needsNewAccessKey`: no password and no access key (cleared after an overdue-rent lockout), looked up
+// separately because the summary query never loads the credential hashes.
+function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean) {
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
   const { id, name, phone, email, aadharNumber, permanentAddress, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
+  return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, rentFromProperty: room.property.rentWithFood !== null && room.property.rentWithoutFood !== null, room: room.number, propertyId: room.propertyId, property: room.property.name, location: room.property.location }
 }
 
 type DocumentsOnFile = { hasAadharCard: boolean; hasPassportScan: boolean }
@@ -61,11 +64,12 @@ async function findDocumentsOnFile(client: Prisma.TransactionClient, id: string)
 }
 
 async function findResidentSummary(id: string) {
-  const [resident, documents] = await Promise.all([
+  const [resident, documents, keyless] = await Promise.all([
     prisma.resident.findUniqueOrThrow({ where: { id }, ...residentSummaryQuery }),
     findDocumentsOnFile(prisma, id),
+    prisma.resident.count({ where: { id, ...noCredentialsWhere } }),
   ])
-  return toResidentSummary(resident, documents, rentRulesOf(await getSettings()))
+  return toResidentSummary(resident, documents, rentRulesOf(await getSettings()), keyless > 0)
 }
 
 const resetVerification = { aadharStatus: AadharVerificationStatus.NOT_SUBMITTED, aadharRejectionReason: null, aadharSubmittedAt: null, aadharReviewedAt: null }
@@ -115,15 +119,17 @@ export const residentRouter = Router()
 residentRouter.get('/residents', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   try {
-    const [residents, withCards, withScans] = await withDatabaseRetry(() => Promise.all([
+    const [residents, withCards, withScans, withoutCredentials] = await withDatabaseRetry(() => Promise.all([
       prisma.resident.findMany({ ...residentSummaryQuery, orderBy: { createdAt: 'desc' } }),
       prisma.resident.findMany({ where: hasAadharCardWhere, select: { id: true } }),
       prisma.resident.findMany({ where: hasPassportScanWhere, select: { id: true } }),
+      prisma.resident.findMany({ where: noCredentialsWhere, select: { id: true } }),
     ]))
     const cardIds = new Set(withCards.map(({ id }) => id))
     const scanIds = new Set(withScans.map(({ id }) => id))
+    const keylessIds = new Set(withoutCredentials.map(({ id }) => id))
     const rules = rentRulesOf(await getSettings())
-    response.json(residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules)))
+    response.json(residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules, keylessIds.has(resident.id))))
   } catch (error) {
     console.error('Resident query failed:', error)
     response.status(503).json({ error: 'Residents could not be loaded.' })

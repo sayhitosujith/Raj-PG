@@ -4,9 +4,9 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
 import { isValidEmail } from './validation.js'
-import { findResidentByCredentials } from './residentCredentials.js'
+import { findResidentByCredentials, isAwaitingNewAccessKey } from './residentCredentials.js'
 import { findDuplicate } from './duplicates.js'
-import { findRentLockMessage, rentLockedCode } from './rentLock.js'
+import { findRentLockMessage, newAccessKeyMessage, rentLockedCode } from './rentLock.js'
 import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
 
 const sessionCookieName = 'raj_pg_session'
@@ -108,6 +108,7 @@ authRouter.post('/auth/login', async (request, response) => {
       response.json({ role: UserRole.RESIDENT })
       return
     }
+    if (!admin && await isAwaitingNewAccessKey(identifier)) { response.status(401).json({ error: await newAccessKeyMessage() }); return }
     response.status(401).json({ error: 'Invalid email, phone, or password.' })
   } catch (error) {
     console.error('Login failed:', error)

@@ -4,6 +4,7 @@ import { propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
+import { revokeCredentialsIfLocked } from './rentLock.js'
 
 /**
  * Rent cycle (days set in Settings, default due the 3rd): reminders 1, 2 and 3 show from their days
@@ -116,9 +117,14 @@ rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) =
     const status = await rentSummary(id)
     if (!status.monthlyRent) { response.status(409).json({ error: 'Set a monthly rent for this resident first.' }); return }
     const month = (requestedMonth as string | undefined) ?? status.outstandingMonths[0] ?? status.currentMonth
-    await prisma.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? status.monthlyRent + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
+    const { monthlyRent } = status
+    const credentialsRevoked = await prisma.$transaction(async (transaction) => {
+      const revoked = await revokeCredentialsIfLocked(transaction, id)
+      await transaction.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? monthlyRent + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
+      return revoked
+    })
     notifyInBackground(() => notifyRentRecorded(id, [month]))
-    response.status(201).json(await rentSummary(id))
+    response.status(201).json({ ...await rentSummary(id), credentialsRevoked })
   } catch (error) {
     respondToError(response, error, 'The payment could not be recorded.')
   }

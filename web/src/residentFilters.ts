@@ -20,9 +20,9 @@ export function isRentOverdue(resident: Resident) {
   return resident.rent.state === 'LOCK_DUE'
 }
 
-/** Active residents who have never replaced their access key with a password. */
+/** Active residents who have never replaced their access key with a password (and still have a key). */
 export function isAwaitingSignIn(resident: Resident) {
-  return resident.active && !resident.hasPassword
+  return resident.active && !resident.hasPassword && !resident.needsNewAccessKey
 }
 
 const statusMatchers: Record<ResidentStatusFilter, (resident: Resident) => boolean> = {

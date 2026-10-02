@@ -326,9 +326,10 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     const response = await request
     if (!response) return 'Could not reach the server.'
     if (!response.ok) return readApiError(response, 'Could not update the rent.')
-    const rent = await response.json() as RentSummary
-    setResidents((current) => current.map((item) => item.id === resident.id ? { ...item, rent } : item))
-    showNotice(success)
+    const { credentialsRevoked, ...rent } = await response.json() as RentSummary & { credentialsRevoked?: boolean }
+    // Recording rent for a locked-out resident clears their sign-in; the owner must issue a new key.
+    setResidents((current) => current.map((item) => item.id === resident.id ? { ...item, rent, ...(credentialsRevoked ? { rentLocked: false, hasPassword: false, needsNewAccessKey: true } : {}) } : item))
+    showNotice(credentialsRevoked ? `${success} Their access was locked for overdue rent, so their old sign-in no longer works: open Edit resident → Send new login details.` : success)
     return null
   }
 
