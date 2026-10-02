@@ -94,11 +94,11 @@ function parseCity(value: unknown): { city?: string | null } | { error: string }
 // Optional owner phone, stored as E.164; blank clears it, absent leaves it alone.
 function parseOwnerPhone(value: unknown): { ownerPhone?: string | null } | { error: string } {
   if (value === undefined) return {}
-  if (value !== null && typeof value !== 'string') return { error: 'Owner number must be text.' }
+  if (value !== null && typeof value !== 'string') return { error: 'Manager number must be text.' }
   const raw = value?.trim() ?? ''
   if (!raw) return { ownerPhone: null }
   const ownerPhone = normalizePhone(raw)
-  return ownerPhone ? { ownerPhone } : { error: 'Enter a valid owner number.' }
+  return ownerPhone ? { ownerPhone } : { error: 'Enter a valid manager number.' }
 }
 
 app.post('/api/properties', async (request, response) => {

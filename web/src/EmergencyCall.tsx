@@ -7,8 +7,8 @@ export function EmergencyButton() {
   return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency 112</a>
 }
 
-/** Tap-to-call for the property owner; renders nothing when no number is set. */
+/** Tap-to-call for the PG manager (the property's manager number); renders nothing when no number is set. */
 export function CallOwnerButton({ ownerName, ownerPhone }: { ownerName: string; ownerPhone: string | null }) {
   if (!ownerPhone) return null
-  return <a className="emergency-button call-owner" href={`tel:${ownerPhone}`} aria-label={`Call ${ownerName} on ${ownerPhone}`}><Phone size={14} /> Call PG Owner</a>
+  return <a className="emergency-button call-owner" href={`tel:${ownerPhone}`} aria-label={`Call the PG manager at ${ownerName} on ${ownerPhone}`}><Phone size={14} /> PG Manager</a>
 }
