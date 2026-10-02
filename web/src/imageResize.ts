@@ -56,16 +56,27 @@ export const resizeLogo = (file: File) => resizeToFitPng(file, logoMaxSide)
  */
 export const resizeUpiQr = (file: File) => resizeToFitPng(file, upiQrMaxSide)
 
+// True when any pixel is see-through, i.e. the image relies on transparency (a logo-style PNG).
+function hasTransparency(canvas: HTMLCanvasElement) {
+  const pixels = canvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data
+  if (!pixels) return false
+  for (let alpha = 3; alpha < pixels.length; alpha += 4) if (pixels[alpha] < 255) return true
+  return false
+}
+
 /**
- * Shrinks a property photo to 1200px on its longest side, without cropping, as JPEG: phone photos
- * of 5–10 MB upload as roughly 150–250 KB and still look sharp on the property cards.
+ * Shrinks a property photo to 1200px on its longest side, without cropping. Ordinary photos become
+ * JPEG (5–10 MB phone photos upload as roughly 150–250 KB). JPEG cannot store transparency, so an
+ * image with a transparent background is kept as WebP instead (PNG where the browser cannot encode
+ * WebP); otherwise its transparent areas turned black.
  */
 export async function resizePropertyPhoto(file: File): Promise<Result> {
   const bitmap = await decode(file)
   if ('error' in bitmap) return bitmap
   const scale = Math.min(1, propertyPhotoMaxSide / Math.max(bitmap.width, bitmap.height))
   const canvas = draw(bitmap, Math.round(bitmap.width * scale), Math.round(bitmap.height * scale), [0, 0, bitmap.width, bitmap.height])
-  return canvas ? { dataUrl: canvas.toDataURL('image/jpeg', 0.8) } : { error: 'Your browser could not process the image.' }
+  if (!canvas) return { error: 'Your browser could not process the image.' }
+  return { dataUrl: hasTransparency(canvas) ? canvas.toDataURL('image/webp', 0.9) : canvas.toDataURL('image/jpeg', 0.8) }
 }
 
 async function resizeToFitPng(file: File, maxSide: number): Promise<Result> {
