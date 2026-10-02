@@ -558,10 +558,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The portal header bar is 76px tall, so the logo stops short of its edges. */
 .portal-topbar .brand-logo { max-height: 60px; }
 /* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
-   vanish on the dark theme; a soft light panel keeps them readable without altering their colours.
-   rgb() so the generated dark theme does not darken the panel again. */
-:root[data-theme="dark"] .brand-logo { padding: 6px 10px; border-radius: 10px; background: rgb(246 248 246 / .94); box-shadow: 0 4px 14px rgb(0 0 0 / .25); }
-:root[data-theme="dark"] .logo-preview { background: rgb(246 248 246); }
+   vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
+   text readable while the background stays transparent (a solid panel showed as a white box).
+   The Settings preview gets the same treatment so it shows what residents will see. */
+:root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: drop-shadow(0 0 1px rgb(255 255 255 / .85)) drop-shadow(0 0 5px rgb(255 255 255 / .28)); }
+:root[data-theme="dark"] .logo-preview { background: rgb(255 255 255 / .06); }
 .logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
 .logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
 .logo-preview img { max-width: 88px; max-height: 48px; object-fit: contain; }
