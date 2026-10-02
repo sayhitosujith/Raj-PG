@@ -1370,3 +1370,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .rent-highlight-copy strong { font-size: 22px; }
   .portal-shell .pagination-summary { text-align: left; }
 }
+
+/* Resident portal: emergency call buttons on their own line under the clock and weather. 112 is
+   solid red so it is findable at a glance; "Call owner" stays a quiet outline beside it. */
+.emergency-call { display: flex; flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.emergency-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--teal); background: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
+.emergency-button:hover, .emergency-button:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .1); }
+.emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
+@container (max-width: 640px) { .emergency-call { justify-content: flex-start; } }
