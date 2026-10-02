@@ -43,6 +43,7 @@ model Property {
   maintenanceRequests MaintenanceRequest[]
   bookings            Booking[]
   announcements       Announcement[]
+  fireAlerts          FireAlert[]
   menuItems           MenuItem[]
   mealFeedback        MealFeedback[]
   createdAt           DateTime             @default(now())
@@ -208,6 +209,20 @@ model Announcement {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
+}
+
+// A fire alarm for one property, raised by the owner or a resident; active until an owner clears it.
+model FireAlert {
+  id                 String    @id @default(cuid())
+  propertyId         String
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  // Who raised it, as shown on the alarm ("Property owner" or the resident's name).
+  raisedByName       String
+  raisedByResidentId String?
+  createdAt          DateTime  @default(now())
+  clearedAt          DateTime?
+
+  @@index([propertyId, clearedAt])
 }
 
 enum UserRole {

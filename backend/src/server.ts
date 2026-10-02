@@ -25,6 +25,7 @@ import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
 import { roomsAdminRouter } from './rooms.js'
 import { holidaysAdminRouter } from './holidays.js'
+import { fireAlertAdminRouter } from './fireAlerts.js'
 import { superAdminRouter } from './superAdmins.js'
 import { logIntegrations } from './startupReport.js'
 
@@ -74,6 +75,7 @@ app.use('/api', settingsRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
 app.use('/api', holidaysAdminRouter)
+app.use('/api', fireAlertAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered

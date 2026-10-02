@@ -49,6 +49,24 @@ export function residentWelcomeEmail(input: { business: string; name: string; pr
   ]) }
 }
 
+/** Fire alarm to a resident: leave now. Sent whatever their email preference, since it is an emergency. */
+export function fireAlertEmail(input: { business: string; name: string; property: string; raisedBy: string; portalUrl: string }) {
+  return { subject: `FIRE ALARM at ${input.property}: leave the building now`, ...layout(input.business, `Fire alarm at ${input.property}`, [
+    { kind: 'p', text: `${input.name}, a fire alarm has been raised at ${input.property} by ${input.raisedBy}. Leave the building now by the nearest exit. Do not use the lift.` },
+    { kind: 'p', text: 'Call 101 (fire) or 112 (all emergencies) if you have not already. Stay outside until your property owner says it is safe.' },
+    { kind: 'button', label: 'Open the resident portal', href: input.portalUrl },
+  ], 'This emergency alert is sent to every resident of the property.') }
+}
+
+/** To the owner when a resident reports a fire, so they can act and clear the alarm once safe. */
+export function fireReportedEmail(input: { business: string; property: string; raisedBy: string; adminUrl: string }) {
+  return { subject: `FIRE reported at ${input.property} by ${input.raisedBy}`, ...layout(input.business, `Fire reported at ${input.property}`, [
+    { kind: 'p', text: `${input.raisedBy} raised the fire alarm at ${input.property}. Every resident there is being alerted in their portal and by email.` },
+    { kind: 'p', text: 'Call 101 (fire) or 112 if needed. Clear the alarm from your dashboard once the building is safe.' },
+    { kind: 'button', label: 'Open the dashboard', href: input.adminUrl },
+  ], 'You get this as a super admin (or the contact email) of this workspace.') }
+}
+
 /** A new notice from the owner. */
 export function announcementEmail(input: { business: string; name: string; title: string; message: string; property: string }) {
   return { subject: `${input.property}: ${input.title}`, ...layout(input.business, input.title, [

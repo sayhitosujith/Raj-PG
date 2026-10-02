@@ -1367,7 +1367,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident portal: "Call owner" under the "My details" intro; Emergency 112 at the far right of the
    same row, solid red so it is findable at a glance. */
 .emergency-button.call-owner { margin-top: 12px; }
-.portal-details-identity .emergency-button.is-sos { align-self: flex-start; margin-left: auto; }
+/* Emergency 112 and Report fire, side by side at the top right of My Details. */
+.portal-emergency-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-self: flex-start; gap: 8px; margin-left: auto; }
 .emergency-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--teal); background: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
 .emergency-button:hover, .emergency-button:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .1); }
 .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
@@ -1487,3 +1488,33 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .list-format-toolbar button:hover, .list-format-toolbar button:focus-visible { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
 .list-format-toolbar button.is-clear { margin-left: 4px; color: var(--muted); font-weight: 600; }
 .list-format-toolbar small { margin-left: 6px; color: var(--muted); font-size: 10px; font-weight: 500; }
+
+/* Fire alarm: full-screen flashing red over everything, then a red bar once silenced. Colours are
+   rgb() so the dark-theme converter leaves them alone; it must look the same in either theme. */
+.fire-alarm { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; padding: 16px; background: rgb(150 10 10 / .92); animation: fire-flash 1s steps(1, end) infinite; }
+@keyframes fire-flash { 0% { background: rgb(150 10 10 / .92); } 50% { background: rgb(215 30 20 / .95); } }
+.fire-alarm-card { display: grid; justify-items: center; gap: 10px; width: min(100%, 460px); padding: 28px 22px; border-radius: 18px; color: rgb(255 255 255); background: rgb(40 0 0 / .55); text-align: center; box-shadow: 0 20px 60px rgb(0 0 0 / .45); }
+.fire-alarm-icon { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; color: rgb(255 200 60); background: rgb(255 255 255 / .12); animation: fire-pulse 1s ease-in-out infinite; }
+@keyframes fire-pulse { 50% { transform: scale(1.12); } }
+.fire-alarm h2 { margin: 4px 0 0; color: rgb(255 255 255); font: 800 34px/1 Manrope, sans-serif; letter-spacing: 2px; }
+.fire-alarm-place { margin: 0; color: rgb(255 220 120); font-size: 18px; font-weight: 800; }
+.fire-alarm p { margin: 0; line-height: 1.5; }
+.fire-alarm-meta { color: rgb(255 210 210); font-size: 12px; }
+.fire-alarm-tap { padding: 6px 12px; border-radius: 999px; color: rgb(60 0 0); background: rgb(255 220 120); font-weight: 800; }
+.fire-alarm-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.fire-alarm-call { display: inline-flex; flex: 1 1 160px; align-items: center; justify-content: center; gap: 7px; padding: 12px 14px; border-radius: 10px; color: rgb(150 10 10); background: rgb(255 255 255); font-weight: 800; text-decoration: none; }
+.fire-alarm-secondary { display: inline-flex; flex: 1 1 160px; align-items: center; justify-content: center; gap: 7px; padding: 10px 14px; border: 1px solid rgb(255 255 255 / .6); border-radius: 10px; color: rgb(255 255 255); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.fire-alarm-error { padding: 6px 10px; border-radius: 8px; color: rgb(60 0 0); background: rgb(255 220 220); }
+.fire-alarm-bar { position: fixed; z-index: 1000; top: 0; right: 0; left: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border: 0; color: rgb(255 255 255); background: rgb(200 20 20); font: inherit; font-weight: 800; cursor: pointer; animation: fire-bar 1.2s ease-in-out infinite; }
+@keyframes fire-bar { 50% { background: rgb(150 10 10); } }
+@media (prefers-reduced-motion: reduce) { .fire-alarm, .fire-alarm-icon, .fire-alarm-bar { animation: none; } }
+/* Raising it: an orange-red outline button (resident "Report fire", owner "Fire alarm" with a property menu). */
+.report-fire-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgb(234 88 12); border-radius: 999px; color: rgb(194 65 12); background: rgb(255 247 237); font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.report-fire-button:hover, .report-fire-button:focus-visible { color: rgb(255 255 255); background: rgb(234 88 12); }
+:root[data-theme="dark"] .report-fire-button { color: rgb(253 186 116); background: rgb(67 20 7); }
+.raise-fire { position: relative; }
+.raise-fire-menu { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; display: grid; gap: 2px; min-width: 220px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 12px 28px #18352f22; }
+.raise-fire-menu p { margin: 4px 8px 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.raise-fire-menu button { display: flex; align-items: center; gap: 8px; padding: 8px; border: 0; border-radius: 7px; color: var(--ink); background: transparent; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.raise-fire-menu button:hover, .raise-fire-menu button:focus-visible { color: rgb(194 65 12); background: rgb(255 237 213); }
+.raise-fire-menu button svg { color: rgb(234 88 12); }

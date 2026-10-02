@@ -20,6 +20,7 @@ import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { currentWeather, weatherNear } from './weather.js'
 import { upcomingHolidays } from './holidays.js'
+import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -163,6 +164,26 @@ function readCoordinates(query: Request['query']) {
 // Current weather where the resident is (?lat=&lon=, from their device when they allow it) or else
 // in their property's city; 204 when there is none to show (no city set, or the lookup failed), so
 // the portal just leaves it out.
+// The resident's property's active fire alarm (or null), polled every few seconds. Only a session is
+// required, not full portal access, so residents still awaiting ID approval hear the alarm too.
+residentPortalRouter.get('/resident-portal/fire-alert', requireResident, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { room: { select: { propertyId: true } } } })
+  response.json({ alert: resident ? await activeFireAlert(resident.room.propertyId) : null })
+})
+
+// "Report fire": raises the alarm for the resident's own property (or returns the active one).
+residentPortalRouter.post('/resident-portal/fire-alert', requireResident, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, room: { select: { propertyId: true } } } })
+    response.status(201).json({ alert: await raiseFireAlert(resident.room.propertyId, { name: resident.name, residentId: userId }) })
+  } catch (error) {
+    console.error('Fire report failed:', error)
+    response.status(503).json({ error: 'The alarm could not be raised. Call 101 or 112 now.' })
+  }
+})
+
 // Upcoming public holidays for the portal's holiday card, today pill and housekeeping date picker.
 residentPortalRouter.get('/resident-portal/holidays', requireResident, requirePortalAccess, async (_request, response) => {
   response.json({ holidays: await upcomingHolidays() })

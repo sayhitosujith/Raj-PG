@@ -3,7 +3,7 @@ import { HousekeepingStatus, type HousekeepingSlot } from '@prisma/client'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
 import { isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
-import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail } from './emailTemplates.js'
+import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail } from './emailTemplates.js'
 import { displayName } from './names.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { getSettings, slotDetails } from './settings.js'
@@ -16,7 +16,7 @@ import { isWhatsAppEnabled, sendTemplate, uploadPdf, whatsappNumber } from './wh
  * stored in OutboundMessage, so retries of the daily job or a double click never message twice.
  * Residents who turned a channel off get nothing on it, except receipts by email (they are records).
  */
-export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update', residentWelcome: 'resident_welcome' } as const
+export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update', residentWelcome: 'resident_welcome', fireAlert: 'fire_alert' } as const
 
 type Channel = 'whatsapp' | 'email'
 /** What happened to one message: skipped when the channel is off or the resident has no address for it. */
@@ -142,6 +142,29 @@ export async function notifyResidentCredentials(residentId: string, accessKey: s
     toWhatsApp(resident, templates.residentWelcome, [name, property, login, accessKey, appUrl()], key),
   ])
   return { email, whatsapp }
+}
+
+/**
+ * A fire alarm: every active resident of the property by email (even if they opted out of email
+ * updates) and WhatsApp (template "fire_alert": {{1}} name, {{2}} property, {{3}} raised by), plus
+ * every super admin by email when a resident raised it. Residents locked out of the portal for rent
+ * or awaiting ID approval still get these, since they cannot see the portal alarm.
+ */
+export async function notifyFireAlert(alert: { id: string; propertyId: string; raisedByName: string; raisedByResidentId: string | null }) {
+  const [{ businessName }, property, residents] = await Promise.all([
+    getSettings(),
+    prisma.property.findUniqueOrThrow({ where: { id: alert.propertyId }, select: { name: true } }),
+    prisma.resident.findMany({ where: { active: true, room: { propertyId: alert.propertyId } }, select: recipientSelect }),
+  ])
+  await Promise.all(residents.map(async (resident) => {
+    const name = displayName(resident.name)
+    const key = `fire:${alert.id}:${resident.id}`
+    await toEmail(resident, 'fire_alert', fireAlertEmail({ business: businessName, name, property: property.name, raisedBy: alert.raisedByName, portalUrl: appUrl() }), key, { ignoreOptOut: true })
+    await toWhatsApp(resident, templates.fireAlert, [name, property.name, alert.raisedByName], key)
+  }))
+  if (!alert.raisedByResidentId || !isEmailEnabled()) return
+  const message = fireReportedEmail({ business: businessName, property: property.name, raisedBy: alert.raisedByName, adminUrl: appUrl() })
+  for (const to of await bookingAlertRecipients()) await deliver('email', null, to, 'fire_reported', `fire-admin:${alert.id}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
 }
 
 /** A rent reminder or overdue notice; the key makes it once per resident, month, stage and channel. */

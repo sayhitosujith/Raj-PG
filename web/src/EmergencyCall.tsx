@@ -4,7 +4,7 @@ import { Phone, Siren } from 'lucide-react'
 
 /** India's single emergency number (112 reaches police, fire and ambulance), as a tap-to-call button. */
 export function EmergencyButton() {
-  return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency 112</a>
+  return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency</a>
 }
 
 /** Tap-to-call for the PG manager (the property's manager number); renders nothing when no number is set. */
