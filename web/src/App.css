@@ -1454,3 +1454,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .workspace-menu-panel > button:hover, .workspace-menu-panel > button:focus-visible { color: var(--teal); background: #e5f3ed; }
 .workspace-menu-panel > button svg { color: var(--teal); }
 .settings-section { scroll-margin-top: 16px; }
+
+/* Resident portal: today at a glance - date, local time and weather on one pill in the My Details
+   card, on its own line above the meal tiles and right-aligned over Dinner (left-aligned on phones). */
+.today-row { display: flex; flex: 1 1 100%; justify-content: flex-end; }
+@container (max-width: 640px) { .today-row { justify-content: flex-start; } }
+.today-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; width: fit-content; max-width: 100%; padding: 6px 12px; border: 1px solid #9fd0c2; border-radius: 999px; background: var(--teal-soft); }
+/* Brand green, like the NEXT meal tile: dark teal text, the strong values and icons in full teal. */
+.today-line .eyebrow { margin: 0; color: #0f5e55; }
+.today-line .local-clock, .today-line .local-weather { flex: 0 0 auto; justify-content: flex-start; color: #0f5e55; }
+.today-line strong, .today-line svg { color: var(--teal); }
+:root[data-theme="dark"] .today-line { border-color: rgb(40 110 98); background: rgb(18 60 54); }
+:root[data-theme="dark"] .today-line .eyebrow, :root[data-theme="dark"] .today-line .local-clock, :root[data-theme="dark"] .today-line .local-weather { color: rgb(170 222 208); }
+:root[data-theme="dark"] .today-line strong, :root[data-theme="dark"] .today-line svg { color: rgb(220 245 238); }
