@@ -1336,3 +1336,37 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji-small.jpg') center 42% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
 :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
 @media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
+
+/* Resident portal on phones: denser layout so the page is shorter to scroll. Container queries
+   (each card is a container) keep it right whatever the card width; the viewport query only
+   tightens page-level padding. */
+@container (max-width: 620px) {
+  /* Meals as one row of three stacked tiles; time ranges may wrap rather than force a column. */
+  .portal-shell .meal-timings { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .portal-shell .meal-tile { flex-direction: column; gap: 6px; padding: 12px 6px 10px; text-align: center; }
+  .portal-shell .meal-icon { width: 28px; height: 28px; }
+  .portal-shell .meal-copy small { font-size: 10px; white-space: normal; }
+  .portal-shell .meal-tag { right: 50%; translate: 50% 0; }
+  /* Local time and weather share one line under the meals instead of a line each. */
+  .portal-shell .local-clock, .portal-shell .local-weather { flex: 0 1 auto; }
+  /* A short banner: a full-width 16:9 photo was the tallest block on the page. */
+  .portal-shell .portal-property-photo { height: 140px; aspect-ratio: auto; }
+  /* The "payment reported" notice stays a row; only the QR pay form needs to stack. */
+  .portal-shell .upi-direct.is-reported { flex-direction: row; align-items: center; padding: 14px; }
+}
+@container (max-width: 520px) {
+  .portal-shell .house-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .portal-shell .house-rules li { gap: 8px; padding: 10px; }
+  .portal-shell .house-rule-icon { width: 28px; height: 28px; }
+  .portal-shell .house-rules strong { font-size: 12px; }
+}
+@media (max-width: 480px) {
+  .portal-shell .page-content { padding-inline: 12px; }
+  .portal-shell .workspace-view { padding: 18px 14px; }
+  .portal-shell .workspace-view-heading { padding-bottom: 14px; }
+  .portal-shell .workspace-view-heading h2 { font-size: 20px; }
+  .portal-shell .welcome-row h1 { font-size: 24px; }
+  .portal-shell .rent-highlight { padding: 12px 14px; }
+  .portal-shell .rent-highlight-copy strong { font-size: 22px; }
+  .portal-shell .pagination-summary { text-align: left; }
+}
