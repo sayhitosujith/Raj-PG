@@ -5,7 +5,7 @@ const AndroidMark = () => <svg viewBox="0 0 24 24" width="16" height="16" aria-h
 const AppleMark = () => <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9s-2-.9-3.3-.9C6.1 7 4.5 8 3.6 9.6c-1.8 3.2-.5 7.9 1.3 10.5.9 1.3 1.9 2.7 3.2 2.6 1.3 0 1.8-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.3-1.3 3.1-2.6 1-1.5 1.4-2.9 1.4-3-.1 0-2.8-1.1-2.8-4.5ZM14 5.2c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.1 1.1.1 2.3-.6 3-1.5Z" /></svg>
 
 /**
- * "StayNest app · coming soon" teaser at the foot of the resident's Announcements card: the
+ * "StayNest app · coming soon" teaser on its own strip above the resident portal's footer: the
  * Android and iOS apps are planned but not released, so the badges are labels, not links.
  */
 export function AppComingSoon() {

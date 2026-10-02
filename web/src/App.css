@@ -1519,11 +1519,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .raise-fire-menu button:hover, .raise-fire-menu button:focus-visible { color: rgb(194 65 12); background: rgb(255 237 213); }
 .raise-fire-menu button svg { color: rgb(234 88 12); }
 
-/* Resident Announcements card: list at the top, the app teaser pinned to the bottom of the card. */
-.announcements-card { display: flex; flex-direction: column; }
-.app-coming-soon { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: auto; padding: 14px; border: 1px dashed #9fd0c2; border-radius: 12px; background: var(--teal-soft); }
-/* Keeps a gap above the teaser when the list is long enough to fill the card. */
-.announcements-card > :nth-last-child(2) { margin-bottom: 18px; }
+/* Resident portal: the app teaser on its own strip between the cards and the footer. */
+.app-coming-soon { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; padding: 14px; border: 1px dashed #9fd0c2; border-radius: 12px; background: var(--teal-soft); }
 .app-coming-soon-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 11px; color: rgb(255 255 255); background: var(--teal); }
 .app-coming-soon-copy { display: grid; flex: 1 1 160px; gap: 2px; min-width: 0; }
 .app-coming-soon-copy strong { color: var(--ink); font-size: 13px; }

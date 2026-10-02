@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Facebook, Instagram, MessageCircle, Search } from 'lucide-react'
+import { Facebook, Instagram, Search } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { bookingLink, bookingSourceLabels } from './booking'
 
 type SharePlatform = 'whatsapp' | 'facebook' | 'instagram' | 'google'
@@ -7,7 +8,7 @@ type SharePlatform = 'whatsapp' | 'facebook' | 'instagram' | 'google'
 // WhatsApp and Facebook have web share targets; Instagram and Google don't, so their tagged link
 // is copied for the resident to paste (a story, a review reply, a search listing post).
 const platforms: Array<{ key: SharePlatform; icon: ReactNode; shareUrl?: (link: string, text: string) => string }> = [
-  { key: 'whatsapp', icon: <MessageCircle size={15} />, shareUrl: (link, text) => `https://wa.me/?text=${encodeURIComponent(`${text} ${link}`)}` },
+  { key: 'whatsapp', icon: <WhatsAppIcon size={15} />, shareUrl: (link, text) => `https://wa.me/?text=${encodeURIComponent(`${text} ${link}`)}` },
   { key: 'facebook', icon: <Facebook size={15} />, shareUrl: (link) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}` },
   { key: 'instagram', icon: <Instagram size={15} /> },
   { key: 'google', icon: <Search size={15} /> },
