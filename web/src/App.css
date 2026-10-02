@@ -1533,3 +1533,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .soon-pill { padding: 3px 9px; border-radius: 999px; color: rgb(180 83 9); background: rgb(254 243 199); font-size: 10px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
 :root[data-theme="dark"] .app-coming-soon { border-color: rgb(40 110 98); background: rgb(18 60 54 / .6); }
 :root[data-theme="dark"] .store-badge { background: rgb(0 0 0 / .45); }
+
+/* Resident portal details: bold, darker labels and tighter rows. align-content keeps the rows at the
+   top instead of spreading them out to match the photo's height, which made the big gaps. */
+.portal-details-row .portal-details { align-content: start; gap: 8px 16px; padding: 12px 14px; }
+.portal-details dt { margin-bottom: 2px; color: #4c5a56; font-size: 10px; font-weight: 800; }
+.portal-details dd { font-size: 12px; line-height: 1.4; }
+:root[data-theme="dark"] .portal-details dt { color: rgb(190 204 200); }
+/* Each detail in its own bordered cell, label directly above its value: align-content: start stops a
+   tall neighbour (a long property name) from pushing the label and value apart. */
+.portal-details-row .portal-details { gap: 8px; padding: 10px; }
+.portal-details > div { align-content: start; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.portal-details dt { margin-bottom: 0; }
