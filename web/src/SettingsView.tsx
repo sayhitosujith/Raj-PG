@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
+import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
 import { WhatsAppSettings } from './WhatsAppSettings'
 import { EmailSettings } from './EmailSettings'
@@ -195,7 +196,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
 
           {policySections.map(({ field, title }) => (
             <SettingsSection key={field} wide icon={<FileText size={18} />} title={title} description="Linked at the bottom of every resident's portal. Plain text; each line break is kept." onSubmit={(form) => onSaveSettings({ [field]: value(form, field) })}>
-              <label>{title}<textarea name={field} maxLength={5000} rows={12} defaultValue={settings[field]} /></label>
+              <ListFormattingTextarea name={field} label={title} maxLength={5000} rows={12} defaultValue={settings[field]} />
               <p className="settings-hint">This starts as a general PG template, so review it and change anything that does not match your property. Up to 5,000 characters. Clear it and save to hide the link from residents.</p>
             </SettingsSection>
           ))}

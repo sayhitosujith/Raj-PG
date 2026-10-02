@@ -1479,3 +1479,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The dark-theme converter repaints .emergency-button's white background with a stronger selector,
    which also hid the solid red of Emergency 112; restore it here. */
 :root[data-theme="dark"] .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
+
+/* Policy editors in Settings: list toolbar above the textarea (bullets, numbers, letters, Roman). */
+.list-format-field { display: grid; gap: 6px; }
+.list-format-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.list-format-toolbar button { min-width: 32px; height: 28px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fff; font: 700 12px 'DM Sans', sans-serif; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.list-format-toolbar button:hover, .list-format-toolbar button:focus-visible { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.list-format-toolbar button.is-clear { margin-left: 4px; color: var(--muted); font-weight: 600; }
+.list-format-toolbar small { margin-left: 6px; color: var(--muted); font-size: 10px; font-weight: 500; }

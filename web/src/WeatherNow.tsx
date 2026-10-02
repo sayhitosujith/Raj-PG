@@ -12,5 +12,5 @@ const conditionIcons: Record<WeatherCondition, LucideIcon> = { clear: Sun, cloud
 export function WeatherNow({ weather }: { weather: Weather | null }) {
   if (!weather) return null
   const Icon = weather.condition === 'clear' && !weather.isDay ? Moon : conditionIcons[weather.condition]
-  return <TodayTile icon={<Icon size={16} />} label={weather.isCurrentLocation ? 'Current location' : 'Weather'} value={<>{weather.city} · {weather.temperature}°C</>} title={weather.description || undefined} />
+  return <TodayTile icon={<Icon size={16} />} label={weather.isCurrentLocation ? 'Current location' : 'Weather'} value={<>{weather.city} · {weather.temperature}°C</>} title={[weather.description, weather.accuracyM !== undefined ? `Location accurate to about ${weather.accuracyM} m` : ''].filter(Boolean).join(' · ') || undefined} />
 }

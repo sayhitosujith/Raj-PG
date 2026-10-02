@@ -122,7 +122,7 @@ const reverseGeocodingUrl = 'https://nominatim.openstreetmap.org/reverse'
 const userAgent = 'raj-pg/1.0 (resident portal weather)'
 const areaNameCache = new Map<string, { expiresAt: number; name: string | null }>()
 
-type ReverseGeocodingResult = { address?: Partial<Record<'suburb' | 'neighbourhood' | 'city_district' | 'city' | 'town' | 'village' | 'county', string>> }
+type ReverseGeocodingResult = { address?: Partial<Record<'road' | 'quarter' | 'suburb' | 'neighbourhood' | 'city_district' | 'city' | 'town' | 'village' | 'county', string>> }
 
 async function findAreaName(place: Place, cacheKey: string): Promise<string | null> {
   const cached = areaNameCache.get(cacheKey)
@@ -131,16 +131,17 @@ async function findAreaName(place: Place, cacheKey: string): Promise<string | nu
   url.searchParams.set('format', 'jsonv2')
   url.searchParams.set('lat', String(place.latitude))
   url.searchParams.set('lon', String(place.longitude))
-  url.searchParams.set('zoom', '14')
+  // 18 is street level, so the nearest named neighbourhood comes back rather than the wider suburb.
+  url.searchParams.set('zoom', '18')
   url.searchParams.set('accept-language', 'en')
   let name: string | null = null
   try {
     const response = await fetch(url, { headers: { 'User-Agent': userAgent }, signal: AbortSignal.timeout(requestTimeoutMs) })
     if (response.ok) {
       const { address = {} } = await response.json() as ReverseGeocodingResult
-      // "Area, City" (e.g. "Bhattrahalli, Bengaluru"): the local name people recognise, with the
+      // "Area, City" (e.g. "Medahalli, Bengaluru"): the most local name people recognise, with the
       // city so it reads clearly; just one of them when the other is missing or the same.
-      const area = address.suburb ?? address.neighbourhood ?? address.city_district ?? address.village ?? null
+      const area = address.neighbourhood ?? address.quarter ?? address.suburb ?? address.village ?? address.city_district ?? address.road ?? null
       const city = address.city ?? address.town ?? address.county ?? null
       name = area && city && area !== city ? `${area}, ${city}` : area ?? city
 
@@ -154,17 +155,25 @@ async function findAreaName(place: Place, cacheKey: string): Promise<string | nu
   return name
 }
 
-/** Coordinates rounded to two decimals (about 1 km): plenty for weather, and they share the cache. */
-export function roundCoordinates(latitude: number, longitude: number): Place {
-  return { latitude: Math.round(latitude * 100) / 100, longitude: Math.round(longitude * 100) / 100 }
+/**
+ * Coordinates rounded to `decimals` places: two (about 1 km) is plenty for weather and lets nearby
+ * residents share the cache; four (about 11 m) names the exact neighbourhood.
+ */
+export function roundCoordinates(latitude: number, longitude: number, decimals = 2): Place {
+  const factor = 10 ** decimals
+  return { latitude: Math.round(latitude * factor) / factor, longitude: Math.round(longitude * factor) / factor }
 }
 
 /**
- * The current weather where the viewer is, named after their area ("Mahadevapura"), or null when a
- * lookup fails. Coordinates are rounded before use, so only an approximate position is ever sent on.
+ * The current weather where the viewer is, named after their neighbourhood ("Medahalli, Bengaluru"),
+ * or null when a lookup fails. The name comes from the position to about 11 m; the weather from it
+ * rounded to about 1 km, since conditions do not change street by street.
  */
 export async function weatherNear(latitude: number, longitude: number): Promise<Weather | null> {
+  const spot = roundCoordinates(latitude, longitude, 4)
+  const spotKey = `${spot.latitude},${spot.longitude}`
+  const area = await findAreaName(spot, spotKey)
   const place = roundCoordinates(latitude, longitude)
-  const cacheKey = `${place.latitude},${place.longitude}`
-  return cachedWeather(`location ${cacheKey}`, async () => readWeather(place, await findAreaName(place, cacheKey) ?? 'Your location'))
+  const weather = await cachedWeather(`location ${place.latitude},${place.longitude}`, () => readWeather(place, 'Your location'))
+  return weather && { ...weather, city: area ?? weather.city }
 }
