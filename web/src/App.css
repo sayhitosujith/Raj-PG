@@ -582,6 +582,19 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-terms { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; }
 .made-in-india { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .made-in-india img { border-radius: 2px; box-shadow: 0 0 0 1px rgb(0 0 0 / .12); }
+/* Refer-a-friend icons: pinned to the right on wide screens so the policy line stays centred (the
+   side padding keeps the two from overlapping); on narrow screens they wrap onto their own centred line. */
+.referral-share { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.referral-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--muted); cursor: pointer; transition: color .15s, border-color .15s, transform .15s; }
+.referral-icon:hover, .referral-icon:focus-visible { transform: translateY(-1px); }
+.referral-icon.is-whatsapp:hover, .referral-icon.is-whatsapp:focus-visible { color: rgb(37 168 90); border-color: rgb(37 168 90); }
+.referral-icon.is-facebook:hover, .referral-icon.is-facebook:focus-visible { color: rgb(24 119 242); border-color: rgb(24 119 242); }
+.referral-icon.is-instagram:hover, .referral-icon.is-instagram:focus-visible { color: rgb(214 41 118); border-color: rgb(214 41 118); }
+.referral-icon.is-google:hover, .referral-icon.is-google:focus-visible { color: rgb(66 133 244); border-color: rgb(66 133 244); }
+@media (min-width: 900px) {
+  .portal-terms { position: relative; padding-right: 230px; padding-left: 230px; }
+  .referral-share { position: absolute; top: 50%; right: 4px; translate: 0 -50%; margin-top: 4px; }
+}
 .terms-modal { width: min(100%, 620px); }
 /* pre-line keeps the owner's line breaks; the modal scrolls on long terms instead of the page. */
 .terms-text { max-height: min(60vh, 520px); margin: 14px 0 0; overflow-y: auto; color: #55635f; font-size: 12px; line-height: 1.7; white-space: pre-line; }
