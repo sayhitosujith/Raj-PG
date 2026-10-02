@@ -5,8 +5,8 @@ import { formatRupees } from './rent'
 /**
  * "Where this month's income went": one slice per expense category plus a Profit slice for what
  * is left. A pie cannot show a negative, so in a loss month the ring is the expenses alone and the
- * centre states the loss. Colours are fixed per category (never by size), slots 1-6 of the
- * validated categorical palette, in App.css (--slice-*).
+ * centre states the loss. Colours are fixed per category (never by size): expenses in shades of
+ * red, profit in green, in App.css (--slice-*).
  */
 type Slice = { key: ExpenseCategory | 'profit'; label: string; amount: number }
 

@@ -1208,13 +1208,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
  * alone; the dark steps below are the palette's own dark column. Profit/loss wear the reserved
  * status colours, always with an icon and a word.
  */
-.finance-overview { container-type: inline-size; display: grid; gap: 18px; margin-top: 26px; padding-top: 22px; border-top: 1px solid #edf0ed; --slice-salaries: rgb(42 120 214); --slice-utilities: rgb(235 104 52); --slice-food: rgb(27 175 122); --slice-maintenance: rgb(237 161 0); --slice-other: rgb(232 123 164); --slice-profit: rgb(0 131 0); --good: rgb(12 163 12); --critical: rgb(208 59 59); }
-:root[data-theme="dark"] .finance-overview { --slice-salaries: rgb(57 135 229); --slice-utilities: rgb(217 89 38); --slice-food: rgb(25 158 112); --slice-maintenance: rgb(201 133 0); --slice-other: rgb(213 81 129); --slice-profit: rgb(0 131 0); }
+.finance-overview { container-type: inline-size; display: grid; gap: 18px; margin-top: 26px; padding-top: 22px; border-top: 1px solid #edf0ed; --slice-profit: rgb(0 131 0); --good: rgb(12 163 12); --critical: rgb(208 59 59); }
+:root[data-theme="dark"] .finance-overview { --slice-profit: rgb(0 131 0); }
 .finance-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .finance-head h3 { margin: 0 0 4px; color: var(--ink); font: 700 18px Manrope, sans-serif; }
 .finance-head p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; }
-.finance-month { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
-.finance-month input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+/* Month and Year dropdowns beside the Income and expenses heading. */
+.month-year-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.month-year-picker label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.month-year-picker select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .finance-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 10px; }
 .finance-kpi { display: grid; align-content: start; gap: 5px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
 .finance-kpi span { color: var(--muted); font-size: 10.5px; font-weight: 600; }
@@ -1429,3 +1431,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (prefers-reduced-motion: reduce) { .emergency-button.is-sos, .emergency-button.is-sos svg { animation: none; } }
 /* Edit resident: "Send new login details" under the access key. */
 .send-credentials-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; width: fit-content; }
+/* Profit amounts in green and losses in red wherever the month's result shows (expenses are already red). */
+.finance-kpi.is-profit strong, .finance-donut-centre strong.is-profit, .finance-profit-text { color: var(--good); }
+.finance-kpi.is-loss strong, .finance-loss-text { color: var(--critical); }
+/* Donut: every expense category is a shade of red (darkest = salaries, lightest = other) and profit
+   stays green, so the chart reads "red = spent, green = kept" at a glance; the 2px gaps and the
+   legend keep the categories apart. Dark mode lifts the shades so they show on the dark card. */
+.finance-overview { --slice-salaries: rgb(160 28 28); --slice-utilities: rgb(204 52 44); --slice-food: rgb(228 92 76); --slice-maintenance: rgb(240 136 114); --slice-other: rgb(248 178 162); }
+:root[data-theme="dark"] .finance-overview { --slice-salaries: rgb(196 44 44); --slice-utilities: rgb(226 74 64); --slice-food: rgb(240 112 96); --slice-maintenance: rgb(246 152 132); --slice-other: rgb(250 192 178); }

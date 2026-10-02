@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import { expenseCategoryLabels, fetchExpenses, fetchFinanceSummary, type Expense, type ExpenseCategory, type FinanceSummary } from './finance'
 import { IncomeDonut } from './IncomeDonut'
+import { MonthYearPicker } from './MonthYearPicker'
 import { todayDateInputValue } from './joinDate'
 import { Pagination } from './Pagination'
 import { formatMonth, formatRupees } from './rent'
@@ -59,7 +60,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
     <section className="finance-overview">
       <div className="finance-head">
         <div><p className="eyebrow">Money</p><h3>Income and expenses</h3><p>Rent collected, other income and what you spent, for the month you pick.</p></div>
-        <label className="finance-month">Month<input type="month" value={month} max={thisMonth()} onChange={(event) => event.target.value && setMonth(event.target.value)} /></label>
+        <MonthYearPicker value={month} max={thisMonth()} onChange={setMonth} />
       </div>
       {!summary ? <p className="portal-empty">Loading…</p> : <>
         <div className="finance-kpis">
@@ -67,7 +68,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
           <div className="finance-kpi"><span>Other income</span><strong>{formatRupees(summary.otherIncome)}</strong><small>Payments not linked to rent</small></div>
           <div className="finance-kpi is-expense"><span>Expenses</span><strong>{formatRupees(summary.expenses)}</strong><small>{expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}</small></div>
           <div className={`finance-kpi ${isLoss ? 'is-loss' : 'is-profit'}`}><span>{isLoss ? 'Loss' : 'Profit'} · {formatMonth(month)}</span><strong>{isLoss ? <TrendingDown size={18} aria-hidden="true" /> : <TrendingUp size={18} aria-hidden="true" />}{isLoss ? '−' : ''}{formatRupees(Math.abs(summary.profit))}</strong><small>income − expenses</small></div>
-          <div className="finance-kpi is-hero"><span>Total income till now</span><strong>{formatRupees(summary.totals.income)}</strong><small>{totalsLoss ? 'Loss' : 'Profit'} so far {totalsLoss ? '−' : ''}{formatRupees(Math.abs(summary.totals.profit))} after {formatRupees(summary.totals.expenses)} expenses</small></div>
+          <div className="finance-kpi is-hero"><span>Total income till now</span><strong>{formatRupees(summary.totals.income)}</strong><small>{totalsLoss ? 'Loss' : 'Profit'} so far <b className={totalsLoss ? 'finance-loss-text' : 'finance-profit-text'}>{totalsLoss ? '−' : ''}{formatRupees(Math.abs(summary.totals.profit))}</b> after <b className="finance-loss-text">{formatRupees(summary.totals.expenses)}</b> expenses</small></div>
         </div>
         <IncomeDonut summary={summary} />
       </>}
