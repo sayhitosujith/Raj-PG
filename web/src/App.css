@@ -1716,3 +1716,24 @@ div.portal-panel { display: contents; }
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .page-content .portal-details-row, .page-content .home-notification-prefs { display: none; }
 }
+/* Resident greeting in italic. */
+.portal-shell .welcome-row h1 { font-style: italic; }
+
+/* Phones: short tabs no longer leave the footer floating mid-screen. The page fills the window and
+   the footer (with the app teaser on the Info tab) sits at the bottom, just above the tab bar. */
+@media (max-width: 720px) {
+  .portal-shell { display: flex; flex-direction: column; }
+  .portal-shell .page-content { display: flex; flex: 1; flex-direction: column; width: 100%; }
+  .portal-shell .page-content > * { flex-shrink: 0; }
+  .portal-shell .portal-terms { margin-top: auto; }
+  .page-content[data-tab="info"] .app-coming-soon { margin-top: auto; }
+  .page-content[data-tab="info"] .portal-terms { margin-top: 20px; }
+}
+/* Info tab on phones: House rules grows to fill the space down to the app card, its rules stacked
+   one per row at the top of the card, instead of leaving an empty gap below it. */
+@media (max-width: 720px) {
+  .page-content[data-tab="info"] [data-panel="info"] > .workspace-view { display: flex; flex: 1 0 auto; flex-direction: column; }
+  .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
+  .page-content[data-tab="info"] .house-rules li { padding: 16px; }
+  .page-content[data-tab="info"] .app-coming-soon { margin-top: 20px; }
+}
