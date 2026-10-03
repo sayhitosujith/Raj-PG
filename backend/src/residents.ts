@@ -1,7 +1,7 @@
 import { AadharVerificationStatus, Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { createAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
-import { parseDateOnly } from './dates.js'
+import { parseDateOnly, propertyNow } from './dates.js'
 import { findDuplicate } from './duplicates.js'
 import { documentDataUrlPattern, findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
 import { prisma, withDatabaseRetry } from './db.js'
@@ -310,8 +310,13 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
   const { id } = request.params
   const accessKey = createAccessKey()
   try {
+    // Renewal: a new key for someone whose approved move-out date has passed means they are staying,
+    // so that move-out is cleared (otherwise the ended stay would sign them straight out again).
+    const current = await prisma.resident.findUniqueOrThrow({ where: { id }, select: { exitStatus: true, exitDate: true, movedOutAt: true } })
+    const isRenewal = current.exitStatus === 'APPROVED' && !current.movedOutAt && Boolean(current.exitDate && current.exitDate.toISOString().slice(0, 10) < propertyNow().date)
+    const renewal = isRenewal ? { exitStatus: null, exitDate: null, exitReason: null, exitRequestedAt: null } : {}
     await prisma.$transaction([
-      prisma.resident.update({ where: { id }, data: { accessKeyHash: hashAccessKey(accessKey), passwordHash: null } }),
+      prisma.resident.update({ where: { id }, data: { accessKeyHash: hashAccessKey(accessKey), passwordHash: null, ...renewal } }),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])
     const isSending = (request.body as { send?: unknown } | undefined)?.send === true

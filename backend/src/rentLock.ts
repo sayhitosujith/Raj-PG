@@ -48,8 +48,11 @@ export async function revokeCredentialsIfLocked(client: Prisma.TransactionClient
   return true
 }
 
-/** What a resident whose sign-in was cleared after a lockout is told when they try their old details. */
+/**
+ * What a resident whose sign-in was cleared (after an overdue-rent lockout, or once their stay
+ * ended) is told when they try their old details.
+ */
 export async function newAccessKeyMessage() {
   const { businessName } = await getSettings()
-  return `Your old sign-in details stopped working after your rent was overdue. Ask ${businessName} for your new access key.`
+  return `Your old sign-in details no longer work. Ask ${businessName} for your new access key.`
 }

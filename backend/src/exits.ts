@@ -8,6 +8,32 @@ import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 const maxReasonLength = 300
 
+/** The response code for a resident whose stay has ended, so the web app can explain the sign-out. */
+export const stayEndedCode = 'STAY_ENDED'
+
+const longDate = (date: Date) => date.toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })
+
+// Clears a resident's password and access key and ends their sessions: from then on only a new
+// access key from the owner ("Send new login details") lets them back in.
+const revokeSignIn = (residentId: string) => prisma.$transaction([
+  prisma.resident.update({ where: { id: residentId }, data: { passwordHash: null, accessKeyHash: null } }),
+  prisma.session.deleteMany({ where: { residentId } }),
+])
+
+/**
+ * Once an approved move-out date has passed (from the next day, IST), the resident's sign-in stops
+ * working even if the owner has not completed the move-out yet; their password and access key are
+ * cleared, so staying on needs a new key. Returns why, ready to show them, or null while it is valid.
+ */
+export async function endStayIfOver(residentId: string) {
+  const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { exitStatus: true, exitDate: true } })
+  if (resident?.exitStatus !== ExitStatus.APPROVED || !resident.exitDate) return null
+  if (resident.exitDate.toISOString().slice(0, 10) >= propertyNow().date) return null
+  await revokeSignIn(residentId)
+  const { businessName } = await getSettings()
+  return `Your stay ended on ${longDate(resident.exitDate)}, so your sign-in no longer works. Ask ${businessName} for a new access key if you are staying on.`
+}
+
 /**
  * A leaving resident's settlement. `months` and `total` are what must be paid before approval: earlier
  * unpaid months in full (late fee when overdue), months in between in full, and the move-out month's
@@ -158,6 +184,9 @@ exitAdminRouter.post('/residents/:id/exit/date', async (request, response) => {
   const date = typeof moveOutDate === 'string' ? parseDateOnly(moveOutDate) : null
   if (!date) { response.status(400).json({ error: 'Choose a valid move-out date.' }); return }
   if (date.toISOString().slice(0, 10) < propertyNow().date) { response.status(400).json({ error: 'The move-out date cannot be in the past.' }); return }
+  // Extending a stay whose approved date has already passed still needs a new access key: this
+  // clears the old sign-in first if that date is behind us.
+  await endStayIfOver(request.params.id)
   const updated = await prisma.resident.updateMany({ where: { id: request.params.id, movedOutAt: null, exitStatus: { in: [ExitStatus.PENDING, ExitStatus.APPROVED] } }, data: { exitDate: date } })
   if (!updated.count) { response.status(409).json({ error: 'There is no open move-out request for this resident.' }); return }
   notifyInBackground(() => notifyExitDateChanged(request.params.id))
@@ -181,7 +210,8 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     if (dues.total > 0) { response.status(409).json({ error: `Clear ₹${dues.total.toLocaleString('en-IN')} in dues before completing the move-out.` }); return }
     const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : null
     await prisma.$transaction([
-      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), ...(movedOutFrom ? { movedOutFrom } : {}) } }),
+      // Their password and access key are cleared too, so moving back in needs a new access key.
+      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
       ...(resident.roomId ? [prisma.room.update({ where: { id: resident.roomId }, data: { occupied: false } })] : []),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])

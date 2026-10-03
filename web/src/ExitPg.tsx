@@ -97,6 +97,7 @@ export function ExitPg({ exit, amountDue, deposit, noticeDays, onChanged, onNoti
         <p className="exit-status is-approved"><DoorOpen size={14} /> Moving out on <strong>{shortDate(exit.date)}</strong> · approved</p>
         {refund > 0 && <p className="exit-refund-note">You will be refunded <strong>{formatRupees(refund)}</strong> on {shortDate(exit.date)}, the date of your exit.</p>}
         {refund < 0 && <p className="exit-dues-note">Please pay {formatRupees(-refund)} before you leave on {shortDate(exit.date)}.</p>}
+        <p className="exit-signin-note">You cannot sign in after your date of exit ({shortDate(exit.date)}). If you still need to sign in after that, contact your property owner for a new access key.</p>
         <button type="button" className="text-link" disabled={isSaving} onClick={cancel}>Cancel move-out</button>
         {error && <p className="login-error" role="alert">{error}</p>}
       </div>

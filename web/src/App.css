@@ -1574,3 +1574,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-exit-date { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-top: 8px; border-top: 1px dashed #f0e2c4; }
 .resident-exit-date label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .resident-exit-date input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+/* Resident's reminder that sign-in ends on the exit date (approved move-out). */
+.exit-signin-note { max-width: 340px; margin: 0; color: #b5523f; font-size: 11px; line-height: 1.45; text-align: right; }
+@media (max-width: 640px) { .exit-signin-note { text-align: left; } }

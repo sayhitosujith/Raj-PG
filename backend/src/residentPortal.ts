@@ -2,7 +2,8 @@ import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@pri
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { findDuplicate } from './duplicates.js'
 import { findInvalidField, pickTextFields } from './residentFields.js'
-import { findRentLockMessage, newAccessKeyMessage, rentLockedCode } from './rentLock.js'
+import { newAccessKeyMessage } from './rentLock.js'
+import { findAccessBlock } from './accessBlocks.js'
 import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
@@ -82,8 +83,8 @@ residentPortalRouter.post('/resident-portal/login', async (request, response) =>
   try {
     const match = await findResidentByCredentials(identifier.trim(), secret)
     if (!match) { response.status(401).json({ error: await isAwaitingNewAccessKey(identifier) ? await newAccessKeyMessage() : 'Invalid email/phone or password.' }); return }
-    const lock = await findRentLockMessage(match.resident.id)
-    if (lock) { response.status(403).json({ error: lock, code: rentLockedCode }); return }
+    const block = await findAccessBlock(match.resident.id)
+    if (block) { response.status(403).json({ error: block.message, code: block.code }); return }
     const token = await startSession(response, UserRole.RESIDENT, { residentId: match.resident.id })
     response.json({ token, mustSetPassword: match.mustSetPassword })
   } catch (error) {

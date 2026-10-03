@@ -50,7 +50,8 @@ import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
 type ResidentProfile = { id: string; name: string; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
-// Overdue rent signed the resident out; its message replaces the portal, even on a background refresh.
+// Overdue rent, or a stay that has ended, signed the resident out; its message replaces the portal,
+// even on a background refresh.
 class RentLockedError extends Error {}
 
 async function fetchProfile() {
@@ -58,7 +59,7 @@ async function fetchProfile() {
   if (!response.ok) {
     const body = await response.clone().json().catch(() => null) as { code?: string } | null
     const message = await readApiError(response, 'Could not load your details.')
-    throw body?.code === 'RENT_LOCKED' ? new RentLockedError(message) : new Error(message)
+    throw body?.code === 'RENT_LOCKED' || body?.code === 'STAY_ENDED' ? new RentLockedError(message) : new Error(message)
   }
   return await response.json() as ResidentProfile
 }
