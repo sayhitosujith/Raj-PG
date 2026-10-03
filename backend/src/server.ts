@@ -31,6 +31,7 @@ import { maintenanceAdminRouter } from './maintenance.js'
 import { superAdminRouter } from './superAdmins.js'
 import { logIntegrations } from './startupReport.js'
 import { dashboardInsights } from './dashboardInsights.js'
+import { parsePropertyInfo } from './residentInfo.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -126,6 +127,8 @@ app.post('/api/properties', async (request, response) => {
   if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   const notice = parseNoticeDays((request.body as { noticePeriodDays?: unknown }).noticePeriodDays)
   if ('error' in notice) { response.status(400).json({ error: notice.error }); return }
+  const info = parsePropertyInfo(request.body as Record<string, unknown>)
+  if ('error' in info) { response.status(400).json({ error: info.error }); return }
   if (!name?.trim() || !location?.trim()) {
     response.status(400).json({ error: 'Name and location are required.' })
     return
@@ -149,7 +152,7 @@ app.post('/api/properties', async (request, response) => {
 
   try {
     const property = await prisma.property.create({
-      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...notice, ...tenantType, ...amenities, ...totalRooms, ...rents.data },
+      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...notice, ...info.data, ...tenantType, ...amenities, ...totalRooms, ...rents.data },
     })
     response.status(201).json({ source: 'postgresql', property: { ...property, image: property.imageUrl, ...occupancySummary({ ...property, rooms: [] }), tone: 'sage', mealTimes: toMealTimes(property) } })
   } catch (error) {
@@ -183,6 +186,8 @@ app.put('/api/properties/:id', async (request, response) => {
   if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   const notice = parseNoticeDays((request.body as { noticePeriodDays?: unknown }).noticePeriodDays)
   if ('error' in notice) { response.status(400).json({ error: notice.error }); return }
+  const info = parsePropertyInfo(request.body as Record<string, unknown>)
+  if ('error' in info) { response.status(400).json({ error: info.error }); return }
   const tenantType = parseTenantType(rawTenantType, false)
   if ('error' in tenantType) { response.status(400).json({ error: tenantType.error }); return }
   const amenities = rawAmenities === undefined ? {} : parseAmenities(rawAmenities)
@@ -200,7 +205,7 @@ app.put('/api/properties/:id', async (request, response) => {
     }
     // Price and residents' rents change together, so a resident never shows a stale rent.
     const property = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
       if (Object.keys(rents.data).length) await syncPropertyRents(transaction, updated.id)
       return updated
     })
@@ -271,6 +276,12 @@ app.get('/api/dashboard', async (_request, response) => {
           city: property.city,
           ownerPhone: property.ownerPhone,
           noticePeriodDays: property.noticePeriodDays,
+          wifiName: property.wifiName,
+          wifiPassword: property.wifiPassword,
+          contacts: property.contacts,
+          checkInTime: property.checkInTime,
+          checkOutTime: property.checkOutTime,
+          gateClosingTime: property.gateClosingTime,
           ...occupancySummary(property),
           status: property.status,
           tone: property.status === 'Healthy' ? 'sage' : 'gold',

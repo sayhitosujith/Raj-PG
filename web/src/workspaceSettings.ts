@@ -19,6 +19,9 @@ export type WorkspaceSettings = {
   lateFee: number
   securityDeposit: number | null
   noticePeriodDays: number
+  /** The owner's own house rules (one per line) and FAQs (question, answer; blank line between). */
+  extraHouseRules: string
+  faqs: string
   /** Per-day rates for the move-out month, in whole rupees. */
   dailyRateWithFood: number
   dailyRateWithoutFood: number

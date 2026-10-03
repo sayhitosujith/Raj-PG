@@ -1,12 +1,15 @@
-import { DoorOpen, IndianRupee, Users } from 'lucide-react'
+import { DoorOpen, IndianRupee, Users, Wifi } from 'lucide-react'
 import { amenityOptions, tenantOptions, type AmenityCode, type TenantType } from './propertyFeatureOptions'
+
+/** A property's resident-facing details: Wi-Fi, important contacts and times ("HH:MM"). */
+export type PropertyInfoValues = { wifiName?: string | null; wifiPassword?: string | null; contacts?: string | null; checkInTime?: string | null; checkOutTime?: string | null; gateClosingTime?: string | null }
 
 /**
  * Number of rooms, rent with/without food, "PG for" (required, one of three) and amenity
  * checkboxes for the add/edit property forms. Uncontrolled inputs; read them back with
  * readPropertyFeatures.
  */
-export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, noticePeriodDays }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; noticePeriodDays?: number | null }) {
+export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, noticePeriodDays, info }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; noticePeriodDays?: number | null; info?: PropertyInfoValues }) {
   return (
     <div className="property-features">
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Number of rooms</span><input name="totalRooms" type="number" inputMode="numeric" min={1} max={1000} step={1} required defaultValue={totalRooms || undefined} placeholder="e.g. 20" /></label>
@@ -20,6 +23,20 @@ export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], 
       </fieldset>
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Move-out notice (days)</span><input name="noticePeriodDays" type="number" inputMode="numeric" min={0} max={180} step={1} defaultValue={noticePeriodDays ?? undefined} placeholder="Settings" /></label>
       <small className="feature-hint">How far ahead residents of this property must give notice to move out. Leave blank to use the notice period in Settings.</small>
+      <fieldset className="feature-group">
+        <legend><Wifi size={13} /> For residents (Info tab)</legend>
+        <div className="rent-prices">
+          <label>Wi-Fi name<input name="wifiName" maxLength={64} defaultValue={info?.wifiName ?? ''} placeholder="e.g. PremiumStay_5G" /></label>
+          <label>Wi-Fi password<input name="wifiPassword" maxLength={64} defaultValue={info?.wifiPassword ?? ''} placeholder="Shown only to residents" /></label>
+        </div>
+        <div className="info-times">
+          <label>Check-in<input name="checkInTime" type="time" defaultValue={info?.checkInTime ?? ''} /></label>
+          <label>Check-out<input name="checkOutTime" type="time" defaultValue={info?.checkOutTime ?? ''} /></label>
+          <label>Gate closes<input name="gateClosingTime" type="time" defaultValue={info?.gateClosingTime ?? ''} /></label>
+        </div>
+        <label>Important contacts<textarea name="contacts" rows={4} maxLength={1500} defaultValue={info?.contacts ?? ''} placeholder={'One per line, name then number:\nWarden – Ravi: 98450 12345\nNearest hospital: 080 2222 3333'} /></label>
+        <small className="feature-hint">All optional. Residents of this property see these under Info, with tap-to-call contacts.</small>
+      </fieldset>
       <fieldset className="feature-group">
         <legend>PG for</legend>
         <div className="tenant-options">

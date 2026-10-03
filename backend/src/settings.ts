@@ -61,7 +61,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -108,6 +108,14 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     const payeeName = input.upiPayeeName?.trim() || null
     if (payeeName && payeeName.length > 50) return { error: 'Payee name can be up to 50 characters.' }
     data.upiPayeeName = payeeName
+  }
+  // Free-text lists for the resident Info tab; blank clears them.
+  for (const [field, label, max] of [['extraHouseRules', 'House rules', 3000], ['faqs', 'FAQs', 6000]] as const) {
+    const text = input[field]
+    if (text === undefined) continue
+    if (typeof text !== 'string') return { error: `${label} must be text.` }
+    if (text.trim().length > max) return { error: `${label} can be up to ${max} characters.` }
+    data[field] = text.trim()
   }
   for (const [field, { label }] of Object.entries(policyFields) as [PolicyField, (typeof policyFields)[PolicyField]][]) {
     const text = input[field]

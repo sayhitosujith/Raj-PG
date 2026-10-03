@@ -36,6 +36,13 @@ model Property {
   rentWithoutFood     Int?
   // Move-out notice in days for this property; null falls back to the notice period in Settings.
   noticePeriodDays    Int?
+  // The resident Info tab (see residentInfo.ts): Wi-Fi, contacts ("Label: number" per line), times ("HH:MM").
+  wifiName            String?
+  wifiPassword        String?
+  contacts            String?
+  checkInTime         String?
+  checkOutTime        String?
+  gateClosingTime     String?
   rooms               Room[]
   payments            Payment[]
   // Housekeeping staff names, shown to the property's residents; the count is the list's length.
@@ -431,6 +438,9 @@ model WorkspaceSettings {
   // Per-day rates for the move-out month (days from the 1st x rate, capped at the month's rent).
   dailyRateWithFood       Int       @default(1250)
   dailyRateWithoutFood    Int       @default(750)
+  // The owner's own house rules (one per line) and FAQs (blocks, question first), shown under Info.
+  extraHouseRules         String    @default("")
+  faqs                    String    @default("")
   // House rules as "HH:MM" local times; quiet hours may run past midnight (from > to).
   visitingFrom            String    @default("10:00")
   visitingTo              String    @default("20:00")

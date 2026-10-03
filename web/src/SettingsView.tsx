@@ -188,10 +188,16 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             <p className="settings-hint">For the month a resident moves out: days stayed from the 1st (move-out day included) × their rate, never more than that month's rent. The unused part of a paid month is refunded with the deposit.</p>
           </SettingsSection>
 
-          <SettingsSection icon={<House size={18} />} title="House rules" description="Visiting and quiet hours, shown to residents in their portal." onSubmit={(form) => onSaveSettings(windowFields(form, ['visiting', 'quiet']))}>
+          <SettingsSection icon={<House size={18} />} title="House rules" description="Visiting and quiet hours, shown to residents in their portal." onSubmit={(form) => onSaveSettings({ ...windowFields(form, ['visiting', 'quiet']), extraHouseRules: value(form, 'extraHouseRules') })}>
             <TimeWindowRow name="visiting" label="Visiting" settings={settings} />
             <TimeWindowRow name="quiet" label="Quiet" settings={settings} />
             <p className="settings-hint">Quiet hours can run past midnight, e.g. 10pm to 7am.</p>
+            <label>More rules <span>(one per line, shown to residents as a list)</span><textarea name="extraHouseRules" rows={5} maxLength={3000} defaultValue={settings.extraHouseRules} placeholder={'Gate closes at 11 pm\nNo smoking inside rooms\nGuests must sign in at reception'} /></label>
+          </SettingsSection>
+
+          <SettingsSection icon={<FileText size={18} />} title="FAQs" description="Common questions, answered for residents under Info." onSubmit={(form) => onSaveSettings({ faqs: value(form, 'faqs') })}>
+            <label>Questions and answers<textarea name="faqs" rows={8} maxLength={6000} defaultValue={settings.faqs} placeholder={'How do I pay rent?\nScan the UPI QR in your portal, then tap "I\'ve paid".\n\nWhat if I lose my key?\nTell the warden; a replacement costs ₹200.'} /></label>
+            <p className="settings-hint">Write the question on one line and the answer below it. Leave a blank line between questions.</p>
           </SettingsSection>
 
           <SettingsSection icon={<Sparkles size={18} />} title="Housekeeping hours" description="The time windows residents choose from when requesting a cleaning." onSubmit={(form) => onSaveSettings({ ...windowFields(form, ['morning', 'afternoon', 'evening']), housekeepingWeeklyLimit: optionalNumber(form, 'housekeepingWeeklyLimit') })}>

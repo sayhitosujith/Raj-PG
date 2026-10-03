@@ -33,6 +33,7 @@ import { TodayTile } from './TodayTile'
 import { CricketScore } from './CricketScore'
 import { PortalTabs, type PortalTab } from './PortalTabs'
 import { ResidentMaintenance } from './ResidentMaintenance'
+import { ResidentInfo, type ResidentInfoData } from './ResidentInfo'
 import { ExitPg, type ExitNotice } from './ExitPg'
 import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
@@ -52,7 +53,7 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 // Overdue rent, or a stay that has ended, signed the resident out; its message replaces the portal,
 // even on a background refresh.
 class RentLockedError extends Error {}
@@ -187,7 +188,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           <div className="home-notification-prefs">{notifications}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} /></div>
+        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} /><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
         <section className="workspace-view portal-panel" data-panel="home">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />

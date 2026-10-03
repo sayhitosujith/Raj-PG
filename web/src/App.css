@@ -1732,8 +1732,32 @@ div.portal-panel { display: contents; }
 /* Info tab on phones: House rules grows to fill the space down to the app card, its rules stacked
    one per row at the top of the card, instead of leaving an empty gap below it. */
 @media (max-width: 720px) {
-  .page-content[data-tab="info"] [data-panel="info"] > .workspace-view { display: flex; flex: 1 0 auto; flex-direction: column; }
+  .page-content[data-tab="info"] [data-panel="info"] > .workspace-view:last-child { display: flex; flex: 1 0 auto; flex-direction: column; }
   .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
   .page-content[data-tab="info"] .house-rules li { padding: 16px; }
   .page-content[data-tab="info"] .app-coming-soon { margin-top: 20px; }
 }
+
+/* Owner's extra house rules (a checklist under the tiles) and the property form's Info fields. */
+.house-rules-extra { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.house-rules-extra li { display: flex; align-items: flex-start; gap: 8px; color: #45544f; font-size: 13px; }
+.house-rules-extra svg { flex: none; margin-top: 2px; color: var(--teal); }
+.info-times { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.info-times label { display: grid; gap: 4px; }
+
+/* Resident Info tab: Wi-Fi, contacts and property details cards, then FAQs. */
+.resident-info { margin-top: 20px; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-top: 16px; }
+.info-card { display: grid; align-content: start; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.info-card h3, .info-faqs h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 2px; color: var(--ink); font-size: 14px; }
+.info-card h3 svg, .info-faqs h3 svg { color: var(--teal); }
+.info-line { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; }
+.info-line > span { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 5px; min-width: 0; color: var(--muted); }
+.info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
+.info-line .icon-button { padding: 4px; color: var(--teal); }
+.info-secret { font-variant-numeric: tabular-nums; letter-spacing: .5px; }
+.info-call { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid #9fd0c2; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.info-faqs { display: grid; gap: 6px; margin-top: 16px; }
+.info-faqs details { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
+.info-faqs summary { color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
+.info-faqs details p { margin: 6px 0 0; color: #45544f; font-size: 12px; line-height: 1.5; }

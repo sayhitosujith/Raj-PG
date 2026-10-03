@@ -27,5 +27,5 @@ export const tenantHint = (type: TenantType | null | undefined) => tenantOptions
 
 /** Reads the PropertyFeatureFields inputs back into the API shape. */
 export function readPropertyFeatures(form: FormData) {
-  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), noticePeriodDays: form.get('noticePeriodDays') }
+  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), noticePeriodDays: form.get('noticePeriodDays'), wifiName: form.get('wifiName'), wifiPassword: form.get('wifiPassword'), contacts: form.get('contacts'), checkInTime: form.get('checkInTime'), checkOutTime: form.get('checkOutTime'), gateClosingTime: form.get('gateClosingTime') }
 }
