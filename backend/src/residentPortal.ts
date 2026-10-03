@@ -21,6 +21,7 @@ import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { currentWeather, weatherNear } from './weather.js'
 import { upcomingHolidays } from './holidays.js'
+import { featuredCricketMatch } from './cricket.js'
 import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 import { cancelExit, earliestExitDate, exitDues, noticeDaysFor, requestExit } from './exits.js'
 
@@ -206,6 +207,13 @@ residentPortalRouter.post('/resident-portal/fire-alert', requireResident, async 
     console.error('Fire report failed:', error)
     response.status(503).json({ error: 'The alarm could not be raised. Call 101 or 112 now.' })
   }
+})
+
+// The featured cricket match (India first) for the portal's score card; 204 when there is none or no key.
+residentPortalRouter.get('/resident-portal/cricket', requireResident, requirePortalAccess, async (_request, response) => {
+  const match = await featuredCricketMatch()
+  if (!match) { response.status(204).send(); return }
+  response.json(match)
 })
 
 // Upcoming public holidays for the portal's holiday card, today pill and housekeeping date picker.

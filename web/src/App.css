@@ -1082,11 +1082,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .is-day .sky-cloud { --cloud: rgb(196 212 232 / .5); opacity: .6; }
 @media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } .sky-city { bottom: 30%; height: 30%; } }
 @media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun, .sky-city { animation: none; } }
-/* City windows after dark: warm lights, a few flickering slowly. */
-.city-windows rect { fill: rgb(255 214 140); opacity: .8; }
-.city-windows rect.is-twinkling { animation: city-window 6s ease-in-out infinite; }
 @keyframes city-window { 0%, 100% { opacity: .8; } 45%, 55% { opacity: .1; } }
-@media (prefers-reduced-motion: reduce) { .city-windows rect.is-twinkling { animation: none; } }
 
 /* Housekeeping staff: the owner's panel on the Housekeeping page and the line residents see. */
 .housekeeping-staff { display: grid; gap: 12px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
@@ -1581,3 +1577,42 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .exit-signin-note strong { color: #b5523f; }
 :root[data-theme="dark"] .exit-signin-note { border-color: rgb(120 50 40); border-left-color: rgb(230 110 90); color: rgb(250 200 190); background: rgb(60 22 18 / .7); }
 :root[data-theme="dark"] .exit-signin-note strong, :root[data-theme="dark"] .exit-signin-note > svg { color: rgb(240 140 120); }
+
+/* The sky now fills the window and stays put while the cards scroll over it, so the city stretches
+   down to the tree line instead of fading out under the greeting. The buildings stand just behind
+   the trees (drawn after the sky), at about the height of the scenery strip. */
+.portal-sky { position: fixed; height: 100vh; -webkit-mask-image: none; mask-image: none; }
+.sky-city { bottom: calc(clamp(120px, 22vh, 220px) * .45); height: min(58vh, 560px); }
+@media (max-width: 720px) { .sky-city { bottom: calc(clamp(120px, 22vh, 220px) * .45); height: 42vh; } }
+
+/* Skyline detail: window glass (a darker tint by day), balcony ledges (a lighter line), and at night
+   warm lit windows with a few flickering. Far windows are fainter so the layers read as depth. */
+.city-glass { fill: rgb(40 58 92 / .22); }
+.city-far-layer .city-glass { fill: rgb(40 58 92 / .12); }
+.city-ledges { fill: rgb(255 255 255 / .28); }
+.is-night .city-glass, .is-rainy .city-glass { fill: rgb(0 0 10 / .22); }
+.is-night .city-ledges, .is-rainy .city-ledges { fill: rgb(255 255 255 / .06); }
+:root[data-theme="dark"] .city-glass { fill: rgb(0 0 0 / .28); }
+:root[data-theme="dark"] .city-ledges { fill: rgb(255 255 255 / .05); }
+.city-lit { fill: rgb(255 214 140); opacity: .85; }
+.city-far-layer .city-lit { opacity: .55; }
+.city-flicker { fill: rgb(255 214 140); opacity: .85; animation: city-window 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .city-flicker { animation: none; } }
+
+/* Live cricket card in the middle of the resident's meals row. */
+.cricket-score { display: grid; gap: 4px; min-width: 200px; max-width: 320px; margin-right: auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.meals-row .weekly-menu-button + .cricket-score { margin-left: 4px; }
+.cricket-score-head { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .4px; }
+.cricket-score-ball { font-size: 13px; }
+.cricket-live { padding: 1px 7px; border-radius: 999px; color: rgb(255 255 255); background: rgb(206 44 44); animation: cricket-live 1.6s ease-in-out infinite; }
+@keyframes cricket-live { 50% { opacity: .55; } }
+.cricket-upcoming { color: var(--teal); text-transform: uppercase; }
+.cricket-format { color: var(--muted); }
+.cricket-teams { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.cricket-teams li { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.cricket-teams img { border-radius: 3px; object-fit: cover; }
+.cricket-team-dot { width: 18px; height: 18px; border-radius: 3px; background: var(--teal-soft); }
+.cricket-teams strong { min-width: 36px; color: var(--ink); }
+.cricket-teams span { color: #45544f; font-variant-numeric: tabular-nums; }
+.cricket-status { overflow: hidden; margin: 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .cricket-live { animation: none; } }

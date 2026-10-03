@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { cityWindows, skyline, type CityWindow } from './cityBuildings'
+import { cityDetail, cityViewBox, skyline, type CityLayerDetail } from './cityBuildings'
 import { isRainy, type WeatherCondition } from './weather'
 
 // Day runs 6 am to 6 pm on the viewer's own clock (the device's local time zone).
@@ -59,9 +59,20 @@ const birds = [
   { x: -58, y: 14, size: 0.7, flap: -0.15 },
 ]
 
-/** Lit windows in a dark sky, a few slowly flickering. */
-function CityLights({ windows }: { windows: CityWindow[] }) {
-  return <g className="city-windows">{windows.map((light, index) => <rect key={index} className={light.twinkle ? 'is-twinkling' : undefined} x={light.x} y={light.y} width={4} height={6} style={light.twinkle ? { animationDelay: `${light.delay}s` } : undefined} />)}</g>
+/**
+ * One layer of the city: building outlines, then their windows (glass by day; by night a share lit,
+ * a few flickering) and balcony ledges, so each nearer layer covers the one behind it.
+ */
+function CityLayer({ name, outlines, detail, isDark }: { name: 'far' | 'middle' | 'near'; outlines: string; detail: CityLayerDetail; isDark: boolean }) {
+  return (
+    <g className={`city-layer city-${name}-layer`}>
+      <path className={`city-${name}`} d={outlines} />
+      <path className="city-glass" d={detail.glass} />
+      {detail.ledges && <path className="city-ledges" d={detail.ledges} />}
+      {isDark && <path className="city-lit" d={detail.lit} />}
+      {isDark && detail.flicker.map((light, index) => <rect key={index} className="city-flicker" x={light.x} y={light.y} width={light.width} height={light.height} style={{ animationDelay: `${light.delay}s` }} />)}
+    </g>
+  )
 }
 
 /**
@@ -99,13 +110,11 @@ export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
             ))}
           </div>}
       {/* Kept in proportion and cropped at the sides on narrow screens; layers are drawn back to front, each
-          layer's windows just above it so nearer buildings cover them. Windows light up in the dark. */}
-      <svg className="sky-city" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
-        <path className="city-far" d={skyline.far} />
-        <path className="city-middle" d={skyline.middle} />
-        {isDark && <CityLights windows={cityWindows.middle} />}
-        <path className="city-near" d={skyline.near} />
-        {isDark && <CityLights windows={cityWindows.near} />}
+          layer's windows and ledges just above it so nearer buildings cover them. Windows light up in the dark. */}
+      <svg className="sky-city" viewBox={cityViewBox} preserveAspectRatio="xMidYMax slice">
+        <CityLayer name="far" outlines={skyline.far} detail={cityDetail.far} isDark={isDark} />
+        <CityLayer name="middle" outlines={skyline.middle} detail={cityDetail.middle} isDark={isDark} />
+        <CityLayer name="near" outlines={skyline.near} detail={cityDetail.near} isDark={isDark} />
       </svg>
     </div>
   )
