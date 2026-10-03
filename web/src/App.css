@@ -1639,3 +1639,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   /* Long dates and names wrap inside the today tiles rather than being cut off. */
   .today-tile-copy strong { white-space: normal; }
 }
+
+/* Resident portal footer as a purple band to match the header: lavender in light mode, deep violet
+   in dark mode, with the links and share icons tinted to suit. */
+.portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(205 198 236); border-radius: 12px; background: linear-gradient(90deg, rgb(236 232 252), rgb(222 216 248)); color: rgb(88 72 140); }
+.portal-terms .text-link { color: rgb(88 64 170); }
+.portal-terms .referral-icon { border-color: rgb(200 192 236); background: rgb(255 255 255 / .7); color: rgb(88 64 170); }
+:root[data-theme="dark"] .portal-terms { border-color: rgb(62 50 110); background: linear-gradient(90deg, rgb(34 26 70), rgb(46 34 92)); color: rgb(200 190 240); }
+:root[data-theme="dark"] .portal-terms .text-link { color: rgb(196 180 255); }
+:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(82 68 140); background: rgb(255 255 255 / .06); color: rgb(196 180 255); }
+/* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
+@media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
