@@ -1616,3 +1616,26 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .cricket-teams span { color: #45544f; font-variant-numeric: tabular-nums; }
 .cricket-status { overflow: hidden; margin: 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .cricket-live { animation: none; } }
+
+/* Resident portal header in purple, matching the twilight sky beneath it. A light lavender keeps the
+   logo, title and buttons readable; dark mode uses a deep violet. */
+.portal-topbar { border-bottom-color: rgb(205 198 236); background: linear-gradient(90deg, rgb(236 232 252), rgb(222 216 248)); }
+.portal-topbar .home-title { color: rgb(88 64 170); }
+.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(200 192 236); background: rgb(255 255 255 / .7); }
+:root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(62 50 110); background: linear-gradient(90deg, rgb(34 26 70), rgb(46 34 92)); }
+:root[data-theme="dark"] .portal-topbar .home-title { color: rgb(196 180 255); }
+:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(82 68 140); background: rgb(255 255 255 / .06); }
+
+/* Phones and narrow cards: the emergency buttons and the move-out status/note move onto their own
+   full-width row under the photo and heading, instead of squeezing both into one tall row. */
+@container (max-width: 620px) {
+  .portal-details-identity { flex-wrap: wrap; align-items: flex-start; }
+  .portal-emergency-actions { flex: 1 1 100%; justify-items: stretch; margin-left: 0; }
+  .portal-emergency-buttons { justify-content: flex-start; }
+  .portal-emergency-actions .exit-status-row { justify-items: start; }
+  .portal-emergency-actions .exit-status { border-radius: 10px; }
+  .portal-emergency-actions .exit-refund-note, .portal-emergency-actions .exit-dues-note { max-width: none; text-align: left; }
+  .portal-emergency-actions .exit-signin-note { max-width: none; }
+  /* Long dates and names wrap inside the today tiles rather than being cut off. */
+  .today-tile-copy strong { white-space: normal; }
+}
