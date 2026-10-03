@@ -21,6 +21,7 @@ import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { currentWeather, weatherNear } from './weather.js'
 import { upcomingHolidays } from './holidays.js'
 import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
+import { cancelExit, earliestExitDate, exitDues, noticeDaysFor, requestExit } from './exits.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -34,6 +35,8 @@ export async function requirePortalAccess(_request: Request, response: Response,
     if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
     if (!resident.passwordHash) { response.status(403).json({ error: 'Choose a password to continue.', code: 'PASSWORD_REQUIRED' }); return }
     if (resident.aadharStatus !== AadharVerificationStatus.VERIFIED) { response.status(403).json({ error: 'Your ID verification must be approved first.', code: 'AADHAR_VERIFICATION_REQUIRED' }); return }
+    // Moved-out residents are inactive (caught above); this also keeps the property lookup safe.
+    if (!resident.room) { response.status(401).json({ error: 'You have moved out of the property.' }); return }
     response.locals.propertyId = resident.room.propertyId
     next()
   } catch (error) {
@@ -93,11 +96,11 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
   const { userId } = response.locals.auth as AuthContext
   try {
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
-    if (!resident?.active) { response.status(401).json({ error: 'Sign in required.' }); return }
+    if (!resident?.active || !resident.room) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { nationality, passportNumber } = resident
     const { id, name, phone, email, aadharNumber, permanentAddress, addressVerified, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
     // Only the last four document characters leave the server for the resident's own view.
-    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, addressVerified, createdAt, joinedAt, room: room.number, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, addressVerified, createdAt, joinedAt, exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays: await noticeDaysFor(id), earliestDate: earliestExitDate(await noticeDaysFor(id)), dues: resident.exitDate ? await exitDues(id) : null }, room: room.number, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -164,12 +167,31 @@ function readCoordinates(query: Request['query']) {
 // Current weather where the resident is (?lat=&lon=, from their device when they allow it) or else
 // in their property's city; 204 when there is none to show (no city set, or the lookup failed), so
 // the portal just leaves it out.
+// "Exit PG": give notice to move out (checked against the notice period), or withdraw it before approval.
+residentPortalRouter.post('/resident-portal/exit', requireResident, requirePortalAccess, async (request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const result = await requestExit(userId, request.body as { moveOutDate?: unknown; reason?: unknown })
+    if ('error' in result) { response.status(400).json({ error: result.error }); return }
+    response.status(204).send()
+  } catch (error) {
+    console.error('Move-out request failed:', error)
+    response.status(503).json({ error: 'Your move-out request could not be sent.' })
+  }
+})
+
+residentPortalRouter.delete('/resident-portal/exit', requireResident, requirePortalAccess, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  if (!await cancelExit(userId)) { response.status(409).json({ error: 'There is no open move-out request to cancel.' }); return }
+  response.status(204).send()
+})
+
 // The resident's property's active fire alarm (or null), polled every few seconds. Only a session is
 // required, not full portal access, so residents still awaiting ID approval hear the alarm too.
 residentPortalRouter.get('/resident-portal/fire-alert', requireResident, async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { room: { select: { propertyId: true } } } })
-  response.json({ alert: resident ? await activeFireAlert(resident.room.propertyId) : null })
+  response.json({ alert: resident?.room ? await activeFireAlert(resident.room.propertyId) : null })
 })
 
 // "Report fire": raises the alarm for the resident's own property (or returns the active one).
@@ -177,6 +199,7 @@ residentPortalRouter.post('/resident-portal/fire-alert', requireResident, async 
   const { userId } = response.locals.auth as AuthContext
   try {
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, room: { select: { propertyId: true } } } })
+    if (!resident.room) { response.status(409).json({ error: 'You have moved out of the property.' }); return }
     response.status(201).json({ alert: await raiseFireAlert(resident.room.propertyId, { name: resident.name, residentId: userId }) })
   } catch (error) {
     console.error('Fire report failed:', error)
@@ -339,6 +362,7 @@ residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, re
     const amount = items.length ? items.reduce((sum, item) => sum + item.amount, 0) : Number((request.body as { amount?: unknown }).amount)
     if (!Number.isInteger(amount) || amount < 1 || amount > maxReportedAmount) { response.status(400).json({ error: 'Enter the amount you paid, in whole rupees.' }); return }
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, phone: true, room: { select: { propertyId: true } } } })
+    if (!resident.room) { response.status(409).json({ error: 'You have moved out of the property.' }); return }
     await prisma.payment.create({ data: { amount, status: 'pending', method: 'upi', payerName: resident.name, phone: resident.phone ?? '', reference, rentMonths: items, propertyId: resident.room.propertyId, residentId: userId } })
     response.status(201).json({ pendingUpiClaim: await pendingUpiClaim(userId) })
   } catch (error) {

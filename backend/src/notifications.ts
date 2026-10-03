@@ -3,7 +3,7 @@ import { HousekeepingStatus, type HousekeepingSlot } from '@prisma/client'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
 import { isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
-import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail } from './emailTemplates.js'
+import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail, exitRequestedEmail, exitDecisionEmail, exitDateChangedEmail, exitCancelledEmail } from './emailTemplates.js'
 import { displayName } from './names.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { getSettings, slotDetails } from './settings.js'
@@ -85,11 +85,11 @@ export async function notifyRentRecorded(residentId: string, months: string[]) {
     }))
     const name = displayName(resident.name)
     const month = formatMonthLabel(payment.month)
-    await toWhatsApp(resident, templates.paymentReceived, [name, businessName, rupees(payment.amount), month, resident.room.property.name], `payment:${payment.id}`, async () => {
+    await toWhatsApp(resident, templates.paymentReceived, [name, businessName, rupees(payment.amount), month, resident.room?.property.name ?? ''], `payment:${payment.id}`, async () => {
       const { filename, content } = await receiptPdf()
       return { id: await uploadPdf(content, filename), filename }
     })
-    await toEmail(resident, 'payment_received', paymentReceivedEmail({ business: businessName, name, amount: rupees(payment.amount), month, property: resident.room.property.name }), `payment:${payment.id}`, { ignoreOptOut: true, attachments: async () => [await receiptPdf()] })
+    await toEmail(resident, 'payment_received', paymentReceivedEmail({ business: businessName, name, amount: rupees(payment.amount), month, property: resident.room?.property.name ?? '' }), `payment:${payment.id}`, { ignoreOptOut: true, attachments: async () => [await receiptPdf()] })
   }
 }
 
@@ -101,7 +101,7 @@ export async function notifyAnnouncement(announcement: { id: string; title: stri
   for (const resident of residents) {
     const name = displayName(resident.name)
     await toWhatsApp(resident, templates.announcement, [name, businessName, announcement.title, announcement.message], `announcement:${announcement.id}:${resident.id}`)
-    await toEmail(resident, 'announcement', announcementEmail({ business: businessName, name, title: announcement.title, message: announcement.message, property: resident.room.property.name }), `announcement:${announcement.id}:${resident.id}`)
+    await toEmail(resident, 'announcement', announcementEmail({ business: businessName, name, title: announcement.title, message: announcement.message, property: resident.room?.property.name ?? '' }), `announcement:${announcement.id}:${resident.id}`)
   }
 }
 
@@ -133,7 +133,7 @@ export async function notifyResidentCredentials(residentId: string, accessKey: s
   if (!resident) return { email: 'skipped', whatsapp: 'skipped' } satisfies Record<Channel, DeliveryResult>
   const { businessName } = await getSettings()
   const name = displayName(resident.name)
-  const property = resident.room.property.name
+  const property = resident.room?.property.name ?? ''
   const login = resident.email || resident.phone || ''
   // Unique per key, so issuing a new key always sends again while a retry of the same key does not.
   const key = `credentials:${resident.id}:${createHash('sha256').update(accessKey).digest('hex').slice(0, 16)}`
@@ -165,6 +165,42 @@ export async function notifyFireAlert(alert: { id: string; propertyId: string; r
   if (!alert.raisedByResidentId || !isEmailEnabled()) return
   const message = fireReportedEmail({ business: businessName, property: property.name, raisedBy: alert.raisedByName, adminUrl: appUrl() })
   for (const to of await bookingAlertRecipients()) await deliver('email', null, to, 'fire_reported', `fire-admin:${alert.id}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
+}
+
+const longDate = (date: Date) => date.toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })
+
+/** Emails every super admin (and the contact email) about a resident's new move-out notice. */
+export async function notifyExitRequested(residentId: string) {
+  if (!isEmailEnabled()) return
+  const [{ businessName }, resident, recipients] = await Promise.all([getSettings(), prisma.resident.findUnique({ where: { id: residentId }, select: { name: true, exitDate: true, exitReason: true, exitRequestedAt: true, room: { select: { number: true, property: { select: { name: true } } } } } }), bookingAlertRecipients()])
+  if (!resident?.exitDate || !resident.exitRequestedAt) return
+  const message = exitRequestedEmail({ business: businessName, name: resident.name, property: resident.room?.property.name ?? '', room: resident.room?.number ?? '—', date: longDate(resident.exitDate), reason: resident.exitReason, adminUrl: appUrl() })
+  for (const to of recipients) await deliver('email', null, to, 'exit_requested', `exit:${residentId}:${resident.exitRequestedAt.getTime()}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
+}
+
+/** Tells the resident their move-out notice was approved or declined (email, even if updates are off). */
+export async function notifyExitDecision(residentId: string, approved: boolean) {
+  const [{ businessName }, resident] = await Promise.all([getSettings(), prisma.resident.findUnique({ where: { id: residentId }, select: { ...recipientSelect, exitDate: true, exitRequestedAt: true, room: { select: { property: { select: { name: true } } } } } })])
+  if (!resident?.exitDate || !resident.exitRequestedAt) return
+  const message = exitDecisionEmail({ business: businessName, name: displayName(resident.name), property: resident.room?.property.name ?? '', date: longDate(resident.exitDate), approved, portalUrl: appUrl() })
+  await toEmail(resident, 'exit_decision', message, `exit-decision:${residentId}:${resident.exitRequestedAt.getTime()}`, { ignoreOptOut: true })
+}
+
+/** Tells the resident the owner moved their move-out date (email, even if updates are off). */
+export async function notifyExitDateChanged(residentId: string) {
+  const [{ businessName }, resident] = await Promise.all([getSettings(), prisma.resident.findUnique({ where: { id: residentId }, select: { ...recipientSelect, exitDate: true, room: { select: { property: { select: { name: true } } } } } })])
+  if (!resident?.exitDate) return
+  const message = exitDateChangedEmail({ business: businessName, name: displayName(resident.name), property: resident.room?.property.name ?? '', date: longDate(resident.exitDate), portalUrl: appUrl() })
+  await toEmail(resident, 'exit_date_changed', message, `exit-date:${residentId}:${resident.exitDate.getTime()}`, { ignoreOptOut: true })
+}
+
+/** Emails every super admin (and the contact email) when a resident cancels an approved move-out. */
+export async function notifyExitCancelled(residentId: string, cancelledDate: Date) {
+  if (!isEmailEnabled()) return
+  const [{ businessName }, resident, recipients] = await Promise.all([getSettings(), prisma.resident.findUnique({ where: { id: residentId }, select: { name: true, room: { select: { number: true, property: { select: { name: true } } } } } }), bookingAlertRecipients()])
+  if (!resident) return
+  const message = exitCancelledEmail({ business: businessName, name: resident.name, property: resident.room?.property.name ?? '', room: resident.room?.number ?? '—', date: longDate(cancelledDate), adminUrl: appUrl() })
+  for (const to of recipients) await deliver('email', null, to, 'exit_cancelled', `exit-cancel:${residentId}:${Date.now()}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
 }
 
 /** A rent reminder or overdue notice; the key makes it once per resident, month, stage and channel. */

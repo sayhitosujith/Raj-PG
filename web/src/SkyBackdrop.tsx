@@ -59,39 +59,16 @@ const birds = [
   { x: -58, y: 14, size: 0.7, flap: -0.15 },
 ]
 
-// Two helicopters crossing left to right at different heights, sizes and speeds, so they never
-// fly in step; `rest` is where each hovers when motion is reduced.
-const helicopters = [
-  { top: '20%', size: 1, duration: 36, delay: -8, rest: '22%' },
-  { top: '33%', size: 0.72, duration: 50, delay: -31, rest: '60%' },
-]
-
 /** Lit windows in a dark sky, a few slowly flickering. */
 function CityLights({ windows }: { windows: CityWindow[] }) {
   return <g className="city-windows">{windows.map((light, index) => <rect key={index} className={light.twinkle ? 'is-twinkling' : undefined} x={light.x} y={light.y} width={4} height={6} style={light.twinkle ? { animationDelay: `${light.delay}s` } : undefined} />)}</g>
 }
 
-/** One helicopter silhouette facing right, with spinning rotors and a navigation light. */
-function Helicopter() {
-  return (
-    <svg className="chopper-body" viewBox="0 0 80 34">
-      <rect className="chopper-rotor" x="20" y="5.5" width="52" height="1.8" rx="0.9" />
-      <rect x="45" y="7" width="2" height="4" />
-      <path d="M34 14 Q36 10 46 10 Q58 10 62 16 Q63 22 56 25 L38 25 Q33 23 34 14 Z" />
-      <path className="chopper-window" d="M50 12 Q57 12 60 17 L50 17 Z" />
-      <path d="M6 13 L34 15 L34 19 L8 18 Z M4 8 L8 8 L10 16 L6 16 Z" />
-      <rect className="chopper-tail-rotor" x="2" y="11.4" width="8" height="1.2" rx="0.6" />
-      <path className="chopper-skids" d="M38 25 V29 M54 25 V29 M32 29 H61" />
-      <circle className="chopper-light" cx="6" cy="19" r="1.3" />
-    </svg>
-  )
-}
-
 /**
  * Decorative sky behind the top of the resident portal, following the viewer's local time: by day a
  * sun in a blue sky, by night a moon with twinkling stars; both over a three-layer city skyline (windows lit after dark), with
- * drifting clouds, a small flock of birds and two helicopters, fading into the page below. When it is raining in
- * the property's city the sky turns overcast instead: no sun, moon, stars, birds or helicopters, darker clouds,
+ * drifting clouds and a small flock of birds, fading into the page below. When it is raining in
+ * the property's city the sky turns overcast instead: no sun, moon, stars or birds, darker clouds,
  * falling rain and occasional lightning (more often in a thunderstorm). Drawn inline so it needs no
  * image requests; colours and motion live in App.css (.portal-sky, with .is-day / .is-night / .is-rainy).
  */
@@ -114,20 +91,13 @@ export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
               {rain.map((drop, index) => <span key={index} className="rain-drop" style={{ left: `${drop.x}%`, '--rain-rest': `${drop.rest}%`, height: drop.length, opacity: drop.opacity, animationDelay: `${drop.delay}s`, animationDuration: `${drop.duration}s` } as CSSProperties} />)}
             </div>
           </>
-        : <>
-            <div className="sky-flock">
-              {birds.map((bird, index) => (
-                <svg key={index} className="sky-bird" viewBox="0 0 40 16" style={{ left: bird.x, top: bird.y, width: 30 * bird.size, animationDelay: `${bird.flap}s` }}>
-                  <path d="M2 11 Q11 2 20 10 Q29 2 38 11" />
-                </svg>
-              ))}
-            </div>
-            {helicopters.map((helicopter, index) => (
-              <div key={index} className="sky-chopper" style={{ top: helicopter.top, width: 84 * helicopter.size, '--chopper-duration': `${helicopter.duration}s`, '--chopper-delay': `${helicopter.delay}s`, '--chopper-rest': helicopter.rest } as CSSProperties}>
-                <Helicopter />
-              </div>
+        : <div className="sky-flock">
+            {birds.map((bird, index) => (
+              <svg key={index} className="sky-bird" viewBox="0 0 40 16" style={{ left: bird.x, top: bird.y, width: 30 * bird.size, animationDelay: `${bird.flap}s` }}>
+                <path d="M2 11 Q11 2 20 10 Q29 2 38 11" />
+              </svg>
             ))}
-          </>}
+          </div>}
       {/* Kept in proportion and cropped at the sides on narrow screens; layers are drawn back to front, each
           layer's windows just above it so nearer buildings cover them. Windows light up in the dark. */}
       <svg className="sky-city" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">

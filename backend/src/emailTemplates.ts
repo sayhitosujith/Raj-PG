@@ -67,6 +67,40 @@ export function fireReportedEmail(input: { business: string; property: string; r
   ], 'You get this as a super admin (or the contact email) of this workspace.') }
 }
 
+/** To the owner when a resident gives notice to move out. */
+export function exitRequestedEmail(input: { business: string; name: string; property: string; room: string; date: string; reason: string | null; adminUrl: string }) {
+  return { subject: `Move-out notice: ${input.name}, ${input.property} room ${input.room}`, ...layout(input.business, 'Move-out notice', [
+    { kind: 'p', text: `${input.name} has asked to move out of ${input.property}.` },
+    { kind: 'rows', rows: [['Room', input.room], ['Move-out date', input.date], ['Reason', input.reason || 'Not given']] },
+    { kind: 'p', text: 'Approve or decline it under Residents. Once approved, complete the move-out on or after that date.' },
+    { kind: 'button', label: 'Open residents', href: input.adminUrl },
+  ], 'You get this as a super admin (or the contact email) of this workspace.') }
+}
+
+/** To the resident when the owner approves or declines their move-out notice. */
+export function exitDecisionEmail(input: { business: string; name: string; property: string; date: string; approved: boolean; portalUrl: string }) {
+  return { subject: input.approved ? `Your move-out on ${input.date} is approved` : 'Your move-out request was declined', ...layout(input.business, input.approved ? 'Move-out approved' : 'Move-out declined', [
+    { kind: 'p', text: input.approved ? `Hi ${input.name}, your move-out from ${input.property} on ${input.date} is approved. Please clear any dues before you leave; your deposit balance is settled with your property owner.` : `Hi ${input.name}, your request to move out of ${input.property} on ${input.date} was declined. Please speak to your property owner, then send a new request from your portal if needed.` },
+    { kind: 'button', label: 'Open the resident portal', href: input.portalUrl },
+  ]) }
+}
+
+/** To the resident when the owner moves their move-out to another date. */
+export function exitDateChangedEmail(input: { business: string; name: string; property: string; date: string; portalUrl: string }) {
+  return { subject: `Your move-out date is now ${input.date}`, ...layout(input.business, 'Move-out date changed', [
+    { kind: 'p', text: `Hi ${input.name}, your property owner changed your move-out date from ${input.property} to ${input.date}. Your dues and refund estimate in the portal now follow this date.` },
+    { kind: 'button', label: 'Open the resident portal', href: input.portalUrl },
+  ]) }
+}
+
+/** To the owner when a resident cancels a move-out that was already approved. */
+export function exitCancelledEmail(input: { business: string; name: string; property: string; room: string; date: string; adminUrl: string }) {
+  return { subject: `Move-out cancelled: ${input.name}, ${input.property} room ${input.room}`, ...layout(input.business, 'Move-out cancelled', [
+    { kind: 'p', text: `${input.name} cancelled their approved move-out from ${input.property} (room ${input.room}) on ${input.date}. They are staying unless they send a new request.` },
+    { kind: 'button', label: 'Open residents', href: input.adminUrl },
+  ], 'You get this as a super admin (or the contact email) of this workspace.') }
+}
+
 /** A new notice from the owner. */
 export function announcementEmail(input: { business: string; name: string; title: string; message: string; property: string }) {
   return { subject: `${input.property}: ${input.title}`, ...layout(input.business, input.title, [

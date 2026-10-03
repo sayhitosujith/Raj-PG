@@ -42,7 +42,7 @@ async function parsePayment(body: PaymentBody): Promise<PaymentFields | { error:
   const residentId = text(body.residentId) || null
   if (residentId) {
     const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { room: { select: { propertyId: true } } } })
-    if (resident?.room.propertyId !== propertyId) return { error: 'That resident does not live in the selected property.' }
+    if (resident?.room?.propertyId !== propertyId) return { error: 'That resident does not live in the selected property.' }
   }
   return { amount, status, method, payerName, phone, bankName, propertyId, residentId }
 }

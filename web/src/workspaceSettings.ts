@@ -19,6 +19,9 @@ export type WorkspaceSettings = {
   lateFee: number
   securityDeposit: number | null
   noticePeriodDays: number
+  /** Per-day rates for the move-out month, in whole rupees. */
+  dailyRateWithFood: number
+  dailyRateWithoutFood: number
   visitingFrom: string
   visitingTo: string
   /** Quiet hours may run past midnight, so quietFrom can be later than quietTo. */

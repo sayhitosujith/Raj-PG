@@ -176,11 +176,16 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             <label>Late fee <span>(₹ added to each month paid after the due day; 0 for none)</span><input name="lateFee" type="number" min={0} max={100000} step={1} defaultValue={settings.lateFee} /></label>
           </SettingsSection>
 
-          <SettingsSection icon={<WalletCards size={18} />} title="Deposit and notice" description="Shown to residents in their portal under House rules." onSubmit={(form) => onSaveSettings({ securityDeposit: optionalNumber(form, 'securityDeposit'), noticePeriodDays: optionalNumber(form, 'noticePeriodDays') ?? 0 })}>
+          <SettingsSection icon={<WalletCards size={18} />} title="Deposit and notice" description="Shown to residents in their portal under House rules." onSubmit={(form) => onSaveSettings({ securityDeposit: optionalNumber(form, 'securityDeposit'), noticePeriodDays: optionalNumber(form, 'noticePeriodDays') ?? 0, dailyRateWithFood: optionalNumber(form, 'dailyRateWithFood') ?? 0, dailyRateWithoutFood: optionalNumber(form, 'dailyRateWithoutFood') ?? 0 })}>
             <div className="settings-pair">
               <label>Security deposit <span>(₹; blank to hide)</span><input name="securityDeposit" type="number" min={1} max={1000000} step={1} defaultValue={settings.securityDeposit ?? ''} placeholder="e.g. 10000" /></label>
               <label>Notice to move out <span>(days)</span><input name="noticePeriodDays" type="number" min={0} max={180} step={1} required defaultValue={settings.noticePeriodDays} /></label>
             </div>
+            <div className="settings-pair">
+              <label>Per-day rate with food <span>(₹)</span><input name="dailyRateWithFood" type="number" min={1} max={100000} step={1} required defaultValue={settings.dailyRateWithFood} /></label>
+              <label>Per-day rate without food <span>(₹)</span><input name="dailyRateWithoutFood" type="number" min={1} max={100000} step={1} required defaultValue={settings.dailyRateWithoutFood} /></label>
+            </div>
+            <p className="settings-hint">For the month a resident moves out: days stayed from the 1st (move-out day included) × their rate, never more than that month's rent. The unused part of a paid month is refunded with the deposit.</p>
           </SettingsSection>
 
           <SettingsSection icon={<House size={18} />} title="House rules" description="Visiting and quiet hours, shown to residents in their portal." onSubmit={(form) => onSaveSettings(windowFields(form, ['visiting', 'quiet']))}>

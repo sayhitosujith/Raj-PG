@@ -24,7 +24,7 @@ export async function runRentReminders() {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)
     const stage = status.state === 'LOCK_DUE' ? 'overdue' : status.state === 'REMINDER_3' ? 'reminder3' : status.state === 'REMINDER_2' ? 'reminder2' : status.state === 'REMINDER_1' ? 'reminder1' : null
     if (!stage || !status.outstandingMonths.length) continue
-    await notifyRent(resident, stage, { amount: status.amountDue, months: status.outstandingMonths, dueDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay), lockDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay + 1), property: resident.room.property.name })
+    await notifyRent(resident, stage, { amount: status.amountDue, months: status.outstandingMonths, dueDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay), lockDate: dueDateLabel(status.outstandingMonths[0], rules.dueDay + 1), property: resident.room?.property.name ?? '' })
     sent[stage] += 1
   }
   return { checked: residents.length, attempted: sent }

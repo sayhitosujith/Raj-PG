@@ -34,6 +34,8 @@ model Property {
   // Optional pricing: when both are set, residents' rent follows their food choice (see propertyRent.ts).
   rentWithFood        Int?
   rentWithoutFood     Int?
+  // Move-out notice in days for this property; null falls back to the notice period in Settings.
+  noticePeriodDays    Int?
   rooms               Room[]
   payments            Payment[]
   // Housekeeping staff names, shown to the property's residents; the count is the list's length.
@@ -84,13 +86,21 @@ model Resident {
   accessKeyHash           String?
   // Set by the resident after their first access-key sign-in; from then on the access key is retired.
   passwordHash            String?
-  roomId                  String                   @unique
-  room                    Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  // Null once they have moved out, so the room can be let again; movedOutFrom keeps where they lived.
+  roomId                  String?                  @unique
+  room                    Room?                    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  movedOutFrom            String?
   active                  Boolean                  @default(true)
   // Move-in date, separate from createdAt because residents are often added after they arrive.
   joinedAt                DateTime                 @default(now()) @db.Date
   // Overdue rent locks the resident out (see rentLock.ts) unless today is on or before this date.
   rentAccessUntil         DateTime?                @db.Date
+  // "Exit PG": the resident's move-out notice (one at a time), the owner's decision, and completion.
+  exitStatus              ExitStatus?
+  exitDate                DateTime?                @db.Date
+  exitReason              String?
+  exitRequestedAt         DateTime?
+  movedOutAt              DateTime?
   // Portal content stays locked until an owner approves the resident's identity documents: Aadhaar,
   // or passport and visa for non-Indians. Named before passports were supported.
   aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)
@@ -223,6 +233,12 @@ model FireAlert {
   clearedAt          DateTime?
 
   @@index([propertyId, clearedAt])
+}
+
+enum ExitStatus {
+  PENDING
+  APPROVED
+  DECLINED
 }
 
 enum UserRole {
@@ -397,6 +413,9 @@ model WorkspaceSettings {
   // Shown to residents; null deposit = not shown.
   securityDeposit         Int?
   noticePeriodDays        Int       @default(30)
+  // Per-day rates for the move-out month (days from the 1st x rate, capped at the month's rent).
+  dailyRateWithFood       Int       @default(1250)
+  dailyRateWithoutFood    Int       @default(750)
   // House rules as "HH:MM" local times; quiet hours may run past midnight (from > to).
   visitingFrom            String    @default("10:00")
   visitingTo              String    @default("20:00")

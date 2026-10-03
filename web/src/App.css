@@ -1146,27 +1146,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes bird-flap { from { transform: scaleY(1); } to { transform: scaleY(.3) translateY(3px); } }
 /* The phone strip is only ~30px tall, so the flock flies smaller there. */
 @media (max-width: 720px) { .sky-flock { top: 74px; scale: .7; } }
-/* Helicopters: cross left to right with a gentle bob; the main rotor blurs by squashing, the tail
-   rotor spins, and the red navigation light blinks (seen mostly at night). Same tones as the birds. */
-.sky-chopper { position: absolute; left: -140px; color: rgb(38 50 68 / .75); animation: chopper-fly var(--chopper-duration, 40s) linear var(--chopper-delay, 0s) infinite; }
-.is-night .sky-chopper { color: rgb(214 222 240 / .55); }
-:root[data-theme="dark"] .is-day .sky-chopper { color: rgb(226 234 246 / .62); }
-.chopper-body { display: block; width: 100%; height: auto; overflow: visible; fill: currentColor; animation: chopper-bob 3.2s ease-in-out infinite alternate; }
-.chopper-window { fill: rgb(170 210 240 / .55); }
-.chopper-skids { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-.chopper-rotor { transform-box: fill-box; transform-origin: center; animation: chopper-rotor .16s linear infinite alternate; }
-.chopper-tail-rotor { transform-box: fill-box; transform-origin: center; animation: chopper-tail .3s linear infinite; }
-.chopper-light { fill: rgb(255 70 70); animation: chopper-light 1.4s steps(1, end) infinite; }
-@keyframes chopper-fly { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 300px)); } }
-@keyframes chopper-bob { from { transform: translateY(0); } to { transform: translateY(5px); } }
-@keyframes chopper-rotor { from { transform: scaleX(1); } to { transform: scaleX(.12); } }
-@keyframes chopper-tail { to { transform: rotate(360deg); } }
-@keyframes chopper-light { 0% { opacity: 1; } 15% { opacity: 0; } }
-@media (max-width: 720px) { .sky-chopper { scale: .7; } }
-@media (prefers-reduced-motion: reduce) {
-  .sky-chopper { animation: none; left: var(--chopper-rest, 40%); }
-  .chopper-body, .chopper-rotor, .chopper-tail-rotor, .chopper-light { animation: none; }
-}
 @media (prefers-reduced-motion: reduce) { .sky-flock { animation: none; left: 30%; } .sky-bird { animation: none; } }
 /* Rain in the property's city: an overcast grey sky, heavy clouds, slanting rain and lightning. */
 .portal-sky.is-rainy { background: linear-gradient(180deg, rgb(62 70 86 / .82) 0%, rgb(92 100 118 / .62) 38%, rgb(140 148 162 / .42) 66%, rgb(196 200 208 / .25) 84%, transparent 100%); }
@@ -1370,8 +1349,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident portal: "Call owner" under the "My details" intro; Emergency 112 at the far right of the
    same row, solid red so it is findable at a glance. */
 .emergency-button.call-owner { margin-top: 12px; }
-/* Emergency 112 and Report fire, side by side at the top right of My Details. */
-.portal-emergency-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-self: flex-start; gap: 8px; margin-left: auto; }
+/* Emergency and Report fire side by side at the top right of My Details, with Exit PG beneath. */
+.portal-emergency-actions { display: grid; justify-items: end; align-self: flex-start; gap: 8px; margin-left: auto; }
+.portal-emergency-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .emergency-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--teal); background: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
 .emergency-button:hover, .emergency-button:focus-visible { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .1); }
 .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
@@ -1545,3 +1525,52 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-details-row .portal-details { gap: 8px; padding: 10px; }
 .portal-details > div { align-content: start; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .portal-details dt { margin-bottom: 0; }
+
+/* Exit PG: the resident's button and status under Emergency, the settlement figures, and the
+   owner's review panel in the expanded resident row. */
+.exit-status-row { display: grid; justify-items: end; gap: 4px; }
+.exit-pg-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: #45544f; background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.exit-pg-button:hover, .exit-pg-button:focus-visible { border-color: var(--teal); color: var(--teal); }
+.exit-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0; padding: 5px 10px; border-radius: 999px; color: #7b5a20; background: #fbf3e2; font-size: 11px; }
+.exit-status.is-approved { color: #b5523f; background: #fbe6e1; }
+.exit-status.is-declined { color: var(--muted); background: transparent; padding: 0; }
+.exit-hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.exit-settlement { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 0; }
+.exit-settlement > div { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfb; }
+.exit-settlement dt { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+.exit-settlement dd { margin: 0; color: var(--ink); font-size: 14px; font-weight: 800; }
+.exit-settlement .is-refund { border-color: #9fd0c2; background: var(--teal-soft); }
+.exit-settlement .is-refund dd { color: var(--teal); }
+.exit-settlement .is-owed { border-color: #f3d3cb; background: #fff1ed; }
+.exit-settlement .is-owed dd { color: #b5523f; }
+@media (max-width: 480px) { .exit-settlement { grid-template-columns: 1fr; } }
+.resident-exit-panel { display: grid; gap: 10px; margin: 0 0 12px 51px; padding: 12px 14px; border: 1px solid #f0e2c4; border-radius: 10px; background: #fffaf0; }
+.resident-exit-panel.is-approved { border-color: #f3d3cb; background: #fff6f3; }
+.resident-exit-head { display: flex; align-items: center; gap: 10px; color: #7b5a20; }
+.resident-exit-head div { display: grid; gap: 2px; }
+.resident-exit-head strong { color: var(--ink); font-size: 13px; }
+.resident-exit-head small { color: var(--muted); font-size: 11px; }
+.resident-exit-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@container (max-width: 620px) { .resident-exit-panel { margin-left: 0; } }
+.resident-exit-panel.is-done { border-color: var(--line); background: #f7faf8; }
+.resident-exit-wait { align-self: center; color: var(--muted); font-size: 11px; }
+/* Dues up to the move-out date, month by month, and the notes that explain why approval waits. */
+.exit-dues-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.exit-dues-list li { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 7px; color: #b5523f; background: #fff1ed; font-size: 12px; }
+.exit-dues-clear { margin: 0; color: var(--teal); font-size: 12px; font-weight: 600; }
+.exit-dues-note { max-width: 320px; margin: 0; color: #b5523f; font-size: 11px; text-align: right; }
+/* Per-day move-out charge line and the four-box settlement (dues, unused rent, deposit, refund). */
+.exit-day-charge { margin: 0; color: #45544f; font-size: 12px; line-height: 1.5; }
+.exit-settlement.is-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 640px) { .exit-settlement.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.exit-refund-note { max-width: 320px; margin: 0; color: var(--teal); font-size: 11px; text-align: right; }
+/* The amount the owner pays back at move-out, made prominent at the top of the move-out panel. */
+.resident-exit-payout { display: grid; gap: 2px; margin: 0; padding: 10px 12px; border: 1px solid #9fd0c2; border-radius: 9px; color: #0f5e55; background: var(--teal-soft); font-size: 13px; }
+.resident-exit-payout strong { color: var(--teal); font: 800 20px Manrope, sans-serif; }
+.resident-exit-payout small { color: var(--muted); font-size: 11px; }
+.resident-exit-payout.is-owed { border-color: #f3d3cb; color: #b5523f; background: #fff1ed; }
+.resident-exit-payout.is-owed strong { color: #b5523f; }
+/* Owner's "Change move-out date" row in the move-out panel. */
+.resident-exit-date { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-top: 8px; border-top: 1px dashed #f0e2c4; }
+.resident-exit-date label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.resident-exit-date input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }

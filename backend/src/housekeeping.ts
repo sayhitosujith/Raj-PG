@@ -174,7 +174,7 @@ const withResident = { ...requestFields, resident: { select: { id: true, name: t
 
 function toOwnerView(request: Prisma.HousekeepingRequestGetPayload<{ select: typeof withResident }>, settings: WorkspaceSettings) {
   const { resident, ...fields } = request
-  return { ...withTiming(fields, settings), resident: { id: resident.id, name: resident.name, room: resident.room.number, property: resident.room.property.name, photoVersion: photoVersion(resident.profilePhotoUpdatedAt) } }
+  return { ...withTiming(fields, settings), resident: { id: resident.id, name: resident.name, room: resident.room?.number ?? '—', property: resident.room?.property.name ?? '', photoVersion: photoVersion(resident.profilePhotoUpdatedAt) } }
 }
 
 // Unanswered reminders first, then overdue visits, then the rest by when they are due.

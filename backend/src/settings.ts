@@ -61,7 +61,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -72,6 +72,8 @@ const numberFields = [
   ['lateFee', 0, 1_00_000, false, 'Late fee must be a whole number of rupees (0 for none).'],
   ['securityDeposit', 1, 10_00_000, true, 'Security deposit must be a whole number of rupees, or blank.'],
   ['noticePeriodDays', 0, 180, false, 'Notice period must be 0 to 180 days.'],
+  ['dailyRateWithFood', 1, 1_00_000, false, 'Per-day rate with food must be a whole number of rupees.'],
+  ['dailyRateWithoutFood', 1, 1_00_000, false, 'Per-day rate without food must be a whole number of rupees.'],
   ['housekeepingWeeklyLimit', 1, 21, true, 'Weekly cleanings must be 1 to 21, or blank for no limit.'],
 ] as const
 

@@ -85,10 +85,11 @@ razorpayResidentRouter.post('/resident-portal/rent/upi-qr', requireResident, req
     const open = await prisma.payment.findFirst({ where: { residentId: userId, status: 'pending', amount, razorpayQrId: { not: null }, qrExpiresAt: { gt: new Date() } } })
     if (open) { response.json(toQrView(open)); return }
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, phone: true, room: { select: { propertyId: true } } } })
+    if (!resident.room) { response.status(409).json({ error: 'You have moved out, so there is no rent to pay online.' }); return }
     const qr = await createUpiQr(amount, `Rent - ${resident.name}`, { residentId: userId, months: items.map((item) => item.month).join(',') })
     const [, payment] = await prisma.$transaction([
       prisma.rentOrder.create({ data: { residentId: userId, razorpayOrderId: qr.razorpayQrId, amount, items } }),
-      prisma.payment.create({ data: { ...qr, amount, status: 'pending', method: 'upi', payerName: resident.name, phone: resident.phone ?? '', propertyId: resident.room.propertyId, residentId: userId } }),
+      prisma.payment.create({ data: { ...qr, amount, status: 'pending', method: 'upi', payerName: resident.name, phone: resident.phone ?? '', propertyId: resident.room!.propertyId, residentId: userId } }),
     ])
     response.status(201).json(toQrView(payment))
   } catch (error) {

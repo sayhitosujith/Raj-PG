@@ -56,7 +56,7 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
   return {
     number: receiptNumber(payment.id, payment.month),
     business: { name: settings.businessName, phone: settings.contactPhone, email: settings.contactEmail, logo: logoImage(settings.logoUrl) },
-    resident: { name: displayName(resident.name), phone: resident.phone, email: resident.email, room: resident.room.number, property: resident.room.property.name, location: resident.room.property.location },
+    resident: { name: displayName(resident.name), phone: resident.phone, email: resident.email, room: resident.room?.number ?? '—', property: resident.room?.property.name ?? resident.movedOutFrom ?? '', location: resident.room?.property.location ?? '' },
     month: payment.month,
     amount: payment.amount,
     paidAt: payment.paidAt,

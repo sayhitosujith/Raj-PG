@@ -6,7 +6,7 @@ import { amenityOptions, tenantOptions, type AmenityCode, type TenantType } from
  * checkboxes for the add/edit property forms. Uncontrolled inputs; read them back with
  * readPropertyFeatures.
  */
-export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null }) {
+export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, noticePeriodDays }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; noticePeriodDays?: number | null }) {
   return (
     <div className="property-features">
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Number of rooms</span><input name="totalRooms" type="number" inputMode="numeric" min={1} max={1000} step={1} required defaultValue={totalRooms || undefined} placeholder="e.g. 20" /></label>
@@ -18,6 +18,8 @@ export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], 
         </div>
         <small className="feature-hint">Residents' rent follows their food plan. Leave both blank to set rent per resident instead.</small>
       </fieldset>
+      <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Move-out notice (days)</span><input name="noticePeriodDays" type="number" inputMode="numeric" min={0} max={180} step={1} defaultValue={noticePeriodDays ?? undefined} placeholder="Settings" /></label>
+      <small className="feature-hint">How far ahead residents of this property must give notice to move out. Leave blank to use the notice period in Settings.</small>
       <fieldset className="feature-group">
         <legend>PG for</legend>
         <div className="tenant-options">
