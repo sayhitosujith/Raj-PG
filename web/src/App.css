@@ -1679,7 +1679,7 @@ div.portal-panel { display: contents; }
   .page-content[data-tab="home"] [data-panel]:not([data-panel="home"]),
   .page-content[data-tab="services"] [data-panel]:not([data-panel="services"]),
   .page-content[data-tab="rent"] [data-panel]:not([data-panel="rent"]),
-  .page-content[data-tab="updates"] [data-panel]:not([data-panel="updates"]),
+  .page-content[data-tab="profile"] [data-panel]:not([data-panel="profile"]),
   .page-content[data-tab="info"] [data-panel]:not([data-panel="info"]) { display: none; }
   /* The welcome row (greeting, amenities) is part of Home only. */
   .page-content:not([data-tab="home"]) .welcome-row { display: none; }
@@ -1702,3 +1702,17 @@ div.portal-panel { display: contents; }
 .maintenance-item-head p { margin: 2px 0 0; color: #45544f; font-size: 12px; }
 .maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+
+/* Profile tab (phones only): photo, details, notifications, password and sign out. On phones those
+   leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */
+.portal-profile { display: none; }
+.portal-profile-head { display: flex; align-items: center; gap: 14px; }
+.portal-profile-head h2 { margin: 0 0 4px; font: 700 22px Manrope; color: var(--ink); }
+.portal-profile-head p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; }
+.portal-profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.portal-profile-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
+.portal-profile .portal-details { margin: 0 0 14px; }
+@media (max-width: 720px) {
+  .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
+  .page-content .portal-details-row, .page-content .home-notification-prefs { display: none; }
+}
