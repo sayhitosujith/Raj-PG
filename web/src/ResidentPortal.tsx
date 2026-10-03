@@ -31,6 +31,8 @@ import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { TodayTile } from './TodayTile'
 import { CricketScore } from './CricketScore'
+import { PortalTabs, type PortalTab } from './PortalTabs'
+import { ResidentMaintenance } from './ResidentMaintenance'
 import { ExitPg, type ExitNotice } from './ExitPg'
 import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
@@ -115,6 +117,8 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 
 /** Resident's own view: their details, their property's announcements, and their rent payments. */
 function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
+  // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
+  const [tab, setTab] = useState<PortalTab>('home')
   const { greeting, dateLabel, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
   const announcementsPager = usePagination(announcements ?? [], portalListPageSize)
@@ -168,7 +172,9 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
-      <main className="page-content" inert={Boolean(pendingConsent)}>
+      <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
+        <PortalTabs active={tab} onChange={setTab} />
+        <div className="portal-panel" data-panel="home">
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
@@ -177,25 +183,29 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" /><dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</dd></div></dl></div>
           <NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} />
         </section>
-        <HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} />
-        <section className="workspace-view">
+        </div>
+        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} /></div>
+        <section className="workspace-view portal-panel" data-panel="updates">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />
         </section>
+        <div className="portal-panel" data-panel="services">
+        <ResidentMaintenance refreshSignal={refreshSignal} onNotice={showNotice} />
         <ResidentHousekeeping holidays={holidays} refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
+        </div>
         <div className="portal-grid">
-          <section className="workspace-view">
+          <section className="workspace-view portal-panel" data-panel="updates">
             <div className="workspace-view-heading"><div><p className="eyebrow">{profile.property}</p><h2>Announcements</h2></div></div>
             {announcements === null ? <p className="portal-empty">Loading…</p> : announcements.length ? <><div className="crud-list">{announcementsPager.pageItems.map((item) => <div className="crud-row" key={item.id}><div className="crud-main"><strong>{item.title}</strong><small>{item.message}</small></div><small className="portal-date">{formatDate(item.createdAt)}</small></div>)}</div><Pagination state={announcementsPager} label="Announcements" /></> : <div className="workspace-empty"><div className="workspace-empty-icon"><Bell size={20} /></div><h3>No announcements</h3><p>Notices from your property owner will appear here.</p></div>}
           </section>
-          <section className="workspace-view">
+          <section className="workspace-view portal-panel" data-panel="rent">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
             {profile.workspace.upi ? <UpiDirectPay payee={profile.workspace.upi} rent={profile.rent} monthlyRent={profile.rent.monthlyRent} pendingClaim={profile.pendingUpiClaim} onReported={onRefresh} onNotice={showNotice} /> : null}
             {payAction && <div className="pay-rent-row">{payAction}</div>}
             <ResidentRentPayments rent={profile.rent} />
           </section>
         </div>
-        <AppComingSoon />
+        <div className="portal-panel" data-panel="info"><AppComingSoon /></div>
         <PortalFooter businessName={profile.workspace.businessName} termsAndConditions={profile.workspace.termsAndConditions} privacyPolicy={profile.workspace.privacyPolicy} onNotice={showNotice} />
       </main>
       {isChangingPassword && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div>}
@@ -205,7 +215,6 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   )
 }
 
-/** Resident portal root: forces a first password after an access-key sign-in, then shows the home view. */
 /**
  * The resident portal, with the fire alarm laid over whichever screen is showing (including password
  * and ID verification), so every signed-in resident hears it.
@@ -215,6 +224,7 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
   return <><ResidentPortalScreens onSignOut={onSignOut} onFireRaised={fire.refresh} /><FireAlarmOverlay alerts={fire.alerts} /></>
 }
 
+/** Resident portal root: forces a first password after an access-key sign-in, then shows the home view. */
 function ResidentPortalScreens({ onSignOut, onFireRaised }: { onSignOut: () => void; onFireRaised: () => void }) {
   const [profile, setProfile] = useState<ResidentProfile | null>(null)
   const [loadError, setLoadError] = useState('')

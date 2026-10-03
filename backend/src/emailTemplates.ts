@@ -101,6 +101,24 @@ export function exitCancelledEmail(input: { business: string; name: string; prop
   ], 'You get this as a super admin (or the contact email) of this workspace.') }
 }
 
+/** To the owner when a resident reports a problem. */
+export function maintenanceRaisedEmail(input: { business: string; name: string; property: string; room: string; title: string; category: string; details: string; adminUrl: string }) {
+  return { subject: `Maintenance: ${input.title} (${input.property}, room ${input.room})`, ...layout(input.business, 'New maintenance request', [
+    { kind: 'p', text: `${input.name} reported a problem at ${input.property}.` },
+    { kind: 'rows', rows: [['Problem', input.title], ['Type', input.category], ['Room', input.room], ['Details', input.details || 'None given']] },
+    { kind: 'button', label: 'Open maintenance', href: input.adminUrl },
+  ], 'You get this as a super admin (or the contact email) of this workspace.') }
+}
+
+/** To the resident when the owner updates their request. */
+export function maintenanceUpdatedEmail(input: { business: string; name: string; title: string; status: string; note: string | null; portalUrl: string }) {
+  return { subject: `Your request "${input.title}" is ${input.status}`, ...layout(input.business, 'Maintenance update', [
+    { kind: 'p', text: `Hi ${input.name}, your request "${input.title}" is now ${input.status}.` },
+    ...(input.note ? [{ kind: 'p' as const, text: `Your property owner says: ${input.note}` }] : []),
+    { kind: 'button', label: 'Open the resident portal', href: input.portalUrl },
+  ]) }
+}
+
 /** A new notice from the owner. */
 export function announcementEmail(input: { business: string; name: string; title: string; message: string; property: string }) {
   return { subject: `${input.property}: ${input.title}`, ...layout(input.business, input.title, [

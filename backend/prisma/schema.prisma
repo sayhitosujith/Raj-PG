@@ -90,6 +90,7 @@ model Resident {
   roomId                  String?                  @unique
   room                    Room?                    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   movedOutFrom            String?
+  maintenanceRequests     MaintenanceRequest[]
   active                  Boolean                  @default(true)
   // Move-in date, separate from createdAt because residents are often added after they arrive.
   joinedAt                DateTime                 @default(now()) @db.Date
@@ -168,13 +169,27 @@ model Payment {
   createdAt         DateTime  @default(now())
 }
 
+// A resident's complaint or repair request (status: open, in_progress, resolved).
 model MaintenanceRequest {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   title      String
-  status     String   @default("open")
+  status     String    @default("open")
+  // plumbing, electrical, wifi, furniture, cleaning, appliance, other.
+  category   String    @default("other")
+  details    String    @default("")
+  // Optional photo as a data URL (resized in the browser).
+  photoUrl   String?
+  // The owner's reply, shown to the resident.
+  ownerNote  String?
   propertyId String
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  residentId String?
+  resident   Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
+  resolvedAt DateTime?
+
+  @@index([residentId])
 }
 
 model Activity {

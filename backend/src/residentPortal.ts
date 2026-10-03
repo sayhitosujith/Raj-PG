@@ -22,6 +22,7 @@ import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { currentWeather, weatherNear } from './weather.js'
 import { upcomingHolidays } from './holidays.js'
 import { featuredCricketMatch } from './cricket.js'
+import { residentMaintenanceRoutes } from './maintenance.js'
 import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 import { cancelExit, earliestExitDate, exitDues, noticeDaysFor, requestExit } from './exits.js'
 
@@ -187,6 +188,9 @@ residentPortalRouter.delete('/resident-portal/exit', requireResident, requirePor
   if (!await cancelExit(userId)) { response.status(409).json({ error: 'There is no open move-out request to cancel.' }); return }
   response.status(204).send()
 })
+
+// Complaints and repairs: list, report (with an optional photo) and view the photo of one's own requests.
+residentMaintenanceRoutes(residentPortalRouter, [requireResident, requirePortalAccess], (locals) => (locals.auth as AuthContext).userId)
 
 // The resident's property's active fire alarm (or null), polled every few seconds. Only a session is
 // required, not full portal access, so residents still awaiting ID approval hear the alarm too.

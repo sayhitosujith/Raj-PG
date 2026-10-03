@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Bell,
   Sparkles,
+  Wrench,
   Building2,
   ChevronDown,
   CircleDollarSign,
@@ -33,6 +34,7 @@ import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
 import { readPropertyFeatures, tenantHint, type TenantType } from './propertyFeatureOptions'
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
+import { MaintenanceView } from './MaintenanceView'
 import { HousekeepingStaffPanel } from './HousekeepingStaffPanel'
 import { FoodView } from './FoodView'
 import { formatMonth, type RentSummary } from './rent'
@@ -87,7 +89,9 @@ type Property = {
 const propertyCardsPerPage = 12
 
 type Activity = { title: string; description: string; amount: string; time: string; tone: string; icon: string }
-type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] }
+/** The Overview's computed text: stat-card detail lines, monthly insight and quick tip (absent in the offline fallback). */
+type DashboardInsights = { details: { properties: string; residents: string; collected: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string } }
+type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
 
 const initialDashboard: DashboardData = {
   source: 'fallback',
@@ -166,7 +170,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [selectedImage, setSelectedImage] = useState('')
   const [editingImage, setEditingImage] = useState('')
   const [dashboard, setDashboard] = useState(initialDashboard)
-  const { properties, activity, stats } = dashboard
+  const { properties, activity, stats, details, insight, tip } = dashboard
   // Only saved properties (with an id) can take a booking; the form needs just these fields.
   const bookableProperties: BookableProperty[] = properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, location: property.location, tenantType: property.tenantType ?? null, rentWithFood: property.rentWithFood ?? null, rentWithoutFood: property.rentWithoutFood ?? null }] : [])
 
@@ -403,6 +407,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <NavItem icon={WalletCards} label="Payments" active={activeView === 'Payments'} onClick={() => handleNavigation('Payments')} />
           <p className="nav-label nav-label-spaced">Manage</p>
           <NavItem icon={Sparkles} label="Housekeeping" badge={newHousekeepingCount ? String(newHousekeepingCount) : undefined} active={activeView === 'Housekeeping'} onClick={() => handleNavigation('Housekeeping')} />
+          <NavItem icon={Wrench} label="Maintenance" badge={stats.openRequests !== '0' ? stats.openRequests : undefined} active={activeView === 'Maintenance'} onClick={() => handleNavigation('Maintenance')} />
           <NavItem icon={UtensilsCrossed} label="Food" active={activeView === 'Food'} onClick={() => handleNavigation('Food')} />
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
           <NavItem icon={ShieldCheck} label="Super admins" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />
@@ -426,24 +431,25 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Booking requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Announcements' && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} onAdminChange={onAdminChange} />}
+          {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Booking requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Booking requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
-            <StatCard icon={Building2} label="Total properties" value={stats.properties} detail="All properties active" accent="teal" />
-            <StatCard icon={Users} label="Active residents" value={stats.residents} detail="↑ 8.4% from last month" accent="coral" />
-            <StatCard icon={CircleDollarSign} label="Collected this month" value={stats.collected} detail="78% of expected rent" accent="blue" />
-            <StatCard icon={ClipboardList} label="Open requests" value={stats.openRequests} detail="4 need your attention" accent="gold" />
+            <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />
+            <StatCard icon={Users} label="Active residents" value={stats.residents} detail={details?.residents ?? 'Sample data'} accent="coral" />
+            <StatCard icon={CircleDollarSign} label="Collected this month" value={stats.collected} detail={details?.collected ?? 'Sample data'} accent="blue" />
+            <StatCard icon={ClipboardList} label="Open requests" value={stats.openRequests} detail={details?.openRequests ?? 'Sample data'} accent="gold" />
           </section>
 
           <section className="dashboard-grid">
             <div className="panel properties-panel"><div className="panel-heading"><div><h2>Your properties</h2><p>Occupancy and performance at a glance</p></div><div className="filter-wrap"><select aria-label="Filter properties" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)}><option>All properties</option><option>Healthy</option><option>Watch</option></select><ChevronDown size={15} /></div></div><div className="property-list">{properties.filter((property) => propertyFilter === 'All properties' || property.status === propertyFilter).map((property) => <PropertyRow key={property.id ?? property.name} {...property} onOpen={() => showNotice(`${property.name} selected.`)} onEdit={() => setEditingProperty(property)} onDelete={() => deleteProperty(property)} />)}</div><button className="text-button" onClick={() => { setPropertyFilter('All properties'); showNotice(`Showing all ${properties.length} properties.`) }}>View all properties <span>↗</span></button></div>
-            <div className="panel activity-panel"><div className="panel-heading"><div><h2>Recent activity</h2><p>Latest updates from your workspace</p></div><button className="more-button" aria-label="More activity options" onClick={() => showNotice('Activity options opened.')}>•••</button></div><div className="activity-list">{activity.map(({ icon, ...item }) => <ActivityItem key={item.title} icon={icon === 'wallet' ? WalletCards : icon === 'door' ? DoorOpen : ClipboardList} {...item} />)}</div><button className="text-button" onClick={() => showNotice('All workspace activity is up to date.')}>See all activity <span>↗</span></button></div>
+            <div className="panel activity-panel"><div className="panel-heading"><div><h2>Recent activity</h2><p>Latest updates from your workspace</p></div></div><div className="activity-list">{!activity.length && <p className="portal-empty">Nothing yet. Rent payments, new residents, bookings, maintenance and move-out notices will appear here.</p>}{activity.map(({ icon, ...item }) => <ActivityItem key={item.title} icon={icon === 'wallet' ? WalletCards : icon === 'door' ? DoorOpen : ClipboardList} {...item} />)}</div><button className="text-button" onClick={() => handleNavigation('Payments')}>See all payments <span>↗</span></button></div>
           </section>
 
-          <section className="bottom-grid"><div className="insight-banner"><div className="insight-graphic"><span>₹</span><div className="insight-line line-one" /><div className="insight-line line-two" /></div><div><p className="eyebrow">Monthly insight</p><h2>Rent collection is up <strong>12.6%</strong></h2><p>Compared to the same period last month.</p></div><button className="outline-button" onClick={() => showNotice('Monthly rent report requested.')}>View report</button></div><div className="tip-card"><div className="tip-icon"><DoorOpen size={19} /></div><div><p className="eyebrow">Quick tip</p><h3>Keep your rooms moving</h3><p>2 rooms are ready to be listed at North Star.</p></div><button className="arrow-button" aria-label="Open quick tip" onClick={() => showNotice('North Star listing tip opened.')}>↗</button></div></section>
+          <section className="bottom-grid"><div className="insight-banner"><div className="insight-graphic"><span>₹</span><div className="insight-line line-one" /><div className="insight-line line-two" /></div><div><p className="eyebrow">Monthly insight</p><h2>{insight?.headline ?? 'Rent collection'} {insight?.emphasis && <strong>{insight.emphasis}</strong>}</h2><p>{insight?.note ?? 'Connect the database to see this month against last month.'}</p></div><button className="outline-button" onClick={() => handleNavigation('Payments')}>View payments</button></div><div className="tip-card"><div className="tip-icon"><DoorOpen size={19} /></div><div><p className="eyebrow">Quick tip</p><h3>{tip?.title ?? 'Keep your rooms moving'}</h3><p>{tip?.text ?? 'Free rooms appear here once the database is connected.'}</p></div><button className="arrow-button" aria-label="Open booking requests" title="Booking requests" onClick={() => handleNavigation('Booking requests')}>↗</button></div></section>
           <section className="panel holidays-panel"><div className="panel-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India from Google's calendar; plan meals, housekeeping and staff around them</p></div></div><HolidayList holidays={holidays} limit={6} /></section>
           </div>
         </div>

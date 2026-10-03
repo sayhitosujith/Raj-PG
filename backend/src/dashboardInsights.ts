@@ -1,0 +1,83 @@
+import { formatMonthLabel, propertyNow, propertyUtcOffsetMs } from './dates.js'
+import { prisma } from './db.js'
+
+const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN')}`
+const shortRupees = (amount: number) => (amount >= 1_00_000 ? `₹${(amount / 1_00_000).toFixed(2)}L` : rupees(amount))
+
+/** One row of the Overview's "Recent activity". `icon` picks wallet, door or clipboard on the web side. */
+type ActivityRow = { title: string; description: string; amount: string; time: string; tone: string; icon: 'wallet' | 'door' | 'clipboard'; at: number }
+
+// Start of a property-local (IST) month as an instant; `offset` months from the current one.
+function monthStart(offset: number) {
+  const [year, month] = propertyNow().date.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1 + offset, 1) - propertyUtcOffsetMs)
+}
+
+// "Just now", "45 min ago", "3 h ago", "Yesterday", then "29 Sept".
+function relativeTime(date: Date) {
+  const minutes = Math.round((Date.now() - date.getTime()) / 60_000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min ago`
+  if (minutes < 24 * 60) return `${Math.round(minutes / 60)} h ago`
+  if (minutes < 48 * 60) return 'Yesterday'
+  return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
+}
+
+/**
+ * Everything on the Overview that used to be placeholder text, worked out from real records: the
+ * detail line under each stat card, rent collected this month against what is expected, the change
+ * from last month, a tip about free rooms, and a recent-activity feed merged from rent payments, new
+ * residents, booking requests, maintenance requests and move-out notices.
+ */
+export async function dashboardInsights(properties: Array<{ name: string; totalRooms: number | null; rooms: Array<{ occupied: boolean }> }>) {
+  const thisMonth = monthStart(0)
+  const lastMonth = monthStart(-1)
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const [collected, collectedLast, expected, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: thisMonth } } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth } } }),
+    prisma.resident.aggregate({ _sum: { monthlyRent: true }, where: { active: true, roomId: { not: null }, rentTrackedFrom: { not: null } } }),
+    prisma.resident.count({ where: { joinedAt: { gte: thisMonth } } }),
+    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' } } }),
+    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, createdAt: { gte: weekAgo } } }),
+    prisma.rentPayment.findMany({ orderBy: { paidAt: 'desc' }, take: 6, select: { amount: true, month: true, paidAt: true, resident: { select: { name: true } } } }),
+    prisma.resident.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { name: true, createdAt: true, room: { select: { number: true, property: { select: { name: true } } } } } }),
+    prisma.booking.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { residentName: true, createdAt: true, property: { select: { name: true } } } }),
+    prisma.maintenanceRequest.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { title: true, createdAt: true, property: { select: { name: true } } } }),
+    prisma.resident.findMany({ where: { exitRequestedAt: { not: null } }, orderBy: { exitRequestedAt: 'desc' }, take: 4, select: { name: true, exitRequestedAt: true, exitDate: true } }),
+  ])
+
+  const collectedNow = collected._sum.amount ?? 0
+  const collectedBefore = collectedLast._sum.amount ?? 0
+  const expectedNow = expected._sum.monthlyRent ?? 0
+  const totalRooms = properties.reduce((sum, property) => sum + (property.totalRooms ?? property.rooms.length), 0)
+  const occupied = properties.reduce((sum, property) => sum + property.rooms.filter((room) => room.occupied).length, 0)
+  const freeRooms = Math.max(0, totalRooms - occupied)
+  const emptiest = properties.map((property) => ({ name: property.name, free: Math.max(0, (property.totalRooms ?? property.rooms.length) - property.rooms.filter((room) => room.occupied).length) })).sort((a, b) => b.free - a.free)[0]
+  const change = collectedBefore > 0 ? Math.round(((collectedNow - collectedBefore) / collectedBefore) * 1000) / 10 : null
+
+  const rows: ActivityRow[] = [
+    ...payments.map((payment) => ({ title: 'Rent received', description: `${payment.resident.name} · ${formatMonthLabel(payment.month)}`, amount: rupees(payment.amount), time: relativeTime(payment.paidAt), tone: 'sage', icon: 'wallet' as const, at: payment.paidAt.getTime() })),
+    ...residents.map((resident) => ({ title: 'New resident', description: `${resident.name}${resident.room ? ` · ${resident.room.property.name}, room ${resident.room.number}` : ''}`, amount: '', time: relativeTime(resident.createdAt), tone: 'blue', icon: 'door' as const, at: resident.createdAt.getTime() })),
+    ...bookings.map((booking) => ({ title: 'Booking request', description: `${booking.residentName} · ${booking.property.name}`, amount: '', time: relativeTime(booking.createdAt), tone: 'gold', icon: 'clipboard' as const, at: booking.createdAt.getTime() })),
+    ...requests.map((request) => ({ title: 'Maintenance request', description: `${request.title} · ${request.property.name}`, amount: '', time: relativeTime(request.createdAt), tone: 'coral', icon: 'clipboard' as const, at: request.createdAt.getTime() })),
+    ...exits.flatMap((resident) => resident.exitRequestedAt ? [{ title: 'Move-out notice', description: `${resident.name}${resident.exitDate ? ` · leaving ${resident.exitDate.toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' })}` : ''}`, amount: '', time: relativeTime(resident.exitRequestedAt), tone: 'coral', icon: 'door' as const, at: resident.exitRequestedAt.getTime() }] : []),
+  ]
+
+  return {
+    collected: shortRupees(collectedNow),
+    details: {
+      properties: freeRooms ? `${freeRooms} ${freeRooms === 1 ? 'room' : 'rooms'} free` : totalRooms ? 'All rooms full' : 'No rooms set up yet',
+      residents: joinedThisMonth ? `${joinedThisMonth} joined this month` : 'No new residents this month',
+      collected: expectedNow ? `${Math.round((collectedNow / expectedNow) * 100)}% of ${shortRupees(expectedNow)} expected` : 'No monthly rent set up yet',
+      openRequests: openRequests ? (newRequests ? `${newRequests} new this week` : 'Waiting for you') : 'All clear',
+    },
+    insight: change === null
+      ? { headline: `Collected ${shortRupees(collectedNow)} so far`, emphasis: '', note: 'Nothing was recorded last month to compare with.' }
+      : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} so far this month against ${shortRupees(collectedBefore)} last month.` },
+    tip: emptiest && emptiest.free > 0
+      ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'room is' : 'rooms are'} free at ${emptiest.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.` }
+      : { title: 'Every room is taken', text: totalRooms ? 'All rooms are occupied. Keep a waiting list from booking requests.' : 'Add rooms under Properties to start tracking occupancy.' },
+    activity: rows.sort((a, b) => b.at - a.at).slice(0, 6).map(({ at: _at, ...row }) => row),
+  }
+}

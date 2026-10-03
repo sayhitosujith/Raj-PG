@@ -6,6 +6,7 @@ const imageDataUrlPattern = /^data:(image\/jpeg|image\/png|image\/webp);base64,(
 const maxProfilePhotoBytes = 300_000
 const maxLogoBytes = 600_000
 const maxUpiQrBytes = 1_500_000
+const maxMaintenancePhotoBytes = 1_500_000
 
 /** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
 function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
@@ -41,6 +42,12 @@ export const sendPropertyImage = (response: Response, dataUrl: string | null | u
 
 /** Sends the workspace logo; public because the sign-in page shows it before anyone signs in. */
 export const sendLogo = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No logo.')
+
+/** Why a photo attached to a maintenance request is unacceptable, or null when it is fine. */
+export const findMaintenancePhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxMaintenancePhotoBytes, 'a photo')
+
+/** Sends a maintenance request's photo (private: the resident who raised it and owners). */
+export const sendMaintenancePhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No photo.')
 
 /** Why an uploaded UPI QR image is unacceptable, or null when it is fine. */
 export const findUpiQrProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxUpiQrBytes, 'a QR image')

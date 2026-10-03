@@ -3,7 +3,7 @@ import { HousekeepingStatus, type HousekeepingSlot } from '@prisma/client'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
 import { isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
-import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail, exitRequestedEmail, exitDecisionEmail, exitDateChangedEmail, exitCancelledEmail } from './emailTemplates.js'
+import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail, exitRequestedEmail, exitDecisionEmail, exitDateChangedEmail, exitCancelledEmail, maintenanceRaisedEmail, maintenanceUpdatedEmail } from './emailTemplates.js'
 import { displayName } from './names.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { getSettings, slotDetails } from './settings.js'
@@ -201,6 +201,25 @@ export async function notifyExitCancelled(residentId: string, cancelledDate: Dat
   if (!resident) return
   const message = exitCancelledEmail({ business: businessName, name: resident.name, property: resident.room?.property.name ?? '', room: resident.room?.number ?? '—', date: longDate(cancelledDate), adminUrl: appUrl() })
   for (const to of recipients) await deliver('email', null, to, 'exit_cancelled', `exit-cancel:${residentId}:${Date.now()}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
+}
+
+const statusWords: Record<string, string> = { open: 'open', in_progress: 'in progress', resolved: 'resolved' }
+
+/** Emails every super admin (and the contact email) about a resident's new maintenance request. */
+export async function notifyMaintenanceRaised(requestId: string) {
+  if (!isEmailEnabled()) return
+  const [{ businessName }, request, recipients] = await Promise.all([getSettings(), prisma.maintenanceRequest.findUnique({ where: { id: requestId }, select: { title: true, category: true, details: true, property: { select: { name: true } }, resident: { select: { name: true, room: { select: { number: true } } } } } }), bookingAlertRecipients()])
+  if (!request) return
+  const message = maintenanceRaisedEmail({ business: businessName, name: request.resident?.name ?? 'A resident', property: request.property.name, room: request.resident?.room?.number ?? '—', title: request.title, category: request.category, details: request.details, adminUrl: appUrl() })
+  for (const to of recipients) await deliver('email', null, to, 'maintenance_raised', `maintenance:${requestId}:${to.toLowerCase()}`, () => sendEmail({ to, ...message }))
+}
+
+/** Tells the resident their request changed status or got a reply (email, honouring their preference). */
+export async function notifyMaintenanceUpdated(requestId: string) {
+  const [{ businessName }, request] = await Promise.all([getSettings(), prisma.maintenanceRequest.findUnique({ where: { id: requestId }, select: { title: true, status: true, ownerNote: true, updatedAt: true, resident: { select: recipientSelect } } })])
+  if (!request?.resident) return
+  const message = maintenanceUpdatedEmail({ business: businessName, name: displayName(request.resident.name), title: request.title, status: statusWords[request.status] ?? request.status, note: request.ownerNote, portalUrl: appUrl() })
+  await toEmail(request.resident, 'maintenance_updated', message, `maintenance-update:${requestId}:${request.updatedAt.getTime()}`)
 }
 
 /** A rent reminder or overdue notice; the key makes it once per resident, month, stage and channel. */

@@ -27,8 +27,10 @@ import { roomsAdminRouter } from './rooms.js'
 import { holidaysAdminRouter } from './holidays.js'
 import { fireAlertAdminRouter } from './fireAlerts.js'
 import { exitAdminRouter } from './exits.js'
+import { maintenanceAdminRouter } from './maintenance.js'
 import { superAdminRouter } from './superAdmins.js'
 import { logIntegrations } from './startupReport.js'
+import { dashboardInsights } from './dashboardInsights.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -78,6 +80,7 @@ app.use('/api', roomsAdminRouter)
 app.use('/api', holidaysAdminRouter)
 app.use('/api', fireAlertAdminRouter)
 app.use('/api', exitAdminRouter)
+app.use('/api', maintenanceAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered
@@ -238,25 +241,28 @@ app.get('/api/dashboard', async (_request, response) => {
   }
 
   try {
-    const [properties, residents, payments, openRequests, pendingBookings, activities] = await prisma.$transaction([
+    const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
       prisma.property.findMany({ include: { rooms: true } }),
       prisma.resident.count({ where: { active: true } }),
-      prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'paid' } }),
-      prisma.maintenanceRequest.count({ where: { status: 'open' } }),
+      prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' } } }),
       prisma.booking.count({ where: { status: 'new' } }),
-      prisma.activity.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
     ])
+    const insights = await dashboardInsights(properties)
 
     response.json({
       source: 'postgresql',
       stats: {
         properties: String(properties.length).padStart(2, '0'),
         residents: String(residents),
-        collected: `₹${((payments._sum.amount ?? 0) / 100000).toFixed(2)}L`,
+        collected: insights.collected,
         openRequests: String(openRequests),
         // Drives the Bookings badge in the sidebar: requests still waiting for a decision.
         pendingBookings,
       },
+      // Detail lines under the stat cards, the monthly insight and the quick tip, all from real data.
+      details: insights.details,
+      insight: insights.insight,
+      tip: insights.tip,
       properties: properties.map((property) => {
         return {
           id: property.id,
@@ -277,14 +283,7 @@ app.get('/api/dashboard', async (_request, response) => {
           rentWithoutFood: property.rentWithoutFood,
         }
       }),
-      activity: activities.map((activity) => ({
-        title: activity.title,
-        description: activity.description,
-        amount: activity.amountLabel,
-        time: activity.timeLabel,
-        tone: activity.tone,
-        icon: activity.title.toLowerCase().includes('rent') ? 'wallet' : 'clipboard',
-      })),
+      activity: insights.activity,
     })
   } catch (error) {
     console.error('Dashboard query failed:', error)

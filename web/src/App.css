@@ -1650,3 +1650,55 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(82 68 140); background: rgb(255 255 255 / .06); color: rgb(196 180 255); }
 /* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
 @media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
+
+/* Bottom of the resident portal in purple, edge to edge: the footer becomes a full-width band that
+   meets the bottom of the page, and the tree strip behind it is tinted purple to match. */
+.portal-shell .page-content { padding-bottom: 0; }
+.portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(205 198 236); border-radius: 0; }
+:root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(62 50 110); }
+@media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 230px); padding-left: calc(50vw - 50% + 230px); } .referral-share { right: calc(50vw - 50% + 16px); } }
+.portal-shell .scenery-back { color: rgb(124 102 200 / .14); }
+.portal-shell .scenery-front { color: rgb(124 102 200 / .24); }
+:root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(150 128 230 / .12); }
+:root[data-theme="dark"] .portal-shell .scenery-front { color: rgb(150 128 230 / .2); }
+
+/* Narrow cards: show the whole property image (a logo-style picture was being cropped to a strip). */
+@container (max-width: 640px) { .portal-shell .portal-property-photo { height: auto; max-height: 200px; aspect-ratio: 16 / 9; object-fit: contain; } }
+
+/* Phone tabs: a fixed bottom bar; only the active tab's sections show. Hidden on wider screens. */
+.portal-tabs { display: none; }
+div.portal-panel { display: contents; }
+@media (max-width: 720px) {
+  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(205 198 236); background: rgb(246 244 254 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(40 30 90 / .1); }
+  .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(110 100 150); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+  .portal-tabs button.is-active { color: rgb(88 64 170); background: rgb(124 102 200 / .14); }
+  :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(62 50 110); background: rgb(28 22 58 / .96); }
+  :root[data-theme="dark"] .portal-tabs button { color: rgb(170 160 210); }
+  :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(220 210 255); background: rgb(150 128 230 / .18); }
+  .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
+  .page-content[data-tab="home"] [data-panel]:not([data-panel="home"]),
+  .page-content[data-tab="services"] [data-panel]:not([data-panel="services"]),
+  .page-content[data-tab="rent"] [data-panel]:not([data-panel="rent"]),
+  .page-content[data-tab="updates"] [data-panel]:not([data-panel="updates"]),
+  .page-content[data-tab="info"] [data-panel]:not([data-panel="info"]) { display: none; }
+  /* The welcome row (greeting, amenities) is part of Home only. */
+  .page-content:not([data-tab="home"]) .welcome-row { display: none; }
+}
+
+/* Complaints & repairs (resident) and the owner's Maintenance page. */
+.maintenance-category { margin-left: 6px; padding: 1px 7px; border-radius: 999px; color: #45544f; background: #eef2ef; font-size: 10px; font-weight: 700; }
+.maintenance-note { color: var(--teal) !important; }
+.maintenance-row { align-items: flex-start; }
+.maintenance-photo-field { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.maintenance-photo-field img, .maintenance-photo-empty { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; }
+.maintenance-photo-empty { display: grid; place-items: center; color: var(--muted); background: #f1f5f2; }
+.maintenance-photo-button { cursor: pointer; }
+.maintenance-list { display: grid; gap: 10px; margin-top: 14px; }
+.maintenance-item { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.maintenance-item-head { display: flex; justify-content: space-between; gap: 12px; }
+.maintenance-item-head > div { display: grid; gap: 3px; min-width: 0; }
+.maintenance-item-head strong { color: var(--ink); font-size: 13px; }
+.maintenance-item-head small { color: var(--muted); font-size: 11px; }
+.maintenance-item-head p { margin: 2px 0 0; color: #45544f; font-size: 12px; }
+.maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
