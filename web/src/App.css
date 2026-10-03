@@ -1575,5 +1575,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-exit-date label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .resident-exit-date input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 /* Resident's reminder that sign-in ends on the exit date (approved move-out). */
-.exit-signin-note { max-width: 340px; margin: 0; color: #b5523f; font-size: 11px; line-height: 1.45; text-align: right; }
-@media (max-width: 640px) { .exit-signin-note { text-align: left; } }
+.exit-signin-note { display: flex; align-items: flex-start; gap: 8px; max-width: 360px; padding: 10px 12px; border: 1px solid #f3d3cb; border-left: 3px solid #c8553f; border-radius: 9px; color: #8a3b2c; background: #fff4f1; font-size: 11px; line-height: 1.45; text-align: left; }
+.exit-signin-note > svg { flex: none; margin-top: 1px; color: #c8553f; }
+.exit-signin-note p { margin: 0; }
+.exit-signin-note strong { color: #b5523f; }
+:root[data-theme="dark"] .exit-signin-note { border-color: rgb(120 50 40); border-left-color: rgb(230 110 90); color: rgb(250 200 190); background: rgb(60 22 18 / .7); }
+:root[data-theme="dark"] .exit-signin-note strong, :root[data-theme="dark"] .exit-signin-note > svg { color: rgb(240 140 120); }
