@@ -57,7 +57,7 @@ function parseFaqs(text: string) {
   })
 }
 
-type PropertyInfo = { location: string; wifiName: string | null; wifiPassword: string | null; contacts: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
+type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
 
 /** Everything the Info tab shows, for the resident's property and the business. */
 export function residentInfoOf(property: PropertyInfo | null | undefined, settings: { extraHouseRules: string; faqs: string }) {
@@ -65,7 +65,9 @@ export function residentInfoOf(property: PropertyInfo | null | undefined, settin
     wifi: property?.wifiName ? { name: property.wifiName, password: property.wifiPassword } : null,
     contacts: parseContacts(property?.contacts ?? null),
     times: { checkIn: property?.checkInTime ?? null, checkOut: property?.checkOutTime ?? null, gateClosing: property?.gateClosingTime ?? null },
+    property: property?.name ?? '',
     location: property?.location ?? '',
+    city: property?.city ?? '',
     rules: settings.extraHouseRules.split('\n').map((line) => line.replace(/^[\s•\-–*\d.)]+/, '').trim()).filter(Boolean),
     faqs: parseFaqs(settings.faqs),
   }

@@ -1,20 +1,23 @@
 import { useState } from 'react'
-import { Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle, MapPin, Phone, Wifi } from 'lucide-react'
+import { Building2, Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle, MapPin, Phone, Wifi } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
+import { LocationLink } from './LocationLink'
 
 /** The Info tab's data, as /resident-portal/me sends it (see the backend's residentInfo.ts). */
 export type ResidentInfoData = {
   wifi: { name: string; password: string | null } | null
   contacts: Array<{ label: string; phone: string }>
   times: { checkIn: string | null; checkOut: string | null; gateClosing: string | null }
+  /** Property name, so a typed area opens the right map search. */
+  property: string
   location: string
+  city: string
   rules: string[]
   faqs: Array<{ question: string; answer: string }>
 }
 
 // "22:30" → "10:30 pm".
 const clockLabel = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'am' : 'pm'}` }
-const isLink = (value: string) => /^https?:\/\//i.test(value)
 
 /** Wi-Fi name and password with copy buttons; the password is hidden until tapped. */
 function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi']>; onNotice: (message: string) => void }) {
@@ -31,12 +34,12 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
 }
 
 /**
- * The Info tab's useful details: Wi-Fi, important contacts (tap to call), the property's address and
- * check-in / check-out / gate times, and FAQs. Each card appears only when the owner has filled it in.
+ * The Info tab's useful details: Wi-Fi, important contacts (tap to call), the property's city and
+ * location (a map link), check-in / check-out / gate times, and FAQs. Each card appears only when the owner has filled it in.
  */
 export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNotice: (message: string) => void }) {
   const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
-  const hasDetails = Boolean(info.location) || times.length > 0
+  const hasDetails = Boolean(info.city || info.location) || times.length > 0
   if (!info.wifi && !info.contacts.length && !hasDetails && !info.faqs.length) return null
   return (
     <section className="workspace-view resident-info">
@@ -49,7 +52,8 @@ export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNot
         </div>}
         {hasDetails && <div className="info-card">
           <h3><DoorOpen size={16} /> Property details</h3>
-          {info.location && <div className="info-line"><span><MapPin size={12} /> Address</span>{isLink(info.location) ? <a className="info-call" href={info.location} target="_blank" rel="noreferrer">Directions</a> : <strong>{info.location}</strong>}</div>}
+          {info.city && <div className="info-line"><span><Building2 size={12} /> City</span><strong>{info.city}</strong></div>}
+          {info.location && <div className="info-line"><span><MapPin size={12} /> Location</span><LocationLink className="info-call" property={info.property} location={info.location} /></div>}
           {times.map(([label, time]) => <div className="info-line" key={label}><span><Clock size={12} /> {label}</span><strong>{clockLabel(time)}</strong></div>)}
         </div>}
       </div>
