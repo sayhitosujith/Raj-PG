@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { cityDetail, cityViewBox, skyline, type CityLayerDetail } from './cityBuildings'
 import { isRainy, type WeatherCondition } from './weather'
 
 // Day runs 6 am to 6 pm on the viewer's own clock (the device's local time zone).
@@ -60,24 +59,8 @@ const birds = [
 ]
 
 /**
- * One layer of the city: building outlines, then their windows (glass by day; by night a share lit,
- * a few flickering) and balcony ledges, so each nearer layer covers the one behind it.
- */
-function CityLayer({ name, outlines, detail, isDark }: { name: 'far' | 'middle' | 'near'; outlines: string; detail: CityLayerDetail; isDark: boolean }) {
-  return (
-    <g className={`city-layer city-${name}-layer`}>
-      <path className={`city-${name}`} d={outlines} />
-      <path className="city-glass" d={detail.glass} />
-      {detail.ledges && <path className="city-ledges" d={detail.ledges} />}
-      {isDark && <path className="city-lit" d={detail.lit} />}
-      {isDark && detail.flicker.map((light, index) => <rect key={index} className="city-flicker" x={light.x} y={light.y} width={light.width} height={light.height} style={{ animationDelay: `${light.delay}s` }} />)}
-    </g>
-  )
-}
-
-/**
  * Decorative sky behind the top of the resident portal, following the viewer's local time: by day a
- * sun in a blue sky, by night a moon with twinkling stars; both over a three-layer city skyline (windows lit after dark), with
+ * sun in a blue sky, by night a moon with twinkling stars; both with
  * drifting clouds and a small flock of birds, fading into the page below. When it is raining in
  * the property's city the sky turns overcast instead: no sun, moon, stars or birds, darker clouds,
  * falling rain and occasional lightning (more often in a thunderstorm). Drawn inline so it needs no
@@ -86,8 +69,6 @@ function CityLayer({ name, outlines, detail, isDark }: { name: 'far' | 'middle' 
 export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
   const daytime = useDaytime()
   const raining = isRainy(condition)
-  // Windows only show as lights when the sky is dark: at night, or under rain clouds.
-  const isDark = !daytime || raining
   return (
     <div className={`portal-sky ${daytime ? 'is-day' : 'is-night'}${raining ? ' is-rainy' : ''}`} aria-hidden="true">
       {raining ? null : daytime ? <div className="sky-sun" /> : <>
@@ -109,13 +90,6 @@ export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
               </svg>
             ))}
           </div>}
-      {/* Kept in proportion and cropped at the sides on narrow screens; layers are drawn back to front, each
-          layer's windows and ledges just above it so nearer buildings cover them. Windows light up in the dark. */}
-      <svg className="sky-city" viewBox={cityViewBox} preserveAspectRatio="xMidYMax slice">
-        <CityLayer name="far" outlines={skyline.far} detail={cityDetail.far} isDark={isDark} />
-        <CityLayer name="middle" outlines={skyline.middle} detail={cityDetail.middle} isDark={isDark} />
-        <CityLayer name="near" outlines={skyline.near} detail={cityDetail.near} isDark={isDark} />
-      </svg>
     </div>
   )
 }

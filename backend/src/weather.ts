@@ -94,13 +94,23 @@ async function cachedWeather(cacheKey: string, load: () => Promise<Weather | nul
   return weather
 }
 
+/**
+ * The weather code is a model's label and often says drizzle, rain or thunderstorm while the same
+ * model has no precipitation falling, which made the portal sky rain under a dry sky. Rain is shown
+ * only when precipitation is actually reported (mm over the last 15 minutes); otherwise it reads as cloud.
+ */
+function confirmRain(described: { condition: WeatherCondition; description: string }, precipitation: number | undefined) {
+  const isWet = described.condition === 'rain' || described.condition === 'storm'
+  return isWet && !(precipitation && precipitation > 0) ? { condition: 'clouds' as const, description: 'cloudy' } : described
+}
+
 async function readWeather(place: Place, name: string): Promise<Weather | null> {
   const url = new URL(forecastUrl)
   url.searchParams.set('latitude', String(place.latitude))
   url.searchParams.set('longitude', String(place.longitude))
-  url.searchParams.set('current', 'temperature_2m,weather_code,is_day')
-  const body = await getJson<{ current?: { temperature_2m: number; weather_code: number; is_day: number } }>(url)
-  return body?.current ? { city: name, temperature: Math.round(body.current.temperature_2m), ...describeCode(body.current.weather_code), isDay: body.current.is_day === 1 } : null
+  url.searchParams.set('current', 'temperature_2m,weather_code,is_day,precipitation')
+  const body = await getJson<{ current?: { temperature_2m: number; weather_code: number; is_day: number; precipitation?: number } }>(url)
+  return body?.current ? { city: name, temperature: Math.round(body.current.temperature_2m), ...confirmRain(describeCode(body.current.weather_code), body.current.precipitation), isDay: body.current.is_day === 1 } : null
 }
 
 /**

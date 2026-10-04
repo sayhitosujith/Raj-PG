@@ -559,15 +559,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-topbar { height: auto; min-height: 76px; padding-block: 8px; }
 .portal-topbar .brand-logo { max-height: 84px; }
 @media (max-width: 560px) { .portal-topbar .brand-logo { max-height: 64px; } }
-/* Light mode: the navy logo tinted to a deeper brand green, lightened less than in dark mode so it
-   keeps contrast on white and the pale purple portal header. */
-.brand-logo, .logo-field:not(.is-tall) .logo-preview img { filter: brightness(1.4) sepia(1) hue-rotate(95deg) saturate(2.8); }
-/* Dark mode: the logo (navy, made for light backgrounds) is lightened and tinted to the brand green
-   so it reads on dark surfaces; lightening first lets the dark parts take the colour. A faint outline
-   keeps the edges crisp while the background stays transparent. Applies everywhere BrandMark shows
-   (sidebar, portal header and footer, sign-in, booking, ID check) and the Settings preview, so the
-   preview shows what residents will see. */
-:root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: brightness(2.2) sepia(1) hue-rotate(95deg) saturate(2.6) drop-shadow(0 0 1px rgb(255 255 255 / .4)) drop-shadow(0 0 6px rgb(40 200 150 / .2)); }
+/* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
+   vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
+   text readable while the background stays transparent (a solid panel showed as a white box).
+   The Settings preview gets the same treatment so it shows what residents will see. */
+:root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: drop-shadow(0 0 1px rgb(255 255 255 / .85)) drop-shadow(0 0 5px rgb(255 255 255 / .28)); }
 :root[data-theme="dark"] .logo-preview { background: rgb(255 255 255 / .06); }
 .logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
 .logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
@@ -1022,16 +1018,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .status-pill.coral { color: #b5523f; background: #fbe6e1; }
 
 /*
- * Resident portal sky. These default rules are the night (.is-night): a moon rising over a
- * three-layer city skyline with lit windows and twinkling stars, at the top of the page and fading into the page below. The
+ * Resident portal sky. These default rules are the night (.is-night): a moon rising with
+ * twinkling stars, at the top of the page and fading into the page below. The
  * day (.is-day) overrides follow. Colours are rgb() on purpose: the generated dark theme only
  * remaps hex and named colours, so the dark palette below is hand-picked instead. It scrolls with
  * the page (absolute, not fixed) so it never sits behind lower sections.
  */
 .portal-sky {
   position: absolute; z-index: -1; top: 0; right: 0; left: 0; height: min(640px, 85vh); overflow: hidden; pointer-events: none;
-  /* Light theme: an early-evening twilight, dark enough at the top for stars to show. */
-  background: linear-gradient(180deg, rgb(58 78 128 / .75) 0%, rgb(104 118 170 / .55) 34%, rgb(176 168 206 / .45) 60%, rgb(226 214 232 / .3) 80%, transparent 100%);
+  /* Light theme: a brand-green evening, dark enough at the top for stars to show. */
+  background: linear-gradient(180deg, rgb(20 92 74 / .8) 0%, rgb(46 132 104 / .6) 34%, rgb(120 184 156 / .45) 60%, rgb(206 232 218 / .3) 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, black 55%, transparent 100%); mask-image: linear-gradient(180deg, black 55%, transparent 100%);
   animation: sky-fade 3s ease-out both;
 }
@@ -1043,27 +1039,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22);
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, moon-glow 7s ease-in-out 4s infinite alternate;
 }
-.sky-city { position: absolute; right: 0; bottom: 12%; left: 0; width: 100%; height: 46%; animation: skyline-in 2.4s ease-out both; }
-/* Light theme ranges stay pale so the text over them keeps its contrast; solid, not translucent,
-   so a far range's shading never shows through the ranges in front of it. */
-.city-far { fill: rgb(166 170 208); }
-.city-middle { fill: rgb(148 156 198); }
-.city-near { fill: rgb(122 136 166); }
-/* Snow caps on the far peaks (bright by day, moonlit at night), and each slope's shaded face. */
 @keyframes sky-fade { from { opacity: .3; } to { opacity: 1; } }
 @keyframes star-twinkle { from { opacity: .25; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
 @keyframes moon-rise { from { transform: translate(-50%, 60%); opacity: .3; } to { transform: translate(-50%, -50%); opacity: 1; } }
 @keyframes moon-glow { from { box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22); } to { box-shadow: 0 0 55px 18px rgb(240 238 220 / .55), 0 0 150px 75px rgb(200 210 255 / .28); } }
-@keyframes skyline-in { from { transform: translateY(8%); opacity: 0; } to { transform: none; opacity: 1; } }
-/* Dark theme: a deep navy night with brighter stars and near-black ranges. */
-:root[data-theme="dark"] .portal-sky { background: linear-gradient(180deg, rgb(8 14 34 / .95) 0%, rgb(18 28 58 / .85) 38%, rgb(36 40 78 / .6) 64%, rgb(30 34 56 / .3) 82%, transparent 100%); }
+/* Dark theme: a deep green night with brighter stars. */
+:root[data-theme="dark"] .portal-sky { background: linear-gradient(180deg, rgb(4 24 20 / .96) 0%, rgb(10 44 36 / .88) 38%, rgb(18 62 50 / .62) 64%, rgb(16 40 34 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-moon { box-shadow: 0 0 45px 14px rgb(240 238 220 / .35), 0 0 140px 70px rgb(150 170 255 / .16); animation-name: moon-rise; }
-:root[data-theme="dark"] .city-far { fill: rgb(44 50 88 / .85); }
-:root[data-theme="dark"] .city-middle { fill: rgb(28 34 64 / .92); }
-:root[data-theme="dark"] .city-near { fill: rgb(16 22 36 / .96); }
 /*
  * Daytime (6 am to 6 pm on the viewer's clock): a clear blue sky with a warm sun where the moon sits,
- * no stars, bright clouds and green-blue ranges. The dark theme keeps a deep blue day so the light
+ * no stars and bright clouds. The dark theme keeps a deep blue day so the light
  * text over it stays readable.
  */
 .portal-sky.is-day { background: linear-gradient(180deg, rgb(98 166 226 / .72) 0%, rgb(140 194 238 / .55) 36%, rgb(196 224 244 / .4) 62%, rgb(232 242 248 / .25) 82%, transparent 100%); }
@@ -1074,19 +1059,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, sun-glow 6s ease-in-out 4s infinite alternate;
 }
 @keyframes sun-glow { from { box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3); } to { box-shadow: 0 0 55px 20px rgb(255 214 110 / .65), 0 0 160px 85px rgb(255 226 150 / .36); } }
-.is-day .city-far { fill: rgb(186 210 230); }
-.is-day .city-middle { fill: rgb(160 184 204); }
-.is-day .city-near { fill: rgb(132 160 180); }
 .is-day .sky-cloud { --cloud: rgb(255 255 255 / .95); opacity: .85; }
 :root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(22 58 104 / .95) 0%, rgb(32 74 122 / .82) 38%, rgb(40 72 108 / .55) 64%, rgb(30 44 60 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-sun { box-shadow: 0 0 40px 12px rgb(255 206 100 / .4), 0 0 130px 65px rgb(255 214 130 / .18); animation-name: moon-rise; }
-:root[data-theme="dark"] .is-day .city-far { fill: rgb(40 74 108 / .85); }
-:root[data-theme="dark"] .is-day .city-middle { fill: rgb(26 56 78 / .92); }
-:root[data-theme="dark"] .is-day .city-near { fill: rgb(16 34 42 / .96); }
 :root[data-theme="dark"] .is-day .sky-cloud { --cloud: rgb(196 212 232 / .5); opacity: .6; }
-@media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } .sky-city { bottom: 30%; height: 30%; } }
-@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun, .sky-city { animation: none; } }
-@keyframes city-window { 0%, 100% { opacity: .8; } 45%, 55% { opacity: .1; } }
+@media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } }
+@media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun { animation: none; } }
 
 /* Housekeeping staff: the owner's panel on the Housekeeping page and the line residents see. */
 .housekeeping-staff { display: grid; gap: 12px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
@@ -1124,7 +1102,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 }
 @keyframes cloud-drift { from { transform: translateX(0); } to { transform: translateX(calc(-100vw - 100% - 40px)); } }
 /* Moonlit clouds at night: dim blue-grey rather than white. */
-:root[data-theme="dark"] .sky-cloud { --cloud: rgb(110 122 160 / .5); opacity: .55; }
+:root[data-theme="dark"] .sky-cloud { --cloud: rgb(100 140 126 / .5); opacity: .55; }
 @media (prefers-reduced-motion: reduce) { .sky-cloud { animation: none; left: var(--cloud-rest, 60%); } }
 /*
  * A flock of four birds crossing the sky left to right (against the clouds' drift) with a gentle
@@ -1303,10 +1281,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .expired-note { color: #b5523f; font-weight: 700; }
 .resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
-/* Sign-in page: a plain brand-green background behind the card, deeper in dark mode. rgb() so the
-   generated dark theme leaves it alone. */
-.login-shell.is-green { background: rgb(22 124 104); }
-:root[data-theme="dark"] .login-shell.is-green { background: rgb(8 44 36); }
+/* Sign-in page: Mt Fuji over the Tokyo skyline at sunset behind the card. Photo by Claudio Pantoni on
+   Unsplash (photo-1741230127615-8334deb6b463), Unsplash License: free for commercial use; desktop gets a
+   landscape crop around Fuji, phones the full portrait frame. Self-hosted in public/ so sign-in depends on no third party;
+   a smaller copy serves phones. The overlay keeps the card readable; the gradient underneath shows
+   while the photo loads. Colours are rgb() so the generated dark theme leaves them alone. */
+.login-shell.has-city { position: relative; isolation: isolate; overflow: hidden; }
+.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji.jpg') center 30% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
+@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji-small.jpg') center 42% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
+:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
+@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
 
 /* Resident portal on phones: denser layout so the page is shorter to scroll. Container queries
    (each card is a container) keep it right whatever the card width; the viewport query only
@@ -1576,26 +1560,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .exit-signin-note { border-color: rgb(120 50 40); border-left-color: rgb(230 110 90); color: rgb(250 200 190); background: rgb(60 22 18 / .7); }
 :root[data-theme="dark"] .exit-signin-note strong, :root[data-theme="dark"] .exit-signin-note > svg { color: rgb(240 140 120); }
 
-/* The sky now fills the window and stays put while the cards scroll over it, so the city stretches
-   down to the tree line instead of fading out under the greeting. The buildings stand just behind
-   the trees (drawn after the sky), at about the height of the scenery strip. */
+/* The sky fills the window and stays put while the cards scroll over it, down to the tree line
+   instead of fading out under the greeting. */
 .portal-sky { position: fixed; height: 100vh; -webkit-mask-image: none; mask-image: none; }
-.sky-city { bottom: calc(clamp(120px, 22vh, 220px) * .45); height: min(58vh, 560px); }
-@media (max-width: 720px) { .sky-city { bottom: calc(clamp(120px, 22vh, 220px) * .45); height: 42vh; } }
-
-/* Skyline detail: window glass (a darker tint by day), balcony ledges (a lighter line), and at night
-   warm lit windows with a few flickering. Far windows are fainter so the layers read as depth. */
-.city-glass { fill: rgb(40 58 92 / .22); }
-.city-far-layer .city-glass { fill: rgb(40 58 92 / .12); }
-.city-ledges { fill: rgb(255 255 255 / .28); }
-.is-night .city-glass, .is-rainy .city-glass { fill: rgb(0 0 10 / .22); }
-.is-night .city-ledges, .is-rainy .city-ledges { fill: rgb(255 255 255 / .06); }
-:root[data-theme="dark"] .city-glass { fill: rgb(0 0 0 / .28); }
-:root[data-theme="dark"] .city-ledges { fill: rgb(255 255 255 / .05); }
-.city-lit { fill: rgb(255 214 140); opacity: .85; }
-.city-far-layer .city-lit { opacity: .55; }
-.city-flicker { fill: rgb(255 214 140); opacity: .85; animation: city-window 6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .city-flicker { animation: none; } }
 
 /* Live cricket card in the middle of the resident's meals row. */
 .cricket-score { display: grid; gap: 4px; min-width: 200px; max-width: 320px; margin-right: auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
@@ -1615,14 +1582,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .cricket-status { overflow: hidden; margin: 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .cricket-live { animation: none; } }
 
-/* Resident portal header in purple, matching the twilight sky beneath it. A light lavender keeps the
-   logo, title and buttons readable; dark mode uses a deep violet. */
-.portal-topbar { border-bottom-color: rgb(205 198 236); background: linear-gradient(90deg, rgb(236 232 252), rgb(222 216 248)); }
-.portal-topbar .home-title { color: rgb(88 64 170); }
-.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(200 192 236); background: rgb(255 255 255 / .7); }
-:root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(62 50 110); background: linear-gradient(90deg, rgb(34 26 70), rgb(46 34 92)); }
-:root[data-theme="dark"] .portal-topbar .home-title { color: rgb(196 180 255); }
-:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(82 68 140); background: rgb(255 255 255 / .06); }
+/* Resident portal header in green, matching the evening sky beneath it. A pale mint keeps the logo
+   and buttons readable; dark mode uses a deep green. The page title is brand green, like the logo. */
+.portal-topbar { border-bottom-color: rgb(190 226 210); background: linear-gradient(90deg, rgb(232 248 240), rgb(214 240 228)); }
+.portal-topbar .home-title { color: rgb(22 124 104); }
+.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(186 222 204); background: rgb(255 255 255 / .7); }
+:root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(34 90 72); background: linear-gradient(90deg, rgb(12 44 36), rgb(18 60 48)); }
+:root[data-theme="dark"] .portal-topbar .home-title { color: rgb(80 210 160); }
+:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(50 120 96); background: rgb(255 255 255 / .06); }
 
 /* Phones and narrow cards: the emergency buttons and the move-out status/note move onto their own
    full-width row under the photo and heading, instead of squeezing both into one tall row. */
@@ -1638,27 +1605,27 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .today-tile-copy strong { white-space: normal; }
 }
 
-/* Resident portal footer as a purple band to match the header: lavender in light mode, deep violet
+/* Resident portal footer as a green band to match the header: pale mint in light mode, deep green
    in dark mode, with the links and share icons tinted to suit. */
-.portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(205 198 236); border-radius: 12px; background: linear-gradient(90deg, rgb(236 232 252), rgb(222 216 248)); color: rgb(88 72 140); }
-.portal-terms .text-link { color: rgb(88 64 170); }
-.portal-terms .referral-icon { border-color: rgb(200 192 236); background: rgb(255 255 255 / .7); color: rgb(88 64 170); }
-:root[data-theme="dark"] .portal-terms { border-color: rgb(62 50 110); background: linear-gradient(90deg, rgb(34 26 70), rgb(46 34 92)); color: rgb(200 190 240); }
-:root[data-theme="dark"] .portal-terms .text-link { color: rgb(196 180 255); }
-:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(82 68 140); background: rgb(255 255 255 / .06); color: rgb(196 180 255); }
+.portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(190 226 210); border-radius: 12px; background: linear-gradient(90deg, rgb(232 248 240), rgb(214 240 228)); color: rgb(40 100 84); }
+.portal-terms .text-link { color: rgb(22 124 104); }
+.portal-terms .referral-icon { border-color: rgb(186 222 204); background: rgb(255 255 255 / .7); color: rgb(22 124 104); }
+:root[data-theme="dark"] .portal-terms { border-color: rgb(34 90 72); background: linear-gradient(90deg, rgb(12 44 36), rgb(18 60 48)); color: rgb(190 236 214); }
+:root[data-theme="dark"] .portal-terms .text-link { color: rgb(80 210 160); }
+:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(50 120 96); background: rgb(255 255 255 / .06); color: rgb(80 210 160); }
 /* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
 @media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
 
-/* Bottom of the resident portal in purple, edge to edge: the footer becomes a full-width band that
-   meets the bottom of the page, and the tree strip behind it is tinted purple to match. */
+/* Bottom of the resident portal in green, edge to edge: the footer becomes a full-width band that
+   meets the bottom of the page, and the tree strip behind it is tinted green to match. */
 .portal-shell .page-content { padding-bottom: 0; }
-.portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(205 198 236); border-radius: 0; }
-:root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(62 50 110); }
+.portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(190 226 210); border-radius: 0; }
+:root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(34 90 72); }
 @media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 230px); padding-left: calc(50vw - 50% + 230px); } .referral-share { right: calc(50vw - 50% + 16px); } }
-.portal-shell .scenery-back { color: rgb(124 102 200 / .14); }
-.portal-shell .scenery-front { color: rgb(124 102 200 / .24); }
-:root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(150 128 230 / .12); }
-:root[data-theme="dark"] .portal-shell .scenery-front { color: rgb(150 128 230 / .2); }
+.portal-shell .scenery-back { color: rgb(40 150 110 / .14); }
+.portal-shell .scenery-front { color: rgb(40 150 110 / .24); }
+:root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(70 190 140 / .12); }
+:root[data-theme="dark"] .portal-shell .scenery-front { color: rgb(70 190 140 / .2); }
 
 /* Narrow cards: show the whole property image (a logo-style picture was being cropped to a strip). */
 @container (max-width: 640px) { .portal-shell .portal-property-photo { height: auto; max-height: 200px; aspect-ratio: 16 / 9; object-fit: contain; } }
@@ -1667,12 +1634,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-tabs { display: none; }
 div.portal-panel { display: contents; }
 @media (max-width: 720px) {
-  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(205 198 236); background: rgb(246 244 254 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(40 30 90 / .1); }
-  .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(110 100 150); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
-  .portal-tabs button.is-active { color: rgb(88 64 170); background: rgb(124 102 200 / .14); }
-  :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(62 50 110); background: rgb(28 22 58 / .96); }
-  :root[data-theme="dark"] .portal-tabs button { color: rgb(170 160 210); }
-  :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(220 210 255); background: rgb(150 128 230 / .18); }
+  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(190 226 210); background: rgb(242 250 246 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
+  .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+  .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(40 150 110 / .14); }
+  :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(34 90 72); background: rgb(10 36 30 / .96); }
+  :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
+  :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(70 190 140 / .18); }
   .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
   .page-content[data-tab="home"] [data-panel]:not([data-panel="home"]),
   .page-content[data-tab="services"] [data-panel]:not([data-panel="services"]),
