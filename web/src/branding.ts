@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { logoFavicon } from './logoFavicon'
 
 /** Public branding: the business name and logo version (null = no logo, show the raj.pg mark). */
 export type Branding = { businessName: string | null; logoVersion: number | null }
@@ -17,12 +18,18 @@ function load() {
 }
 
 // The browser tab icon lives outside React, so it is set here; without an uploaded logo it falls
-// back to the static mark in public/favicon.svg.
+// back to the static mark in public/favicon.svg. If cropping the logo fails, the whole logo is
+// still better than the fallback mark.
 function applyFavicon({ logoVersion }: Branding) {
   const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
   if (!link) return
   link.removeAttribute('type')
-  link.href = logoVersion ? logoUrl(logoVersion) : '/favicon.svg'
+  if (!logoVersion) { link.href = '/favicon.svg'; return }
+  const source = logoUrl(logoVersion)
+  logoFavicon(source).catch(() => source).then((href) => {
+    // A newer logo may have been uploaded while this one was being cropped.
+    if (current.logoVersion === logoVersion) link.href = href
+  })
 }
 
 function subscribe(listener: () => void) {
