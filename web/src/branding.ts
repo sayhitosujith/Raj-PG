@@ -12,8 +12,17 @@ const listeners = new Set<() => void>()
 function load() {
   fetch('/api/branding')
     .then((response) => response.ok ? response.json() as Promise<Branding> : Promise.reject(new Error('Branding request failed')))
-    .then((branding) => { current = branding; listeners.forEach((listener) => listener()) })
+    .then((branding) => { current = branding; applyFavicon(branding); listeners.forEach((listener) => listener()) })
     .catch(() => undefined)
+}
+
+// The browser tab icon lives outside React, so it is set here; without an uploaded logo it falls
+// back to the static mark in public/favicon.svg.
+function applyFavicon({ logoVersion }: Branding) {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) return
+  link.removeAttribute('type')
+  link.href = logoVersion ? logoUrl(logoVersion) : '/favicon.svg'
 }
 
 function subscribe(listener: () => void) {
