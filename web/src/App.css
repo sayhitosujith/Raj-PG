@@ -559,11 +559,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-topbar { height: auto; min-height: 76px; padding-block: 8px; }
 .portal-topbar .brand-logo { max-height: 84px; }
 @media (max-width: 560px) { .portal-topbar .brand-logo { max-height: 64px; } }
-/* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
-   vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
-   text readable while the background stays transparent (a solid panel showed as a white box).
-   The Settings preview gets the same treatment so it shows what residents will see. */
-:root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: drop-shadow(0 0 1px rgb(255 255 255 / .85)) drop-shadow(0 0 5px rgb(255 255 255 / .28)); }
+/* Light mode: the navy logo tinted to a deeper brand green, lightened less than in dark mode so it
+   keeps contrast on white and the pale purple portal header. */
+.brand-logo, .logo-field:not(.is-tall) .logo-preview img { filter: brightness(1.4) sepia(1) hue-rotate(95deg) saturate(2.8); }
+/* Dark mode: the logo (navy, made for light backgrounds) is lightened and tinted to the brand green
+   so it reads on dark surfaces; lightening first lets the dark parts take the colour. A faint outline
+   keeps the edges crisp while the background stays transparent. Applies everywhere BrandMark shows
+   (sidebar, portal header and footer, sign-in, booking, ID check) and the Settings preview, so the
+   preview shows what residents will see. */
+:root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: brightness(2.2) sepia(1) hue-rotate(95deg) saturate(2.6) drop-shadow(0 0 1px rgb(255 255 255 / .4)) drop-shadow(0 0 6px rgb(40 200 150 / .2)); }
 :root[data-theme="dark"] .logo-preview { background: rgb(255 255 255 / .06); }
 .logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
 .logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
@@ -1299,16 +1303,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .expired-note { color: #b5523f; font-weight: 700; }
 .resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
-/* Sign-in page: Mt Fuji over the Tokyo skyline at sunset behind the card. Photo by Claudio Pantoni on
-   Unsplash (photo-1741230127615-8334deb6b463), Unsplash License: free for commercial use; desktop gets a
-   landscape crop around Fuji, phones the full portrait frame. Self-hosted in public/ so sign-in depends on no third party;
-   a smaller copy serves phones. The overlay keeps the card readable; the gradient underneath shows
-   while the photo loads. Colours are rgb() so the generated dark theme leaves them alone. */
-.login-shell.has-city { position: relative; isolation: isolate; overflow: hidden; }
-.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji.jpg') center 30% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
-@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji-small.jpg') center 42% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
-:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
-@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
+/* Sign-in page: a plain brand-green background behind the card, deeper in dark mode. rgb() so the
+   generated dark theme leaves it alone. */
+.login-shell.is-green { background: rgb(22 124 104); }
+:root[data-theme="dark"] .login-shell.is-green { background: rgb(8 44 36); }
 
 /* Resident portal on phones: denser layout so the page is shorter to scroll. Container queries
    (each card is a container) keep it right whatever the card width; the viewport query only
