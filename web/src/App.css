@@ -1133,10 +1133,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .sky-rain { position: absolute; inset: 0; }
 .rain-drop { position: absolute; top: -40px; width: 1px; border-radius: 1px; background: linear-gradient(180deg, transparent, rgb(214 226 244 / .85)); animation: rain-fall .8s linear infinite; }
 @keyframes rain-fall { from { transform: translate3d(0, 0, 0) rotate(12deg); } to { transform: translate3d(-150px, 720px, 0) rotate(12deg); } }
-/* Lightning: a soft glow that flickers twice then rests for seconds, far below the three-flashes-a-second
+/* Lightning: a glow and bolt that flicker twice then rest for seconds, far below the three-flashes-a-second
    photosensitivity limit (WCAG 2.3.1); a thunderstorm only brings the flashes closer together. */
-.sky-lightning { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse 70% 55% at 62% 8%, rgb(226 234 255 / .6), rgb(196 210 255 / .18) 55%, transparent 80%); animation: lightning-flash 12s linear 3s infinite; }
-.sky-lightning.is-storm { animation-duration: 7s; animation-delay: 1s; }
+.sky-lightning { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse 70% 55% at 62% 8%, rgb(226 234 255 / .6), rgb(196 210 255 / .18) 55%, transparent 80%); animation: lightning-flash 8s linear 2s infinite; }
+.sky-lightning.is-storm { animation-duration: 5s; animation-delay: 1s; }
+.sky-bolt { position: absolute; left: 60%; top: 4%; width: 34px; height: 110px; fill: rgb(240 244 255); filter: drop-shadow(0 0 6px rgb(200 214 255 / .9)) drop-shadow(0 0 16px rgb(170 190 255 / .6)); }
+@media (max-width: 720px) { .sky-bolt { width: 20px; height: 64px; } }
 @keyframes lightning-flash { 0%, 90% { opacity: 0; } 91% { opacity: .85; } 92.5% { opacity: .15; } 94% { opacity: .65; } 97%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .rain-drop { top: var(--rain-rest); animation: none; transform: rotate(12deg); }

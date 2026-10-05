@@ -78,7 +78,10 @@ export function SkyBackdrop({ condition }: { condition?: WeatherCondition }) {
       {clouds.map((cloud, index) => <div key={index} className="sky-cloud" style={{ top: cloud.top, '--cloud-size': cloud.size, '--cloud-duration': `${cloud.duration}s`, '--cloud-delay': `${cloud.delay}s`, '--cloud-rest': cloud.rest } as CSSProperties} />)}
       {raining
         ? <>
-            <div className={`sky-lightning${condition === 'storm' ? ' is-storm' : ''}`} />
+            <div className={`sky-lightning${condition === 'storm' ? ' is-storm' : ''}`}>
+              {/* A forked bolt under the glow, so a flash reads as lightning rather than the sky just brightening. */}
+              <svg className="sky-bolt" viewBox="0 0 40 120"><path d="M24 0 L10 52 H21 L8 120 L34 40 H22 L32 0 Z" /></svg>
+            </div>
             <div className="sky-rain">
               {rain.map((drop, index) => <span key={index} className="rain-drop" style={{ left: `${drop.x}%`, '--rain-rest': `${drop.rest}%`, height: drop.length, opacity: drop.opacity, animationDelay: `${drop.delay}s`, animationDuration: `${drop.duration}s` } as CSSProperties} />)}
             </div>
