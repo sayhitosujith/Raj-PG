@@ -1,4 +1,4 @@
-/** Copies a one-time secret to the clipboard and reports the outcome through the app's toast. */
+/** Copies text (an access key, contact detail, Wi-Fi password) and reports the outcome through the app's toast. */
 export async function copyWithNotice(text: string, label: string, onNotice: (message: string) => void) {
   try {
     await navigator.clipboard.writeText(text)
