@@ -1559,6 +1559,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-exit-panel.is-approved { border-color: #f3d3cb; background: #fff6f3; }
 /* Account deletion request: the move-out panel's layout in red, since approving erases the account. */
 .resident-exit-panel.is-deletion { border-color: #f3c4c4; background: #fff4f4; }
+/* Deleted records: each row carries the date the account was closed above it. */
+.deleted-record { display: grid; gap: 4px; }
+.deleted-record-date { color: var(--muted); font-size: 11px; font-weight: 600; }
 .deletion-decline { display: grid; gap: 8px; }
 .deletion-decline label { display: grid; gap: 6px; color: #55635f; font-size: 11px; font-weight: 700; }
 .deletion-decline label span { color: #9da7a3; font-weight: 400; }

@@ -16,7 +16,7 @@ export function DeleteAccountRequest({ requestedAt, declinedAt, declineReason, o
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   async function send(method: 'POST' | 'DELETE') {
-    if (method === 'POST' && !window.confirm('Ask your property owner to delete your account? Once they approve, your details are erased, you are moved out and you cannot sign in again.')) return
+    if (method === 'POST' && !window.confirm('Ask your property owner to delete your account? Once they approve, your account is closed, you are moved out and you cannot sign in again. Your property owner keeps your records as the law requires.')) return
     setIsSaving(true)
     setResult(null)
     try {
@@ -48,7 +48,7 @@ export function DeleteAccountRequest({ requestedAt, declinedAt, declineReason, o
           {requestedAt
             ? <small>You asked on {shortDate(requestedAt)}. Waiting for your property owner to approve.</small>
             : declinedAt ? <small className="delete-account-declined">Your property owner declined your request on {shortDate(declinedAt)}{declineReason ? <>: “{declineReason}”</> : '.'} Contact them if you still want your account deleted, or ask again.</small>
-            : <small>Ask your property owner to erase your account and personal details. They approve it first.</small>}
+            : <small>Ask your property owner to close your account. They approve it first and keep your records as the law requires.</small>}
         </div>
         {requestedAt
           ? <button type="button" className="secondary-button" disabled={isSaving} onClick={() => void send('DELETE')}>Cancel request</button>

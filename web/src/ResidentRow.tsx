@@ -90,7 +90,7 @@ const maxStaggerSteps = 10
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
-export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, securityDeposit }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onClone: () => void; onDelete: () => void; securityDeposit: number | null; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
+export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, securityDeposit, isRecord = false }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onClone: () => void; onDelete: () => void; securityDeposit: number | null; /** A closed account on the Deleted records page: everything shown, nothing that would act on it as a resident. */ isRecord?: boolean; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
   // Overdue residents are locked out of the app unless the owner allowed access up to a date.
   const rentBadge = resident.rent.state !== 'LOCK_DUE' ? rentBadges[resident.rent.state]
     : resident.rentLocked ? { label: 'Rent overdue · locked out', tone: 'coral' }
@@ -112,17 +112,17 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
         <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document">Aadhaar {formatAadhar(resident.aadharNumber, true)}</span> : resident.passportNumber && <span className="resident-document">Passport {resident.passportNumber}</span>}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
-        <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>
-        <button className="row-edit row-clone" aria-label={`Clone ${resident.name}`} title="Clone: add a new resident with the same property, rent and address" onClick={onClone}><CopyPlus size={14} /></button>
-        <button className="row-delete" aria-label={`Remove ${resident.name}`} title="Remove resident" onClick={onDelete}><Trash2 size={14} /></button>
+        {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}
+        {!isRecord && <button className="row-edit row-clone" aria-label={`Clone ${resident.name}`} title="Clone: add a new resident with the same property, rent and address" onClick={onClone}><CopyPlus size={14} /></button>}
+        <button className="row-delete" aria-label={`${isRecord ? 'Delete record of' : 'Remove'} ${resident.name}`} title={isRecord ? 'Delete this record permanently' : 'Remove resident'} onClick={onDelete}><Trash2 size={14} /></button>
         <button className="row-toggle" aria-expanded={isExpanded} aria-controls={detailsId} aria-label={`${isExpanded ? 'Hide' : 'Show'} details for ${resident.name}`} title={isExpanded ? 'Hide details' : 'Show details'} onClick={onToggle}><ChevronDown size={16} /></button>
       </div>
       {/* inert keeps collapsed links and buttons out of the tab order while they animate closed. */}
       <div className="resident-details-collapse" id={detailsId} inert={!isExpanded}>
         <div className="resident-details-inner">
-          <ResidentExitPanel resident={resident} deposit={securityDeposit} onChanged={onChanged} onNotice={onNotice} />
+          {!isRecord && <ResidentExitPanel resident={resident} deposit={securityDeposit} onChanged={onChanged} onNotice={onNotice} />}
           <AccountDeletionReview resident={resident} onChanged={onChanged} onNotice={onNotice} />
-          <AadharVerificationPanel resident={resident} onVerify={onVerify} />
+          {!isRecord && <AadharVerificationPanel resident={resident} onVerify={onVerify} />}
           <RentPanel rent={resident.rent} onRecord={onRecordRent} onUndo={onUndoRent} />
           <dl className="resident-details">
             <div><dt>Phone</dt><dd>{resident.phone ? <a href={`tel:${resident.phone}`}><PhoneText value={resident.phone} /></a> : '—'}</dd></div>
@@ -143,7 +143,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             {/* After the ID cells, so it fills the first row's free space on wide screens instead of a row of its own. */}
             <div><dt>Emergency contact</dt><dd><EmergencyContactText contact={resident} /></dd></div>
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
-            <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}<AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} /></dd></div>
+            <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
             <div><dt>Days stayed</dt><dd>{daysStayedLabel(resident.joinedAt)}</dd></div>
             <div><dt>Food plan</dt><dd className="sign-in-cell">{resident.foodOpted ? 'With food' : 'Without food'}{resident.rentFromProperty ? ' · rent from property prices' : ''}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>

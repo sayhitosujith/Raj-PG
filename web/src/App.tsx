@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  Archive,
   Bell,
   Sparkles,
   Wrench,
@@ -28,6 +29,7 @@ import type { BookableProperty, BookingRequest } from './booking'
 import type { Resident } from './resident'
 import { ResidentsView, type ResidentsLoadState } from './ResidentsView'
 import { SuperAdminsView } from './SuperAdminsView'
+import { DeletedRecordsView } from './DeletedRecordsView'
 import type { HousekeepingStatus, OwnerHousekeepingRequest } from './housekeeping'
 import { MealTimingFields } from './MealTimings'
 import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
@@ -418,6 +420,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <NavItem icon={LayoutGrid} label="Overview" active={activeView === 'Overview'} onClick={() => handleNavigation('Overview')} />
           <NavItem icon={Building2} label="Properties" badge={stats.properties} active={activeView === 'Properties'} onClick={() => handleNavigation('Properties')} />
           <NavItem icon={Users} label="Residents" badge={activeResidentCount ? String(activeResidentCount).padStart(2, '0') : undefined} active={activeView === 'Residents'} onClick={() => handleNavigation('Residents')} />
+          <NavItem icon={Archive} label="Deleted records" active={activeView === 'Deleted records'} onClick={() => handleNavigation('Deleted records')} />
           <NavItem icon={ClipboardList} label="Booking requests" badge={stats.pendingBookings ? String(stats.pendingBookings) : undefined} active={activeView === 'Booking requests'} onClick={() => handleNavigation('Booking requests')} />
           <NavItem icon={WalletCards} label="Payments" active={activeView === 'Payments'} onClick={() => handleNavigation('Payments')} />
           <p className="nav-label nav-label-spaced">Manage</p>
@@ -446,11 +449,12 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Booking requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Announcements' && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && <SuperAdminsView currentAdminId={currentAdmin.id} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} onAdminChange={onAdminChange} />}
+          {activeView === 'Deleted records' && <DeletedRecordsView refreshSignal={refreshSignal} securityDeposit={settings?.securityDeposit ?? null} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Booking requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Booking requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

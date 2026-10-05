@@ -116,7 +116,7 @@ model Resident {
   movedOutAt              DateTime?
   // "Delete my account": when the resident asked (null when nothing is pending), when the owner last
   // declined and why (both shown to the resident until they ask again), and when the owner approved
-  // it. Approval erases their personal details but keeps the record and rent history.
+  // it (the account is closed, with every detail kept for the owner's Deleted records).
   deletionRequestedAt     DateTime?
   deletionDeclinedAt      DateTime?
   deletionDeclineReason   String?

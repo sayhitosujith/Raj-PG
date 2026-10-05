@@ -119,25 +119,42 @@ function respondToWriteError(response: Response, error: unknown, fallback: strin
 /** Resident management routes; must be mounted behind the super admin guard. */
 export const residentRouter = Router()
 
+// Owner summaries for the residents matching `where`, newest first by `orderBy`.
+async function listResidentSummaries(where: Prisma.ResidentWhereInput, orderBy: Prisma.ResidentOrderByWithRelationInput) {
+  const [residents, withCards, withScans, withoutCredentials] = await withDatabaseRetry(() => Promise.all([
+    prisma.resident.findMany({ ...residentSummaryQuery, where, orderBy }),
+    prisma.resident.findMany({ where: { AND: [where, hasAadharCardWhere] }, select: { id: true } }),
+    prisma.resident.findMany({ where: { AND: [where, hasPassportScanWhere] }, select: { id: true } }),
+    prisma.resident.findMany({ where: { AND: [where, noCredentialsWhere] }, select: { id: true } }),
+  ]))
+  const cardIds = new Set(withCards.map(({ id }) => id))
+  const scanIds = new Set(withScans.map(({ id }) => id))
+  const keylessIds = new Set(withoutCredentials.map(({ id }) => id))
+  const settings = await getSettings()
+  const rules = rentRulesOf(settings)
+  const rates = dailyRatesOf(settings)
+  return residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules, keylessIds.has(resident.id), rates))
+}
+
+// Everyone except accounts closed at the resident's request, which live on the Deleted records page.
 residentRouter.get('/residents', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   try {
-    const [residents, withCards, withScans, withoutCredentials] = await withDatabaseRetry(() => Promise.all([
-      prisma.resident.findMany({ ...residentSummaryQuery, orderBy: { createdAt: 'desc' } }),
-      prisma.resident.findMany({ where: hasAadharCardWhere, select: { id: true } }),
-      prisma.resident.findMany({ where: hasPassportScanWhere, select: { id: true } }),
-      prisma.resident.findMany({ where: noCredentialsWhere, select: { id: true } }),
-    ]))
-    const cardIds = new Set(withCards.map(({ id }) => id))
-    const scanIds = new Set(withScans.map(({ id }) => id))
-    const keylessIds = new Set(withoutCredentials.map(({ id }) => id))
-    const settings = await getSettings()
-    const rules = rentRulesOf(settings)
-    const rates = dailyRatesOf(settings)
-    response.json(residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules, keylessIds.has(resident.id), rates)))
+    response.json(await listResidentSummaries({ deletedAt: null }, { createdAt: 'desc' }))
   } catch (error) {
     console.error('Resident query failed:', error)
     response.status(503).json({ error: 'Residents could not be loaded.' })
+  }
+})
+
+// Accounts closed at the resident's request, with every detail kept, most recently closed first.
+residentRouter.get('/residents/deleted', async (_request, response) => {
+  if (!process.env.DATABASE_URL) { response.json([]); return }
+  try {
+    response.json(await listResidentSummaries({ deletedAt: { not: null } }, { deletedAt: 'desc' }))
+  } catch (error) {
+    console.error('Deleted records query failed:', error)
+    response.status(503).json({ error: 'Deleted records could not be loaded.' })
   }
 })
 
@@ -244,9 +261,9 @@ residentRouter.put('/residents/:id', async (request, response) => {
   if (body.rentAccessUntil && rentAccessUntil === null) { response.status(400).json({ error: 'Allow access until must be a valid date.' }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
   try {
-    // An erased account must stay erased: editing it could re-add details or move it back into a room.
-    const erased = await prisma.resident.findUnique({ where: { id }, select: { deletedAt: true } })
-    if (erased?.deletedAt) { response.status(409).json({ error: 'This account was deleted at the resident\'s request and cannot be edited.' }); return }
+    // A closed account is a record, not a resident: editing it could move it back into a room or change what was kept.
+    const closed = await prisma.resident.findUnique({ where: { id }, select: { deletedAt: true } })
+    if (closed?.deletedAt) { response.status(409).json({ error: "This account was closed at the resident's request and is kept as a record; it cannot be edited." }); return }
     await prisma.$transaction(async (transaction) => {
       const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
       const expired = findExpiredDocument(identity.fields, current)
@@ -315,7 +332,8 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
   try {
     // Renewal: a new key for someone whose approved move-out date has passed means they are staying,
     // so that move-out is cleared (otherwise the ended stay would sign them straight out again).
-    const current = await prisma.resident.findUniqueOrThrow({ where: { id }, select: { exitStatus: true, exitDate: true, movedOutAt: true } })
+    const current = await prisma.resident.findUniqueOrThrow({ where: { id }, select: { exitStatus: true, exitDate: true, movedOutAt: true, deletedAt: true } })
+    if (current.deletedAt) { response.status(409).json({ error: "This account was closed at the resident's request, so it cannot get a new access key." }); return }
     const isRenewal = current.exitStatus === 'APPROVED' && !current.movedOutAt && Boolean(current.exitDate && current.exitDate.toISOString().slice(0, 10) < propertyNow().date)
     const renewal = isRenewal ? { exitStatus: null, exitDate: null, exitReason: null, exitRequestedAt: null } : {}
     await prisma.$transaction([

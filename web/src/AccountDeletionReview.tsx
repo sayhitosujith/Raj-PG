@@ -6,7 +6,7 @@ import { readApiError } from './superAdmin'
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
-/** Header badge for a resident who asked to delete their account, or whose account was erased. */
+/** Header badge for a resident who asked to delete their account, or whose account was closed. */
 export function deletionBadge(resident: Resident) {
   if (resident.deletedAt) return { label: 'Account deleted', tone: 'muted' }
   if (resident.deletionRequestedAt) return { label: 'Deletion requested', tone: 'coral' }
@@ -16,7 +16,7 @@ export function deletionBadge(resident: Resident) {
 /**
  * The owner's decision on a resident's "Delete my account" request, in the expanded resident row.
  * Dues do not block approval (the owner may write them off), so they are shown beside the buttons.
- * Approval erases the person's details for good, so it asks for confirmation first; declining asks
+ * Approval closes the account for good, so it asks for confirmation first; declining asks
  * for a reason, which the resident sees. Styled like the move-out panel above it, since both are
  * requests waiting on the owner.
  */
@@ -30,7 +30,7 @@ export function AccountDeletionReview({ resident, onChanged, onNotice }: { resid
   const amountDue = resident.rent.amountDue
 
   async function decide(decision: 'approve' | 'decline') {
-    if (decision === 'approve' && !window.confirm(`Delete ${resident.name}'s account? Their name, contact details, ID documents, photo and address are erased and they are moved out and signed out. Rent payments stay in your records. This cannot be undone.`)) return
+    if (decision === 'approve' && !window.confirm(`Delete ${resident.name}'s account? They are moved out and signed out for good, and the account moves to Deleted records with all its details. This cannot be undone.`)) return
     setIsSaving(true)
     setError('')
     try {
@@ -48,7 +48,7 @@ export function AccountDeletionReview({ resident, onChanged, onNotice }: { resid
   return (
     <div className="resident-exit-panel is-deletion">
       <div className="resident-exit-head"><Trash2 size={16} /><div><strong>Account deletion request</strong><small>Asked on {shortDate(resident.deletionRequestedAt)}</small></div></div>
-      <p className={`resident-exit-payout${amountDue > 0 ? ' is-owed' : ''}`}>{amountDue > 0 ? <>{resident.name} still owes <strong>{formatRupees(amountDue)}</strong> in rent</> : <>No rent due</>}<small>Approving erases their personal details and moves them out; rent payments stay in your records.</small></p>
+      <p className={`resident-exit-payout${amountDue > 0 ? ' is-owed' : ''}`}>{amountDue > 0 ? <>{resident.name} still owes <strong>{formatRupees(amountDue)}</strong> in rent</> : <>No rent due</>}<small>Approving closes the account and moves them out; their full record moves to Deleted records.</small></p>
       {isDeclining
         ? <form className="deletion-decline" onSubmit={(event) => { event.preventDefault(); void decide('decline') }}>
             <label>Reason for declining <span>(shown to {resident.name})</span><textarea value={reason} required maxLength={300} rows={2} autoFocus placeholder="e.g. Please clear your dues and hand over the room keys first." onChange={(event) => setReason(event.target.value)} /></label>
