@@ -1350,7 +1350,21 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 
 /* Resident "Edit my details": the Edit button beside the heading, and the ID row in the modal. */
 .my-details-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+/* Heading and contact lines on the left, the weather tile in the top-right corner level with the heading.
+   A fixed two-column grid, so the tile stays there instead of wrapping under the email; only the
+   narrowest cards stack it below. */
+.my-details-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin: 4px 0 12px; }
+.my-details-main { min-width: 0; }
+.my-details-card > .today-tile { max-width: 220px; }
+@container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
 .my-details-title h2 { margin-bottom: 0; }
+/* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
+   Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
+.workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
+.my-details-contact span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.my-details-contact svg { flex: none; color: var(--teal); }
+.my-details-contact a { overflow: hidden; color: inherit; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.my-details-contact a:hover { color: var(--teal); text-decoration: underline; }
 .my-details-edit { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font-size: 12px; }
 .my-details-note { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
 .my-details-document { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
@@ -1439,12 +1453,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .today-tile-copy small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
 .today-tile-copy strong { overflow: hidden; color: #344449; font-size: 12px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 
-/* My Details: the "today" tiles and the meals row each sit in their own bordered group. */
-.today-grid, .meals-row { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / .5); }
+/* My Details: the heading with contact lines, the "today" tiles and the meals row each sit in their own bordered group. */
+.today-grid, .meals-row, .my-details-card { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / .5); }
 .today-grid { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
 .meals-row { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
 .meals-row .weekly-menu-button { margin-right: auto; }
-:root[data-theme="dark"] .today-grid, :root[data-theme="dark"] .meals-row { border-color: rgb(255 255 255 / .1); background: rgb(255 255 255 / .02); }
+:root[data-theme="dark"] .today-grid, :root[data-theme="dark"] .meals-row, :root[data-theme="dark"] .my-details-card { border-color: rgb(255 255 255 / .1); background: rgb(255 255 255 / .02); }
 /* The dark-theme converter repaints .emergency-button's white background with a stronger selector,
    which also hid the solid red of Emergency 112; restore it here. */
 :root[data-theme="dark"] .emergency-button.is-sos { border-color: rgb(200 40 40); color: rgb(255 255 255); background: rgb(206 44 44); }
@@ -1514,8 +1528,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Exit PG: the resident's button and status under Emergency, the settlement figures, and the
    owner's review panel in the expanded resident row. */
 .exit-status-row { display: grid; justify-items: end; gap: 4px; }
-.exit-pg-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: #45544f; background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-.exit-pg-button:hover, .exit-pg-button:focus-visible { border-color: var(--teal); color: var(--teal); }
+/* Red because moving out is a weighty, hard-to-undo step; outlined rather than solid so it does not read as Emergency. */
+.exit-pg-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: rgb(185 28 28); background: rgb(254 242 242); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.exit-pg-button:hover, .exit-pg-button:focus-visible { color: rgb(255 255 255); background: rgb(220 38 38); }
+:root[data-theme="dark"] .exit-pg-button { border-color: rgb(220 38 38); color: rgb(252 165 165); background: rgb(69 10 10); }
+:root[data-theme="dark"] .exit-pg-button:hover, :root[data-theme="dark"] .exit-pg-button:focus-visible { color: rgb(255 255 255); background: rgb(220 38 38); }
 .exit-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0; padding: 5px 10px; border-radius: 999px; color: #7b5a20; background: #fbf3e2; font-size: 11px; }
 .exit-status.is-approved { color: #b5523f; background: #fbe6e1; }
 .exit-status.is-declined { color: var(--muted); background: transparent; padding: 0; }
@@ -1598,12 +1615,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .portal-topbar .home-title { color: rgb(80 210 160); }
 :root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(50 120 96); background: rgb(255 255 255 / .06); }
 
-/* Phones and narrow cards: the emergency buttons and the move-out status/note move onto their own
-   full-width row under the photo and heading, instead of squeezing both into one tall row. */
+/* Phones and narrow cards: the emergency buttons sit beside the photo, filling the space that would
+   otherwise be empty there, with the heading and the move-out status/note full width below. The
+   actions wrapper steps aside (display: contents) so its two parts can be placed separately. */
 @container (max-width: 620px) {
-  .portal-details-identity { flex-wrap: wrap; align-items: flex-start; }
-  .portal-emergency-actions { flex: 1 1 100%; justify-items: stretch; margin-left: 0; }
-  .portal-emergency-buttons { justify-content: flex-start; }
+  .portal-details-identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px 14px; }
+  .portal-details-identity > *, .portal-emergency-actions > * { grid-column: 1 / -1; }
+  .portal-details-identity > .profile-photo-picker { grid-column: 1; grid-row: 1; }
+  .portal-emergency-actions { display: contents; }
+  .portal-emergency-buttons { grid-column: 2; grid-row: 1; justify-content: flex-end; }
   .portal-emergency-actions .exit-status-row { justify-items: start; }
   .portal-emergency-actions .exit-status { border-radius: 10px; }
   .portal-emergency-actions .exit-refund-note, .portal-emergency-actions .exit-dues-note { max-width: none; text-align: left; }
@@ -1675,7 +1695,7 @@ div.portal-panel { display: contents; }
 .maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 
-/* Profile tab (phones only): photo, details, notifications, password and sign out. On phones those
+/* Profile tab (phones only): photo, details, move-out, notifications and password (sign out stays in the top bar). On phones those
    leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */
 .portal-profile { display: none; }
 .portal-profile-head { display: flex; align-items: center; gap: 14px; }
@@ -1684,9 +1704,19 @@ div.portal-panel { display: contents; }
 .portal-profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .portal-profile-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
 .portal-profile .portal-details { margin: 0 0 14px; }
+/* Exit PG in the header's top-right corner; once a move-out is underway its notes are wider than the
+   space beside the name, so the block wraps onto its own full-width line under the header. */
+.portal-profile-head { flex-wrap: wrap; }
+.portal-profile-exit { align-self: flex-start; margin-left: auto; }
+/* The Home card right-aligns the move-out block; in the Profile list it reads left like everything else. */
+.portal-profile-exit .exit-status-row { justify-items: start; }
+.portal-profile-exit .exit-refund-note, .portal-profile-exit .exit-dues-note, .portal-profile-exit .exit-signin-note { max-width: none; text-align: left; }
+.portal-profile-exit .exit-status { border-radius: 10px; }
 @media (max-width: 720px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
-  .page-content .portal-details-row, .page-content .home-notification-prefs { display: none; }
+  .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
+  /* Phones change their password from the Profile tab, so the top bar keeps only refresh, theme and sign out. */
+  .portal-topbar .topbar-change-password { display: none; }
 }
 /* Resident greeting in italic. */
 .portal-shell .welcome-row h1 { font-style: italic; }
