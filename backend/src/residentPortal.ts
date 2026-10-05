@@ -1,7 +1,7 @@
 import { AadharVerificationStatus, UserRole, type WorkspaceSettings } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { findDuplicate } from './duplicates.js'
-import { findInvalidField, pickTextFields } from './residentFields.js'
+import { findInvalidField, pickTextFields, toResidentWrite } from './residentFields.js'
 import { newAccessKeyMessage } from './rentLock.js'
 import { findAccessBlock } from './accessBlocks.js'
 import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
@@ -26,6 +26,7 @@ import { residentMaintenanceRoutes } from './maintenance.js'
 import { residentInfoOf } from './residentInfo.js'
 import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 import { cancelExit, earliestExitDate, exitDues, noticeDaysFor, requestExit } from './exits.js'
+import { cancelAccountDeletion, requestAccountDeletion } from './accountDeletion.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -102,9 +103,9 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: true } } } })
     if (!resident?.active || !resident.room) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { nationality, passportNumber } = resident
-    const { id, name, phone, email, aadharNumber, permanentAddress, addressVerified, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
+    const { id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, addressVerified, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, room } = resident
     // Only the last four document characters leave the server for the resident's own view.
-    response.json({ emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, await getSettings()), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays: await noticeDaysFor(id), earliestDate: earliestExitDate(await noticeDaysFor(id)), dues: resident.exitDate ? await exitDues(id) : null }, room: room.number, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, emailOptIn, id, name, phone, email, nationality, aadharLast4: aadharNumber ? aadharNumber.slice(-4) : null, passportLast4: passportNumber ? passportNumber.slice(-4) : null, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, await getSettings()), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays: await noticeDaysFor(id), earliestDate: earliestExitDate(await noticeDaysFor(id)), dues: resident.exitDate ? await exitDues(id) : null }, room: room.number, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.housekeepingStaff, propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent: await rentSummary(id), onlinePayment: isOnlinePaymentEnabled(), foodOpted, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(await getSettings(), policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: await pendingUpiClaim(id), photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -190,6 +191,29 @@ residentPortalRouter.delete('/resident-portal/exit', requireResident, requirePor
   response.status(204).send()
 })
 
+// "Delete my account": ask the owner to erase the account, or withdraw the request before they decide.
+residentPortalRouter.post('/resident-portal/deletion-request', requireResident, requirePortalAccess, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    if (!await requestAccountDeletion(userId)) { response.status(409).json({ error: 'You have already asked for your account to be deleted.' }); return }
+    response.status(204).send()
+  } catch (error) {
+    console.error('Account deletion request failed:', error)
+    response.status(503).json({ error: 'Your deletion request could not be sent. Please try again.' })
+  }
+})
+
+residentPortalRouter.delete('/resident-portal/deletion-request', requireResident, requirePortalAccess, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    if (!await cancelAccountDeletion(userId)) { response.status(409).json({ error: 'There is no deletion request to cancel.' }); return }
+    response.status(204).send()
+  } catch (error) {
+    console.error('Cancelling the account deletion request failed:', error)
+    response.status(503).json({ error: 'Your request could not be cancelled. Please try again.' })
+  }
+})
+
 // Complaints and repairs: list, report (with an optional photo) and view the photo of one's own requests.
 residentMaintenanceRoutes(residentPortalRouter, [requireResident, requirePortalAccess], (locals) => (locals.auth as AuthContext).userId)
 
@@ -266,7 +290,7 @@ residentPortalRouter.put('/resident-portal/details', requireResident, requirePor
     const duplicate = await findDuplicate(prisma, { email: data.email, phone: data.phone }, { residentId: userId }, { revealOwner: false })
     if (duplicate) { response.status(409).json({ error: duplicate }); return }
     const isNewAddress = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '')
-    await prisma.resident.update({ where: { id: userId }, data: { ...data, phone: data.phone || null, email: data.email || null, permanentAddress: data.permanentAddress || null, ...(isNewAddress ? { addressVerified: false } : {}) } })
+    await prisma.resident.update({ where: { id: userId }, data: { ...toResidentWrite(data), phone: data.phone || null, email: data.email || null, permanentAddress: data.permanentAddress || null, ...(isNewAddress ? { addressVerified: false } : {}) } })
     response.status(204).send()
   } catch (error) {
     console.error('Resident details update failed:', error)

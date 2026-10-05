@@ -5,7 +5,7 @@ import { readApiError } from './superAdmin'
 /** An active fire alarm, as both portals receive it. */
 export type FireAlert = { id: string; propertyId: string; raisedByName: string; createdAt: string; property: { name: string } }
 
-// Alarms must reach people fast, so this polls far more often than the one-minute portal refresh.
+// Alarms must reach people fast, so this polls on its own timer rather than waiting on the page refresh.
 const pollMs = 10_000
 
 /** The active alarm(s) from `url`, re-checked every 10 seconds; `refresh` re-checks at once. */

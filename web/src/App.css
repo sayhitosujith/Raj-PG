@@ -404,6 +404,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-fields { display: grid; gap: 8px; margin: 15px 0 0; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: #f8fbf8; }
 .meal-fields legend { padding: 0 4px; color: #55635f; font-size: 11px; font-weight: 700; }
 .meal-fields legend span { color: #9da7a3; font-weight: 400; }
+/* Emergency contact in the resident and owner forms: a dashed group like the meal timings, name and
+   relationship side by side above the phone (stacked on narrow screens). */
+.emergency-contact-fields { display: grid; gap: 10px; margin: 4px 0 0; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: #f8fbf8; }
+.emergency-contact-fields legend { padding: 0 4px; color: #55635f; font-size: 11px; font-weight: 700; }
+.emergency-contact-fields legend span { color: #9da7a3; font-weight: 400; }
+.emergency-contact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 10px; }
+:root[data-theme="dark"] .emergency-contact-fields { border-color: rgb(255 255 255 / .14); background: rgb(255 255 255 / .03); }
 .meal-field-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; }
 .meal-field-label { display: inline-flex; align-items: center; gap: 6px; color: #55635f; font-size: 11px; font-weight: 700; }
 .meal-field-label svg { color: var(--teal); }
@@ -1550,6 +1557,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 480px) { .exit-settlement { grid-template-columns: 1fr; } }
 .resident-exit-panel { display: grid; gap: 10px; margin: 0 0 12px 51px; padding: 12px 14px; border: 1px solid #f0e2c4; border-radius: 10px; background: #fffaf0; }
 .resident-exit-panel.is-approved { border-color: #f3d3cb; background: #fff6f3; }
+/* Account deletion request: the move-out panel's layout in red, since approving erases the account. */
+.resident-exit-panel.is-deletion { border-color: #f3c4c4; background: #fff4f4; }
+.deletion-decline { display: grid; gap: 8px; }
+.deletion-decline label { display: grid; gap: 6px; color: #55635f; font-size: 11px; font-weight: 700; }
+.deletion-decline label span { color: #9da7a3; font-weight: 400; }
+.deletion-decline textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; resize: vertical; }
 .resident-exit-head { display: flex; align-items: center; gap: 10px; color: #7b5a20; }
 .resident-exit-head div { display: grid; gap: 2px; }
 .resident-exit-head strong { color: var(--ink); font-size: 13px; }
@@ -1670,6 +1683,8 @@ div.portal-panel { display: contents; }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
   :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(70 190 140 / .18); }
   .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
+  /* Messages sit above the tab bar; at the default bottom and z-index the bar covered them on phones. */
+  .portal-shell .toast { z-index: 50; bottom: calc(16px + 64px + env(safe-area-inset-bottom)); }
   .page-content[data-tab="home"] [data-panel]:not([data-panel="home"]),
   .page-content[data-tab="services"] [data-panel]:not([data-panel="services"]),
   .page-content[data-tab="rent"] [data-panel]:not([data-panel="rent"]),
@@ -1714,6 +1729,24 @@ div.portal-panel { display: contents; }
 .portal-profile-exit .exit-status-row { justify-items: start; }
 .portal-profile-exit .exit-refund-note, .portal-profile-exit .exit-dues-note, .portal-profile-exit .exit-signin-note { max-width: none; text-align: left; }
 .portal-profile-exit .exit-status { border-radius: 10px; }
+/* "Delete account" under the notification settings: a quiet card with a red action, since it only
+   sends a request the owner must approve. */
+/* The "Danger Zone" label above it, in red, marks it apart from the everyday settings. */
+.danger-zone-title { margin: 18px 0 8px; color: rgb(200 30 30); font-size: 13px; font-weight: 800; letter-spacing: .3px; text-transform: none; }
+:root[data-theme="dark"] .danger-zone-title { color: rgb(252 120 120); }
+.delete-account { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 0; padding: 14px 16px; border: 1px solid #f3d3cb; border-radius: 12px; background: #fff8f6; }
+.delete-account-copy { display: grid; gap: 3px; min-width: 0; flex: 1 1 220px; }
+.delete-account-copy strong { color: #8a3b2c; font-size: 13px; }
+.delete-account-copy small { color: var(--muted); font-size: 12px; }
+.delete-account-copy small.delete-account-declined { color: #b5523f; font-weight: 600; }
+.delete-account-result { display: flex; flex: 1 1 100%; align-items: center; gap: 6px; margin: 0; color: #b5523f; font-size: 12px; font-weight: 600; }
+.delete-account-result.is-ok { color: var(--teal); }
+.delete-account-button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: rgb(185 28 28); background: white; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.delete-account-button:hover, .delete-account-button:focus-visible { color: white; background: rgb(220 38 38); }
+:root[data-theme="dark"] .delete-account { border-color: rgb(220 38 38 / .35); background: rgb(69 10 10 / .35); }
+:root[data-theme="dark"] .delete-account-copy strong { color: rgb(252 165 165); }
+:root[data-theme="dark"] .delete-account-button { color: rgb(252 165 165); background: rgb(69 10 10); }
+:root[data-theme="dark"] .delete-account-button:hover, :root[data-theme="dark"] .delete-account-button:focus-visible { color: white; background: rgb(220 38 38); }
 @media (max-width: 720px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }

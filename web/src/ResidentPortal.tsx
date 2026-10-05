@@ -28,6 +28,7 @@ import { previewSkyCondition, useWeather } from './weather'
 import { ResidentRentPayments } from './ResidentRentPayments'
 import { PortalFooter } from './PortalFooter'
 import { PhoneText } from './PhoneField'
+import { EmergencyContactText } from './EmergencyContact'
 import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { TodayTile } from './TodayTile'
@@ -36,6 +37,7 @@ import { PortalTabs, type PortalTab } from './PortalTabs'
 import { ResidentMaintenance } from './ResidentMaintenance'
 import { ResidentInfo, type ResidentInfoData } from './ResidentInfo'
 import { ExitPg, type ExitNotice } from './ExitPg'
+import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
@@ -54,17 +56,23 @@ import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
 
-type ResidentProfile = { id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
-// Overdue rent, or a stay that has ended, signed the resident out; its message replaces the portal,
+type ResidentProfile = { /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharLast4?: string | null; passportLast4?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+// Overdue rent, an ended stay or an erased account signed the resident out; its message replaces the portal,
 // even on a background refresh.
-class RentLockedError extends Error {}
+class AccessBlockedError extends Error {
+  readonly code: string
+  constructor(message: string, code: string) { super(message); this.code = code }
+}
+
+// Heading for each reason the server signs a resident out.
+const blockedTitles: Record<string, string> = { ACCOUNT_DELETED: 'Account deleted', RENT_LOCKED: 'Access paused', STAY_ENDED: 'Access paused' }
 
 async function fetchProfile() {
   const response = await fetch('/api/resident-portal/me')
   if (!response.ok) {
     const body = await response.clone().json().catch(() => null) as { code?: string } | null
     const message = await readApiError(response, 'Could not load your details.')
-    throw body?.code === 'RENT_LOCKED' || body?.code === 'STAY_ENDED' ? new RentLockedError(message) : new Error(message)
+    throw body?.code && body.code in blockedTitles ? new AccessBlockedError(message, body.code) : new Error(message)
   }
   return await response.json() as ResidentProfile
 }
@@ -157,6 +165,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     ['Room', profile.room],
     ['Phone', profile.phone || '—'],
     ['Email', profile.email || '—'],
+    ['Emergency contact', <EmergencyContactText contact={profile} />],
     isIndian(profile.nationality)
       ? ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—']
       : ['Passport number', profile.passportLast4 ? <>{`•••• ${profile.passportLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—'],
@@ -169,6 +178,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   const detailsList = <dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</dd></div></dl>
   // Home card on wide screens, Profile tab on phones (CSS shows one), like the details list above.
   const exitPg = <ExitPg exit={profile.exit} amountDue={profile.rent.amountDue} deposit={profile.workspace.houseRules.securityDeposit} noticeDays={profile.exit.noticeDays} onChanged={onRefresh} onNotice={showNotice} />
+  // Under the notification settings: in the Profile tab on phones, on the Home card on wide screens.
+  const deleteAccount = <DeleteAccountRequest requestedAt={profile.deletionRequestedAt} declinedAt={profile.deletionDeclinedAt} declineReason={profile.deletionDeclineReason} onChanged={onRefresh} onNotice={showNotice} />
   const notifications = <NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} />
   return (
     <div className="portal-shell">
@@ -187,9 +198,9 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><TodayTile icon={<CalendarDays size={16} />} label="Today" value={dateLabel} title={dateLabel} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Resident</p><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><TodayTile icon={<CalendarDays size={16} />} label="Today" value={dateLabel} title={dateLabel} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
-          <div className="home-notification-prefs">{notifications}</div>
+          <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
         <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} /><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
@@ -221,9 +232,10 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <div className="portal-panel" data-panel="info"><AppComingSoon /></div>
         <section className="workspace-view portal-profile" data-panel="profile">
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div><div className="portal-profile-exit">{exitPg}</div></div>
-          <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>
+          <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>
           {detailsList}
           {notifications}
+          {deleteAccount}
         </section>
         <PortalFooter businessName={profile.workspace.businessName} termsAndConditions={profile.workspace.termsAndConditions} privacyPolicy={profile.workspace.privacyPolicy} onNotice={showNotice} />
       </main>
@@ -247,12 +259,12 @@ export function ResidentPortal({ onSignOut }: { onSignOut: () => void }) {
 function ResidentPortalScreens({ onSignOut, onFireRaised }: { onSignOut: () => void; onFireRaised: () => void }) {
   const [profile, setProfile] = useState<ResidentProfile | null>(null)
   const [loadError, setLoadError] = useState('')
-  const [isRentLocked, setIsRentLocked] = useState(false)
+  const [blockedTitle, setBlockedTitle] = useState<string | null>(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
 
   function showLoadError(error: unknown) {
-    setIsRentLocked(error instanceof RentLockedError)
+    setBlockedTitle(error instanceof AccessBlockedError ? blockedTitles[error.code] : null)
     setLoadError(error instanceof Error && error.message !== 'Failed to fetch' ? error.message : 'Could not reach the server.')
   }
 
@@ -265,20 +277,20 @@ function ResidentPortalScreens({ onSignOut, onFireRaised }: { onSignOut: () => v
   useEffect(() => {
     fetchProfile().then(setProfile, showLoadError)
   }, [])
-  // One refresh for the whole portal, shared by the refresh buttons and the one-minute timer. It
+  // One refresh for the whole portal, shared by the refresh buttons and the auto-refresh timer. It
   // picks up the owner's Aadhaar decision without the resident pressing anything; a failed
   // attempt is ignored rather than replacing the screen with an error.
   async function refreshPortal() {
     setRefreshSignal((signal) => signal + 1)
     // The owner may have changed the workspace logo since this page loaded.
     refreshBranding()
-    await fetchProfile().then(setProfile, (error: unknown) => { if (error instanceof RentLockedError) showLoadError(error) })
+    await fetchProfile().then(setProfile, (error: unknown) => { if (error instanceof AccessBlockedError) showLoadError(error) })
     setLastRefreshedAt(new Date())
   }
 
   useAutoRefresh(() => { void refreshPortal() })
 
-  if (loadError) return <main className="login-shell"><div className="login-card"><h1>{isRentLocked ? 'Access paused' : 'Something went wrong'}</h1><p className="login-error" role="alert">{loadError}</p><button className="secondary-button portal-signout" onClick={onSignOut}>Back to sign in</button></div></main>
+  if (loadError) return <main className="login-shell"><div className="login-card"><h1>{blockedTitle ?? 'Something went wrong'}</h1><p className="login-error" role="alert">{loadError}</p><button className="secondary-button portal-signout" onClick={onSignOut}>Back to sign in</button></div></main>
   if (!profile) return <PageLoader label="Loading your home…" />
   if (profile.mustSetPassword) {
     return (

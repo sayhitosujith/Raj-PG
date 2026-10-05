@@ -50,7 +50,7 @@ import { HolidayList, useHolidays } from './holidays'
 import { FireAlarmOverlay, RaiseFireAlarmButton, useFireAlerts, type FireAlert } from './FireAlarm'
 import { readApiError, type SuperAdmin } from './superAdmin'
 import { RefreshButton } from './RefreshButton'
-import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
+import { slowRefreshIntervalMs, useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
 import { LocationLink } from './LocationLink'
 import { RoomsManager } from './RoomsManager'
@@ -167,7 +167,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [housekeeping, setHousekeeping] = useState<OwnerHousekeepingRequest[]>([])
   const [housekeepingLoadState, setHousekeepingLoadState] = useState<ResidentsLoadState>('loading')
   // New requests plus unanswered "cleaner did not turn up" reminders: everything waiting on the owner.
-  const rentOverdueCount = residents.filter((resident) => resident.rent?.state === 'LOCK_DUE').length
+  // Sidebar badge: active residents, padded like the Properties badge ("03"), matching the Active tile.
+  const activeResidentCount = residents.filter((resident) => resident.active).length
   const newHousekeepingCount = housekeeping.filter((request) => request.status === 'REQUESTED' || request.hasOpenReminder).length
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
   // null = closed; undefined resident = add mode.
@@ -185,16 +186,23 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     fetchDashboard().then(setDashboard).catch(() => undefined)
   }, [])
 
-  // One refresh for the whole workspace, shared by the header button and the one-minute timer.
-  // Silent: a failed attempt keeps what is on screen, and lists update in place so open filters
-  // and expanded rows are untouched. Child views reload when refreshSignal changes.
-  async function refreshWorkspace() {
+  // The lists and every open child view (via refreshSignal), refreshed every few seconds so new
+  // requests show up quickly. Silent: a failed attempt keeps what is on screen, and lists update in
+  // place so open filters and expanded rows are untouched.
+  async function refreshLists() {
     setRefreshSignal((signal) => signal + 1)
-    await Promise.allSettled([fetchDashboard().then(setDashboard), fetchResidents().then(showResidents), fetchHousekeeping().then(showHousekeeping)])
+    await Promise.allSettled([fetchResidents().then(showResidents), fetchHousekeeping().then(showHousekeeping)])
     setLastRefreshedAt(new Date())
   }
 
-  useAutoRefresh(() => { void refreshWorkspace() })
+  // Everything, including the dashboard: the header button, and a slower timer, because the
+  // dashboard embeds every property photo and is too heavy to re-download every few seconds.
+  async function refreshWorkspace() {
+    await Promise.allSettled([fetchDashboard().then(setDashboard), refreshLists()])
+  }
+
+  useAutoRefresh(() => { void refreshLists() })
+  useAutoRefresh(() => { void fetchDashboard().then(setDashboard, () => undefined) }, slowRefreshIntervalMs)
 
   // A failed load is shown as an error with Retry rather than as an empty list, which would
   // misleadingly read as "you have no residents".
@@ -409,7 +417,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <p className="nav-label">Workspace</p>
           <NavItem icon={LayoutGrid} label="Overview" active={activeView === 'Overview'} onClick={() => handleNavigation('Overview')} />
           <NavItem icon={Building2} label="Properties" badge={stats.properties} active={activeView === 'Properties'} onClick={() => handleNavigation('Properties')} />
-          <NavItem icon={Users} label="Residents" badge={rentOverdueCount ? String(rentOverdueCount) : undefined} active={activeView === 'Residents'} onClick={() => handleNavigation('Residents')} />
+          <NavItem icon={Users} label="Residents" badge={activeResidentCount ? String(activeResidentCount).padStart(2, '0') : undefined} active={activeView === 'Residents'} onClick={() => handleNavigation('Residents')} />
           <NavItem icon={ClipboardList} label="Booking requests" badge={stats.pendingBookings ? String(stats.pendingBookings) : undefined} active={activeView === 'Booking requests'} onClick={() => handleNavigation('Booking requests')} />
           <NavItem icon={WalletCards} label="Payments" active={activeView === 'Payments'} onClick={() => handleNavigation('Payments')} />
           <p className="nav-label nav-label-spaced">Manage</p>

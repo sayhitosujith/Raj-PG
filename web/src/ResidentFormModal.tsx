@@ -7,6 +7,7 @@ import { todayDateInputValue } from './joinDate'
 import type { Resident } from './resident'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
 import { PhoneField } from './PhoneField'
+import { EmergencyContactFields, emergencyContactFields } from './EmergencyContact'
 import { readApiError } from './superAdmin'
 import { RoomSelect } from './RoomSelect'
 
@@ -102,7 +103,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
+    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'permanentAddress', ...emergencyContactFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
     const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
@@ -130,6 +131,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
+        <EmergencyContactFields contact={resident} />
         <IdentityDocumentFields details={resident} defaultNationality={prefill?.nationality} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
         <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
         <fieldset className="food-plan">

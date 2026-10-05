@@ -6,7 +6,7 @@ const photoSize = 256
 const logoMaxSide = 400
 /** Longest side of a stored UPI QR image; enough for a phone to scan it off another screen. */
 const upiQrMaxSide = 1000
-/** Longest side of a stored property photo. Kept modest: the owner dashboard, refreshed every minute, embeds every property photo. */
+/** Longest side of a stored property photo. Kept modest: the owner dashboard, refreshed every minute (see slowRefreshIntervalMs), embeds every property photo. */
 const propertyPhotoMaxSide = 1200
 
 type Result = { dataUrl: string } | { error: string }

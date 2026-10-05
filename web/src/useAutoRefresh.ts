@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
 
-/** How often open views re-fetch their data. */
-export const autoRefreshIntervalMs = 60_000
+/** How often open views re-fetch their data, so new requests and changes show within seconds. */
+export const autoRefreshIntervalMs = 10_000
+
+/** For payloads too heavy to poll every few seconds, such as the owner dashboard with its property photos. */
+export const slowRefreshIntervalMs = 60_000
 
 /**
- * Re-runs `reload` whenever a parent bumps `signal` (the refresh button or the one-minute timer),
+ * Re-runs `reload` whenever a parent bumps `signal` (the refresh button or the auto-refresh timer),
  * so every open view refreshes together from one trigger instead of running its own timers.
  * Compares against the last seen value, so React's development double-mount does not re-fetch.
  */
@@ -20,7 +23,7 @@ export function useRefreshSignal(signal: number, reload: () => void) {
 }
 
 /**
- * Calls `refresh` every minute while the tab is visible. Hidden tabs are skipped (no point
+ * Calls `refresh` every `intervalMs` while the tab is visible. Hidden tabs are skipped (no point
  * querying the database for a screen nobody sees); if a refresh was missed, it runs as soon as
  * the tab is shown again. The initial load stays with the caller's own effect.
  *

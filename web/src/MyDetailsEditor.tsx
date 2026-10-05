@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Pencil, X } from 'lucide-react'
 import { PhoneField } from './PhoneField'
+import { EmergencyContactFields, emergencyContactFields, type EmergencyContact } from './EmergencyContact'
 import { readApiError } from './superAdmin'
 
 /** The resident's own details as the editor needs them. */
-export type EditableDetails = { name: string; phone?: string | null; email?: string | null; permanentAddress?: string | null; isIndian: boolean; documentLast4?: string | null }
+export type EditableDetails = EmergencyContact & { name: string; phone?: string | null; email?: string | null; permanentAddress?: string | null; isIndian: boolean; documentLast4?: string | null }
 
 /**
- * "Edit" beside the resident's "My details" heading: a modal to change their name, phone, email and
- * permanent address, saved straight away. Their ID document is changed separately, through the
- * existing ID form, because a new document needs the owner's review before the portal reopens.
+ * "Edit" beside the resident's "My details" heading: a modal to change their name, phone, email,
+ * permanent address and emergency contact, saved straight away. Their ID document is changed
+ * separately, through the existing ID form, because a new document needs the owner's review first.
  */
 export function MyDetailsEditor({ details, onChanged, onNotice }: { details: EditableDetails; onChanged: () => Promise<void>; onNotice: (message: string) => void }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -38,7 +39,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const body = Object.fromEntries(['name', 'phone', 'email', 'permanentAddress'].map((field) => [field, String(form.get(field) ?? '')]))
+    const body = Object.fromEntries(['name', 'phone', 'email', 'permanentAddress', ...emergencyContactFields].map((field) => [field, String(form.get(field) ?? '')]))
     void send(() => fetch('/api/resident-portal/details', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), 'Could not save your details.', 'Your details are saved.')
   }
 
@@ -57,6 +58,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
           <PhoneField name="phone" label="Phone" defaultValue={details.phone ?? ''} />
           <label>Email <span>(optional)</span><input name="email" type="email" maxLength={120} defaultValue={details.email ?? ''} autoComplete="email" /></label>
           <label>Permanent address<textarea name="permanentAddress" rows={3} maxLength={300} defaultValue={details.permanentAddress ?? ''} /></label>
+          <EmergencyContactFields contact={details} />
           <p className="my-details-note">Your phone or email is how you sign in. A new address shows as unverified until your property owner checks it.</p>
           <div className="my-details-document">
             <div><strong>{details.isIndian ? 'Aadhaar number' : 'Passport number'}</strong><small>{details.documentLast4 ? (details.isIndian ? `XXXX XXXX ${details.documentLast4}` : `•••• ${details.documentLast4}`) : 'Not on file'}</small></div>

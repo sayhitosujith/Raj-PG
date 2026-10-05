@@ -26,7 +26,7 @@ type Coordinates = { latitude: number; longitude: number; /** Metres, as the dev
 // 10 m, then stops; after `gpsWaitMs` it settles for the best fix so far (indoors that may be 20–50 m).
 const targetAccuracyM = 10
 const gpsWaitMs = 15_000
-// The portal refreshes every minute; reusing a recent fix keeps GPS from running (and draining a
+// The portal refreshes every few seconds; reusing a recent fix keeps GPS from running (and draining a
 // phone battery) each time. A resident who walks across town is picked up within five minutes.
 const fixReuseMs = 5 * 60_000
 let lastFix: { position: Coordinates; at: number } | null = null

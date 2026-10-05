@@ -11,10 +11,12 @@ import { AccessKeyReset } from './AccessKeyReset'
 import { FoodRequestReview } from './FoodRequestReview'
 import { formatAadhar } from './aadharNumber'
 import { PhoneText } from './PhoneField'
+import { EmergencyContactText } from './EmergencyContact'
 import { CopyButton } from './CopyButton'
 import { LazyCountryLabel } from './CountryField'
 import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, isOnOrBeforeToday, visaTypeLabels } from './identity'
 import { exitBadge, ResidentExitPanel } from './ResidentExitPanel'
+import { AccountDeletionReview, deletionBadge } from './AccountDeletionReview'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -106,7 +108,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
     <article className={`resident-card${isExpanded ? ' is-expanded' : ''}`} style={{ '--stagger': Math.min(index, maxStaggerSteps) } as CSSProperties}>
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
-        <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
+        <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
         <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document">Aadhaar {formatAadhar(resident.aadharNumber, true)}</span> : resident.passportNumber && <span className="resident-document">Passport {resident.passportNumber}</span>}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
@@ -119,6 +121,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
       <div className="resident-details-collapse" id={detailsId} inert={!isExpanded}>
         <div className="resident-details-inner">
           <ResidentExitPanel resident={resident} deposit={securityDeposit} onChanged={onChanged} onNotice={onNotice} />
+          <AccountDeletionReview resident={resident} onChanged={onChanged} onNotice={onNotice} />
           <AadharVerificationPanel resident={resident} onVerify={onVerify} />
           <RentPanel rent={resident.rent} onRecord={onRecordRent} onUndo={onUndoRent} />
           <dl className="resident-details">
@@ -137,6 +140,8 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
                   <div><dt>Visa</dt><dd>{resident.visaNumber ? `${resident.visaNumber}${resident.visaType ? ` · ${visaTypeLabels[resident.visaType] ?? resident.visaType}` : ''}` : '—'}</dd></div>
                   <div><dt>Visa expiry</dt><dd><ExpiryDate value={resident.visaExpiry} /></dd></div>
                 </>}
+            {/* After the ID cells, so it fills the first row's free space on wide screens instead of a row of its own. */}
+            <div><dt>Emergency contact</dt><dd><EmergencyContactText contact={resident} /></dd></div>
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}<AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} /></dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>

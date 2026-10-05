@@ -19,7 +19,7 @@ async function fetchRequests() {
 }
 
 // The server says from when a reminder is allowed (slot started, cooldown over). The current time
-// is taken each time the list loads, and the one-minute auto refresh reloads it, so the button
+// is taken each time the list loads, and the auto refresh reloads it, so the button
 // appears on time.
 const canRemindNow = (request: HousekeepingRequest, now: number) => request.canRemindAt !== null && new Date(request.canRemindAt).getTime() <= now
 

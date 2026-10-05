@@ -80,6 +80,11 @@ model Resident {
   nationality             String                   @default("IN")
   aadharNumber            String?
   permanentAddress        String?
+  // One optional emergency contact, set by the resident or the owner; the owner calls it if something
+  // happens to the resident. The phone is stored in E.164 like the resident's own.
+  emergencyContactName     String?
+  emergencyContactRelation String?
+  emergencyContactPhone    String?
   // False after the resident edits their own address: its "Verified" badge waits for the owner again.
   addressVerified         Boolean                  @default(true)
   aadharCardUrl           String?
@@ -109,6 +114,13 @@ model Resident {
   exitReason              String?
   exitRequestedAt         DateTime?
   movedOutAt              DateTime?
+  // "Delete my account": when the resident asked (null when nothing is pending), when the owner last
+  // declined and why (both shown to the resident until they ask again), and when the owner approved
+  // it. Approval erases their personal details but keeps the record and rent history.
+  deletionRequestedAt     DateTime?
+  deletionDeclinedAt      DateTime?
+  deletionDeclineReason   String?
+  deletedAt               DateTime?
   // Portal content stays locked until an owner approves the resident's identity documents: Aadhaar,
   // or passport and visa for non-Indians. Named before passports were supported.
   aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)
