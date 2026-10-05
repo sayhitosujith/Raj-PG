@@ -40,7 +40,7 @@ import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
 import { HouseRules } from './HouseRules'
-import { NextMealAlert, WeeklyMenuButton } from './ResidentFood'
+import { NextMealAlert, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { ThemeToggle } from './ThemeToggle'
@@ -131,6 +131,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   const [notice, setNotice] = useState('')
   const weather = useWeather(refreshSignal)
   const holidays = useHolidays('/api/resident-portal/holidays')
+  const todayMenu = useTodayMenu(refreshSignal, profile.foodOpted)
   const todayHoliday = holidayOn(holidays, todayDateInputValue())
 
   useEffect(() => {
@@ -192,7 +193,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         </section>
         </div>
         <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} /><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
-        <section className="workspace-view portal-panel" data-panel="home">
+        <section className="workspace-view portal-panel" data-panel="info">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />
         </section>
@@ -212,6 +213,11 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
             <ResidentRentPayments rent={profile.rent} />
           </section>
         </div>
+        {/* Phones only (CSS): the Home card keeps the meals row on wide screens, which show every section at once. */}
+        <section className="workspace-view portal-panel portal-info-meals" data-panel="info">
+          <div className="workspace-view-heading"><div><p className="eyebrow">Food</p><h2>Meals</h2><p>{profile.foodOpted ? "Today's meals" : "Meal timings"} at {profile.property}.</p></div>{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}</div>
+          <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu ?? undefined} />
+        </section>
         <div className="portal-panel" data-panel="info"><AppComingSoon /></div>
         <section className="workspace-view portal-profile" data-panel="profile">
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div><div className="portal-profile-exit">{exitPg}</div></div>

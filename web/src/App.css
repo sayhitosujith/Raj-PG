@@ -394,6 +394,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-copy { display: grid; gap: 2px; min-width: 0; }
 .meal-copy strong { color: #344449; font-size: 12px; }
 .meal-copy small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+/* Today's dishes under the time (Info tab); long menus are cut at three lines. */
+.meal-items { display: -webkit-box; overflow: hidden; margin-top: 2px; color: #45544f; font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
 .meal-tile.is-serving { border-color: var(--teal); background: var(--teal-soft); }
 .meal-tile.is-serving .meal-icon { color: white; background: var(--teal); }
@@ -1738,6 +1740,14 @@ div.portal-panel { display: contents; }
   .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
   .page-content[data-tab="info"] .house-rules li { padding: 16px; }
   .page-content[data-tab="info"] .app-coming-soon { margin-top: 20px; }
+}
+/* Meals on the Info tab (phones), next to the upcoming holidays: the weekly menu and meal timings
+   leave the Home card there, which keeps only the cricket score, or nothing when no match is on. */
+.portal-info-meals { display: none; }
+@media (max-width: 720px) {
+  .page-content[data-tab="info"] .portal-info-meals { display: block; }
+  .page-content .meals-row .weekly-menu-button, .page-content .meals-row .meal-timings { display: none; }
+  .page-content .meals-row:not(:has(.cricket-score)) { display: none; }
 }
 
 /* Owner's extra house rules (a checklist under the tiles) and the property form's Info fields. */

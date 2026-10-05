@@ -1,7 +1,10 @@
-import { formatMealWindow, mealDetails, mealStatus, type MealTimes } from './meals'
+import { formatMealWindow, mealDetails, mealStatus, type Meal, type MealTimes } from './meals'
 
-/** The resident's meal timings, highlighting the meal being served now or the next one. */
-export function MealTimings({ times, minutesIntoDay }: { times: MealTimes; minutesIntoDay: number }) {
+/**
+ * The resident's meal timings, highlighting the meal being served now or the next one. `menu`, when
+ * given, adds what each meal serves today under its time; a meal the owner has not set shows none.
+ */
+export function MealTimings({ times, minutesIntoDay, menu }: { times: MealTimes; minutesIntoDay: number; menu?: Partial<Record<Meal, string | null>> }) {
   const { serving, next } = mealStatus(times, minutesIntoDay)
   return (
     <div className="meal-timings" aria-label="Meal timings">
@@ -10,7 +13,7 @@ export function MealTimings({ times, minutesIntoDay }: { times: MealTimes; minut
         return (
           <div key={meal} className={`meal-tile${meal === serving ? ' is-serving' : meal === next ? ' is-next' : ''}`}>
             <span className="meal-icon"><Icon size={16} /></span>
-            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small></span>
+            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small>{menu?.[meal] && <span className="meal-items">{menu[meal]}</span>}</span>
             {tag && <em className="meal-tag">{tag}</em>}
           </div>
         )

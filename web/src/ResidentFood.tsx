@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, ThumbsDown, ThumbsUp, UtensilsCrossed, X } from 'lucide-react'
 import { relativeDayLabel, type ResidentMeal, type ResidentMenuDay } from './food'
-import { formatMealWindow, mealDetails } from './meals'
+import { formatMealWindow, mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
@@ -122,6 +122,18 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
       </div>}
     </>
   )
+}
+
+/**
+ * What each meal serves today, from the resident's menu; null while loading, on failure, or when
+ * `enabled` is false. Residents without the food plan pass false, since the menu API refuses them.
+ */
+export function useTodayMenu(refreshSignal: number, enabled: boolean) {
+  const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
+  useEffect(() => { if (enabled) fetchMenu().then(setDays, () => undefined) }, [enabled])
+  useRefreshSignal(refreshSignal, () => { if (enabled) fetchMenu().then(setDays, () => undefined) })
+  const today = enabled ? days?.[0] : undefined
+  return today ? Object.fromEntries(today.meals.map((meal) => [meal.meal, meal.items])) as Partial<Record<Meal, string | null>> : null
 }
 
 // Which meal alert the resident answered "I'll eat" to. Per-browser convenience only: eating is the
