@@ -13,10 +13,10 @@ export const stayEndedCode = 'STAY_ENDED'
 
 const longDate = (date: Date) => date.toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })
 
-// Clears a resident's password and access key and ends their sessions: from then on only a new
+// Clears a resident's password, access key and passkeys and ends their sessions: from then on only a new
 // access key from the owner ("Send new login details") lets them back in.
 const revokeSignIn = (residentId: string) => prisma.$transaction([
-  prisma.resident.update({ where: { id: residentId }, data: { passwordHash: null, accessKeyHash: null } }),
+  prisma.resident.update({ where: { id: residentId }, data: { passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} } } }),
   prisma.session.deleteMany({ where: { residentId } }),
 ])
 
@@ -211,7 +211,7 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : null
     await prisma.$transaction([
       // Their password and access key are cleared too, so moving back in needs a new access key.
-      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
+      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
       ...(resident.roomId ? [prisma.room.update({ where: { id: resident.roomId }, data: { occupied: false } })] : []),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])

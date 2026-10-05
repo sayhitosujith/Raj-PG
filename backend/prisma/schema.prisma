@@ -156,6 +156,7 @@ model Resident {
   policiesAcceptedVersion DateTime?
   policiesAcceptedAt      DateTime?
   mealFeedback            MealFeedback[]
+  passkeys                ResidentPasskey[]
   createdAt               DateTime                 @default(now())
 }
 
@@ -548,4 +549,23 @@ model Expense {
   createdAt  DateTime  @default(now())
 
   @@index([date])
+}
+
+// A passkey a resident saved on their phone to sign in with Face ID, Touch ID or a fingerprint. Only
+// the public key is stored; the biometric check happens on the device and never reaches the server.
+// counter is the authenticator's signature count, kept to spot a cloned key.
+model ResidentPasskey {
+  id           String    @id @default(cuid())
+  residentId   String
+  resident     Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      Int       @default(0)
+  transports   String[]
+  // Which device it is on, from the browser ("iPhone", "Android"), so the resident can tell keys apart.
+  label        String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([residentId])
 }

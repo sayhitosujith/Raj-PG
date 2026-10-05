@@ -29,7 +29,7 @@ async function closeAccount(id: string) {
     prisma.resident.update({
       where: { id },
       data: {
-        passwordHash: null, accessKeyHash: null, whatsappOptIn: false, emailOptIn: false, active: false, roomId: null, movedOutAt: now,
+        passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, whatsappOptIn: false, emailOptIn: false, active: false, roomId: null, movedOutAt: now,
         deletionRequestedAt: null, deletionDeclinedAt: null, deletionDeclineReason: null, deletedAt: now, ...(movedOutFrom ? { movedOutFrom } : {}),
       },
     }),

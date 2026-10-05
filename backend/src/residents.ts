@@ -337,7 +337,7 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
     const isRenewal = current.exitStatus === 'APPROVED' && !current.movedOutAt && Boolean(current.exitDate && current.exitDate.toISOString().slice(0, 10) < propertyNow().date)
     const renewal = isRenewal ? { exitStatus: null, exitDate: null, exitReason: null, exitRequestedAt: null } : {}
     await prisma.$transaction([
-      prisma.resident.update({ where: { id }, data: { accessKeyHash: hashAccessKey(accessKey), passwordHash: null, ...renewal } }),
+      prisma.resident.update({ where: { id }, data: { accessKeyHash: hashAccessKey(accessKey), passwordHash: null, passkeys: { deleteMany: {} }, ...renewal } }),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])
     const isSending = (request.body as { send?: unknown } | undefined)?.send === true

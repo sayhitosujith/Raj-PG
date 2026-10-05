@@ -27,6 +27,7 @@ import { residentInfoOf } from './residentInfo.js'
 import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 import { cancelExit, earliestExitDate, exitDues, noticeDaysFor, requestExit } from './exits.js'
 import { cancelAccountDeletion, requestAccountDeletion } from './accountDeletion.js'
+import { passkeyLoginRoutes, residentPasskeyRoutes } from './passkeys.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -216,6 +217,10 @@ residentPortalRouter.delete('/resident-portal/deletion-request', requireResident
 
 // Complaints and repairs: list, report (with an optional photo) and view the photo of one's own requests.
 residentMaintenanceRoutes(residentPortalRouter, [requireResident, requirePortalAccess], (locals) => (locals.auth as AuthContext).userId)
+
+// Face ID / fingerprint sign-in: saving and managing passkeys needs a full session; signing in with one is public.
+residentPasskeyRoutes(residentPortalRouter, [requireResident, requirePortalAccess])
+passkeyLoginRoutes(residentPortalRouter)
 
 // The resident's property's active fire alarm (or null), polled every few seconds. Only a session is
 // required, not full portal access, so residents still awaiting ID approval hear the alarm too.

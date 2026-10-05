@@ -43,7 +43,7 @@ export async function findRentLockMessage(residentId: string) {
  */
 export async function revokeCredentialsIfLocked(client: Prisma.TransactionClient, residentId: string) {
   if (!(await lockState(client, residentId)).isLocked) return false
-  await client.resident.update({ where: { id: residentId }, data: { passwordHash: null, accessKeyHash: null } })
+  await client.resident.update({ where: { id: residentId }, data: { passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} } } })
   await client.session.deleteMany({ where: { residentId } })
   return true
 }
