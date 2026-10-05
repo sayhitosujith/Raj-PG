@@ -37,8 +37,8 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
         <ThemeToggle className="card-theme-toggle" />
         <div className="brand-row"><BrandMark /></div>
         <h1>Sign in</h1>
-        <label>Email or phone number<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus placeholder="Outside India? Start the number with its code, e.g. +44" /></label>
-        <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
+        <label>Email<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus placeholder="Enter your email ID" /></label>
+        <label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Enter your password" /></label>
         <p className="login-hint">Resident signing in for the first time? Enter the access key from your property owner as your password.</p>
         {error && <p className="login-error" role="alert">{error}</p>}
         <button type="submit" className="primary-button" disabled={isSubmitting}><LogIn size={16} /> {isSubmitting ? 'Signing in…' : 'Sign in'}</button>
