@@ -325,7 +325,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .profile-photo-button:hover .profile-photo-overlay, .profile-photo-button:focus-visible .profile-photo-overlay, .profile-photo-button.is-saving .profile-photo-overlay { opacity: 1; }
 .profile-photo-remove { font-size: 10px; }
 .spin { animation: spin .8s linear infinite; }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-direction: row; justify-content: space-between; gap: 14px; }
   .profile-photo-button { width: 64px; height: 64px; }
   .profile-photo { font-size: 20px; }
@@ -477,7 +477,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-amenity-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .resident-amenity { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #cfe7dc; border-radius: 999px; color: #2f5d55; background: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px #18352f0d; }
 .resident-amenity svg { color: var(--teal); }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-wrap: wrap; }
   .resident-amenities { order: 3; flex-basis: 100%; margin-left: 0; }
 }
@@ -1688,10 +1688,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Narrow cards: show the whole property image (a logo-style picture was being cropped to a strip). */
 @container (max-width: 640px) { .portal-shell .portal-property-photo { height: auto; max-height: 200px; aspect-ratio: 16 / 9; object-fit: contain; } }
 
-/* Phone tabs: a fixed bottom bar; only the active tab's sections show. Hidden on wider screens. */
+/* Phone and tablet tabs (up to 1024px): a fixed bottom bar; only the active tab's sections show. Hidden on wider screens. */
 .portal-tabs { display: none; }
 div.portal-panel { display: contents; }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(190 226 210); background: rgb(242 250 246 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
   .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(40 150 110 / .14); }
@@ -1728,7 +1728,7 @@ div.portal-panel { display: contents; }
 .maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 
-/* Profile tab (phones only): photo, details, move-out, notifications and password (sign out stays in the top bar). On phones those
+/* Profile tab (phones and tablets): photo, details, move-out, notifications and password (sign out stays in the top bar). There those
    leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */
 .portal-profile { display: none; }
 .portal-profile-head { display: flex; align-items: center; gap: 14px; }
@@ -1777,7 +1777,7 @@ div.portal-panel { display: contents; }
 :root[data-theme="dark"] .delete-account-copy strong { color: rgb(252 165 165); }
 :root[data-theme="dark"] .delete-account-button { color: rgb(252 165 165); background: rgb(69 10 10); }
 :root[data-theme="dark"] .delete-account-button:hover, :root[data-theme="dark"] .delete-account-button:focus-visible { color: white; background: rgb(220 38 38); }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
   /* Phones change their password from the Profile tab, so the top bar keeps only refresh, theme and sign out. */
@@ -1788,7 +1788,7 @@ div.portal-panel { display: contents; }
 
 /* Phones: short tabs no longer leave the footer floating mid-screen. The page fills the window and
    the footer (with the app teaser on the Info tab) sits at the bottom, just above the tab bar. */
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .portal-shell { display: flex; flex-direction: column; }
   .portal-shell .page-content { display: flex; flex: 1; flex-direction: column; width: 100%; }
   .portal-shell .page-content > * { flex-shrink: 0; }
@@ -1798,7 +1798,7 @@ div.portal-panel { display: contents; }
 }
 /* Info tab on phones: House rules grows to fill the space down to the app card, its rules stacked
    one per row at the top of the card, instead of leaving an empty gap below it. */
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .page-content[data-tab="info"] [data-panel="info"] > .workspace-view:last-child { display: flex; flex: 1 0 auto; flex-direction: column; }
   .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
   .page-content[data-tab="info"] .house-rules li { padding: 16px; }
@@ -1807,7 +1807,7 @@ div.portal-panel { display: contents; }
 /* Meals on the Info tab (phones), next to the upcoming holidays: the weekly menu and meal timings
    leave the Home card there, which keeps only the cricket score, or nothing when no match is on. */
 .portal-info-meals { display: none; }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .page-content[data-tab="info"] .portal-info-meals { display: block; }
   .page-content .meals-row .weekly-menu-button, .page-content .meals-row .meal-timings { display: none; }
   .page-content .meals-row:not(:has(.cricket-score)) { display: none; }

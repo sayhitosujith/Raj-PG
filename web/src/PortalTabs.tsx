@@ -15,7 +15,7 @@ const tabs: Array<{ key: PortalTab; label: string; icon: LucideIcon }> = [
  * A bottom tab bar for phones, so the long portal becomes five short screens: Home (details, rent,
  * meals, announcements, holidays), Services (complaints, housekeeping), Rent (payments), Profile
  * (your details, notifications, password, sign out) and Info (house rules, app). Sections carry
- * data-panel and CSS hides the others below 720px; on wider screens the bar is hidden and
+ * data-panel and CSS hides the others up to 1024px (phones and tablets); on wider screens the bar is hidden and
  * everything shows as one page.
  */
 export function PortalTabs({ active, onChange }: { active: PortalTab; onChange: (tab: PortalTab) => void }) {
