@@ -67,8 +67,8 @@ function hasTransparency(canvas: HTMLCanvasElement) {
 /**
  * Shrinks a property photo to 1200px on its longest side, without cropping. Ordinary photos become
  * JPEG (5–10 MB phone photos upload as roughly 150–250 KB). JPEG cannot store transparency, so an
- * image with a transparent background is kept as WebP instead (PNG where the browser cannot encode
- * WebP); otherwise its transparent areas turned black.
+ * image with a transparent background (such as a logo) is kept as PNG instead; not WebP, which is
+ * smaller but cannot go into the PDF rent receipts that show this photo.
  */
 export async function resizePropertyPhoto(file: File): Promise<Result> {
   const bitmap = await decode(file)
@@ -76,7 +76,7 @@ export async function resizePropertyPhoto(file: File): Promise<Result> {
   const scale = Math.min(1, propertyPhotoMaxSide / Math.max(bitmap.width, bitmap.height))
   const canvas = draw(bitmap, Math.round(bitmap.width * scale), Math.round(bitmap.height * scale), [0, 0, bitmap.width, bitmap.height])
   if (!canvas) return { error: 'Your browser could not process the image.' }
-  return { dataUrl: hasTransparency(canvas) ? canvas.toDataURL('image/webp', 0.9) : canvas.toDataURL('image/jpeg', 0.8) }
+  return { dataUrl: hasTransparency(canvas) ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.8) }
 }
 
 async function resizeToFitPng(file: File, maxSide: number): Promise<Result> {

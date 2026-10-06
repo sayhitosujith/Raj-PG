@@ -24,7 +24,11 @@ export const receiptNumber = (rentPaymentId: string, month: string) => `RC-${mon
 
 type ReceiptData = {
   number: string
-  business: { name: string; phone: string | null; email: string | null; logo: Buffer | null }
+  business: { name: string; phone: string | null; email: string | null }
+  /** The resident's property photo, shown at the top left when there is one. */
+  propertyPhoto: Buffer | null
+  /** The owner's UPI ID the money was sent to, for a UPI transfer; null otherwise. */
+  upi: { id: string } | null
   resident: { name: string; phone: string | null; email: string | null; room: string; property: string; location: string }
   month: string
   amount: number
@@ -33,10 +37,27 @@ type ReceiptData = {
   reference: string | null
 }
 
-// The stored logo is a PNG/JPEG data URL (resized in the browser); anything else is skipped.
-function logoImage(dataUrl: string | null) {
+// An uploaded photo is a PNG/JPEG data URL (resized in the browser); anything else is skipped.
+function dataUrlImage(dataUrl: string | null) {
   const match = dataUrl?.match(/^data:image\/(png|jpeg);base64,(.+)$/s)
   return match ? Buffer.from(match[2], 'base64') : null
+}
+
+/**
+ * The property photo as PNG/JPEG bytes for the PDF, or null. An uploaded photo is a data URL; a
+ * pasted one is a web address, fetched here (JPEG requested, since PDFs cannot embed WebP or AVIF).
+ * A slow or odd image just leaves that corner empty.
+ */
+async function propertyPhoto(imageUrl: string | null | undefined) {
+  if (!imageUrl) return null
+  if (imageUrl.startsWith('data:')) return dataUrlImage(imageUrl)
+  try {
+    const response = await fetch(imageUrl, { headers: { Accept: 'image/jpeg,image/png' }, signal: AbortSignal.timeout(4000) })
+    const type = response.headers.get('content-type') ?? ''
+    return response.ok && /image\/(jpeg|png)/.test(type) ? Buffer.from(await response.arrayBuffer()) : null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -55,7 +76,11 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
   const { resident } = payment
   return {
     number: receiptNumber(payment.id, payment.month),
-    business: { name: settings.businessName, phone: settings.contactPhone, email: settings.contactEmail, logo: logoImage(settings.logoUrl) },
+    // The property's manager number (Edit property) is who residents should call about their rent;
+    // the business-wide number covers properties without one and moved-out residents.
+    business: { name: settings.businessName, phone: resident.room?.property.ownerPhone || settings.contactPhone, email: settings.contactEmail },
+    propertyPhoto: await propertyPhoto(resident.room?.property.imageUrl),
+    upi: report && settings.upiId ? { id: settings.upiId } : null,
     resident: { name: displayName(resident.name), phone: resident.phone, email: resident.email, room: resident.room?.number ?? '—', property: resident.room?.property.name ?? resident.movedOutFrom ?? '', location: resident.room?.property.location ?? '' },
     month: payment.month,
     amount: payment.amount,
@@ -63,6 +88,25 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
     method,
     reference,
   }
+}
+
+/**
+ * A round "PAID" seal centred on (cx, cy), drawn like a rubber stamp: two rings, the word across the
+ * middle between two rules, and the payment date under it, tilted a little and slightly see-through
+ * so it reads as stamped on rather than printed.
+ */
+function drawPaidSeal(doc: PDFKit.PDFDocument, cx: number, cy: number, radius: number, paidOn: string) {
+  doc.save()
+  doc.rotate(-14, { origin: [cx, cy] })
+  doc.opacity(0.88)
+  doc.circle(cx, cy, radius).lineWidth(2.4).strokeColor(colors.teal).stroke()
+  doc.circle(cx, cy, radius - 5).lineWidth(0.9).strokeColor(colors.teal).stroke()
+  const ruleHalf = radius - 14
+  doc.moveTo(cx - ruleHalf, cy - 15).lineTo(cx + ruleHalf, cy - 15).lineWidth(0.9).strokeColor(colors.teal).stroke()
+  doc.moveTo(cx - ruleHalf, cy + 13).lineTo(cx + ruleHalf, cy + 13).lineWidth(0.9).strokeColor(colors.teal).stroke()
+  doc.font('Helvetica-Bold').fontSize(19).fillColor(colors.teal).text('PAID', cx - radius, cy - 10, { width: radius * 2, align: 'center', characterSpacing: 2.5, lineBreak: false })
+  doc.font('Helvetica-Bold').fontSize(6.5).text(paidOn.toUpperCase(), cx - radius, cy + 18, { width: radius * 2, align: 'center', characterSpacing: 0.6, lineBreak: false })
+  doc.restore()
 }
 
 /** Renders the receipt as a one-page A4 PDF laid out like an invoice. */
@@ -83,24 +127,28 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     }
     const label = (value: string, x: number, y: number, widthOrUndefined?: number, align?: 'left' | 'right') => text(value.toUpperCase(), x, y, { size: 7.5, bold: true, color: colors.muted, spacing: 0.9, width: widthOrUndefined, align })
 
-    // Header band: brand on the left, document title and number on the right.
+    // Header band: the property photo on the left, document title and number on the right.
     doc.rect(0, 0, doc.page.width, 6).fill(colors.teal)
-    let brandX = left
-    if (receipt.business.logo) {
-      try { doc.image(receipt.business.logo, left, 44, { fit: [120, 44] }); brandX = left + 132 } catch { brandX = left }
+    // The resident's property photo top left when there is one (a rounded square, centre-cropped);
+    // the property's contact details are in the Property column below.
+    const photoSize = 60
+    let brandArtBottom = 98
+    if (receipt.propertyPhoto) {
+      try {
+        doc.save()
+        doc.roundedRect(left, 40, photoSize, photoSize, 10).clip()
+        doc.image(receipt.propertyPhoto, left, 40, { cover: [photoSize, photoSize], align: 'center', valign: 'center' })
+        doc.restore()
+        brandArtBottom = 40 + photoSize
+      } catch {
+        doc.restore()
+      }
     }
-    // Kept clear of the right-aligned title block, wrapping if the business name is long.
-    const brandWidth = right - 190 - brandX
-    text(receipt.business.name, brandX, 48, { size: 17, bold: true, width: brandWidth })
-    const contact = [receipt.business.phone, receipt.business.email].filter(Boolean).join('   |   ')
-    let contactY = doc.y + 4
-    for (const line of [receipt.business.phone, receipt.business.email].filter((value): value is string => Boolean(value))) { text(line, brandX, contactY, { size: 9, color: colors.muted, width: brandWidth }); contactY = doc.y + 1 }
-    const brandBottom = doc.y
     text('RENT RECEIPT', left, 46, { size: 18, bold: true, color: colors.teal, width, align: 'right', spacing: 1.2 })
     text(`Receipt no. ${receipt.number}`, left, 72, { size: 9, color: colors.muted, width, align: 'right' })
     text(`Issued ${formatDate(new Date())}`, left, 85, { size: 9, color: colors.muted, width, align: 'right' })
-    // The divider sits below whichever side of the header ran longer (a long name wraps).
-    const dividerY = Math.max(brandBottom, receipt.business.logo ? 92 : 98) + 18
+    // The divider sits below the photo when there is one.
+    const dividerY = brandArtBottom + 18
     doc.moveTo(left, dividerY).lineTo(right, dividerY).lineWidth(1).strokeColor(colors.line).stroke()
 
     // Parties: who paid, and for which room.
@@ -115,10 +163,25 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     label('Property', propertyX, partiesTop)
     text(receipt.resident.property, propertyX, partiesTop + 14, { size: 12, bold: true, width: column })
     text(`Room ${receipt.resident.room}`, propertyX, doc.y + 3, { size: 9.5, color: colors.muted, width: column })
+    // Who to contact about this property: its manager number (or the business phone) and email.
+    for (const line of [receipt.business.phone, receipt.business.email].filter((value): value is string => Boolean(value))) text(line, propertyX, doc.y + 2, { size: 9.5, color: colors.muted, width: column })
     const link = mapLink(receipt.resident.location)
     if (link) text('View location on map', propertyX, doc.y + 2, { size: 9.5, color: colors.teal, width: column, link })
     else if (receipt.resident.location.trim()) text(receipt.resident.location.trim(), propertyX, doc.y + 2, { size: 9.5, color: colors.muted, width: column })
     y = Math.max(partiesBottom, doc.y) + 28
+
+    // Where a UPI transfer was received: the owner's UPI ID, paid for this property, in a strip above the items.
+    if (receipt.upi) {
+      const stripHeight = 44
+      doc.roundedRect(left, y, width, stripHeight, 6).lineWidth(1).strokeColor(colors.line).stroke()
+      label('Received via UPI', left + 14, y + 10)
+      text('UPI ID', left + 14, y + 25, { size: 9.5, color: colors.muted })
+      text(receipt.upi.id, left + 60, y + 25, { size: 9.5, bold: true, width: column - 60 })
+      const paidTo = receipt.resident.property || receipt.business.name
+      text('Paid to', propertyX, y + 25, { size: 9.5, color: colors.muted })
+      text(paidTo, propertyX + 46, y + 25, { size: 9.5, bold: true, width: column - 46 })
+      y += stripHeight + 20
+    }
 
     // Line items: one rent month per receipt, then the total.
     const amountWidth = 130
@@ -136,9 +199,6 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     y += 14
     text('Total received', periodX, y + 4, { size: 11, bold: true })
     text(formatInr(receipt.amount), right - amountWidth - 12, y, { size: 16, bold: true, color: colors.teal, width: amountWidth, align: 'right' })
-    // A "PAID" stamp beside the total makes the status obvious at a glance.
-    doc.roundedRect(left, y - 4, 64, 26, 5).lineWidth(1.5).strokeColor(colors.teal).stroke()
-    text('PAID', left, y + 3, { size: 12, bold: true, color: colors.teal, width: 64, align: 'center', spacing: 2 })
     y += 52
 
     // Payment details.
@@ -146,17 +206,21 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     const boxHeight = 40 + details.length * 22
     doc.roundedRect(left, y, width, boxHeight, 8).fill(colors.tealSoft)
     label('Payment details', left + 16, y + 12)
+    const sealRadius = 46
     details.forEach(([name, value], index) => {
       const rowY = y + 30 + index * 22
       text(name, left + 16, rowY, { size: 10, color: colors.muted })
-      text(value, left + 150, rowY, { size: 10, width: width - 166 })
+      // Values stop short of the seal on the right.
+      text(value, left + 150, rowY, { size: 10, width: width - 166 - sealRadius * 2 - 24 })
     })
+    drawPaidSeal(doc, right - sealRadius - 24, y + Math.max(boxHeight, sealRadius * 2 + 16) / 2, sealRadius, formatDate(receipt.paidAt))
 
     // Footer, pinned to the bottom of the page.
     const footerY = doc.page.height - 86
+    const contact = [receipt.business.phone, receipt.business.email].filter(Boolean).join('   |   ')
     doc.moveTo(left, footerY).lineTo(right, footerY).lineWidth(1).strokeColor(colors.line).stroke()
     text('This is a computer-generated receipt and does not require a signature.', left, footerY + 14, { size: 8.5, color: colors.muted, width, align: 'center' })
-    text(`Thank you. For any questions, contact ${receipt.business.name}${contact ? ` (${contact})` : ''}.`, left, footerY + 28, { size: 8.5, color: colors.muted, width, align: 'center' })
+    text(`Thank you. For any questions, contact ${receipt.resident.property || receipt.business.name}${contact ? ` (${contact})` : ''}.`, left, footerY + 28, { size: 8.5, color: colors.muted, width, align: 'center' })
     doc.end()
   })
 }
