@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run neutral-portal && tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "neutral-portal": "node scripts/neutral-portal.mjs"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "postcss": "^8.5.29",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }

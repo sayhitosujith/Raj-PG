@@ -46,7 +46,8 @@ export function PayRentButton({ rent, onPaid, onNotice, className = '' }: { rent
         name: 'Rent payment',
         description: `Rent for ${order.months.length} ${order.months.length === 1 ? 'month' : 'months'}`,
         prefill: order.prefill,
-        theme: { color: '#167c70' },
+        // Matches the resident portal, which has no green.
+        theme: { color: '#1b2528' },
         handler: (result) => { void verify(result) },
         modal: { ondismiss: () => setIsBusy(false) },
       })

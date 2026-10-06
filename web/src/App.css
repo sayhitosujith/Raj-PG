@@ -716,8 +716,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes portal-drift-b { from { transform: translate3d(0, 0, 0) rotate(0deg); } to { transform: translate3d(-5vmax, -3vmax, 0) rotate(8deg); } }
 /* Swaying tree line along the bottom, behind the cards; tinted from theme tokens like the glows. */
 .portal-scenery { position: fixed; z-index: -1; right: 0; bottom: 0; left: 0; width: 100%; height: clamp(120px, 22vh, 220px); pointer-events: none; }
-.scenery-back { color: color-mix(in srgb, var(--teal) 9%, transparent); fill: currentColor; }
-.scenery-front { color: color-mix(in srgb, var(--teal) 16%, transparent); fill: currentColor; }
+.scenery-back { color: color-mix(in srgb, #5c6670 9%, transparent); fill: currentColor; }
+.scenery-front { color: color-mix(in srgb, #5c6670 16%, transparent); fill: currentColor; }
 .scenery-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: tree-sway var(--sway-duration, 7s) ease-in-out var(--sway-delay, 0s) infinite alternate; }
 @keyframes tree-sway { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
 @media (prefers-reduced-motion: reduce) {
@@ -1053,8 +1053,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
  */
 .portal-sky {
   position: absolute; z-index: -1; top: 0; right: 0; left: 0; height: min(640px, 85vh); overflow: hidden; pointer-events: none;
-  /* Light theme: a brand-green evening, dark enough at the top for stars to show. */
-  background: linear-gradient(180deg, rgb(20 92 74 / .8) 0%, rgb(46 132 104 / .6) 34%, rgb(120 184 156 / .45) 60%, rgb(206 232 218 / .3) 80%, transparent 100%);
+  /* Light theme: a grey evening, dark enough at the top for stars to show. */
+  background: linear-gradient(180deg, rgb(54 60 70 / .8) 0%, rgb(90 97 108 / .6) 34%, rgb(150 156 166 / .45) 60%, rgb(218 222 228 / .3) 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, black 55%, transparent 100%); mask-image: linear-gradient(180deg, black 55%, transparent 100%);
   animation: sky-fade 3s ease-out both;
 }
@@ -1071,7 +1071,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes moon-rise { from { transform: translate(-50%, 60%); opacity: .3; } to { transform: translate(-50%, -50%); opacity: 1; } }
 @keyframes moon-glow { from { box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22); } to { box-shadow: 0 0 55px 18px rgb(240 238 220 / .55), 0 0 150px 75px rgb(200 210 255 / .28); } }
 /* Dark theme: a deep green night with brighter stars. */
-:root[data-theme="dark"] .portal-sky { background: linear-gradient(180deg, rgb(4 24 20 / .96) 0%, rgb(10 44 36 / .88) 38%, rgb(18 62 50 / .62) 64%, rgb(16 40 34 / .3) 82%, transparent 100%); }
+:root[data-theme="dark"] .portal-sky { background: linear-gradient(180deg, rgb(10 12 16 / .96) 0%, rgb(22 25 30 / .88) 38%, rgb(36 40 47 / .62) 64%, rgb(28 31 36 / .3) 82%, transparent 100%); }
 :root[data-theme="dark"] .sky-moon { box-shadow: 0 0 45px 14px rgb(240 238 220 / .35), 0 0 140px 70px rgb(150 170 255 / .16); animation-name: moon-rise; }
 /*
  * Daytime (6 am to 6 pm on the viewer's clock): a clear blue sky with a warm sun where the moon sits,
@@ -1637,14 +1637,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .cricket-status { overflow: hidden; margin: 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .cricket-live { animation: none; } }
 
-/* Resident portal header in green, matching the evening sky beneath it. A pale mint keeps the logo
-   and buttons readable; dark mode uses a deep green. The page title is brand green, like the logo. */
-.portal-topbar { border-bottom-color: rgb(190 226 210); background: linear-gradient(90deg, rgb(232 248 240), rgb(214 240 228)); }
+/* Resident portal header in grey, matching the evening sky beneath it. A pale grey keeps the logo
+   and buttons readable; dark mode uses a deep grey. The page title stays brand green. */
+.portal-topbar { border-bottom-color: rgb(214 218 224); background: linear-gradient(90deg, rgb(244 245 247), rgb(228 231 235)); }
 .portal-topbar .home-title { color: rgb(22 124 104); }
-.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(186 222 204); background: rgb(255 255 255 / .7); }
-:root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(34 90 72); background: linear-gradient(90deg, rgb(12 44 36), rgb(18 60 48)); }
+.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); }
+:root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(58 62 70); background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43)); }
 :root[data-theme="dark"] .portal-topbar .home-title { color: rgb(80 210 160); }
-:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(50 120 96); background: rgb(255 255 255 / .06); }
+:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); }
 
 /* Phones and narrow cards: the emergency buttons sit beside the photo, filling the space that would
    otherwise be empty there, with the heading and the move-out status/note full width below. The
@@ -1663,24 +1663,24 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .today-tile-copy strong { white-space: normal; }
 }
 
-/* Resident portal footer as a green band to match the header: pale mint in light mode, deep green
+/* Resident portal footer as a grey band to match the header: pale grey in light mode, deep grey
    in dark mode, with the links and share icons tinted to suit. */
-.portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(190 226 210); border-radius: 12px; background: linear-gradient(90deg, rgb(232 248 240), rgb(214 240 228)); color: rgb(40 100 84); }
+.portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(214 218 224); border-radius: 12px; background: linear-gradient(90deg, rgb(244 245 247), rgb(228 231 235)); color: rgb(40 100 84); }
 .portal-terms .text-link { color: rgb(22 124 104); }
-.portal-terms .referral-icon { border-color: rgb(186 222 204); background: rgb(255 255 255 / .7); color: rgb(22 124 104); }
-:root[data-theme="dark"] .portal-terms { border-color: rgb(34 90 72); background: linear-gradient(90deg, rgb(12 44 36), rgb(18 60 48)); color: rgb(190 236 214); }
+.portal-terms .referral-icon { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); color: rgb(22 124 104); }
+:root[data-theme="dark"] .portal-terms { border-color: rgb(58 62 70); background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43)); color: rgb(190 236 214); }
 :root[data-theme="dark"] .portal-terms .text-link { color: rgb(80 210 160); }
-:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(50 120 96); background: rgb(255 255 255 / .06); color: rgb(80 210 160); }
+:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); color: rgb(80 210 160); }
 /* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
 @media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
 
 /* Bottom of the resident portal in green, edge to edge: the footer becomes a full-width band that
    meets the bottom of the page, and the tree strip behind it is tinted green to match. */
 .portal-shell .page-content { padding-bottom: 0; }
-.portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(190 226 210); border-radius: 0; }
-:root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(34 90 72); }
+.portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(214 218 224); border-radius: 0; }
+:root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(58 62 70); }
 @media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 230px); padding-left: calc(50vw - 50% + 230px); } .referral-share { right: calc(50vw - 50% + 16px); } }
-.portal-shell .scenery-back { color: rgb(40 150 110 / .14); }
+.portal-shell .scenery-back { color: rgb(60 66 76 / .1); }
 .portal-shell .scenery-front { color: rgb(40 150 110 / .24); }
 :root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(70 190 140 / .12); }
 :root[data-theme="dark"] .portal-shell .scenery-front { color: rgb(70 190 140 / .2); }
@@ -1692,12 +1692,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-tabs { display: none; }
 div.portal-panel { display: contents; }
 @media (max-width: 1024px) {
-  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(190 226 210); background: rgb(242 250 246 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
+  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
-  .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(40 150 110 / .14); }
-  :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(34 90 72); background: rgb(10 36 30 / .96); }
+  .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(60 66 76 / .1); }
+  :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
-  :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(70 190 140 / .18); }
+  :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(200 206 214 / .14); }
   .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
   /* Messages sit above the tab bar; at the default bottom and z-index the bar covered them on phones. */
   .portal-shell .toast { z-index: 50; bottom: calc(16px + 64px + env(safe-area-inset-bottom)); }
@@ -1755,6 +1755,13 @@ div.portal-panel { display: contents; }
 .delete-account-copy strong { color: #8a3b2c; font-size: 13px; }
 .delete-account-copy small { color: var(--muted); font-size: 12px; }
 .delete-account-copy small.delete-account-declined { color: #b5523f; font-weight: 600; }
+/* Fire emergency card in the Profile tab (phones and tablets): what the button does, then the button. */
+.profile-fire { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 12px; padding: 14px 16px; border: 1px solid rgb(253 186 116); border-radius: 12px; background: rgb(255 247 237); }
+.profile-fire > div { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
+.profile-fire strong { color: rgb(154 52 18); font-size: 13px; }
+.profile-fire small { color: var(--muted); font-size: 12px; }
+:root[data-theme="dark"] .profile-fire { border-color: rgb(234 88 12 / .4); background: rgb(67 20 7 / .45); }
+:root[data-theme="dark"] .profile-fire strong { color: rgb(253 186 116); }
 /* Face ID / fingerprint sign-in in the profile: the switch-on button and the phones where it is on. */
 .passkey-settings { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .passkey-settings-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
@@ -1780,6 +1787,8 @@ div.portal-panel { display: contents; }
 @media (max-width: 1024px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
+  /* Report fire moves to the Profile tab (its Fire emergency card); Emergency stays on Home. */
+  .page-content .portal-emergency-buttons .report-fire-button { display: none; }
   /* Phones change their password from the Profile tab, so the top bar keeps only refresh, theme and sign out. */
   .portal-topbar .topbar-change-password { display: none; }
 }

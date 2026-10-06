@@ -1,0 +1,24 @@
+/* Resident portal colours, loaded after App.css and portalNeutral.css so these win: no green
+   anywhere for residents. portalNeutral.css (generated) greys the fixed greens; the rules here set
+   the near-black brand colour, icons and text by hand. */
+
+/* Resident portal icons in near-black instead of the brand green (light in dark theme so they stay
+   visible). Tinted icon tiles keep their (greyed) soft background; the solid ones (rent, current
+   meal, holiday, app) turn dark. */
+.portal-shell { --portal-icon: #1b2528; --portal-icon-on: #ffffff; }
+:root[data-theme="dark"] .portal-shell { --portal-icon: rgb(232 240 237); --portal-icon-on: rgb(16 24 22); }
+.portal-shell :is(.resident-amenity, .my-details-contact, .today-tile-icon, .meal-icon, .meal-alert, .food-opt-in, .detail-location, .emergency-button.call-owner, .weekly-menu-button, .portal-tabs button, .passkey-settings-icon, .house-rule-icon, .house-rules-extra, .menu-meal-icon, .info-card h3, .info-faqs h3, .info-line .icon-button, .upi-direct.is-reported, .upi-qr-panel.is-paid, .inline-loader, .referral-icon) svg,
+.portal-shell .holiday-today-icon { color: var(--portal-icon); }
+.portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon, .app-coming-soon-icon) { color: var(--portal-icon-on); background: var(--portal-icon); }
+.portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon, .app-coming-soon-icon) svg { color: inherit; }
+
+/* Resident portal text in near-black instead of the brand green (light in dark theme). Inside the
+   portal the brand colour variable itself is redefined, which turns every green heading, link, label
+   and border dark at once, filled buttons included (scripts/neutral-portal.mjs greys the remaining
+   fixed greens). Fixed text greens (title, footer, tabs, amenity chips) are set here too. */
+.portal-shell { --teal: #1b2528; --portal-text: #1b2528; }
+:root[data-theme="dark"] .portal-shell { --teal: rgb(232 240 237); --portal-text: rgb(232 240 237); }
+.portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-terms .text-link, .portal-tabs button, .portal-tabs button.is-active, .resident-amenity),
+:root[data-theme="dark"] .portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-terms .text-link, .portal-tabs button, .portal-tabs button.is-active) { color: var(--portal-text); }
+/* In dark theme the portal's brand colour is light, so things filled with it carry dark text. */
+:root[data-theme="dark"] .portal-shell :is(.primary-button, .meal-tag, .pagination-button.is-current, .holiday-list li.is-today .holiday-date, .filter-tabs button.is-active, .booking-chip.is-selected) { color: rgb(16 24 22); }

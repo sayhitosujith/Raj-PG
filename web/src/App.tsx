@@ -23,6 +23,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import './App.css'
+// The resident portal without green: generated greys, then the hand-set portal colours (in that order).
+import './portalNeutral.css'
+import './portalTheme.css'
 import { clonePrefill, ResidentFormModal, type ResidentPrefill } from './ResidentFormModal'
 import { BookingRequestsView } from './BookingRequestsView'
 import type { BookableProperty, BookingRequest } from './booking'
