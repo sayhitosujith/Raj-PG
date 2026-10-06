@@ -66,6 +66,11 @@ button { cursor: pointer; }
 .login-card .primary-button { justify-content: center; margin-top: 22px; }
 .login-card .primary-button:disabled { opacity: .6; cursor: progress; }
 /* "or" between the password sign-in and the Face ID / fingerprint button. */
+/* The last resident's property photo, in place of the logo on the sign-in card. */
+.login-property { display: grid; justify-items: center; gap: 8px; width: 100%; margin: 0; text-align: center; }
+.login-property img { width: 96px; height: 96px; border: 3px solid white; border-radius: 20px; object-fit: cover; box-shadow: 0 8px 22px rgb(22 92 74 / .2); }
+.login-property figcaption { color: var(--ink); font-size: 14px; font-weight: 700; letter-spacing: normal; }
+:root[data-theme="dark"] .login-property figcaption { color: rgb(220 236 230); }
 .login-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; color: var(--muted); font-size: 11px; }
 .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .login-card .login-passkey { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; }
@@ -577,6 +582,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-topbar { height: auto; min-height: 76px; padding-block: 8px; }
 .portal-topbar .brand-logo { max-height: 84px; }
 @media (max-width: 560px) { .portal-topbar .brand-logo { max-height: 64px; } }
+/* Property photo in the resident header, in place of the app logo: a rounded square that keeps
+   the photo's centre, whatever its shape. */
+.portal-property-mark { flex: none; width: 64px; height: 64px; border: 2px solid white; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 14px rgb(22 92 74 / .18); }
+@media (max-width: 560px) { .portal-property-mark { width: 52px; height: 52px; border-radius: 12px; } }
 /* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
    vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
    text readable while the background stays transparent (a solid panel showed as a white box).

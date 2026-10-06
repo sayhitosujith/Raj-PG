@@ -39,6 +39,7 @@ import { ResidentInfo, type ResidentInfoData } from './ResidentInfo'
 import { ExitPg, type ExitNotice } from './ExitPg'
 import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { PasskeySettings } from './PasskeySettings'
+import { rememberProperty } from './lastProperty'
 import { AppComingSoon } from './AppComingSoon'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
@@ -139,6 +140,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   const pendingConsent = profile.policyConsent && profile.policyConsent.version !== acceptedVersion ? profile.policyConsent : null
   const [notice, setNotice] = useState('')
   const weather = useWeather(refreshSignal)
+  // The sign-in page shows this property's photo next time on this device.
+  useEffect(() => { void rememberProperty(profile.property, profile.propertyImage) }, [profile.property, profile.propertyImage])
   const holidays = useHolidays('/api/resident-portal/holidays')
   const todayMenu = useTodayMenu(refreshSignal, profile.foodOpted)
   const todayHoliday = holidayOn(holidays, todayDateInputValue())
@@ -189,7 +192,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
       <PortalScenery />
       <PortalAnimals />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        <div className="brand-row"><BrandMark /><span className="home-title portal-title">Resident Home</span></div>
+        {/* The resident's own property photo in place of the app logo, so the portal feels like their home. */}
+        <div className="brand-row"><img className="portal-property-mark" src={profile.propertyImage} alt={profile.property} title={profile.property} /><span className="home-title portal-title">Resident Home</span></div>
         <div className="view-actions"><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>

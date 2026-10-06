@@ -14,13 +14,20 @@ export async function canUseDeviceUnlock() {
   return platformAuthenticatorIsAvailable().catch(() => false)
 }
 
+// Remembers, in this browser only, that a passkey was saved here, so the sign-in page offers the
+// button only where it can work instead of leading to the phone's "No passkeys available".
+// A per-device convenience: when storage is blocked or cleared, the button just stays hidden.
+const savedHereKey = 'staynest-passkey-saved-here'
+export function hasPasskeyHere() { try { return window.localStorage.getItem(savedHereKey) === '1' } catch { return false } }
+function markPasskeyHere(isSaved: boolean) { try { if (isSaved) window.localStorage.setItem(savedHereKey, '1'); else window.localStorage.removeItem(savedHereKey) } catch { /* storage blocked */ } }
+
 const postJson = (url: string, body?: unknown) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body ?? {}) })
 
-// The phone's own prompt was cancelled or timed out: not an error worth a red message.
+// The phone's own prompt was closed, timed out, or had no passkey to offer.
 const isCancelled = (error: unknown) => error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'AbortError')
 
-/** Signs in with a passkey on this device. Returns the session, null when the resident cancelled, or throws with a message to show. */
-export async function signInWithPasskey(): Promise<SessionResponse | null> {
+/** Signs in with a passkey on this device. Returns the session, or throws with a message to show. */
+export async function signInWithPasskey(): Promise<SessionResponse> {
   const start = await postJson('/api/resident-portal/passkey-login/options')
   if (!start.ok) throw new Error(await readApiError(start, 'Face ID / fingerprint sign-in is not available right now.'))
   const { options, challengeId } = await start.json()
@@ -28,11 +35,16 @@ export async function signInWithPasskey(): Promise<SessionResponse | null> {
   try {
     credential = await startAuthentication({ optionsJSON: options })
   } catch (error) {
-    if (isCancelled(error)) return null
+    // The phone reports "cancelled" both when the resident closes the prompt and when it holds no
+    // passkey for this site, so the message covers both.
+    if (isCancelled(error)) throw new Error('No Face ID / fingerprint sign-in was found on this phone. Sign in with your password, then turn it on in Profile.')
     throw new Error('Your phone could not use Face ID or fingerprint here. Sign in with your password instead.')
   }
   const finish = await postJson('/api/resident-portal/passkey-login', { challengeId, credential })
-  if (!finish.ok) throw new Error(await readApiError(finish, 'Face ID / fingerprint sign-in did not work.'))
+  if (!finish.ok) {
+    if (finish.status === 401) markPasskeyHere(false)
+    throw new Error(await readApiError(finish, 'Face ID / fingerprint sign-in did not work.'))
+  }
   return await finish.json() as SessionResponse
 }
 
@@ -47,10 +59,11 @@ export async function addPasskey(): Promise<Passkey[] | null> {
   } catch (error) {
     if (isCancelled(error)) return null
     // InvalidStateError: this phone already holds a passkey for this account.
-    if (error instanceof Error && error.name === 'InvalidStateError') throw new Error('Face ID / fingerprint sign-in is already on for this phone.')
+    if (error instanceof Error && error.name === 'InvalidStateError') { markPasskeyHere(true); throw new Error('Face ID / fingerprint sign-in is already on for this phone.') }
     throw new Error('Your phone could not set up Face ID or fingerprint sign-in.')
   }
   const finish = await postJson('/api/resident-portal/passkeys', { challengeId, credential })
   if (!finish.ok) throw new Error(await readApiError(finish, 'Face ID / fingerprint sign-in could not be saved.'))
+  markPasskeyHere(true)
   return await finish.json() as Passkey[]
 }

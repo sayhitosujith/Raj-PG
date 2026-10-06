@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Fingerprint, LogIn } from 'lucide-react'
 import { BrandMark } from './BrandMark'
-import { canUseDeviceUnlock, signInWithPasskey } from './passkeys'
+import { canUseDeviceUnlock, hasPasskeyHere, signInWithPasskey } from './passkeys'
+import { readLastProperty } from './lastProperty'
 import type { SessionResponse } from './session'
 import { ThemeToggle } from './ThemeToggle'
 import { readApiError } from './superAdmin'
@@ -9,14 +10,17 @@ import { readApiError } from './superAdmin'
 /**
  * One sign-in form for super admins and residents. The server works out the account type from
  * the credentials, so nobody has to pick a role first. Residents who turned on Face ID /
- * fingerprint sign-in in their profile also get a one-tap button, shown only on devices that can use it.
+ * fingerprint sign-in in their profile get a one-tap button on the phone where they turned it on.
  */
 export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionResponse) => void }) {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [canUsePasskey, setCanUsePasskey] = useState(false)
+  // The last resident's property on this device, shown instead of the logo; owners and new devices see the logo.
+  const [lastProperty] = useState(readLastProperty)
 
-  useEffect(() => { void canUseDeviceUnlock().then(setCanUsePasskey) }, [])
+  // Offered only where this browser saved a passkey; elsewhere the phone would just say it has none.
+  useEffect(() => { if (hasPasskeyHere()) void canUseDeviceUnlock().then(setCanUsePasskey) }, [])
 
   async function signIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -38,8 +42,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
     setIsSubmitting(true)
     setError('')
     try {
-      const session = await signInWithPasskey()
-      if (session) onSignedIn(session)
+      onSignedIn(await signInWithPasskey())
     } catch (failure) {
       setError(failure instanceof Error && failure.message !== 'Failed to fetch' ? failure.message : 'Could not reach the server.')
     } finally {
@@ -53,7 +56,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
       <div className="city-backdrop" aria-hidden="true" />
       <form className="login-card login-card-themed" onSubmit={signIn}>
         <ThemeToggle className="card-theme-toggle" />
-        <div className="brand-row"><BrandMark /></div>
+        <div className="brand-row">{lastProperty ? <figure className="login-property"><img src={lastProperty.image} alt={lastProperty.name} /><figcaption>{lastProperty.name}</figcaption></figure> : <BrandMark />}</div>
         <h1>Sign in</h1>
         <label>Email<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus placeholder="Enter your email ID" /></label>
         <label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Enter your password" /></label>
@@ -63,7 +66,6 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
         {canUsePasskey && <>
           <p className="login-divider"><span>or</span></p>
           <button type="button" className="secondary-button login-passkey" disabled={isSubmitting} onClick={() => void signInWithDevice()}><Fingerprint size={16} /> Sign in with Face ID / fingerprint</button>
-          <p className="login-hint">Residents: turn this on first in Profile after signing in with your password.</p>
         </>}
       </form>
     </main>
