@@ -16,7 +16,7 @@ import { notifyResidentCredentials } from './notifications.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card and /passport-scan instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: true } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const noCredentialsWhere = { passwordHash: null, accessKeyHash: null } satisfies Prisma.ResidentWhereInput
@@ -51,6 +51,8 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
   return { rent, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+    // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
+    rentConcessions: resident.rentConcessions,
     rentFromProperty: Boolean(room && room.property.rentWithFood !== null && room.property.rentWithoutFood !== null), room: room?.number ?? '—', propertyId: room?.propertyId ?? '', property: room?.property.name ?? resident.movedOutFrom ?? 'Moved out', location: room?.property.location ?? '', movedOutFrom: resident.movedOutFrom }
 }
 

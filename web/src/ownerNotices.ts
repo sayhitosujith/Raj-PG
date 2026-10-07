@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { describeVisit, type OwnerHousekeepingRequest } from './housekeeping'
 import { identityDocumentName } from './identity'
+import { formatMonth } from './rent'
 import type { OwnerMaintenanceRequest } from './maintenance'
 import type { Notice } from './NotificationBell'
 import type { Resident } from './resident'
@@ -18,7 +19,8 @@ function requester(resident: Pick<Resident, 'name' | 'phone' | 'room'> | undefin
 /**
  * The owner's notifications: everything a resident has asked for that is still waiting on the owner.
  * That covers move-out notices, account deletion requests, requests to join the food plan, ID
- * documents to verify, housekeeping visits and repairs. Each says who asked, with their phone and
+ * documents to verify, housekeeping visits and repairs, plus referral rewards granted (cancellable in
+ * the resident's rent panel). Each request says who asked, with their phone and
  * room. Ids carry the request's state, so a fresh request shows up as unread even from the same
  * resident.
  */
@@ -31,6 +33,7 @@ export function buildOwnerNotices(residents: Resident[], housekeeping: OwnerHous
     if (resident.exitStatus === 'PENDING' && resident.exitDate) notices.push({ kind: 'Move-out', id: `exit-${resident.id}-${resident.exitDate}`, title: `Move-out request for ${shortDate(resident.exitDate)}`, detail: by })
     if (resident.deletionRequestedAt) notices.push({ kind: 'Account', id: `deletion-${resident.id}-${resident.deletionRequestedAt}`, title: 'Account deletion request', detail: by, at: resident.deletionRequestedAt })
     if (resident.foodRequestedAt && !resident.foodOpted) notices.push({ kind: 'Food', id: `food-${resident.id}-${resident.foodRequestedAt}`, title: 'Wants to join the food plan', detail: by, at: resident.foodRequestedAt })
+    for (const concession of resident.rentConcessions ?? []) notices.push({ kind: 'Reward', id: `reward-${concession.id}`, title: `${resident.name} gets ${concession.percent}% off ${formatMonth(concession.month)} rent`, detail: concession.reason })
     if (resident.aadharStatus === 'PENDING') notices.push({ kind: 'ID check', id: `id-${resident.id}-${resident.aadharSubmittedAt ?? ''}`, title: `${identityDocumentName(resident.nationality)} submitted for verification`, detail: by, at: resident.aadharSubmittedAt })
   }
   for (const request of housekeeping) {

@@ -1,16 +1,17 @@
 import { RentOrderStatus } from '@prisma/client'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyRentRecorded } from './notifications.js'
-import type { rentSummary } from './rent.js'
+import { rentForMonth, type rentSummary } from './rent.js'
+import { grantReferralReward } from './referrals.js'
 
-/** One month in a rent order's snapshot: the month and what was owed for it, late fee included. */
+/** One month in a rent order's snapshot: the month and what was owed for it (less any concession), late fee included. */
 export type OrderItem = { month: string; amount: number }
 
 /** Everything the resident owes right now, month by month, or null when nothing is due. */
 export function outstandingRentItems(rent: Awaited<ReturnType<typeof rentSummary>>): OrderItem[] | null {
   if (!rent.monthlyRent || !rent.outstandingMonths.length) return null
   const monthlyRent = rent.monthlyRent
-  return rent.outstandingMonths.map((month) => ({ month, amount: monthlyRent + (rent.overdueMonths.includes(month) ? rent.lateFee : 0) }))
+  return rent.outstandingMonths.map((month) => ({ month, amount: rentForMonth(monthlyRent, month, rent.concessions) + (rent.overdueMonths.includes(month) ? rent.lateFee : 0) }))
 }
 
 const monthAfter = (key: string) => {
@@ -30,7 +31,7 @@ export function rentItemsToPay(rent: Awaited<ReturnType<typeof rentSummary>>): O
   const paid = new Set(rent.payments.map((payment) => payment.month))
   let month = monthAfter(rent.currentMonth)
   while (paid.has(month)) month = monthAfter(month)
-  return [{ month, amount: rent.monthlyRent }]
+  return [{ month, amount: rentForMonth(rent.monthlyRent, month, rent.concessions) }]
 }
 
 /**
@@ -50,5 +51,8 @@ export async function fulfilOrder(razorpayOrderId: string, razorpayPaymentId: st
     return { residentId: order.residentId, months: items.map((item) => item.month) }
   })
   // Only the call that actually recorded the months sends the confirmation (webhook and callback race).
-  if (fulfilled) notifyInBackground(() => notifyRentRecorded(fulfilled.residentId, fulfilled.months))
+  if (fulfilled) {
+    notifyInBackground(() => notifyRentRecorded(fulfilled.residentId, fulfilled.months))
+    void grantReferralReward(fulfilled.residentId)
+  }
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Clock, IndianRupee } from 'lucide-react'
-import { formatDueDate, formatMonth, formatRupees, ordinal, type RentSummary } from './rent'
+import { AlertTriangle, Clock, Gift, IndianRupee } from 'lucide-react'
+import { formatDueDate, formatMonth, formatRupees, ordinal, rentForMonth, type RentSummary } from './rent'
 
 /** Which of the three reminders the resident is on, or null outside the reminder days. */
 const reminderNumber = (rent: RentSummary) => ({ REMINDER_1: 1, REMINDER_2: 2, REMINDER_3: 3 } as Partial<Record<RentSummary['state'], number>>)[rent.state] ?? null
@@ -51,11 +51,12 @@ export function RentHighlight({ rent }: { rent: RentSummary }) {
       <div className="rent-highlight-side">
         <div className="rent-highlight-badges">
           {reminder && <span className="rent-highlight-status gold">Reminder {reminder} of 3</span>}
+          {(rent.concessions ?? []).map((concession) => <span key={concession.month} className="rent-highlight-status reward" title={concession.reason}><Gift size={12} /> {concession.percent}% off {formatMonth(concession.month)}</span>)}
           <span className={`rent-highlight-status ${status.tone}`}>{status.label}</span>
         </div>
         {reminder && <div className="rent-highlight-reminder" role="status">
           {reminder === 3 && <LockCountdown rent={rent} />}
-          <p>{formatRupees(rent.monthlyRent)} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{reminder === 3 ? ' This is the last reminder.' : ''}{rent.lateFee ? ` A late fee of ${formatRupees(rent.lateFee)} applies after that.` : ''} Please pay your property owner.</p>
+          <p>{formatRupees(rentForMonth(rent, rent.currentMonth))} for {formatMonth(rent.currentMonth)} is due by {formatDueDate(rent.currentMonth, rent.dueDay)}.{reminder === 3 ? ' This is the last reminder.' : ''}{rent.lateFee ? ` A late fee of ${formatRupees(rent.lateFee)} applies after that.` : ''} Please pay your property owner.</p>
         </div>}
       </div>
     </div>

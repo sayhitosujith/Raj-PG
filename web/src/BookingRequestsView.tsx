@@ -32,7 +32,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
   const [isAdding, setIsAdding] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
 
-  useEffect(() => { fetchBookings().then(setBookings, () => onNotice('Booking requests could not be loaded.')) }, [onNotice])
+  useEffect(() => { fetchBookings().then(setBookings, () => onNotice('Referral requests could not be loaded.')) }, [onNotice])
   useRefreshSignal(refreshSignal, () => { fetchBookings().then(setBookings, () => undefined) })
 
   const all = bookings ?? []
@@ -64,7 +64,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
 
   return (
     <section className="workspace-view crud-view booking-requests">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Booking requests</h2><p>Requests from your booking link on Instagram, Facebook, WhatsApp and Google, plus calls and walk-ins you add.</p></div><div className="view-actions"><button className="secondary-button" onClick={() => setIsSharing((open) => !open)}><Share2 size={15} /> Share booking link</button><button className="primary-button" onClick={() => setIsAdding(true)}><Plus size={16} /> Add request</button><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Referral Requests</h2><p>Requests from your booking link on Instagram, Facebook, WhatsApp and Google, plus calls and walk-ins you add.</p></div><div className="view-actions"><button className="secondary-button" onClick={() => setIsSharing((open) => !open)}><Share2 size={15} /> Share booking link</button><button className="primary-button" onClick={() => setIsAdding(true)}><Plus size={16} /> Add request</button><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
 
       {isSharing && (
         <div className="booking-share">
@@ -84,7 +84,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
         {bookings === null ? <p className="portal-empty">Loading…</p> : visible.length ? pager.pageItems.map((booking) => (
           <div className="crud-row booking-row" key={booking.id}>
             <div className="crud-main">
-              <strong>{booking.name} <span className="booking-source">{bookingSourceLabels[booking.source] ?? booking.source}</span></strong>
+              <strong>{booking.name} <span className="booking-source">{bookingSourceLabels[booking.source] ?? booking.source}</span>{booking.referredBy && <span className="booking-referrer">Referred by {booking.referredBy}</span>}</strong>
               <small>{[booking.phone, booking.property, booking.moveInDate && `Move in ${formatDay(booking.moveInDate)}`, booking.foodOpted === null ? null : booking.foodOpted ? 'With food' : 'Without food', `Received ${formatDay(booking.createdAt)}`].filter(Boolean).join(' · ')}</small>
               {booking.message && <p className="booking-message">“{booking.message}”</p>}
             </div>
@@ -96,9 +96,9 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
               <button className="row-delete" aria-label={`Delete request from ${booking.name}`} onClick={() => remove(booking)}><Trash2 size={14} /></button>
             </div>
           </div>
-        )) : <div className="workspace-empty"><div className="workspace-empty-icon"><ClipboardList size={22} /></div><h3>{all.length ? 'No requests match' : 'No booking requests yet'}</h3><p>{all.length ? 'Try another source or status.' : 'Share your booking link on social media; requests will appear here.'}</p>{!all.length && <button className="secondary-button" onClick={() => setIsSharing(true)}><Share2 size={15} /> Share booking link</button>}</div>}
+        )) : <div className="workspace-empty"><div className="workspace-empty-icon"><ClipboardList size={22} /></div><h3>{all.length ? 'No requests match' : 'No referral requests yet'}</h3><p>{all.length ? 'Try another source or status.' : 'Share your booking link on social media; requests will appear here.'}</p>{!all.length && <button className="secondary-button" onClick={() => setIsSharing(true)}><Share2 size={15} /> Share booking link</button>}</div>}
       </div>
-      <Pagination state={pager} label="Booking requests" />
+      <Pagination state={pager} label="Referral requests" />
 
       {isAdding && <AddBookingModal properties={properties} onClose={() => setIsAdding(false)} onSaved={(booking) => { upsert(booking); setIsAdding(false); onNotice('Booking request added.') }} />}
     </section>
@@ -123,7 +123,7 @@ function AddBookingModal({ properties, onClose, onSaved }: { properties: Bookabl
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal payment-modal" onSubmit={save}>
-        <div className="modal-heading"><div><p className="eyebrow">Booking requests</p><h2>Add request</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
+        <div className="modal-heading"><div><p className="eyebrow">Referral Requests</p><h2>Add request</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <label>Came in by<select name="source" defaultValue="phone">{Object.entries(bookingSourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <BookingFields properties={properties} />
         {error && <p className="login-error" role="alert">{error}</p>}

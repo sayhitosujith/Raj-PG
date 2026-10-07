@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Copy, Smartphone } from 'lucide-react'
-import { formatMonth, formatRupees, nextMonthToRecord, type RentSummary } from './rent'
+import { formatMonth, formatRupees, nextMonthToRecord, rentForMonth, type RentSummary } from './rent'
 import { readApiError } from './superAdmin'
 import type { UpiPayee } from './workspaceSettings'
 
@@ -38,7 +38,7 @@ function scanHint(amount: number | null, payeeName: string, isUploadedQr: boolea
  */
 function payTarget(rent: RentSummary, monthlyRent: number | null) {
   if (rent.outstandingMonths.length) return { amount: rent.amountDue, caption: 'Rent due · pay by UPI' }
-  if (rent.state !== 'NOT_TRACKED' && monthlyRent) return { amount: monthlyRent, caption: `Next rent · ${formatMonth(nextMonthToRecord(rent))} · pay in advance` }
+  if (rent.state !== 'NOT_TRACKED' && monthlyRent) return { amount: rentForMonth(rent, nextMonthToRecord(rent)), caption: `Next rent · ${formatMonth(nextMonthToRecord(rent))} · pay in advance` }
   return { amount: null, caption: 'Pay by UPI' }
 }
 

@@ -4,7 +4,21 @@ export type RentState = 'NOT_TRACKED' | 'NOT_DUE' | 'PAID' | 'REMINDER_1' | 'REM
 export type RentPaymentRecord = { id: string; month: string; amount: number; paidAt: string; razorpayPaymentId?: string | null }
 
 /** A resident's rent position; months are "YYYY-MM", amounts whole rupees. amountDue includes late fees. */
-export type RentSummary = { state: RentState; monthlyRent: number | null; currentMonth: string; outstandingMonths: string[]; overdueMonths: string[]; amountDue: number; dueDay: number; lateFee: number; payments: RentPaymentRecord[] }
+export type RentSummary = { state: RentState; monthlyRent: number | null; currentMonth: string; outstandingMonths: string[]; overdueMonths: string[]; amountDue: number; dueDay: number; lateFee: number; payments: RentPaymentRecord[]; /** Rent for each month the resident may pay now (owed, this, next), concessions applied. */ monthAmounts: Record<string, number>; /** Active discounts, e.g. a referral reward. */ concessions: RentConcession[] }
+
+/** A discount on one month's rent, as a percentage (e.g. a 10% referral reward). */
+export type RentConcession = { month: string; percent: number; reason?: string }
+
+/**
+ * The rent for `month` before any late fee: the server's figure when it sent one, otherwise the
+ * same rule as backend/src/rent.ts rentForMonth (monthly rent less that month's concessions, rounded).
+ */
+export function rentForMonth(rent: Pick<RentSummary, 'monthlyRent' | 'monthAmounts' | 'concessions'>, month: string) {
+  if (rent.monthAmounts?.[month] !== undefined) return rent.monthAmounts[month]
+  const monthlyRent = rent.monthlyRent ?? 0
+  const percentOff = Math.min(100, (rent.concessions ?? []).filter((item) => item.month === month).reduce((sum, item) => sum + item.percent, 0))
+  return monthlyRent - Math.round(monthlyRent * percentOff / 100)
+}
 
 /** "October 2026" from "2026-10". */
 export function formatMonth(month: string) {

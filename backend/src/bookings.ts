@@ -4,6 +4,7 @@ import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyNewBooking } from './notifications.js'
 import { getSettings } from './settings.js'
+import { referrerForCode } from './referrals.js'
 import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
 
 /**
@@ -17,7 +18,7 @@ const ownerSources = [...publicSources, 'phone', 'walk_in'] as const
 const statuses = ['new', 'contacted', 'accepted', 'declined'] as const
 const maxMessageLength = 500
 
-type BookingBody = { name?: unknown; phone?: unknown; email?: unknown; propertyId?: unknown; moveInDate?: unknown; foodOpted?: unknown; message?: unknown; source?: unknown }
+type BookingBody = { name?: unknown; phone?: unknown; email?: unknown; propertyId?: unknown; moveInDate?: unknown; foodOpted?: unknown; message?: unknown; source?: unknown; /** A resident's referral code from the link (?ref=), public form only. */ referralCode?: unknown }
 
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 const isOneOf = <T extends string>(options: readonly T[], value: string): value is T => (options as readonly string[]).includes(value)
@@ -46,10 +47,10 @@ async function parseBooking(body: BookingBody, allowedSources: readonly string[]
   return { data: { residentName: name, phone, email, propertyId, moveInDate: moveIn ?? null, foodOpted, message, source } } as const
 }
 
-const withProperty = { include: { property: { select: { name: true } } } } as const
+const withProperty = { include: { property: { select: { name: true } }, referrer: { select: { name: true } } } } as const
 function toBookingSummary(booking: Prisma.BookingGetPayload<typeof withProperty>) {
-  const { property, residentName, ...fields } = booking
-  return { ...fields, name: residentName, property: property.name }
+  const { property, residentName, referrer, ...fields } = booking
+  return { ...fields, name: residentName, property: property.name, referredBy: referrer?.name ?? null }
 }
 
 function respondToError(response: Response, error: unknown, fallback: string) {
@@ -93,7 +94,9 @@ bookingPublicRouter.post('/public/booking-requests', async (request, response) =
   try {
     const parsed = await parseBooking(body, publicSources)
     if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }
-    const booking = await prisma.booking.create({ data: parsed.data, include: { property: { select: { name: true } } } })
+    // Which resident's referral link this came through, if any; an unknown code is simply ignored.
+    const referrerResidentId = await referrerForCode(body.referralCode)
+    const booking = await prisma.booking.create({ data: { ...parsed.data, referrerResidentId }, include: { property: { select: { name: true } } } })
     // Email the owner straight away; never delays or fails the visitor's submission.
     notifyInBackground(() => notifyNewBooking(booking))
     response.status(201).json({ ok: true })

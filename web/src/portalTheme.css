@@ -2,6 +2,10 @@
    anywhere for residents. portalNeutral.css (generated) greys the fixed greens; the rules here set
    the near-black brand colour, icons and text by hand. */
 
+/* portalNeutral.css sets grey surface tokens on .portal-shell itself, which hides the dark tokens set
+   on :root; the dark theme's own surfaces are restored here, with a grey in place of the green tint. */
+:root[data-theme="dark"] .portal-shell { --line: #2b3532; --paper: #101514; --teal-soft: #252b2a; }
+
 /* Resident portal icons in near-black instead of the brand green (light in dark theme so they stay
    visible). Tinted icon tiles keep their (greyed) soft background; the solid ones (rent, current
    meal, holiday, app) turn dark. */
@@ -26,6 +30,7 @@
    green switches) and Face ID sign-in. The brand colours are restored on the cards themselves, so
    everything inside them inherits the originals rather than the portal's near-black. */
 .portal-shell :is(.notification-preferences, .whatsapp-preference, .passkey-settings) { --teal: #167c70; --teal-soft: #e6f2ee; }
+:root[data-theme="dark"] .portal-shell :is(.notification-preferences, .whatsapp-preference, .passkey-settings) { --teal: #1f9e8d; --teal-soft: #173833; }
 /* The meal being served now stands out in orange (the same orange as Report fire): its "Now serving"
    tag, border and icon box. "Next" stays neutral. */
 .portal-shell .meal-tile.is-serving { border-color: rgb(234 88 12); background: rgb(255 247 237); }
@@ -43,3 +48,9 @@
 /* The footer's Terms and conditions and Privacy policy links in brand green, so they read as links. */
 .portal-shell .portal-terms .text-link { color: #167c70; }
 :root[data-theme="dark"] .portal-shell .portal-terms .text-link { color: rgb(80 210 160); }
+/* Dark theme: solid icon tiles and the food opt-in button were filled with the light brand colour,
+   which glared as white blocks on the dark cards; they get a soft translucent fill instead. */
+:root[data-theme="dark"] .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon) { color: var(--portal-icon); background: rgb(255 255 255 / .1); }
+:root[data-theme="dark"] .portal-shell .food-opt-in .primary-button { border: 1px solid rgb(255 255 255 / .18); color: var(--portal-text); background: rgb(255 255 255 / .1); box-shadow: none; }
+/* The property photo is often a dark logo; a light frame keeps it from vanishing into the dark header. */
+:root[data-theme="dark"] .portal-shell .portal-property-mark { border-color: rgb(232 240 237 / .85); box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 0 14px rgb(255 255 255 / .14); }

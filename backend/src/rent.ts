@@ -5,6 +5,7 @@ import { prisma } from './db.js'
 import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 import { revokeCredentialsIfLocked } from './rentLock.js'
+import { grantReferralReward } from './referrals.js'
 
 /**
  * Rent cycle (days set in Settings, default due the 3rd): reminders 1, 2 and 3 show from their days
@@ -41,16 +42,34 @@ function monthsBetween(from: { year: number; month: number }, to: { year: number
   return months
 }
 
+/** A month's discount, as the rent code needs it. */
+export type MonthConcession = { month: string; percent: number; reason?: string }
+
+/** Selects a resident's active concessions for {@link rentStatus}; add to any query whose rent figures are shown or charged. */
+export const activeConcessions = { rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { month: true, percent: true, reason: true } } } satisfies Prisma.ResidentSelect
+
+/**
+ * The rent for one month, before any late fee: the monthly rent less that month's concessions,
+ * rounded to whole rupees. The single place a month is priced, so dues, payments, orders and
+ * move-out figures always agree.
+ */
+export function rentForMonth(monthlyRent: number, month: string, concessions: readonly MonthConcession[] = []) {
+  const percentOff = Math.min(100, concessions.filter((concession) => concession.month === month).reduce((sum, concession) => sum + concession.percent, 0))
+  return monthlyRent - Math.round(monthlyRent * percentOff / 100)
+}
+
+const nextMonthKey = (month: string) => { const [year, number] = month.split('-').map(Number); return number === 12 ? monthKey(year + 1, 1) : monthKey(year, number + 1) }
+
 /**
  * Computes a resident's rent position. Billing starts at the later of their joining date and the
  * date rent was first set, so turning rent on for an existing resident never invents back-rent.
  */
-export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean }, paidMonths: string[], rules: RentRules, now = new Date()) {
+export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean; rentConcessions?: readonly MonthConcession[] }, paidMonths: string[], rules: RentRules, now = new Date()) {
   const { dueDay } = rules
   const today = propertyToday(now)
   const currentMonth = monthKey(today.year, today.month)
   if (!resident.monthlyRent || !resident.rentTrackedFrom || !resident.active) {
-    return { state: 'NOT_TRACKED' as RentState, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths: [] as string[], overdueMonths: [] as string[], amountDue: 0, dueDay, lateFee: rules.lateFee }
+    return { state: 'NOT_TRACKED' as RentState, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths: [] as string[], overdueMonths: [] as string[], amountDue: 0, dueDay, lateFee: rules.lateFee, monthAmounts: {} as Record<string, number>, concessions: [] as MonthConcession[] }
   }
   const start = resident.rentTrackedFrom > resident.joinedAt ? resident.rentTrackedFrom : resident.joinedAt
   const paid = new Set(paidMonths)
@@ -64,9 +83,14 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
     : owesCurrent && today.day >= rules.reminderOneDay ? 'REMINDER_1'
     : paid.has(currentMonth) ? 'PAID'
     : 'NOT_DUE'
-  // Each overdue month carries the late fee on top of its rent.
-  const amountDue = outstandingMonths.length * resident.monthlyRent + overdueMonths.length * rules.lateFee
-  return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee }
+  // Each month at its own price (a concession lowers just that month); overdue ones also carry the late fee.
+  const concessions = resident.rentConcessions ?? []
+  const { monthlyRent } = resident
+  const price = (month: string) => rentForMonth(monthlyRent, month, concessions)
+  // The months anyone may be asked to pay: those owed, this month and next (paying ahead).
+  const monthAmounts = Object.fromEntries([...new Set([...outstandingMonths, currentMonth, nextMonthKey(currentMonth)])].map((month) => [month, price(month)]))
+  const amountDue = outstandingMonths.reduce((sum, month) => sum + price(month), 0) + overdueMonths.length * rules.lateFee
+  return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee, monthAmounts, concessions: [...concessions] }
 }
 
 /** True when the resident is overdue (past the due day); pauses housekeeping requests during an access override. */
@@ -91,7 +115,7 @@ const recentPayments = { orderBy: { month: 'desc' }, take: 6, select: { id: true
 
 /** Rent summary for API responses: status plus the latest recorded payments. */
 export async function rentSummary(residentId: string) {
-  const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
+  const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } })
   const payments = await prisma.rentPayment.findMany({ where: { residentId }, ...recentPayments })
   return { ...rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(await getSettings())), payments }
 }
@@ -107,7 +131,7 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 export const rentAdminRouter = Router()
 
 // Records a month as paid: the oldest unpaid month by default, or a specific "YYYY-MM" (e.g. an
-// advance payment for next month). Amount defaults to the monthly rent, plus the late fee when that month is overdue.
+// advance payment for next month). Amount defaults to that month's rent (less any concession), plus the late fee when overdue.
 rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) => {
   const { id } = request.params
   const { month: requestedMonth, amount: requestedAmount } = request.body as { month?: unknown; amount?: unknown }
@@ -118,12 +142,15 @@ rentAdminRouter.post('/residents/:id/rent-payments', async (request, response) =
     if (!status.monthlyRent) { response.status(409).json({ error: 'Set a monthly rent for this resident first.' }); return }
     const month = (requestedMonth as string | undefined) ?? status.outstandingMonths[0] ?? status.currentMonth
     const { monthlyRent } = status
+
     const credentialsRevoked = await prisma.$transaction(async (transaction) => {
       const revoked = await revokeCredentialsIfLocked(transaction, id)
-      await transaction.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? monthlyRent + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
+      await transaction.rentPayment.create({ data: { residentId: id, month, amount: (requestedAmount as number | undefined) ?? rentForMonth(monthlyRent, month, status.concessions) + (status.overdueMonths.includes(month) ? status.lateFee : 0) } })
       return revoked
     })
     notifyInBackground(() => notifyRentRecorded(id, [month]))
+    // A first payment by someone a resident referred earns that resident their reward.
+    void grantReferralReward(id)
     response.status(201).json({ ...await rentSummary(id), credentialsRevoked })
   } catch (error) {
     respondToError(response, error, 'The payment could not be recorded.')

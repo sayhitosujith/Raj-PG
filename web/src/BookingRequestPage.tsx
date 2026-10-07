@@ -18,7 +18,10 @@ export function BookingRequestPage() {
   const [error, setError] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isSent, setIsSent] = useState(false)
-  const source = new URLSearchParams(window.location.search).get('from') ?? 'direct'
+  const query = new URLSearchParams(window.location.search)
+  const source = query.get('from') ?? 'direct'
+  // A resident's referral code from their "Refer a friend" link: earns them a reward when this friend joins.
+  const referralCode = query.get('ref')
 
   useEffect(() => {
     fetch('/api/public/booking-options')
@@ -30,7 +33,7 @@ export function BookingRequestPage() {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     setIsSending(true)
-    const response = await fetch('/api/public/booking-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...readBookingFields(form), source, website: form.get('website') }) }).catch(() => null)
+    const response = await fetch('/api/public/booking-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...readBookingFields(form), source, referralCode, website: form.get('website') }) }).catch(() => null)
     setIsSending(false)
     if (!response?.ok) { setError(response ? await readApiError(response, 'Your request could not be sent.') : 'Could not reach the server. Check your connection and try again.'); return }
     setIsSent(true)

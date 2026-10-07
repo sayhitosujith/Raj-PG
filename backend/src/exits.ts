@@ -3,7 +3,7 @@ import { Router } from 'express'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
 import { notifyExitCancelled, notifyExitDateChanged, notifyExitDecision, notifyExitRequested, notifyInBackground } from './notifications.js'
-import { rentStatus } from './rent.js'
+import { rentForMonth, rentStatus, type MonthConcession, activeConcessions } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 
 const maxReasonLength = 300
@@ -53,7 +53,7 @@ export type ExitDues = {
   unusedCredit: number
 }
 
-type DuesInput = { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean; exitDate: Date | null; foodOpted: boolean }
+type DuesInput = { monthlyRent: number | null; rentTrackedFrom: Date | null; joinedAt: Date; active: boolean; exitDate: Date | null; foodOpted: boolean; rentConcessions?: readonly MonthConcession[] }
 
 /** The two per-day rates from Settings. */
 export type DailyRates = { withFood: number; withoutFood: number }
@@ -88,13 +88,14 @@ export function computeExitDues(resident: DuesInput, payments: Array<{ month: st
   const exitMonth = exitDay.slice(0, 7)
   const daysStayed = Number(exitDay.slice(8, 10))
   const dailyRate = resident.foodOpted ? rates.withFood : rates.withoutFood
-  const dayCharge = Math.min(daysStayed * dailyRate, rent)
+  // A concession on the move-out month comes off its day charge too.
+  const dayCharge = rentForMonth(Math.min(daysStayed * dailyRate, rent), exitMonth, status.concessions)
   const isExitMonthPaid = paid.has(exitMonth)
   const exitMonthPaid = payments.filter((payment) => payment.month === exitMonth).reduce((sum, payment) => sum + payment.amount, 0)
   const isExitMonthOverdue = status.overdueMonths.includes(exitMonth)
   const fullMonths = [
-    ...status.outstandingMonths.filter((month) => month !== exitMonth).map((month) => ({ month, amount: rent + (status.overdueMonths.includes(month) ? rules.lateFee : 0) })),
-    ...monthsAfter(status.currentMonth, exitMonth).filter((month) => month !== exitMonth && !paid.has(month)).map((month) => ({ month, amount: rent })),
+    ...status.outstandingMonths.filter((month) => month !== exitMonth).map((month) => ({ month, amount: rentForMonth(rent, month, status.concessions) + (status.overdueMonths.includes(month) ? rules.lateFee : 0) })),
+    ...monthsAfter(status.currentMonth, exitMonth).filter((month) => month !== exitMonth && !paid.has(month)).map((month) => ({ month, amount: rentForMonth(rent, month, status.concessions) })),
   ]
   const months = isExitMonthPaid ? fullMonths : [...fullMonths, { month: exitMonth, amount: dayCharge + (isExitMonthOverdue ? rules.lateFee : 0) }]
   return { total: months.reduce((sum, item) => sum + item.amount, 0), months, exitMonth, daysStayed, dailyRate, dayCharge, isExitMonthPaid, exitMonthPaid, unusedCredit: isExitMonthPaid ? Math.max(0, exitMonthPaid - dayCharge) : 0 }
@@ -103,7 +104,7 @@ export function computeExitDues(resident: DuesInput, payments: Array<{ month: st
 /** computeExitDues for one resident, loading what it needs. */
 export async function exitDues(residentId: string) {
   const [resident, settings] = await Promise.all([
-    prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, exitDate: true, foodOpted: true, rentPayments: { select: { month: true, amount: true } } } }),
+    prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, exitDate: true, foodOpted: true, ...activeConcessions, rentPayments: { select: { month: true, amount: true } } } }),
     getSettings(),
   ])
   return computeExitDues(resident, resident.rentPayments, rentRulesOf(settings), dailyRatesOf(settings))

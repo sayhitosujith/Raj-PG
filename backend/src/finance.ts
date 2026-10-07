@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { parseDateOnly, propertyNow, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
-import { rentStatus } from './rent.js'
+import { activeConcessions, rentStatus } from './rent.js'
 import { getSettings, rentRulesOf } from './settings.js'
 
 /**
@@ -44,10 +44,10 @@ async function otherIncome(range?: { istStart: Date; istEnd: Date }) {
 /** Rent still owed for `month`, from each resident's rent status (so it matches the rent screens). */
 async function rentOutstanding(month: string) {
   const rules = rentRulesOf(await getSettings())
-  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
+  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } })
   return residents.reduce((sum, resident) => {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)
-    return status.outstandingMonths.includes(month) ? sum + (status.monthlyRent ?? 0) + (status.overdueMonths.includes(month) ? status.lateFee : 0) : sum
+    return status.outstandingMonths.includes(month) ? sum + (status.monthAmounts[month] ?? 0) + (status.overdueMonths.includes(month) ? status.lateFee : 0) : sum
   }, 0)
 }
 

@@ -35,6 +35,8 @@ type ReceiptData = {
   paidAt: Date
   method: string
   reference: string | null
+  /** A concession on this month (e.g. "10% referral reward"), shown as its own detail line. */
+  discount: string | null
 }
 
 // An uploaded photo is a PNG/JPEG data URL (resized in the browser); anything else is skipped.
@@ -73,6 +75,8 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
     : report ? { method: 'UPI transfer to property owner', reference: report.reference ? `UTR ${report.reference}` : null }
     : { method: 'Recorded by property owner', reference: null }
   const settings = await getSettings()
+  const concession = await prisma.rentConcession.findFirst({ where: { residentId, month: payment.month, status: 'ACTIVE' }, select: { percent: true, reason: true } })
+  const discount = concession ? `${concession.percent}% off${concession.reason ? ` · ${concession.reason}` : ''}` : null
   const { resident } = payment
   return {
     number: receiptNumber(payment.id, payment.month),
@@ -87,6 +91,7 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
     paidAt: payment.paidAt,
     method,
     reference,
+    discount,
   }
 }
 
@@ -202,7 +207,7 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     y += 52
 
     // Payment details.
-    const details: Array<[string, string]> = [['Payment method', receipt.method], ['Paid on', formatDate(receipt.paidAt)], ...(receipt.reference ? [['Reference', receipt.reference] as [string, string]] : [])]
+    const details: Array<[string, string]> = [['Payment method', receipt.method], ['Paid on', formatDate(receipt.paidAt)], ...(receipt.discount ? [['Discount', receipt.discount] as [string, string]] : []), ...(receipt.reference ? [['Reference', receipt.reference] as [string, string]] : [])]
     const boxHeight = 40 + details.length * 22
     doc.roundedRect(left, y, width, boxHeight, 8).fill(colors.tealSoft)
     label('Payment details', left + 16, y + 12)

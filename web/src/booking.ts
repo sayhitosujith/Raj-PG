@@ -22,14 +22,22 @@ export type BookingRequest = {
   source: BookingSource
   status: BookingStatus
   residentId: string | null
+  /** The resident whose referral link this came through, if any. */
+  referredBy: string | null
   createdAt: string
 }
 
 /** A property as the public booking form sees it (no occupancy or owner-only details). */
 export type BookableProperty = { id: string; name: string; location: string; tenantType: 'MEN' | 'WOMEN' | 'COLIVING' | null; rentWithFood: number | null; rentWithoutFood: number | null }
 
-/** The link to share on a platform; `?from=` tags the requests that come through it. */
-export const bookingLink = (source: string) => `${window.location.origin}/book${source === 'direct' ? '' : `?from=${source}`}`
+/** The public booking link tagged with its channel (?from=) and, from a resident's "Refer a friend", their referral code (?ref=). */
+export const bookingLink = (source: string, referralCode?: string | null) => {
+  const params = new URLSearchParams()
+  if (source !== 'direct') params.set('from', source)
+  if (referralCode) params.set('ref', referralCode)
+  const query = params.toString()
+  return `${window.location.origin}/book${query ? `?${query}` : ''}`
+}
 
 /** True on the public booking page (/book), which needs no sign-in. */
 export const isBookingPage = () => /^\/book\/?$/.test(window.location.pathname)

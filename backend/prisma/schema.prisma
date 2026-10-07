@@ -150,7 +150,13 @@ model Resident {
   housekeepingRequests    HousekeepingRequest[]
   rentPayments            RentPayment[]
   payments                Payment[]
-  bookings                Booking[]
+  bookings                Booking[]                @relation("bookingResident")
+  // Bookings made through this resident's referral link, and the rent concessions they earned.
+  referredBookings        Booking[]                @relation("bookingReferrer")
+  rentConcessions         RentConcession[]         @relation("concessionHolder")
+  referralRewards         RentConcession[]         @relation("concessionReferral")
+  // The code in this resident's "Refer a friend" link (?ref=…), made the first time they open the portal.
+  referralCode            String?                  @unique
   // WhatsApp updates (rent reminders, receipts, notices); on by default, the resident can turn it off.
   whatsappOptIn           Boolean                  @default(true)
   outboundMessages        OutboundMessage[]
@@ -248,7 +254,10 @@ model Booking {
   message      String    @default("")
   source       String    @default("direct")
   residentId   String?
-  resident     Resident? @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  resident     Resident? @relation("bookingResident", fields: [residentId], references: [id], onDelete: SetNull)
+  // The resident whose referral link brought this request in, if any; their friend joining earns them a reward.
+  referrerResidentId String?
+  referrer     Resident? @relation("bookingReferrer", fields: [referrerResidentId], references: [id], onDelete: SetNull)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @default(now()) @updatedAt
 }
@@ -576,4 +585,28 @@ model ResidentPasskey {
   lastUsedAt   DateTime?
 
   @@index([residentId])
+}
+
+// A discount on one month's rent for one resident, as a percentage of that month's rent. Earned by
+// referring a friend who joins and pays their first rent (referredResidentId, once per friend); the
+// owner can cancel it until that month is paid. Every place that prices a month applies it (rent.ts).
+model RentConcession {
+  id                 String             @id @default(cuid())
+  residentId         String
+  resident           Resident           @relation("concessionHolder", fields: [residentId], references: [id], onDelete: Cascade)
+  // "YYYY-MM": the month it comes off.
+  month              String
+  percent            Int
+  reason             String
+  referredResidentId String?            @unique
+  referredResident   Resident?          @relation("concessionReferral", fields: [referredResidentId], references: [id], onDelete: SetNull)
+  status             ConcessionStatus   @default(ACTIVE)
+  createdAt          DateTime           @default(now())
+
+  @@index([residentId])
+}
+
+enum ConcessionStatus {
+  ACTIVE
+  CANCELLED
 }

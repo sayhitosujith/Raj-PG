@@ -140,8 +140,11 @@ function transform(css: string): string {
       if (inner) output.push(`${prelude} { ${inner} }`)
       continue
     }
-    const declarations = darkDeclarations(body)
-    if (declarations.length) output.push(`${splitTopLevel(prelude, ',').map(darkSelector).join(', ')} { ${declarations.join('; ')} }`)
+    // Rules already written for the dark theme hold dark colours; converting them again would
+    // treat those as light colours and wash them out.
+    const selectors = splitTopLevel(prelude, ',').filter((selector) => !selector.includes(darkRoot))
+    const declarations = selectors.length ? darkDeclarations(body) : []
+    if (declarations.length) output.push(`${selectors.map(darkSelector).join(', ')} { ${declarations.join('; ')} }`)
   }
   return output.join('\n')
 }

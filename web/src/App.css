@@ -1098,8 +1098,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 }
 @keyframes sun-glow { from { box-shadow: 0 0 40px 14px rgb(255 214 110 / .55), 0 0 130px 70px rgb(255 226 150 / .3); } to { box-shadow: 0 0 55px 20px rgb(255 214 110 / .65), 0 0 160px 85px rgb(255 226 150 / .36); } }
 .is-day .sky-cloud { --cloud: rgb(255 255 255 / .95); opacity: .85; }
-:root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(22 58 104 / .95) 0%, rgb(32 74 122 / .82) 38%, rgb(40 72 108 / .55) 64%, rgb(30 44 60 / .3) 82%, transparent 100%); }
-:root[data-theme="dark"] .sky-sun { box-shadow: 0 0 40px 12px rgb(255 206 100 / .4), 0 0 130px 65px rgb(255 214 130 / .18); animation-name: moon-rise; }
+/* Dark theme by day: a dusk sky with a low, dimmed sun, so the time of day still shows without a
+   bright disc glaring over the dark cards. */
+:root[data-theme="dark"] .portal-sky.is-day { background: linear-gradient(180deg, rgb(30 34 70 / .95) 0%, rgb(58 52 96 / .82) 38%, rgb(108 72 92 / .5) 64%, rgb(150 92 72 / .22) 82%, transparent 100%); }
+:root[data-theme="dark"] .sky-sun { opacity: .7; background: radial-gradient(circle at 42% 38%, rgb(255 222 170) 0%, rgb(240 160 90) 60%, rgb(214 112 70) 100%); box-shadow: 0 0 24px 6px rgb(240 150 90 / .28), 0 0 80px 36px rgb(214 112 70 / .12); animation-name: moon-rise; }
 :root[data-theme="dark"] .is-day .sky-cloud { --cloud: rgb(196 212 232 / .5); opacity: .6; }
 @media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } }
 @media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun { animation: none; } }
@@ -1950,3 +1952,41 @@ div.portal-panel { display: contents; }
 :root[data-theme="dark"] .notification-panel li.is-kind-housekeeping { border-color: rgb(219 39 119 / .35); border-left-color: rgb(244 114 182); background: rgb(131 24 67 / .3); }
 /* "View Profile" under the resident's photo on Home: a small outlined button like Edit and PG Manager. */
 .profile-view-button { display: inline-flex; align-items: center; gap: 5px; margin-top: 2px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+/* "Referred by …" on a referral request that came through a resident's link. */
+.booking-referrer { margin-left: 6px; padding: 1px 7px; border-radius: 999px; color: rgb(109 40 217); background: rgb(237 233 254); font-size: 10px; font-weight: 700; }
+/* Referral rewards: the resident's rent-card badge and the owner's list of concessions in the rent panel. */
+.rent-highlight-status.reward { display: inline-flex; align-items: center; gap: 4px; color: rgb(109 40 217); background: rgb(237 233 254); }
+.rent-concessions { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.rent-concessions li { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid rgb(221 214 254); border-radius: 8px; color: #45544f; background: rgb(245 243 255); font-size: 12px; }
+.rent-concessions li > svg { flex: none; margin-top: 2px; color: rgb(124 58 237); }
+.rent-concessions li > span { display: grid; flex: 1; gap: 2px; }
+.rent-concessions small { color: var(--muted); font-size: 11px; }
+:root[data-theme="dark"] .booking-referrer, :root[data-theme="dark"] .rent-highlight-status.reward { color: rgb(196 181 253); background: rgb(76 29 149 / .35); }
+:root[data-theme="dark"] .rent-concessions li { border-color: rgb(139 92 246 / .35); color: rgb(220 214 240); background: rgb(76 29 149 / .25); }
+/* Reward notifications (referral rewards), indigo. */
+.notice-kind.is-reward { color: rgb(67 56 202); background: rgb(224 231 255); }
+.notification-panel li.is-kind-reward { border-color: rgb(199 210 254); border-left-color: rgb(79 70 229); background: rgb(238 242 255); }
+:root[data-theme="dark"] .notice-kind.is-reward { color: rgb(165 180 252); }
+:root[data-theme="dark"] .notification-panel li.is-kind-reward { border-color: rgb(79 70 229 / .35); border-left-color: rgb(129 140 248); background: rgb(49 46 129 / .3); }
+
+/* The "Today" tile opens a month calendar: today circled, public holidays marked, arrows for other months. */
+.calendar-tile { position: relative; min-width: 0; }
+.calendar-tile-button { width: 100%; border: 1px solid var(--line); font: inherit; text-align: left; cursor: pointer; }
+.calendar-tile-button:hover, .calendar-tile-button[aria-expanded="true"] { border-color: #b9c0c8; }
+.calendar-popover { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; width: 280px; max-width: calc(100vw - 48px); padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 18px 40px rgb(20 30 40 / .16); animation: modal-in .2s ease both; }
+.calendar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.calendar-head strong { color: var(--ink); font-size: 13px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+.calendar-weekday { color: var(--muted); font-size: 10px; font-weight: 700; padding-bottom: 4px; }
+.calendar-day { display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; color: var(--ink); font-size: 12px; }
+.calendar-day.is-holiday { color: rgb(194 65 12); background: rgb(255 237 213); font-weight: 700; cursor: help; }
+.calendar-day.is-today { color: #fff; background: var(--ink); font-weight: 800; }
+.calendar-legend { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+.calendar-legend-dot { width: 10px; height: 10px; border-radius: 50%; background: rgb(255 237 213); box-shadow: inset 0 0 0 1px rgb(234 88 12 / .5); }
+:root[data-theme="dark"] .calendar-popover { border-color: rgb(255 255 255 / .12); background: rgb(28 31 36); }
+:root[data-theme="dark"] .calendar-day.is-holiday { color: rgb(253 186 116); background: rgb(124 45 18 / .4); }
+:root[data-theme="dark"] .calendar-day.is-today { color: rgb(16 24 22); background: rgb(232 240 237); }
+:root[data-theme="dark"] .calendar-legend-dot { background: rgb(124 45 18 / .4); box-shadow: inset 0 0 0 1px rgb(253 186 116 / .5); }
+/* Phones: the bell sits left of other header buttons, so a panel hung from its right edge spilled off
+   the left of the screen. There it is pinned to the screen edges instead, just below the bell. */
+@media (max-width: 720px) { .notification-panel { position: fixed; top: var(--panel-top, 72px); right: 16px; left: 16px; width: auto; max-height: min(420px, calc(100vh - var(--panel-top, 72px) - 80px)); } }

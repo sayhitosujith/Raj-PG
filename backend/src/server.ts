@@ -28,6 +28,7 @@ import { holidaysAdminRouter } from './holidays.js'
 import { fireAlertAdminRouter } from './fireAlerts.js'
 import { exitAdminRouter } from './exits.js'
 import { accountDeletionAdminRouter } from './accountDeletion.js'
+import { concessionAdminRouter } from './referrals.js'
 import { maintenanceAdminRouter } from './maintenance.js'
 import { superAdminRouter } from './superAdmins.js'
 import { logIntegrations } from './startupReport.js'
@@ -83,6 +84,7 @@ app.use('/api', holidaysAdminRouter)
 app.use('/api', fireAlertAdminRouter)
 app.use('/api', exitAdminRouter)
 app.use('/api', accountDeletionAdminRouter)
+app.use('/api', concessionAdminRouter)
 app.use('/api', maintenanceAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the

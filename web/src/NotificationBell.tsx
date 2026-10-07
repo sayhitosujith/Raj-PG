@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react'
 export type Notice = { id: string; title: string; detail?: string | null; at?: string | null; /** Shown as a small badge, e.g. "Announcement". */ kind: NoticeKind }
 
 /** What a notice is about, shown as its badge. */
-export type NoticeKind = 'Announcement' | 'Rent' | 'Move-out' | 'Repair' | 'Account' | 'Food' | 'ID check' | 'Housekeeping'
+export type NoticeKind = 'Announcement' | 'Rent' | 'Move-out' | 'Repair' | 'Account' | 'Food' | 'ID check' | 'Housekeeping' | 'Reward'
 
 // When this resident read each notice, per device (localStorage): notice id -> time read (ms). A read
 // notice (one the resident clicked) is cleared from view; its record is kept, so it does
@@ -62,7 +62,12 @@ export function NotificationBell({ ownerId, notices }: { ownerId: string; notice
     setSeen(next)
     saveSeen(ownerId, next)
   }
-  const toggle = () => setIsOpen((open) => !open)
+  // On phones the panel is pinned to the screen edges (see App.css); it opens just below the bell.
+  const [panelTop, setPanelTop] = useState(0)
+  function toggle(event: React.MouseEvent<HTMLButtonElement>) {
+    setPanelTop(event.currentTarget.getBoundingClientRect().bottom + 8)
+    setIsOpen((open) => !open)
+  }
 
   return (
     <div className="notification-bell" ref={wrapperRef}>
@@ -70,7 +75,7 @@ export function NotificationBell({ ownerId, notices }: { ownerId: string; notice
         <Bell size={16} />
         {unread.length > 0 && <span className="notification-count" aria-hidden="true">{unread.length > 9 ? '9+' : unread.length}</span>}
       </button>
-      {isOpen && <div className="notification-panel" role="dialog" aria-label="Notifications">
+      {isOpen && <div className="notification-panel" role="dialog" aria-label="Notifications" style={{ '--panel-top': `${panelTop}px` } as React.CSSProperties}>
         <p className="notification-panel-title">Notifications</p>
         {sorted.length
           ? <ul>{sorted.map((notice) => <li key={notice.id} className={`is-kind-${kindClass(notice.kind)}`}><button type="button" className="notification-item" title="Mark as read" onClick={() => markRead(notice.id)}><span className={`notice-kind is-${kindClass(notice.kind)}`}>{notice.kind}</span><strong>{notice.title}</strong>{notice.detail && <small>{notice.detail}</small>}{notice.at && <time dateTime={notice.at}>{when(notice.at)}</time>}</button></li>)}</ul>

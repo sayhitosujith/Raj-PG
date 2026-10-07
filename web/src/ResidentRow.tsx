@@ -11,6 +11,7 @@ import { AccessKeyReset } from './AccessKeyReset'
 import { FoodRequestReview } from './FoodRequestReview'
 import { formatAadhar } from './aadharNumber'
 import { PhoneText } from './PhoneField'
+import { readApiError } from './superAdmin'
 import { EmergencyContactText } from './EmergencyContact'
 import { vehicleText } from './VehicleFields'
 import { CopyButton } from './CopyButton'
@@ -105,6 +106,15 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
   }
 
   const hasFoodRequest = !resident.foodOpted && Boolean(resident.foodRequestedAt)
+  // Cancels a rent concession (e.g. a referral reward) before its month is paid; the list reloads after.
+  async function cancelConcession(concessionId: string) {
+    const response = await fetch(`/api/residents/${resident.id}/concessions/${concessionId}/cancel`, { method: 'POST' }).catch(() => null)
+    if (!response) return 'Could not reach the server.'
+    if (!response.ok) return readApiError(response, 'Could not cancel the discount.')
+    onNotice('Discount cancelled.')
+    onChanged()
+    return null
+  }
   return (
     <article className={`resident-card${isExpanded ? ' is-expanded' : ''}`} style={{ '--stagger': Math.min(index, maxStaggerSteps) } as CSSProperties}>
       <div className="resident-row" onClick={toggleFromHeader}>
@@ -124,7 +134,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
           {!isRecord && <ResidentExitPanel resident={resident} deposit={securityDeposit} onChanged={onChanged} onNotice={onNotice} />}
           <AccountDeletionReview resident={resident} onChanged={onChanged} onNotice={onNotice} />
           {!isRecord && <AadharVerificationPanel resident={resident} onVerify={onVerify} />}
-          <RentPanel rent={resident.rent} onRecord={onRecordRent} onUndo={onUndoRent} />
+          <RentPanel rent={resident.rent} onRecord={onRecordRent} onUndo={onUndoRent} concessions={resident.rentConcessions} onCancelConcession={cancelConcession} />
           <dl className="resident-details">
             <div><dt>Phone</dt><dd>{resident.phone ? <a href={`tel:${resident.phone}`}><PhoneText value={resident.phone} /></a> : '—'}</dd></div>
             <div><dt>Email</dt><dd>{resident.email ? <a href={`mailto:${resident.email}`}>{resident.email}</a> : '—'}</dd></div>

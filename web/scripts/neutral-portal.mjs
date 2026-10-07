@@ -67,10 +67,13 @@ input.walkRules((rule) => {
   // Keyframes are global and cannot be scoped to the portal; none of them are visibly green here.
   if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name)) return
   const declarations = []
+  // Hand-written dark rules are copied whole, green or not: the dark sheet generated from this file
+  // is scoped to .portal-shell, so it would otherwise outrank App.css's own dark rule for the element.
+  const isDark = rule.selectors.some((selector) => selector.includes('[data-theme="dark"]'))
   rule.walkDecls((decl) => {
     // The brand colour itself is set by hand in App.css (near-black inside the portal), not greyed here.
     if (decl.prop === '--teal') return
-    const value = neutralise(decl.value)
+    const value = neutralise(decl.value) ?? (isDark ? decl.value : null)
     if (value) declarations.push(postcss.decl({ prop: decl.prop, value, important: decl.important }))
   })
   if (!declarations.length) return

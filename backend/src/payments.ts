@@ -1,3 +1,4 @@
+import { grantReferralReward } from './referrals.js'
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
@@ -107,6 +108,7 @@ paymentsAdminRouter.put('/payments/:id', async (request, response) => {
     if (existing.status !== 'paid' && updated.status === 'paid' && updated.residentId && claimedMonths.length) {
       const residentId = updated.residentId
       notifyInBackground(() => notifyRentRecorded(residentId, claimedMonths))
+      void grantReferralReward(residentId)
     }
     response.json(toPaymentSummary(updated))
   } catch (error) { respondToError(response, error, 'Payment could not be updated.') }

@@ -3,7 +3,7 @@ import { Router, type Request } from 'express'
 import { prisma } from './db.js'
 import { isEmailEnabled } from './emailClient.js'
 import { notifyRent, recipientSelect } from './notifications.js'
-import { rentStatus } from './rent.js'
+import { activeConcessions, rentStatus } from './rent.js'
 import { getSettings, rentRulesOf } from './settings.js'
 import { isWhatsAppEnabled } from './whatsappClient.js'
 
@@ -18,7 +18,7 @@ const dueDateLabel = (month: string, dueDay: number) => new Date(Date.UTC(Number
 export async function runRentReminders() {
   if (!isWhatsAppEnabled() && !isEmailEnabled()) return { skipped: 'Neither WhatsApp nor email is configured.' }
   const rules = rentRulesOf(await getSettings())
-  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, room: { select: { property: { select: { name: true } } } } } })
+  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions, room: { select: { property: { select: { name: true } } } } } })
   const sent = { reminder1: 0, reminder2: 0, reminder3: 0, overdue: 0 }
   for (const resident of residents) {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)
