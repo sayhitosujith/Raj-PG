@@ -64,7 +64,7 @@ function residentUpiPayee(settings: WorkspaceSettings) {
 
 async function residentWorkspace() {
   const settings = await getSettings()
-  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
+  return { businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, residentTheme: settings.residentTheme, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */

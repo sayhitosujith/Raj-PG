@@ -50,7 +50,7 @@ import { HouseRules } from './HouseRules'
 import { NextMealAlert, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
-import { ThemeToggle } from './ThemeToggle'
+import { useResidentTheme } from './useResidentTheme'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
 import { RefreshButton } from './RefreshButton'
@@ -133,6 +133,7 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
+  useResidentTheme(profile.workspace.residentTheme)
   // Profile has no tab of its own: on phones and tablets the Home photo and "View Profile" open it;
   // on desktop, where everything is one page, "View Profile" scrolls down to it.
   const isTabLayout = useTabLayout()
@@ -216,7 +217,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* The resident's own property photo in place of the app logo, so the portal feels like their home. */}
         <div className="brand-row"><img className="portal-property-mark" src={profile.propertyImage} alt={profile.property} title={profile.property} /><span className="home-title portal-title">Resident Home</span></div>
-        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><ThemeToggle className="portal-theme-toggle" /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />

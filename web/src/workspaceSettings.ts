@@ -38,10 +38,15 @@ export type WorkspaceSettings = {
   afternoonTo: string
   eveningFrom: string
   eveningTo: string
+  /** The resident portal's view, chosen by the owner; residents cannot change it. */
+  residentTheme: ResidentTheme
   /** Plain-text resident policies, linked from the resident portal; empty hides the link. */
   termsAndConditions: string
   privacyPolicy: string
 }
+
+/** The owner's choice of view for residents: AUTO = light 7am–7pm, dark otherwise. */
+export type ResidentTheme = 'AUTO' | 'LIGHT' | 'DARK'
 
 /** Used until settings load (and for the sidebar before sign-in data arrives); matches server defaults. */
 export const defaultBusinessName = 'Raj Properties'
@@ -55,4 +60,4 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
 /** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

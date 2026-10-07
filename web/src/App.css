@@ -569,7 +569,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .theme-toggle { color: #64716d; }
 .theme-toggle svg { transition: transform .35s ease; }
 .theme-toggle:hover svg { transform: rotate(-20deg); }
-.portal-theme-toggle { border: 1px solid var(--line); border-radius: 8px; }
 .login-card-themed { position: relative; }
 .card-theme-toggle { position: absolute; top: 14px; right: 14px; }
 
@@ -1531,12 +1530,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .report-fire-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgb(234 88 12); border-radius: 999px; color: rgb(194 65 12); background: rgb(255 247 237); font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .report-fire-button:hover, .report-fire-button:focus-visible { color: rgb(255 255 255); background: rgb(234 88 12); }
 :root[data-theme="dark"] .report-fire-button { color: rgb(253 186 116); background: rgb(67 20 7); }
-.raise-fire { position: relative; }
-.raise-fire-menu { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; display: grid; gap: 2px; min-width: 220px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 12px 28px #18352f22; }
-.raise-fire-menu p { margin: 4px 8px 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
-.raise-fire-menu button { display: flex; align-items: center; gap: 8px; padding: 8px; border: 0; border-radius: 7px; color: var(--ink); background: transparent; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
-.raise-fire-menu button:hover, .raise-fire-menu button:focus-visible { color: rgb(194 65 12); background: rgb(255 237 213); }
-.raise-fire-menu button svg { color: rgb(234 88 12); }
 
 /* Resident portal details: bold, darker labels and tighter rows. align-content keeps the rows at the
    top instead of spreading them out to match the photo's height, which made the big gaps. */
@@ -1658,10 +1651,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    and buttons readable; dark mode uses a deep grey. The page title stays brand green. */
 .portal-topbar { border-bottom-color: rgb(214 218 224); background: linear-gradient(90deg, rgb(244 245 247), rgb(228 231 235)); }
 .portal-topbar .home-title { color: rgb(22 124 104); }
-.portal-topbar .secondary-button, .portal-topbar .portal-theme-toggle { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); }
+.portal-topbar .secondary-button { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); }
 :root[data-theme="dark"] .portal-topbar { border-bottom-color: rgb(58 62 70); background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43)); }
 :root[data-theme="dark"] .portal-topbar .home-title { color: rgb(80 210 160); }
-:root[data-theme="dark"] .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-topbar .portal-theme-toggle { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); }
+:root[data-theme="dark"] .portal-topbar .secondary-button { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); }
 
 /* Phones and narrow cards: the emergency buttons sit beside the photo, filling the space that would
    otherwise be empty there, with the heading and the move-out status/note full width below. The
@@ -1990,3 +1983,10 @@ div.portal-panel { display: contents; }
 /* Phones: the bell sits left of other header buttons, so a panel hung from its right edge spilled off
    the left of the screen. There it is pinned to the screen edges instead, just below the bell. */
 @media (max-width: 720px) { .notification-panel { position: fixed; top: var(--panel-top, 72px); right: 16px; left: 16px; width: auto; max-height: min(420px, calc(100vh - var(--panel-top, 72px) - 80px)); } }
+/* The resident page uses the full screen width on large monitors (the owner pages keep the 1680px cap). */
+.portal-shell .page-content { max-width: none; }
+/* The resident's header block (details, emergency actions, today tiles, food opt-in) sits in its own
+   card, tinted sky blue so it stands out from the rent card below it. Narrower padding on phones keeps the tiles their full width. */
+.portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 1px solid rgb(186 230 253); border-radius: 12px; background: rgb(224 242 254); }
+:root[data-theme="dark"] .portal-shell .portal-details-heading { border-color: rgb(56 189 248 / .3); background: rgb(12 74 110 / .3); }
+@media (max-width: 560px) { .portal-shell .portal-details-heading { padding: 12px 10px; } }

@@ -1,4 +1,4 @@
-import type { HousekeepingSlot, WorkspaceSettings } from '@prisma/client'
+import type { HousekeepingSlot, ResidentTheme, WorkspaceSettings } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
 import { findLogoProblem, findUpiQrProblem, photoVersion, sendLogo, sendUpiQr } from './photo.js'
@@ -49,6 +49,7 @@ export const houseRulesOf = (settings: WorkspaceSettings) => ({ visitingHours: f
 /** All three slots for forms (value, label, hours). */
 export const slotOptionsOf = (settings: WorkspaceSettings) => (Object.keys(slotNames) as HousekeepingSlot[]).map((slot) => { const { value, label, hours } = slotDetails(settings, slot); return { value, label, hours } })
 
+const residentThemes: readonly ResidentTheme[] = ['AUTO', 'LIGHT', 'DARK']
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 
 // Each window is a start/end pair of "HH:MM" fields; overnight windows may end the next morning.
@@ -61,7 +62,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -141,6 +142,10 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     if (nullable && raw === null) { data[field] = null; continue }
     if (!isWholeNumber(raw, min, max)) return { error }
     data[field] = raw
+  }
+  if (input.residentTheme !== undefined) {
+    if (!residentThemes.includes(input.residentTheme as ResidentTheme)) return { error: 'Resident view must be Auto, Light or Dark.' }
+    data.residentTheme = input.residentTheme as ResidentTheme
   }
   for (const { key, label, overnight } of timeWindows) {
     const from = input[`${key}From`]

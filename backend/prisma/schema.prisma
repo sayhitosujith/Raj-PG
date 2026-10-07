@@ -478,7 +478,15 @@ model WorkspaceSettings {
   quietTo                 String    @default("07:00")
   // Cleanings a resident may book per Monday–Sunday week; null = no limit.
   housekeepingWeeklyLimit Int?
+  // The resident portal's light/dark view, set by the owner: AUTO = light 7am–7pm, dark otherwise.
+  residentTheme           ResidentTheme @default(AUTO)
   updatedAt               DateTime  @updatedAt
+}
+
+enum ResidentTheme {
+  AUTO
+  LIGHT
+  DARK
 }
 
 enum MealType {

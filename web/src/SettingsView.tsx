@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, SunMoon, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -8,7 +8,7 @@ import { EmailSettings } from './EmailSettings'
 import { ordinal } from './rent'
 import { readIdentityFields, type SuperAdmin } from './superAdmin'
 import { SuperAdminIdentityFields } from './SuperAdminIdentityFields'
-import type { WorkspaceSettings } from './workspaceSettings'
+import type { ResidentTheme, WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
 
 type SaveResult = Promise<string | null>
@@ -160,6 +160,14 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
+          </SettingsSection>
+
+          <SettingsSection icon={<SunMoon size={18} />} title="Resident view" description="Light or dark view for every resident's portal. Residents cannot change it themselves." onSubmit={(form) => onSaveSettings({ residentTheme: value(form, 'residentTheme') as ResidentTheme })}>
+            <label>View<select name="residentTheme" defaultValue={settings.residentTheme}>
+              <option value="AUTO">Auto: light from 7am, dark from 7pm</option>
+              <option value="LIGHT">Always light</option>
+              <option value="DARK">Always dark</option>
+            </select></label>
           </SettingsSection>
 
           <WhatsAppSettings onNotice={onNotice} />

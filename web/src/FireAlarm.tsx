@@ -133,18 +133,3 @@ export function ReportFireButton({ onRaised, onNotice }: { onRaised: () => void;
   return <button type="button" className="report-fire-button" onClick={() => void raise('/api/resident-portal/fire-alert', undefined, ' for your building', onRaised, onNotice)}><Flame size={14} /> Report fire</button>
 }
 
-/** The owner's "Fire alarm" control: choose the property, then raise its alarm. */
-export function RaiseFireAlarmButton({ properties, onRaised, onNotice }: { properties: Array<{ id?: string; name: string }>; onRaised: () => void; onNotice: (message: string) => void }) {
-  const [isChoosing, setIsChoosing] = useState(false)
-  const choices = properties.filter((property): property is { id: string; name: string } => Boolean(property.id))
-  return (
-    <div className="raise-fire">
-      <button type="button" className="report-fire-button" aria-expanded={isChoosing} onClick={() => setIsChoosing((open) => !open)}><Flame size={14} /> Fire alarm</button>
-      {isChoosing && <div className="raise-fire-menu" role="menu">
-        <p>Raise the alarm for:</p>
-        {choices.length ? choices.map((property) => <button key={property.id} type="button" role="menuitem" onClick={() => { setIsChoosing(false); void raise('/api/fire-alerts', { propertyId: property.id }, ` at ${property.name}`, onRaised, onNotice) }}><Flame size={13} /> {property.name}</button>)
-          : <p>No properties yet.</p>}
-      </div>}
-    </div>
-  )
-}

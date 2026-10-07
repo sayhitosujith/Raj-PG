@@ -812,9 +812,6 @@
     color: rgb(253 186 116);
     background: rgb(67 20 7)
 }
-.portal-shell .raise-fire-menu {
-    box-shadow: 0 12px 28px #27272722
-}
 .portal-shell .portal-details dt {
     color: #535353
 }
@@ -881,7 +878,7 @@
 :root[data-theme="dark"] .portal-shell .portal-topbar .home-title {
     color: rgb(145 145 145)
 }
-:root[data-theme="dark"] .portal-shell .portal-topbar .secondary-button, :root[data-theme="dark"] .portal-shell .portal-topbar .portal-theme-toggle {
+:root[data-theme="dark"] .portal-shell .portal-topbar .secondary-button {
     border-color: rgb(78 84 94);
     background: rgb(255 255 255 / .06)
 }
@@ -913,10 +910,10 @@
 .portal-shell .scenery-front {
     color: rgb(95 95 95 / .24)
 }
-:root[data-theme="dark"] .portal-shell .portal-shell .scenery-back {
+:root[data-theme="dark"] .portal-shell .scenery-back {
     color: rgb(130 130 130 / .12)
 }
-:root[data-theme="dark"] .portal-shell .portal-shell .scenery-front {
+:root[data-theme="dark"] .portal-shell .scenery-front {
     color: rgb(130 130 130 / .2)
 }
 @media (max-width: 1024px) {
@@ -1118,4 +1115,8 @@
 :root[data-theme="dark"] .portal-shell .calendar-legend-dot {
     background: rgb(124 45 18 / .4);
     box-shadow: inset 0 0 0 1px rgb(253 186 116 / .5)
+}
+:root[data-theme="dark"] .portal-shell .portal-details-heading {
+    border-color: rgb(56 189 248 / .3);
+    background: rgb(12 74 110 / .3)
 }

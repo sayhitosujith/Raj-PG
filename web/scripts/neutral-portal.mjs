@@ -50,7 +50,12 @@ function neutralise(value) {
 function scope(selector) {
   if (selector.startsWith('.portal-shell')) return selector
   const root = selector.match(/^:root(\[[^\]]*\])*/)
-  if (root) return root[0].length === selector.length ? `${selector} .portal-shell` : `${root[0]} .portal-shell${selector.slice(root[0].length)}`
+  if (root) {
+    const rest = selector.slice(root[0].length)
+    // Already scoped to the portal (e.g. a hand-written dark portal rule): keep it as it is.
+    if (/^\s*\.portal-shell\b/.test(rest)) return selector
+    return rest ? `${root[0]} .portal-shell${rest}` : `${selector} .portal-shell`
+  }
   if (/^(html|body)\b/.test(selector)) return null
   return `.portal-shell ${selector}`
 }

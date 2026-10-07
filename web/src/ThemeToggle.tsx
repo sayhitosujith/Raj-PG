@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
-import { applyTheme, chooseTheme, currentTheme, nextThemeSwitch, type Theme } from './theme'
+import { applyTheme, chooseTheme, currentTheme, type Theme } from './theme'
+import { useThemeClock } from './useThemeClock'
 
 /**
  * Light/dark switch. The theme follows the device clock (light 7am–7pm, dark otherwise) and flips
@@ -10,22 +11,11 @@ import { applyTheme, chooseTheme, currentTheme, nextThemeSwitch, type Theme } fr
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>(() => currentTheme())
 
-  useEffect(() => {
-    let timer: number
-    const sync = () => {
-      const next = currentTheme()
-      applyTheme(next)
-      setTheme(next)
-      window.clearTimeout(timer)
-      // A second past the switch, so the clock is clearly on the new side of it.
-      timer = window.setTimeout(sync, nextThemeSwitch().getTime() - Date.now() + 1000)
-    }
-    // Background tabs throttle timers and laptops sleep, so re-check when the page is shown again.
-    const onVisible = () => { if (document.visibilityState === 'visible') sync() }
-    timer = window.setTimeout(sync, nextThemeSwitch().getTime() - Date.now() + 1000)
-    document.addEventListener('visibilitychange', onVisible)
-    return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible) }
-  }, [])
+  useThemeClock(() => {
+    const next = currentTheme()
+    applyTheme(next)
+    setTheme(next)
+  })
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
