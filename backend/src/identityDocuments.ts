@@ -22,7 +22,8 @@ export const documentDataUrlPattern = /^data:(image\/jpeg|image\/png|application
 
 const maxDocumentBytes = 2_000_000
 // ICAO 9303 allows up to 9 characters; 6 covers the shortest numbers still in circulation.
-const passportNumberPattern = /^[A-Z0-9]{6,9}$/
+/** A passport number as stored: 6–9 letters and digits, upper case. */
+export const passportNumberPattern = /^[A-Z0-9]{6,9}$/
 // Visa sticker numbers and e-Visa application IDs vary by issue; letters and digits only.
 const visaNumberPattern = /^[A-Z0-9]{4,20}$/
 

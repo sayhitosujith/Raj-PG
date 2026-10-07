@@ -13,7 +13,9 @@ export type SuperAdmin = {
   name: string
   email: string
   phone: string | null
+  /** One ID document by nationality: Aadhaar for Indian nationals, passport for everyone else. */
   aadharNumber: string | null
+  passportNumber: string | null
   sex: Sex | null
   /** ISO 3166-1 alpha-2 code, e.g. "IN". */
   nationality: string | null
@@ -22,7 +24,7 @@ export type SuperAdmin = {
 }
 
 /** Form field names of the identity details, matching the API's body keys. */
-export const identityFieldNames = ['phone', 'aadharNumber', 'sex', 'nationality', 'permanentAddress'] as const
+export const identityFieldNames = ['phone', 'aadharNumber', 'passportNumber', 'sex', 'nationality', 'permanentAddress'] as const
 
 /** The identity details from a form containing {@link identityFieldNames} inputs, as API body fields. */
 export function readIdentityFields(form: FormData): Record<string, string> {

@@ -5,8 +5,8 @@ import { phoneDigitVariants } from './validation.js'
  * Duplicate checks for the details that identify a person. Emails must be unique across every
  * account (resident or super admin), because one sign-in form serves both and a shared email
  * signs in whichever account's password matches. Phones must be unique among residents, who also
- * sign in by phone; Aadhaar numbers across residents and super admins; passport numbers among
- * residents. Only active residents count: an inactive one cannot sign in, and a returning
+ * sign in by phone; Aadhaar and passport numbers across residents and super admins. Only active
+ * residents count: an inactive one cannot sign in, and a returning
  * resident can be added again without deleting their old record.
  *
  * These are application checks, not database constraints (a rule spanning two tables cannot be a
@@ -51,7 +51,11 @@ async function findOwner(db: Prisma.TransactionClient, candidate: IdentityCandid
     if (resident) return { detail: 'Aadhaar number', owner: { name: resident.name, kind: 'resident' } }
   }
   if (candidate.passportNumber) {
-    const resident = await db.resident.findFirst({ where: { ...residents, passportNumber: candidate.passportNumber }, select: { name: true } })
+    const [admin, resident] = await Promise.all([
+      db.superAdmin.findFirst({ where: { ...admins, passportNumber: candidate.passportNumber }, select: { name: true } }),
+      db.resident.findFirst({ where: { ...residents, passportNumber: candidate.passportNumber }, select: { name: true } }),
+    ])
+    if (admin) return { detail: 'passport number', owner: { name: admin.name, kind: 'super admin' } }
     if (resident) return { detail: 'passport number', owner: { name: resident.name, kind: 'resident' } }
   }
   return null

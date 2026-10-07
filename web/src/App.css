@@ -1398,6 +1398,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .my-details-contact svg { flex: none; color: var(--teal); }
 .my-details-contact a { overflow: hidden; color: inherit; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .my-details-contact a:hover { color: var(--teal); text-decoration: underline; }
+/* The document name before the ID number ("Passport Number", "Aadhaar Number"), bold and underlined. */
+.my-details-id-label { font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .my-details-edit { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font-size: 12px; }
 .my-details-note { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
 .my-details-document { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }

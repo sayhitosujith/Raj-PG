@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { KeyRound, Pencil, ShieldCheck, Trash2, UserPlus, X } from 'lucide-react'
 import { formatAadhar } from './aadharNumber'
+import { isIndian } from './identity'
 import { PhoneText } from './PhoneField'
 import { readApiError, sexLabels, type SuperAdmin } from './superAdmin'
 import { LazyCountryLabel } from './CountryField'
@@ -9,7 +10,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 import { Pagination } from './Pagination'
 import { usePagination } from './usePagination'
 
-// Aadhaar is masked here; the full number is only shown inside the edit form.
+// The ID number matching nationality, masked; the full number is only shown inside the edit form.
 function IdentitySummary({ admin }: { admin: SuperAdmin }) {
   if (!admin.phone) return <small className="identity-missing">Identity details not added yet</small>
   return (
@@ -17,7 +18,9 @@ function IdentitySummary({ admin }: { admin: SuperAdmin }) {
       <PhoneText value={admin.phone} />
       {admin.nationality && <Suspense fallback={<span>{admin.nationality}</span>}><LazyCountryLabel code={admin.nationality} /></Suspense>}
       {admin.sex && <span>{sexLabels[admin.sex]}</span>}
-      {admin.aadharNumber && <span className="aadhar-value">Aadhaar {formatAadhar(admin.aadharNumber)}</span>}
+      {isIndian(admin.nationality)
+        ? admin.aadharNumber && <span className="aadhar-value">Aadhaar {formatAadhar(admin.aadharNumber)}</span>
+        : admin.passportNumber && <span className="aadhar-value">Passport •••• {admin.passportNumber.slice(-4)}</span>}
     </small>
   )
 }

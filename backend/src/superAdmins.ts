@@ -7,6 +7,7 @@ import { isCountryCode } from './countries.js'
 import { findDuplicate } from './duplicates.js'
 import { prisma } from './db.js'
 import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
+import { indianNationality, passportNumberPattern } from './identityDocuments.js'
 
 
 /**
@@ -14,29 +15,37 @@ import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
  * number is included because only super admins can call these routes and they can edit it; the
  * list view masks it.
  */
-export type PublicSuperAdmin = Pick<SuperAdmin, 'id' | 'name' | 'email' | 'phone' | 'aadharNumber' | 'sex' | 'nationality' | 'permanentAddress' | 'createdAt'>
+export type PublicSuperAdmin = Pick<SuperAdmin, 'id' | 'name' | 'email' | 'phone' | 'aadharNumber' | 'passportNumber' | 'sex' | 'nationality' | 'permanentAddress' | 'createdAt'>
 
 /** Result of {@link createSuperAdmin}; carries an HTTP status so routes can relay failures as-is. */
 export type CreateSuperAdminResult = { ok: true; admin: PublicSuperAdmin } | { ok: false; status: 400 | 409; error: string }
 
 /** Identity details every admin added from the dashboard must provide. */
-export type SuperAdminIdentity = Pick<Prisma.SuperAdminCreateInput, 'phone' | 'aadharNumber' | 'sex' | 'nationality' | 'permanentAddress'>
+export type SuperAdminIdentity = Pick<Prisma.SuperAdminCreateInput, 'phone' | 'aadharNumber' | 'passportNumber' | 'sex' | 'nationality' | 'permanentAddress'>
 
 /** The identity fields as they arrive in a request body, before validation. */
-export type IdentityInput = { phone?: string; aadharNumber?: string; sex?: string; nationality?: string; permanentAddress?: string }
+export type IdentityInput = { phone?: string; aadharNumber?: string; passportNumber?: string; sex?: string; nationality?: string; permanentAddress?: string }
 
-/** Validates and normalises the identity fields of a new super admin, all of which are required. */
+/**
+ * Validates and normalises the identity fields of a new super admin, all of which are required. The
+ * ID document follows nationality, as for residents: a 12-digit Aadhaar number for Indian nationals,
+ * a passport number for everyone else; the other one is cleared so only the matching ID is kept.
+ */
 export function parseSuperAdminIdentity(input: IdentityInput): { ok: true; identity: SuperAdminIdentity } | { ok: false; error: string } {
   const phone = normalizePhone(input.phone ?? '')
-  const aadharNumber = input.aadharNumber?.replace(/\s/g, '') ?? ''
   const nationality = input.nationality?.trim().toUpperCase() ?? ''
+  const aadharNumber = input.aadharNumber?.replace(/\s/g, '') ?? ''
+  const passportNumber = input.passportNumber?.replace(/\s/g, '').toUpperCase() ?? ''
   const permanentAddress = input.permanentAddress?.trim()
   if (!phone) return { ok: false, error: phoneRequirement }
-  if (!isValidAadharNumber(aadharNumber)) return { ok: false, error: 'Aadhaar number must be 12 digits.' }
-  if (!Object.values(Sex).includes(input.sex as Sex)) return { ok: false, error: 'Choose male, female, or other for sex.' }
   if (!isCountryCode(nationality)) return { ok: false, error: 'Choose a nationality from the list.' }
+  const isIndianNational = nationality === indianNationality
+  if (isIndianNational && !isValidAadharNumber(aadharNumber)) return { ok: false, error: 'Aadhaar number must be 12 digits.' }
+  if (!isIndianNational && !passportNumberPattern.test(passportNumber)) return { ok: false, error: 'Passport number must be 6 to 9 letters and digits.' }
+  if (!Object.values(Sex).includes(input.sex as Sex)) return { ok: false, error: 'Choose male, female, or other for sex.' }
   if (!permanentAddress) return { ok: false, error: 'Permanent address is required.' }
-  return { ok: true, identity: { phone, aadharNumber, sex: input.sex as Sex, nationality, permanentAddress } }
+  const document = isIndianNational ? { aadharNumber, passportNumber: null } : { aadharNumber: null, passportNumber }
+  return { ok: true, identity: { phone, ...document, sex: input.sex as Sex, nationality, permanentAddress } }
 }
 
 /** Emails are stored lower-cased so login and uniqueness are case-insensitive. */
@@ -45,8 +54,8 @@ export function normalizeEmail(email: string) {
 }
 
 /** Strips a super admin record down to its client-safe fields. */
-export function toPublicSuperAdmin({ id, name, email, phone, aadharNumber, sex, nationality, permanentAddress, createdAt }: SuperAdmin): PublicSuperAdmin {
-  return { id, name, email, phone, aadharNumber, sex, nationality, permanentAddress, createdAt }
+export function toPublicSuperAdmin({ id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, createdAt }: SuperAdmin): PublicSuperAdmin {
+  return { id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, createdAt }
 }
 
 /**
@@ -59,7 +68,7 @@ export async function createSuperAdmin(input: { name?: string; email?: string; p
   if (!name) return { ok: false, status: 400, error: 'Name is required.' }
   if (!isValidEmail(email)) return { ok: false, status: 400, error: 'A valid email address is required.' }
   if (!isAcceptablePassword(input.password)) return { ok: false, status: 400, error: passwordRequirement }
-  const duplicate = await findDuplicate(prisma, { email, aadharNumber: identity.aadharNumber })
+  const duplicate = await findDuplicate(prisma, { email, aadharNumber: identity.aadharNumber, passportNumber: identity.passportNumber })
   if (duplicate) return { ok: false, status: 409, error: duplicate }
   try {
     const admin = await prisma.superAdmin.create({ data: { ...identity, name, email, passwordHash: hashPassword(input.password) } })
@@ -124,7 +133,7 @@ superAdminRouter.patch('/super-admins/:id', async (request, response) => {
       const self = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId }, select: { email: true } })
       if (self.email !== email) { response.status(403).json({ error: 'Change your own email under Settings → My account; it needs your current password.' }); return }
     }
-    const duplicate = await findDuplicate(prisma, { email, aadharNumber: parsed.identity.aadharNumber }, { superAdminId: request.params.id })
+    const duplicate = await findDuplicate(prisma, { email, aadharNumber: parsed.identity.aadharNumber, passportNumber: parsed.identity.passportNumber }, { superAdminId: request.params.id })
     if (duplicate) { response.status(409).json({ error: duplicate }); return }
     const admin = await prisma.superAdmin.update({ where: { id: request.params.id }, data: { ...parsed.identity, name, email } })
     response.json(toPublicSuperAdmin(admin))

@@ -168,7 +168,7 @@ authRouter.put('/auth/me', requireRole(UserRole.SUPER_ADMIN), async (request, re
     const newEmail = typeof email === 'string' ? normalizeEmail(email) : admin.email
     const changesCredentials = newEmail !== admin.email || newPassword !== undefined
     if (changesCredentials && !(typeof currentPassword === 'string' && verifyPassword(currentPassword, admin.passwordHash))) { response.status(400).json({ error: 'Enter your current password to change your email or password.' }); return }
-    const duplicate = await findDuplicate(prisma, { email: newEmail !== admin.email ? newEmail : null, aadharNumber: identity?.ok ? identity.identity.aadharNumber : null }, { superAdminId: userId })
+    const duplicate = await findDuplicate(prisma, { email: newEmail !== admin.email ? newEmail : null, aadharNumber: identity?.ok ? identity.identity.aadharNumber : null, passportNumber: identity?.ok ? identity.identity.passportNumber : null }, { superAdminId: userId })
     if (duplicate) { response.status(409).json({ error: duplicate }); return }
     const updated = await prisma.superAdmin.update({ where: { id: userId }, data: { ...(identity?.ok ? identity.identity : {}), ...(typeof name === 'string' ? { name: name.trim() } : {}), email: newEmail, ...(typeof newPassword === 'string' ? { passwordHash: hashPassword(newPassword) } : {}) } })
     if (typeof newPassword === 'string') await prisma.session.deleteMany({ where: { superAdminId: userId, id: { not: sessionId } } })

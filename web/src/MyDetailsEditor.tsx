@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Pencil, X } from 'lucide-react'
+import { formatAadhar } from './aadharNumber'
 import { PhoneField } from './PhoneField'
 import { EmergencyContactFields, emergencyContactFields, type EmergencyContact } from './EmergencyContact'
 import { readApiError } from './superAdmin'
 
 /** The resident's own details as the editor needs them. */
-export type EditableDetails = EmergencyContact & { name: string; phone?: string | null; email?: string | null; permanentAddress?: string | null; isIndian: boolean; documentLast4?: string | null }
+export type EditableDetails = EmergencyContact & { name: string; phone?: string | null; email?: string | null; permanentAddress?: string | null; isIndian: boolean; documentNumber?: string | null }
 
 /**
  * "Edit" beside the resident's "My details" heading: a modal to change their name, phone, email,
@@ -61,7 +62,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
           <EmergencyContactFields contact={details} />
           <p className="my-details-note">Your phone or email is how you sign in. A new address shows as unverified until your property owner checks it.</p>
           <div className="my-details-document">
-            <div><strong>{details.isIndian ? 'Aadhaar number' : 'Passport number'}</strong><small>{details.documentLast4 ? (details.isIndian ? `XXXX XXXX ${details.documentLast4}` : `•••• ${details.documentLast4}`) : 'Not on file'}</small></div>
+            <div><strong>{details.isIndian ? 'Aadhaar number' : 'Passport number'}</strong><small>{details.documentNumber ? (details.isIndian ? formatAadhar(details.documentNumber, true) : details.documentNumber) : 'Not on file'}</small></div>
             <button type="button" className="secondary-button" disabled={isSaving} onClick={changeDocument}>Change {documentName}</button>
           </div>
           {error && <p className="login-error" role="alert">{error}</p>}
