@@ -61,3 +61,62 @@
 /* Sign out in the resident header: an icon-only red power button. */
 .portal-shell .portal-power-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; color: #fff; background: rgb(220 38 38); box-shadow: 0 4px 12px rgb(220 38 38 / .25); cursor: pointer; transition: background .15s, transform .15s; }
 .portal-shell .portal-power-button:hover, .portal-shell .portal-power-button:focus-visible { background: rgb(185 28 28); transform: translateY(-1px); }
+/* Contact icons in the details card each in their own colour: phone blue, email orange, ID violet
+   (lighter shades in dark view). */
+.portal-shell .my-details-contact svg.lucide-phone { color: rgb(37 99 235); }
+.portal-shell .my-details-contact svg.lucide-mail { color: rgb(234 88 12); }
+.portal-shell .my-details-contact svg.lucide-id-card { color: rgb(124 58 237); }
+:root[data-theme="dark"] .portal-shell .my-details-contact svg.lucide-phone { color: rgb(96 165 250); }
+:root[data-theme="dark"] .portal-shell .my-details-contact svg.lucide-mail { color: rgb(251 146 60); }
+:root[data-theme="dark"] .portal-shell .my-details-contact svg.lucide-id-card { color: rgb(167 139 250); }
+/* Coloured icons on Home: each tile and info card icon has its own colour on a soft tint of it
+   (date violet, local time amber, weather sky blue; Wi-Fi blue, contacts cyan, property details rose,
+   city indigo, location red). Lighter shades on darker tints in dark view. */
+.portal-shell .today-tile:is(.is-date, .is-time, .is-weather) .today-tile-icon { color: var(--tile-icon); background: var(--tile-tint); }
+.portal-shell .today-tile:is(.is-date, .is-time, .is-weather) .today-tile-icon svg { color: inherit; }
+.portal-shell .today-tile.is-date { --tile-icon: rgb(124 58 237); --tile-tint: rgb(237 233 254); }
+.portal-shell .today-tile.is-time { --tile-icon: rgb(217 119 6); --tile-tint: rgb(254 243 199); }
+.portal-shell .today-tile.is-weather { --tile-icon: rgb(2 132 199); --tile-tint: rgb(224 242 254); }
+:root[data-theme="dark"] .portal-shell .today-tile.is-date { --tile-icon: rgb(196 181 253); --tile-tint: rgb(76 29 149 / .45); }
+:root[data-theme="dark"] .portal-shell .today-tile.is-time { --tile-icon: rgb(252 211 77); --tile-tint: rgb(120 53 15 / .45); }
+:root[data-theme="dark"] .portal-shell .today-tile.is-weather { --tile-icon: rgb(125 211 252); --tile-tint: rgb(12 74 110 / .5); }
+.portal-shell .info-card.is-wifi h3 svg { color: rgb(37 99 235); }
+.portal-shell .info-card.is-contacts h3 svg { color: rgb(8 145 178); }
+.portal-shell .info-card.is-details h3 svg { color: rgb(225 29 72); }
+.portal-shell .info-line svg.lucide-building-2 { color: rgb(79 70 229); }
+.portal-shell .info-line svg.lucide-map-pin { color: rgb(220 38 38); }
+:root[data-theme="dark"] .portal-shell .info-card.is-wifi h3 svg { color: rgb(96 165 250); }
+:root[data-theme="dark"] .portal-shell .info-card.is-contacts h3 svg { color: rgb(103 232 249); }
+:root[data-theme="dark"] .portal-shell .info-card.is-details h3 svg { color: rgb(251 113 133); }
+:root[data-theme="dark"] .portal-shell .info-line svg.lucide-building-2 { color: rgb(165 180 252); }
+:root[data-theme="dark"] .portal-shell .info-line svg.lucide-map-pin { color: rgb(248 113 113); }
+.portal-shell .my-details-contact svg.lucide-plane { color: rgb(219 39 119); }
+:root[data-theme="dark"] .portal-shell .my-details-contact svg.lucide-plane { color: rgb(244 114 182); }
+/* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
+   out in white below it. Its Edit button and weather tile stay white. :root keeps it ahead of the
+   generated light and dark card colours in both views. */
+:root .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
+/* On the blue details card the contact icons use light shades that read on blue. */
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-phone { color: rgb(186 230 253); }
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-mail { color: rgb(253 186 116); }
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-id-card { color: rgb(221 214 254); }
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-plane { color: rgb(251 207 232); }
+/* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
+   Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */
+.portal-shell .resident-amenity svg { color: var(--amenity, var(--portal-icon)); }
+.portal-shell .resident-amenity.is-hot_water { --amenity: rgb(234 88 12); }
+.portal-shell .resident-amenity.is-tv { --amenity: rgb(79 70 229); }
+.portal-shell .resident-amenity.is-wifi { --amenity: rgb(37 99 235); }
+.portal-shell .resident-amenity.is-security { --amenity: rgb(217 119 6); }
+.portal-shell .resident-amenity.is-lift { --amenity: rgb(124 58 237); }
+.portal-shell .resident-amenity.is-ac { --amenity: rgb(8 145 178); }
+.portal-shell .resident-amenity.is-food { --amenity: rgb(220 38 38); }
+.portal-shell .resident-amenity.is-cctv { --amenity: rgb(71 85 105); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-hot_water { --amenity: rgb(251 146 60); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-tv { --amenity: rgb(165 180 252); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-wifi { --amenity: rgb(96 165 250); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-security { --amenity: rgb(252 211 77); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-lift { --amenity: rgb(196 181 253); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-ac { --amenity: rgb(103 232 249); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-food { --amenity: rgb(248 113 113); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-cctv { --amenity: rgb(203 213 225); }

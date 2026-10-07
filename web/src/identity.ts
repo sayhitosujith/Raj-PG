@@ -46,6 +46,12 @@ export function hasAnyIdentity(details: IdentityDetails) {
     : Boolean(details.passportNumber || details.visaNumber) || details.hasPassportScan
 }
 
+/** A visa for display: "V1234567 · Employment", just the number when no type is set, or "—". */
+export function visaText({ visaNumber, visaType }: { visaNumber?: string | null; visaType?: string | null }) {
+  if (!visaNumber) return '—'
+  return visaType ? `${visaNumber} · ${visaTypeLabels[visaType] ?? visaType}` : visaNumber
+}
+
 /** Whether a stored date-only value ("YYYY-MM-DD…") is today or earlier in the viewer's calendar. */
 export function isOnOrBeforeToday(value: string) {
   const today = new Date()

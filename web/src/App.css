@@ -206,15 +206,23 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
 .resident-phone { min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; }
 /* Email under the phone; long addresses are cut with an ellipsis (full address on hover). */
-.resident-email { display: block; min-width: 0; overflow: hidden; color: var(--muted); font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.resident-email { display: block; min-width: 0; overflow: hidden; color: rgb(37 99 235); font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .resident-email:hover { color: var(--teal); text-decoration: underline; }
+/* Owner's resident row: email in blue, and each ID line led by a coloured label (passport or Aadhaar
+   violet, visa pink) so the documents are easy to pick out; values stay in the normal text colour. */
+.document-label { font-weight: 700; }
+.document-label.is-id { color: rgb(124 58 237); }
+.document-label.is-visa { color: rgb(219 39 119); }
+:root[data-theme="dark"] .resident-email { color: rgb(96 165 250); }
+:root[data-theme="dark"] .document-label.is-id { color: rgb(167 139 250); }
+:root[data-theme="dark"] .document-label.is-visa { color: rgb(244 114 182); }
 .resident-contact-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .resident-contact-line + .resident-contact-line { margin-top: 3px; }
 /* Faint until hovered so a column of copy icons does not compete with the contact details. */
 .contact-copy { flex: none; display: grid; place-items: center; padding: 3px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; opacity: .55; cursor: pointer; transition: opacity .15s, color .15s, background .15s; }
 .contact-copy:hover, .contact-copy:focus-visible { opacity: 1; color: var(--teal); background: var(--teal-soft); }
 /* Aadhaar (in full) or passport, under the email. */
-.resident-document { display: block; margin-top: 3px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.resident-document { display: block; margin-top: 3px; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .resident-card .resident-room { display: flex; align-items: center; gap: 10px; }
 .resident-room-meta { display: grid; gap: 4px; }
 .resident-room .rent-chip { margin-top: 0; }
@@ -1407,15 +1415,25 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .my-details-main { min-width: 0; }
 .my-details-card > .today-tile { max-width: 220px; }
 @container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
-.my-details-title h2 { margin-bottom: 0; overflow-wrap: anywhere; }
+/* Narrow cards: the Edit button and the first contact line (the phone) sit beside the weather tile,
+   filling the space under Edit; the other lines run the full card width below, so "Passport Number:
+   KL…" stays on one line. The contact list steps aside (display: contents) so each line is placed. */
+@container (min-width: 381px) and (max-width: 620px) {
+  .my-details-card { row-gap: 6px; }
+  .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
+  .my-details-title { grid-column: 1; grid-row: 1; }
+  .my-details-card > .today-tile { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  .my-details-main > :not(.my-details-title), .my-details-contact > span { grid-column: 1 / -1; }
+  .my-details-contact > span:first-child { grid-column: 1; grid-row: 2; align-self: center; }
+}
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
 .workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
-.my-details-contact span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
-.my-details-contact svg { flex: none; color: var(--teal); }
+/* Icons line up with the first line of text, so a value that wraps (the ID line) keeps its icon at the top like the others. */
+.my-details-contact > span { display: inline-flex; align-items: flex-start; gap: 6px; min-width: 0; max-width: 100%; line-height: 20px; }
+.my-details-contact svg { flex: none; margin-top: 3px; color: var(--teal); }
 /* The ID line is one run of text (label, colon, number) next to its icon, so on a narrow card it wraps
    as a sentence; the label itself never splits ("Passport / Number"). */
-.my-details-contact .my-details-id { display: inline; }
 .my-details-id-label { white-space: nowrap; }
 .my-details-contact a { overflow: hidden; color: inherit; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .my-details-contact a:hover { color: var(--teal); text-decoration: underline; }
@@ -1869,7 +1887,8 @@ div.portal-panel { display: contents; }
 .info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
 .info-line .icon-button { padding: 4px; color: var(--teal); }
 .info-secret { font-variant-numeric: tabular-nums; letter-spacing: .5px; }
-.info-call { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid #9fd0c2; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: nowrap; }
+/* flex: none so the pill never shrinks below its label on a narrow card (the label would spill out). */
+.info-call { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 4px 10px; line-height: 1.3; border: 1px solid #9fd0c2; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .info-faqs { display: grid; gap: 6px; margin-top: 16px; }
 .info-faqs details { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
 .info-faqs summary { color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -2011,7 +2030,10 @@ div.portal-panel { display: contents; }
 .portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 0; border-radius: 16px; background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); box-shadow: 0 10px 28px rgb(3 105 161 / .25); }
 /* The tiles inside stay white, so their text keeps its normal colours; only what sits straight on the
    blue (the move-out notes and link) turns light. */
-:root:not([data-theme="dark"]) .portal-shell .portal-details-heading :is(.today-grid, .meals-row, .my-details-card) { background: rgb(255 255 255); }
+:root:not([data-theme="dark"]) .portal-shell .portal-details-heading :is(.today-grid, .meals-row) { background: rgb(255 255 255); }
+/* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
+   out in white below it. Its Edit button and weather tile stay white. */
+.portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
 .portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: rgb(240 249 255); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
 :root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); }
@@ -2023,3 +2045,27 @@ div.portal-panel { display: contents; }
   .portal-shell .portal-details-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; }
 }
 @media (max-width: 560px) { .portal-shell .portal-details-heading { padding: 12px 10px; } }
+/* Resident Home motion, all stopped for reduced motion:
+   - the contact lines in the details card slide in one after another;
+   - amenity chips lift on hover with a little icon wiggle (they already pop in on load);
+   - section titles (Property info, …) get a sky-blue underline that draws itself in;
+   - info card titles: the Wi-Fi icon pulses like a signal, other card icons bob gently. */
+.portal-shell .my-details-contact > span { animation: contact-slide-in .45s cubic-bezier(.2, .7, .3, 1) both; }
+.portal-shell .my-details-contact > span:nth-child(2) { animation-delay: .08s; }
+.portal-shell .my-details-contact > span:nth-child(3) { animation-delay: .16s; }
+.portal-shell .my-details-contact > span:nth-child(n + 4) { animation-delay: .24s; }
+.portal-shell .resident-amenity { transition: transform .2s ease, box-shadow .2s ease; }
+.portal-shell .resident-amenity:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgb(20 30 40 / .1); }
+.portal-shell .resident-amenity:hover svg { animation: amenity-wiggle .5s ease; }
+.portal-shell .workspace-view-heading h2 { position: relative; padding-bottom: 6px; }
+.portal-shell .workspace-view-heading h2::after { position: absolute; bottom: 0; left: 0; width: 44px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, rgb(14 165 233), rgb(125 211 252)); content: ''; transform-origin: left; animation: title-underline .7s cubic-bezier(.2, .7, .3, 1) .2s both; }
+.portal-shell .info-card h3 svg { animation: info-icon-bob 3.6s ease-in-out infinite; }
+.portal-shell .info-card.is-wifi h3 svg { animation: wifi-pulse 2.4s ease-in-out infinite; }
+@keyframes contact-slide-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes amenity-wiggle { 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+@keyframes title-underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes info-icon-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes wifi-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) {
+  .portal-shell :is(.my-details-contact > span, .resident-amenity:hover svg, .workspace-view-heading h2::after, .info-card h3 svg) { animation: none; }
+}

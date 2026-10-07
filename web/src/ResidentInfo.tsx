@@ -23,7 +23,7 @@ const clockLabel = (time: string) => { const [hours, minutes] = time.split(':').
 function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi']>; onNotice: (message: string) => void }) {
   const [isShown, setIsShown] = useState(false)
   return (
-    <div className="info-card">
+    <div className="info-card is-wifi">
       <h3><Wifi size={16} /> Wi-Fi</h3>
       <div className="info-line"><span>Network</span><strong>{wifi.name}</strong><button type="button" className="icon-button" aria-label="Copy network name" onClick={() => copyWithNotice(wifi.name, 'Network name', onNotice)}><Copy size={14} /></button></div>
       {wifi.password && <div className="info-line"><span>Password</span><strong className="info-secret">{isShown ? wifi.password : '••••••••'}</strong>
@@ -46,11 +46,11 @@ export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNot
       <div className="workspace-view-heading"><div><p className="eyebrow">Good to know</p><h2>Property info</h2><p>Wi-Fi, contacts and timings from your property owner.</p></div></div>
       <div className="info-grid">
         {info.wifi && <WifiCard wifi={info.wifi} onNotice={onNotice} />}
-        {info.contacts.length > 0 && <div className="info-card">
+        {info.contacts.length > 0 && <div className="info-card is-contacts">
           <h3><Phone size={16} /> Important contacts</h3>
           {info.contacts.map((contact) => <div className="info-line" key={`${contact.label}-${contact.phone}`}><span>{contact.label}</span>{contact.phone ? <a className="info-call" href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`}><Phone size={12} /> {contact.phone}</a> : <strong />}</div>)}
         </div>}
-        {hasDetails && <div className="info-card">
+        {hasDetails && <div className="info-card is-details">
           <h3><DoorOpen size={16} /> Property details</h3>
           {info.city && <div className="info-line"><span><Building2 size={12} /> City</span><strong>{info.city}</strong></div>}
           {info.location && <div className="info-line"><span><MapPin size={12} /> Location</span><LocationLink className="info-call" property={info.property} location={info.location} /></div>}

@@ -45,7 +45,7 @@ export function CalendarTile({ label, holidays }: { label: string; holidays: Hol
 
   return (
     <div className="calendar-tile" ref={wrapperRef}>
-      <button type="button" className="today-tile calendar-tile-button" aria-expanded={isOpen} aria-label={`${label}. Open calendar`} onClick={toggle}>
+      <button type="button" className="today-tile is-date calendar-tile-button" aria-expanded={isOpen} aria-label={`${label}. Open calendar`} onClick={toggle}>
         <span className="today-tile-icon" aria-hidden="true"><CalendarDays size={16} /></span>
         <span className="today-tile-copy"><small>Today</small><strong>{label}</strong></span>
       </button>

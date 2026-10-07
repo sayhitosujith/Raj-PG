@@ -16,7 +16,8 @@ import { EmergencyContactText } from './EmergencyContact'
 import { vehicleText } from './VehicleFields'
 import { CopyButton } from './CopyButton'
 import { LazyCountryLabel } from './CountryField'
-import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, isOnOrBeforeToday, visaTypeLabels } from './identity'
+import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, visaText } from './identity'
+import { ExpiryDate } from './ExpiryDate'
 import { exitBadge, ResidentExitPanel } from './ResidentExitPanel'
 import { AccountDeletionReview, deletionBadge } from './AccountDeletionReview'
 
@@ -30,14 +31,6 @@ const verificationBadges: Record<Exclude<AadharStatus, 'VERIFIED'>, { label: str
 }
 
 const formatDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-// Expiry dates are calendar days stored at UTC midnight, so they are formatted in UTC to avoid shifting a day.
-const formatDay = (value: string) => new Date(value).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })
-
-/** An expiry date, flagged when it has passed (the owner may need fresh documents for Form C). */
-function ExpiryDate({ value }: { value: string | null | undefined }) {
-  if (!value) return <>—</>
-  return <>{formatDay(value)}{isOnOrBeforeToday(value) && <span className="expired-note"> · expired</span>}</>
-}
 
 /**
  * The owner's side of verification. Approve is offered once every detail of the resident's
@@ -120,7 +113,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
-        <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document">Aadhaar {formatAadhar(resident.aadharNumber, true)}</span> : resident.passportNumber && <span className="resident-document">Passport {resident.passportNumber}</span>}</div>
+        <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
         {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}
@@ -148,7 +141,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
                   <div><dt>Passport number</dt><dd>{resident.passportNumber ?? '—'}</dd></div>
                   <div><dt>Passport expiry</dt><dd><ExpiryDate value={resident.passportExpiry} /></dd></div>
                   <div><dt>Passport scan</dt><dd>{resident.hasPassportScan ? <a href={`/api/residents/${resident.id}/passport-scan`} target="_blank" rel="noopener noreferrer">View passport <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>
-                  <div><dt>Visa</dt><dd>{resident.visaNumber ? `${resident.visaNumber}${resident.visaType ? ` · ${visaTypeLabels[resident.visaType] ?? resident.visaType}` : ''}` : '—'}</dd></div>
+                  <div><dt>Visa</dt><dd>{visaText(resident)}</dd></div>
                   <div><dt>Visa expiry</dt><dd><ExpiryDate value={resident.visaExpiry} /></dd></div>
                 </>}
             {/* After the ID cells, so it fills the first row's free space on wide screens instead of a row of its own. */}

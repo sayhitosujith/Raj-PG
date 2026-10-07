@@ -5,6 +5,7 @@ import { formatMealWindow, mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
+import { ModalLayer } from './ModalLayer'
 
 async function fetchMenu() {
   const response = await fetch('/api/resident-portal/food')
@@ -113,13 +114,13 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
   return (
     <>
       <button type="button" className="secondary-button weekly-menu-button" onClick={() => setIsOpen(true)}><UtensilsCrossed size={15} /> Weekly menu</button>
-      {isOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+      {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
         <div className="profile-modal menu-modal" role="dialog" aria-modal="true" aria-labelledby="weekly-menu-title">
           <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="weekly-menu-title">Weekly menu</h2></div><button type="button" className="icon-button" aria-label="Close weekly menu" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
           <p className="menu-modal-hint">Skip a meal before it starts if you will be away, and tell us how today's meals were.</p>
           <MenuBody refreshSignal={refreshSignal} onNotice={onNotice} />
         </div>
-      </div>}
+      </div></ModalLayer>}
     </>
   )
 }

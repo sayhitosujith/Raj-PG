@@ -72,7 +72,7 @@ export function ResidentAmenities({ amenities = [] }: { amenities?: string[] }) 
   return (
     <div className="resident-amenities" aria-label="Amenities at your property">
       <p className="eyebrow">Amenities</p>
-      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className="resident-amenity"><Icon size={14} /> {label}</span>)}</div>
+      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className={`resident-amenity is-${value.toLowerCase()}`}><Icon size={14} /> {label}</span>)}</div>
     </div>
   )
 }

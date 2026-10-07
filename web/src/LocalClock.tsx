@@ -29,5 +29,5 @@ export function LocalClock() {
   }, [])
   const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const isAway = Boolean(viewerZone) && timeIn(viewerZone, now) !== timeIn(propertyTimeZone, now)
-  return <TodayTile icon={<Clock size={16} />} label="Local time" value={timeIn(propertyTimeZone, now)} title={isAway ? `Your time: ${timeIn(viewerZone, now)}` : undefined} />
+  return <TodayTile kind="time" icon={<Clock size={16} />} label="Local time" value={timeIn(propertyTimeZone, now)} title={isAway ? `Your time: ${timeIn(viewerZone, now)}` : undefined} />
 }
