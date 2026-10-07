@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Bike, Briefcase, Building2, Car, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, LogOut, Mail, PartyPopper, Phone, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { Briefcase, Building2, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, LogOut, Mail, PartyPopper, Phone, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
@@ -28,7 +28,7 @@ import { ResidentRentPayments } from './ResidentRentPayments'
 import { PortalFooter } from './PortalFooter'
 import { PhoneText } from './PhoneField'
 import { EmergencyContactText } from './EmergencyContact'
-import { vehicleText } from './VehicleFields'
+import { vehicleIcon, vehicleText } from './VehicleFields'
 import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { TodayTile } from './TodayTile'
@@ -180,8 +180,8 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
   // The ID that matches nationality, in full, for the My Details card: Aadhaar for Indian nationals,
   // passport for everyone else (as in the details list below).
   const idDocumentLine = isIndian(profile.nationality)
-    ? profile.aadharNumber && <><strong className="my-details-id-label">Aadhaar Number</strong> : {formatAadhar(profile.aadharNumber, true)}</>
-    : profile.passportNumber && <><strong className="my-details-id-label">Passport Number</strong> : {profile.passportNumber}</>
+    ? profile.aadharNumber && <span className="my-details-id"><strong className="my-details-id-label">Aadhaar Number</strong> : {formatAadhar(profile.aadharNumber, true)}</span>
+    : profile.passportNumber && <span className="my-details-id"><strong className="my-details-id-label">Passport Number</strong> : {profile.passportNumber}</span>
   // Each detail with the icon its card shows (see .detail-card in App.css).
   const details: Array<[string, ReactNode, LucideIcon]> = [
     ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>, Building2],
@@ -189,7 +189,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
     ['Phone', profile.phone || '—', Phone],
     ['Email', profile.email || '—', Mail],
     ['Emergency contact', <EmergencyContactText contact={profile} />, Siren],
-    ['Vehicle', vehicleText(profile), profile.vehicleType === 'Car' ? Car : Bike],
+    ['Vehicle', vehicleText(profile), vehicleIcon(profile.vehicleType)],
     isIndian(profile.nationality)
       ? ['Aadhaar number', profile.aadharNumber ? <>{formatAadhar(profile.aadharNumber, true)}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard]
       : ['Passport number', profile.passportNumber ? <>{profile.passportNumber}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard],
@@ -226,13 +226,14 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div><p className="eyebrow">Resident</p><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email || idDocumentLine) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><CalendarTile label={dateLabel} holidays={holidays} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>{profile.name}</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email || idDocumentLine) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><CalendarTile label={dateLabel} holidays={holidays} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} /><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
-        <section className="workspace-view portal-panel" data-panel="info">
+        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /></div>
+        <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
+        <section className="workspace-view portal-panel" data-panel="home">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />
         </section>
@@ -248,11 +249,12 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
             <ResidentRentPayments rent={profile.rent} />
           </section>
         </div>
-        {/* Phones only (CSS): the Home card keeps the meals row on wide screens, which show every section at once. */}
-        <section className="workspace-view portal-panel portal-info-meals" data-panel="info">
-          <div className="workspace-view-heading"><div><p className="eyebrow">Food</p><h2>Meals</h2><p>{profile.foodOpted ? "Today's meals" : "Meal timings"} at {profile.property}.</p></div>{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}</div>
+        {/* Phones and tablets only (CSS), on Home under the main card, and only for residents on the food plan;
+            wide screens keep the meals row in the Home card. */}
+        {profile.foodOpted && <section className="workspace-view portal-panel portal-info-meals" data-panel="home">
+          <div className="workspace-view-heading"><div><p className="eyebrow">Food</p><h2>Meals</h2><p>Today's meals at {profile.property}.</p></div><WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} /></div>
           <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu ?? undefined} />
-        </section>
+        </section>}
         <section className="workspace-view portal-profile" data-panel="profile">
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div><div className="portal-profile-exit">{exitPg}</div></div>
           <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>

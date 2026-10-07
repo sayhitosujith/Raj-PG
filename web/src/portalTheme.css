@@ -54,3 +54,9 @@
 :root[data-theme="dark"] .portal-shell .food-opt-in .primary-button { border: 1px solid rgb(255 255 255 / .18); color: var(--portal-text); background: rgb(255 255 255 / .1); box-shadow: none; }
 /* The property photo is often a dark logo; a light frame keeps it from vanishing into the dark header. */
 :root[data-theme="dark"] .portal-shell .portal-property-mark { border-color: rgb(232 240 237 / .85); box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 0 14px rgb(255 255 255 / .14); }
+/* Light view: a plain white page. The drifting glows, sky (sun, clouds, weather), trees and animals
+   are dark-view only, so the light view reads as a clean white background behind the cards. */
+:root:not([data-theme="dark"]) .portal-shell { background: #ffffff; }
+:root:not([data-theme="dark"]) .portal-shell::before,
+:root:not([data-theme="dark"]) .portal-shell::after { content: none; }
+:root:not([data-theme="dark"]) .portal-shell :is(.portal-sky, .portal-scenery, .portal-animals) { display: none; }

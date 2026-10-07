@@ -1,14 +1,20 @@
 import { CalendarClock, Check, MoonStar, UsersRound, WalletCards } from 'lucide-react'
 import { formatRupees } from './rent'
 import type { HouseRules as HouseRulesData } from './workspaceSettings'
+import { vehicleIcon, vehicleText, type Vehicle } from './VehicleFields'
 
-/** House rules from Settings, shown to residents: visiting and quiet hours, notice period, deposit, then the owner's own rules. */
-export function HouseRules({ rules, extra = [] }: { rules: HouseRulesData; extra?: string[] }) {
+/**
+ * House rules from Settings, shown to residents: visiting and quiet hours, notice period, deposit, the
+ * resident's own registered vehicle (what security and parking go by), then the owner's own rules.
+ */
+export function HouseRules({ rules, extra = [], vehicle }: { rules: HouseRulesData; extra?: string[]; vehicle?: Vehicle }) {
+  const VehicleIcon = vehicleIcon(vehicle?.vehicleType)
   const items = [
     { icon: <UsersRound size={16} />, label: 'Visiting hours', value: rules.visitingHours },
     { icon: <MoonStar size={16} />, label: 'Quiet hours', value: rules.quietHours },
     { icon: <CalendarClock size={16} />, label: 'Notice to move out', value: rules.noticePeriodDays ? `${rules.noticePeriodDays} days` : 'Not required' },
     ...(rules.securityDeposit ? [{ icon: <WalletCards size={16} />, label: 'Security deposit', value: formatRupees(rules.securityDeposit) }] : []),
+    ...(vehicle ? [{ icon: <VehicleIcon size={16} />, label: 'Your vehicle', value: vehicle.vehicleType ? vehicleText(vehicle) : 'None registered (add it under Profile)' }] : []),
   ]
   return (
     <section className="workspace-view">

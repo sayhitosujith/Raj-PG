@@ -1391,12 +1391,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .my-details-main { min-width: 0; }
 .my-details-card > .today-tile { max-width: 220px; }
 @container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
-.my-details-title h2 { margin-bottom: 0; }
+.my-details-title h2 { margin-bottom: 0; overflow-wrap: anywhere; }
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
 .workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
 .my-details-contact span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
 .my-details-contact svg { flex: none; color: var(--teal); }
+/* The ID line is one run of text (label, colon, number) next to its icon, so on a narrow card it wraps
+   as a sentence; the label itself never splits ("Passport / Number"). */
+.my-details-contact .my-details-id { display: inline; }
+.my-details-id-label { white-space: nowrap; }
 .my-details-contact a { overflow: hidden; color: inherit; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .my-details-contact a:hover { color: var(--teal); text-decoration: underline; }
 /* The document name before the ID number ("Passport Number", "Aadhaar Number"), bold and underlined. */
@@ -1821,11 +1825,11 @@ div.portal-panel { display: contents; }
   .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
   .page-content[data-tab="info"] .house-rules li { padding: 16px; }
 }
-/* Meals on the Info tab (phones), next to the upcoming holidays: the weekly menu and meal timings
+/* Meals on the Home tab (phones and tablets), under property info and the upcoming holidays: the weekly menu and meal timings
    leave the Home card there, which keeps only the cricket score, or nothing when no match is on. */
 .portal-info-meals { display: none; }
 @media (max-width: 1024px) {
-  .page-content[data-tab="info"] .portal-info-meals { display: block; }
+  .page-content[data-tab="home"] .portal-info-meals { display: block; }
   .page-content .meals-row .weekly-menu-button, .page-content .meals-row .meal-timings { display: none; }
   .page-content .meals-row:not(:has(.cricket-score)) { display: none; }
 }
@@ -1986,7 +1990,12 @@ div.portal-panel { display: contents; }
 /* The resident page uses the full screen width on large monitors (the owner pages keep the 1680px cap). */
 .portal-shell .page-content { max-width: none; }
 /* The resident's header block (details, emergency actions, today tiles, food opt-in) sits in its own
-   card, tinted sky blue so it stands out from the rent card below it. Narrower padding on phones keeps the tiles their full width. */
-.portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 1px solid rgb(186 230 253); border-radius: 12px; background: rgb(224 242 254); }
-:root[data-theme="dark"] .portal-shell .portal-details-heading { border-color: rgb(56 189 248 / .3); background: rgb(12 74 110 / .3); }
+   card, a cyan-to-ocean-blue gradient (with soft light circles) so it stands out from the rent card below it. Narrower padding on phones keeps the tiles their full width. */
+.portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 0; border-radius: 16px; background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); box-shadow: 0 10px 28px rgb(3 105 161 / .25); }
+/* The tiles inside stay white, so their text keeps its normal colours; only what sits straight on the
+   blue (the move-out notes and link) turns light. */
+:root:not([data-theme="dark"]) .portal-shell .portal-details-heading :is(.today-grid, .meals-row, .my-details-card) { background: rgb(255 255 255); }
+.portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: rgb(240 249 255); }
+.portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
+:root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); }
 @media (max-width: 560px) { .portal-shell .portal-details-heading { padding: 12px 10px; } }

@@ -1,3 +1,4 @@
+import { Bike, Car } from 'lucide-react'
 /** A resident's vehicle as the API returns it; both parts are optional. */
 export type Vehicle = { vehicleType?: string | null; vehicleNumber?: string | null }
 
@@ -22,6 +23,9 @@ export function VehicleFields({ vehicle }: { vehicle?: Vehicle | null }) {
     </fieldset>
   )
 }
+
+/** The icon for a vehicle: a car for cars, otherwise a bike (two-wheelers and no vehicle alike). */
+export const vehicleIcon = (vehicleType?: string | null) => vehicleType === 'Car' ? Car : Bike
 
 /** The vehicle for a details list: "Bike · KA 01 AB 1234", just the type when there is no number, or "—". */
 export function vehicleText({ vehicleType, vehicleNumber }: Vehicle) {
