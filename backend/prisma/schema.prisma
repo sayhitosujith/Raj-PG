@@ -85,6 +85,12 @@ model Resident {
   emergencyContactName     String?
   emergencyContactRelation String?
   emergencyContactPhone    String?
+  // The resident's vehicle, for parking and security: type (Bike, Scooter, Car, Bicycle) and its
+  // registration number, upper case. Both optional; a bicycle may have no number.
+  vehicleType              String?
+  vehicleNumber            String?
+  // What the resident does (e.g. "Software engineer", "Student"), as they or the owner typed it.
+  occupation               String?
   // False after the resident edits their own address: its "Verified" badge waits for the owner again.
   addressVerified         Boolean                  @default(true)
   aadharCardUrl           String?

@@ -33,6 +33,8 @@ import type { Resident } from './resident'
 import { ResidentsView, type ResidentsLoadState } from './ResidentsView'
 import { SuperAdminsView } from './SuperAdminsView'
 import { DeletedRecordsView } from './DeletedRecordsView'
+import { NotificationBell } from './NotificationBell'
+import { buildOwnerNotices, useOwnerRepairs } from './ownerNotices'
 import type { HousekeepingStatus, OwnerHousekeepingRequest } from './housekeeping'
 import { MealTimingFields } from './MealTimings'
 import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
@@ -146,7 +148,6 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
   const [roomsProperty, setRoomsProperty] = useState<Property | null>(null)
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
   const profileName = currentAdmin.name
@@ -175,6 +176,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   // Sidebar badge: active residents, padded like the Properties badge ("03"), matching the Active tile.
   const activeResidentCount = residents.filter((resident) => resident.active).length
   const newHousekeepingCount = housekeeping.filter((request) => request.status === 'REQUESTED' || request.hasOpenReminder).length
+  // The top bar's notifications: every resident request still waiting on the owner, with who asked.
+  const ownerRepairs = useOwnerRepairs(refreshSignal)
+  const ownerNotices = buildOwnerNotices(residents, housekeeping, ownerRepairs)
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
   // null = closed; undefined resident = add mode.
   // prefill/onCreated are set when a booking request is being converted into a resident.
@@ -441,7 +445,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         <header className="topbar">
           <button className="icon-button menu-trigger" aria-label="Open navigation" onClick={() => setIsSidebarOpen(true)}><Menu size={21} /></button>
           <div className="topbar-heading"><span className="home-title">Admin Home</span><div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div></div>
-          <div className="topbar-actions"><RaiseFireAlarmButton properties={properties} onRaised={fire.refresh} onNotice={showNotice} /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><button className="icon-button notification-button" aria-label="View notifications" onClick={() => { setIsNotificationsOpen((open) => !open); setIsProfileOpen(false) }}><Bell size={19} /><i /></button><button className="profile" aria-expanded={isProfileOpen} onClick={() => { setIsProfileOpen((open) => !open); setIsNotificationsOpen(false) }}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isNotificationsOpen && <div className="notification-popover"><strong>Notifications</strong><p>4 residents have paid rent this week.</p><p>2 rooms are ready to list.</p></div>}{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>Super admin</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
+          <div className="topbar-actions"><RaiseFireAlarmButton properties={properties} onRaised={fire.refresh} onNotice={showNotice} /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>Super admin</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profileName.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>

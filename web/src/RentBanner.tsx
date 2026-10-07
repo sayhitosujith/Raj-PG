@@ -40,7 +40,8 @@ export function RentHighlight({ rent }: { rent: RentSummary }) {
     : { label: 'Nothing due yet', tone: 'muted' }
   const reminder = reminderNumber(rent)
   return (
-    <div className={`rent-highlight is-${status.tone}`}>
+    // The amount itself turns red while any month is unpaid and green when nothing is owed.
+    <div className={`rent-highlight is-${status.tone} ${rent.outstandingMonths.length ? 'is-due' : 'is-clear'}`}>
       <span className="rent-highlight-icon"><IndianRupee size={20} /></span>
       <div className="rent-highlight-copy">
         <p className="eyebrow">Monthly rent</p>

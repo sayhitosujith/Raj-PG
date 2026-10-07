@@ -18,8 +18,8 @@
    fixed greens). Fixed text greens (title, footer, tabs, amenity chips) are set here too. */
 .portal-shell { --teal: #1b2528; --portal-text: #1b2528; }
 :root[data-theme="dark"] .portal-shell { --teal: rgb(232 240 237); --portal-text: rgb(232 240 237); }
-.portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-terms .text-link, .portal-tabs button, .portal-tabs button.is-active, .resident-amenity),
-:root[data-theme="dark"] .portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-terms .text-link, .portal-tabs button, .portal-tabs button.is-active) { color: var(--portal-text); }
+.portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-tabs button, .portal-tabs button.is-active, .resident-amenity),
+:root[data-theme="dark"] .portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-tabs button, .portal-tabs button.is-active) { color: var(--portal-text); }
 /* In dark theme the portal's brand colour is light, so things filled with it carry dark text. */
 :root[data-theme="dark"] .portal-shell :is(.primary-button, .meal-tag, .pagination-button.is-current, .holiday-list li.is-today .holiday-date, .filter-tabs button.is-active, .booking-chip.is-selected) { color: rgb(16 24 22); }
 /* Exceptions that keep their original colours: the notification settings (WhatsApp green, email blue,
@@ -33,3 +33,13 @@
 :root[data-theme="dark"] .portal-shell .meal-tile.is-serving .meal-tag { color: #fff; background: rgb(234 88 12); }
 .portal-shell .meal-tile.is-serving .meal-icon { color: #fff; background: rgb(234 88 12); }
 :root[data-theme="dark"] .portal-shell .meal-tile.is-serving { border-color: rgb(234 88 12); background: rgb(67 20 7 / .45); }
+/* The monthly rent amount: red while any month is unpaid, green when nothing is owed. Green is
+   allowed here on purpose: it means "paid", not decoration. */
+.portal-shell .rent-highlight.is-due .rent-highlight-copy strong { color: rgb(200 30 30); }
+.portal-shell .rent-highlight.is-clear .rent-highlight-copy strong { color: rgb(22 140 72); }
+:root[data-theme="dark"] .portal-shell .rent-highlight.is-due .rent-highlight-copy strong { color: rgb(252 120 120); }
+:root[data-theme="dark"] .portal-shell .rent-highlight.is-clear .rent-highlight-copy strong { color: rgb(74 222 128); }
+.portal-shell .rent-highlight .rent-highlight-copy strong small { color: var(--muted); }
+/* The footer's Terms and conditions and Privacy policy links in brand green, so they read as links. */
+.portal-shell .portal-terms .text-link { color: #167c70; }
+:root[data-theme="dark"] .portal-shell .portal-terms .text-link { color: rgb(80 210 160); }

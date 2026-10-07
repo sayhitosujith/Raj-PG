@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Camera, LoaderCircle } from 'lucide-react'
+import { Camera, LoaderCircle, UserRound } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { resizeToSquareJpeg } from './imageResize'
 import { useTabLayout } from './useTabLayout'
@@ -62,7 +62,7 @@ export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, on
       </button>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={choose} />
       {onOpenProfile
-        ? <button type="button" className="text-link profile-photo-remove" onClick={onOpenProfile}>View Profile</button>
+        ? <button type="button" className="secondary-button profile-view-button" onClick={onOpenProfile}><UserRound size={13} /> View Profile</button>
         : photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
     </div>
   )

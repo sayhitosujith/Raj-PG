@@ -12,6 +12,7 @@ import { FoodRequestReview } from './FoodRequestReview'
 import { formatAadhar } from './aadharNumber'
 import { PhoneText } from './PhoneField'
 import { EmergencyContactText } from './EmergencyContact'
+import { vehicleText } from './VehicleFields'
 import { CopyButton } from './CopyButton'
 import { LazyCountryLabel } from './CountryField'
 import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, isOnOrBeforeToday, visaTypeLabels } from './identity'
@@ -142,6 +143,8 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
                 </>}
             {/* After the ID cells, so it fills the first row's free space on wide screens instead of a row of its own. */}
             <div><dt>Emergency contact</dt><dd><EmergencyContactText contact={resident} /></dd></div>
+            <div><dt>Vehicle</dt><dd>{vehicleText(resident)}</dd></div>
+            <div><dt>Occupation</dt><dd>{resident.occupation || '—'}</dd></div>
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
