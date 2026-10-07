@@ -259,8 +259,11 @@ residentPortalRouter.get('/resident-portal/holidays', requireResident, requirePo
 residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (request, response) => {
   try {
     const coordinates = readCoordinates(request.query)
-    const property = coordinates ? null : await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
-    const weather = coordinates ? await weatherNear(coordinates.latitude, coordinates.longitude) : property?.city ? await currentWeather(property.city) : null
+    // The device's position first; if that lookup fails, the property's city, so a shared location
+    // never leaves the resident with no weather at all.
+    const near = coordinates ? await weatherNear(coordinates.latitude, coordinates.longitude) : null
+    const property = near ? null : await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
+    const weather = near ?? (property?.city ? await currentWeather(property.city) : null)
     if (!weather) { response.status(204).send(); return }
     response.json(weather)
   } catch (error) {

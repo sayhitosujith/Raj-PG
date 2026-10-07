@@ -1416,6 +1416,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .my-details-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
 .my-details-card > .today-tile { max-width: 220px; }
+/* The weather value wraps rather than being cut off ("Bengaluru · 24°C") when the tile is narrow. */
+.my-details-card > .today-tile .today-tile-copy strong { white-space: normal; }
 @container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
 /* Narrow cards: the Edit button and the first contact line (the phone) sit beside the weather tile,
    filling the space under Edit; the other lines run the full card width below, so "Passport Number:
