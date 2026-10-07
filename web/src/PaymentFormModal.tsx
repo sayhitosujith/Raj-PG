@@ -3,6 +3,7 @@ import { Plus, QrCode, X } from 'lucide-react'
 import type { Resident } from './resident'
 import { paymentMethodLabels, paymentStatusLabels, type Payment, type PaymentDraft, type PaymentMethod, type PaymentStatus } from './payment'
 import { readApiError } from './superAdmin'
+import { ModalLayer } from './ModalLayer'
 
 type PropertyOption = { id: string; name: string }
 
@@ -45,7 +46,7 @@ export function PaymentFormModal({ payment, properties, residents, onClose, onSa
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal payment-modal" onSubmit={save}>
         <div className="modal-heading"><div><p className="eyebrow">Payments</p><h2>{payment ? 'Edit payment' : 'Add payment'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <div className="payment-form-grid">
@@ -61,6 +62,6 @@ export function PaymentFormModal({ payment, properties, residents, onClose, onSa
         {error && <p className="login-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button>{canShowQr && <button type="submit" value="qr" className="secondary-button" disabled={isSaving}><QrCode size={16} /> Save &amp; show UPI QR</button>}<button type="submit" className="primary-button" disabled={isSaving}><Plus size={16} /> {isSaving ? 'Saving…' : 'Save'}</button></div>
       </form>
-    </div>
+    </div></ModalLayer>
   )
 }

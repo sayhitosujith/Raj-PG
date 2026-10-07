@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { QrCode, X } from 'lucide-react'
 import { readApiError } from './superAdmin'
 import { UpiQrPanel, type QrState } from './UpiQrPanel'
+import { ModalLayer } from './ModalLayer'
 
 type QrView = QrState & { paymentId: string }
 
@@ -35,12 +36,12 @@ export function UpiQrRentButton({ onPaid, onNotice }: { onPaid: () => Promise<vo
     <>
       <button type="button" className="secondary-button pay-rent-button" disabled={isOpening} onClick={open}><QrCode size={15} /> {isOpening ? 'Creating QR…' : 'Pay by UPI QR'}</button>
       {qr && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setQr(null)}>
+        <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setQr(null)}>
           <div className="profile-modal payment-modal" role="dialog" aria-label="Pay rent by UPI QR">
             <div className="modal-heading"><div><p className="eyebrow">Rent</p><h2>Pay by UPI QR</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={() => setQr(null)}><X size={18} /></button></div>
             <UpiQrPanel key={qr.imageUrl} initial={qr} poll={poll} onSettled={settled} onRetry={open} />
           </div>
-        </div>
+        </div></ModalLayer>
       )}
     </>
   )

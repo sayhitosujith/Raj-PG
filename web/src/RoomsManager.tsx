@@ -3,6 +3,7 @@ import { DoorOpen, Trash2, X } from 'lucide-react'
 import { InlineLoader } from './Loader'
 import { fetchRooms, type PropertyRooms } from './rooms'
 import { readApiError } from './superAdmin'
+import { ModalLayer } from './ModalLayer'
 
 const maxRange = 200
 
@@ -70,7 +71,7 @@ export function RoomsManager({ propertyId, propertyName, onClose, onNotice }: { 
 
   const free = data?.rooms.filter((room) => !room.residentName).length ?? 0
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="profile-modal rooms-modal" role="dialog" aria-modal="true" aria-labelledby="rooms-title">
         <div className="modal-heading"><div><p className="eyebrow">{propertyName}</p><h2 id="rooms-title">Rooms</h2></div><button type="button" className="icon-button" aria-label="Close rooms" onClick={onClose}><X size={18} /></button></div>
         {!data ? (error ? <p className="login-error" role="alert">{error}</p> : <InlineLoader label="Loading rooms…" />) : <>
@@ -99,6 +100,6 @@ export function RoomsManager({ propertyId, propertyName, onClose, onNotice }: { 
             : <p className="portal-empty">No rooms yet. Add a range such as 101 to 110 to get started.</p>}
         </>}
       </div>
-    </div>
+    </div></ModalLayer>
   )
 }

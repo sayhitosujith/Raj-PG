@@ -216,6 +216,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .resident-email { color: rgb(96 165 250); }
 :root[data-theme="dark"] .document-label.is-id { color: rgb(167 139 250); }
 :root[data-theme="dark"] .document-label.is-visa { color: rgb(244 114 182); }
+/* A little space between the emergency contact's name line and the number below it. */
+.emergency-contact-call { display: inline-block; margin-top: 4px; }
 .resident-contact-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .resident-contact-line + .resident-contact-line { margin-top: 3px; }
 /* Faint until hovered so a column of copy icons does not compete with the contact details. */
@@ -1585,11 +1587,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    and an arrow on the right (not on the settings cards, whose right side holds their switch). */
 .portal-details { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 10px; }
 .portal-details-row .portal-details { grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); }
-.portal-details > .detail-card { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "icon label arrow" "icon value arrow"; align-items: center; gap: 2px 12px; padding: 12px 14px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; }
+.portal-details > .detail-card { display: grid; grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "icon label" "icon value"; align-items: center; gap: 2px 12px; padding: 12px 14px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; }
 .detail-card-icon { grid-area: icon; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--portal-icon, var(--ink)); background: #f5eff7; }
 .portal-details > .detail-card dt { grid-area: label; align-self: end; margin: 0; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .portal-details > .detail-card dd { grid-area: value; align-self: start; margin: 0; color: #6e6a78; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
-.detail-card-arrow { grid-area: arrow; color: #a98bb5; }
 .portal-shell :is(.whatsapp-preference, .passkey-settings) { border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; }
 :root[data-theme="dark"] .portal-details > .detail-card, :root[data-theme="dark"] .portal-shell :is(.whatsapp-preference, .passkey-settings) { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); }
 :root[data-theme="dark"] .detail-card-icon { background: rgb(255 255 255 / .07); }

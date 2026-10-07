@@ -11,6 +11,7 @@ import { EmergencyContactFields, emergencyContactFields } from './EmergencyConta
 import { VehicleFields, vehicleFields } from './VehicleFields'
 import { readApiError } from './superAdmin'
 import { RoomSelect } from './RoomSelect'
+import { ModalLayer } from './ModalLayer'
 
 const minimumPasswordLength = 10
 
@@ -123,7 +124,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal resident-modal" onSubmit={save}>
         <div className="modal-heading"><div><p className="eyebrow">Residents</p><h2>{isEdit ? 'Edit resident' : 'Add resident'}</h2></div><button type="button" className="icon-button" aria-label="Close resident form" onClick={onClose}><X size={18} /></button></div>
         <ResidentPhotoField name={previewName} currentUrl={resident?.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} change={photoChange} onChange={setPhotoChange} onError={setError} />
@@ -181,6 +182,6 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         {error && <p className="login-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving || (!isEdit && !accessKey)}>{isEdit ? <><Save size={16} /> Save changes</> : <><UserPlus size={17} /> Add resident</>}</button></div>
       </form>
-    </div>
+    </div></ModalLayer>
   )
 }

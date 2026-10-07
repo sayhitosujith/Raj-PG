@@ -3,6 +3,7 @@ import { DoorOpen, Info, X } from 'lucide-react'
 import { formatMonth, formatRupees } from './rent'
 import type { ExitDues } from './resident'
 import { readApiError } from './superAdmin'
+import { ModalLayer } from './ModalLayer'
 
 /** The resident's move-out notice as the portal receives it. */
 export type ExitNotice = { status: 'PENDING' | 'APPROVED' | 'DECLINED' | null; date: string | null; reason: string | null; /** Notice period for the resident's property (its own, or Settings). */ noticeDays: number; earliestDate: string; dues: ExitDues | null }
@@ -121,7 +122,7 @@ export function ExitPg({ exit, amountDue, deposit, noticeDays, onChanged, onNoti
         {exit.status === 'DECLINED' && <p className="exit-status is-declined">Your last move-out request was declined.</p>}
         <button type="button" className="exit-pg-button" onClick={() => setIsOpen(true)}><DoorOpen size={14} /> Exit PG</button>
       </div>
-      {isOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+      {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
         <form className="profile-modal" role="dialog" aria-modal="true" aria-labelledby="exit-pg-title" onSubmit={submit}>
           <div className="modal-heading"><div><p className="eyebrow">Move out</p><h2 id="exit-pg-title">Exit PG</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
           <p className="exit-hint">The notice period is {noticeDays} {noticeDays === 1 ? 'day' : 'days'}, so the earliest move-out date is {shortDate(exit.earliestDate)}. Your property owner will approve the date.</p>
@@ -133,7 +134,7 @@ export function ExitPg({ exit, amountDue, deposit, noticeDays, onChanged, onNoti
           {error && <p className="login-error" role="alert">{error}</p>}
           <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setIsOpen(false)}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}><DoorOpen size={15} /> {isSaving ? 'Sending…' : 'Send move-out request'}</button></div>
         </form>
-      </div>}
+      </div></ModalLayer>}
     </>
   )
 }

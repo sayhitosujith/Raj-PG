@@ -7,6 +7,7 @@ import { Pagination } from './Pagination'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { listPageSize, usePagination } from './usePagination'
+import { ModalLayer } from './ModalLayer'
 
 async function fetchBookings() {
   const response = await fetch('/api/bookings')
@@ -121,7 +122,7 @@ function AddBookingModal({ properties, onClose, onSaved }: { properties: Bookabl
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal payment-modal" onSubmit={save}>
         <div className="modal-heading"><div><p className="eyebrow">Referral Requests</p><h2>Add request</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <label>Came in by<select name="source" defaultValue="phone">{Object.entries(bookingSourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -129,6 +130,6 @@ function AddBookingModal({ properties, onClose, onSaved }: { properties: Bookabl
         {error && <p className="login-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}><Plus size={16} /> {isSaving ? 'Saving…' : 'Save'}</button></div>
       </form>
-    </div>
+    </div></ModalLayer>
   )
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Briefcase, Building2, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, Mail, PartyPopper, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { Briefcase, Building2, CalendarDays, DoorOpen, Hourglass, House, IdCard, KeyRound, Mail, PartyPopper, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
@@ -60,6 +60,7 @@ import { PageLoader } from './Loader'
 import { LocationLink } from './LocationLink'
 import { FoodOptIn } from './FoodOptIn'
 import { displayName } from './displayName'
+import { ModalLayer } from './ModalLayer'
 
 type ResidentProfile = { /** The code in this resident's "Refer a friend" link. */ referralCode?: string | null; /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharNumber?: string | null; passportNumber?: string | null; /** Passport and Indian visa details (non-Indian residents), expiry dates as "YYYY-MM-DD…". */ passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; vehicleType?: string | null; vehicleNumber?: string | null; occupation?: string | null; createdAt: string; joinedAt: string; room: string; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 // Overdue rent, an ended stay or a closed account signed the resident out; its message replaces the portal,
@@ -188,7 +189,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const details: Array<[string, ReactNode, LucideIcon]> = [
     ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>, Building2],
     ['Room', profile.room, DoorOpen],
-    ['Phone', profile.phone || '—', Phone],
+    ['Phone', profile.phone ? <PhoneText value={profile.phone} /> : '—', Phone],
     ['Email', profile.email || '—', Mail],
     ['Emergency contact', <EmergencyContactText contact={profile} />, Siren],
     ['Vehicle', vehicleText(profile), vehicleIcon(profile.vehicleType)],
@@ -203,7 +204,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   ]
 
   // One detail as a card: icon, label over value, and an arrow, in the portal's card style.
-  const detailCard = (label: string, value: ReactNode, Icon: LucideIcon, className = 'detail-card') => <div key={label} className={className}><span className="detail-card-icon" aria-hidden="true"><Icon size={18} /></span><dt>{label}</dt><dd>{value}</dd><ChevronRight className="detail-card-arrow" size={16} aria-hidden="true" /></div>
+  const detailCard = (label: string, value: ReactNode, Icon: LucideIcon, className = 'detail-card') => <div key={label} className={className}><span className="detail-card-icon" aria-hidden="true"><Icon size={18} /></span><dt>{label}</dt><dd>{value}</dd></div>
   // Shared by the Home card (wide screens) and the Profile tab (phones and tablets).
   const detailsList = <dl className="resident-details portal-details">{details.map(([label, value, icon]) => detailCard(label, value, icon))}{detailCard('Permanent address', <>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</>, House, 'detail-card resident-details-wide')}</dl>
   // Home card on wide screens, Profile tab on phones (CSS shows one), like the details list above.
@@ -270,7 +271,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         </section>
         <PortalFooter businessName={profile.workspace.businessName} termsAndConditions={profile.workspace.termsAndConditions} privacyPolicy={profile.workspace.privacyPolicy} referralCode={profile.referralCode} onNotice={showNotice} />
       </main>
-      {isChangingPassword && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div>}
+      {isChangingPassword && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div></ModalLayer>}
       {pendingConsent && <PolicyConsentModal consent={pendingConsent} workspace={profile.workspace} onSignOut={onSignOut} onAccepted={async (version) => { if (version) setAcceptedVersion(version); await onRefresh() }} />}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>

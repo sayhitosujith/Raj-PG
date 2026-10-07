@@ -28,12 +28,12 @@ export function EmergencyContactFields({ contact }: { contact?: EmergencyContact
 }
 
 /**
- * The contact for a details list: "Ravi Kumar (Father) · +91 …", with the number as a call link so
- * the owner can ring it from a phone. "—" when there is none.
+ * The contact for a details list: "Ravi Kumar (Father)" with the number on the line below, as a call
+ * link so it can be rung from a phone. "—" when there is none.
  */
 export function EmergencyContactText({ contact }: { contact: EmergencyContact }) {
   const { emergencyContactName: name, emergencyContactRelation: relation, emergencyContactPhone: phone } = contact
   if (!phone) return <>—</>
   const who = [name, relation && `(${relation})`].filter(Boolean).join(' ')
-  return <>{who && <>{who} · </>}<a className="emergency-contact-call" href={`tel:${phone}`}><PhoneText value={phone} /></a></>
+  return <>{who && <>{who}<br /></>}<a className="emergency-contact-call" href={`tel:${phone}`}><PhoneText value={phone} /></a></>
 }

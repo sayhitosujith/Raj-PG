@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { Payment } from './payment'
 import { readApiError } from './superAdmin'
 import { UpiQrPanel, type QrState } from './UpiQrPanel'
+import { ModalLayer } from './ModalLayer'
 
 const toQrState = (payment: Payment): QrState => ({ status: payment.status, amount: payment.amount, imageUrl: payment.qrImageUrl, expiresAt: payment.qrExpiresAt })
 
@@ -30,12 +31,12 @@ export function PaymentQrModal({ payment, onClose, onUpdated }: { payment: Payme
   }, [payment.id, onUpdated])
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="profile-modal payment-modal" role="dialog" aria-label="UPI QR payment">
         <div className="modal-heading"><div><p className="eyebrow">UPI QR · {payment.payerName}</p><h2>Collect payment</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         {error ? <p className="login-error" role="alert">{error}</p> : qr ? <UpiQrPanel initial={qr} poll={poll} key={qr.imageUrl} onSettled={setQr} onRetry={retry} /> : <p className="upi-qr-loading">Creating QR code…</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>{qr?.status === 'paid' ? 'Done' : 'Close'}</button></div>
       </div>
-    </div>
+    </div></ModalLayer>
   )
 }

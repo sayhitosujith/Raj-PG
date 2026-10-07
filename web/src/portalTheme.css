@@ -120,3 +120,14 @@
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-ac { --amenity: rgb(103 232 249); }
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-food { --amenity: rgb(248 113 113); }
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-cctv { --amenity: rgb(203 213 225); }
+/* The profile detail icon tiles and the phone tab bar in the same sky-to-ocean blue as the Home card,
+   with white icons and labels (the current tab on a frosted white pill). [data-theme] is always set,
+   so these beat both the light and the generated dark colours. */
+:root[data-theme] .portal-shell .detail-card-icon { color: #fff; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 4px 10px rgb(3 105 161 / .22); }
+:root[data-theme] .portal-shell .detail-card-icon svg { color: inherit; }
+@media (max-width: 1024px) {
+  :root[data-theme] .portal-shell .portal-tabs { border-top-color: transparent; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 -6px 18px rgb(3 105 161 / .25); }
+  :root[data-theme] .portal-shell :is(.portal-tabs button, .portal-tabs button.is-active) { color: rgb(224 242 254); }
+  :root[data-theme] .portal-shell :is(.portal-tabs button, .portal-tabs button.is-active) svg { color: inherit; }
+  :root[data-theme] .portal-shell :is(.portal-tabs button.is-active) { color: #fff; background: rgb(255 255 255 / .2); }
+}

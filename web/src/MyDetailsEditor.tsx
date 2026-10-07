@@ -5,6 +5,7 @@ import { PhoneField } from './PhoneField'
 import { EmergencyContactFields, emergencyContactFields, type EmergencyContact } from './EmergencyContact'
 import { VehicleFields, vehicleFields, type Vehicle } from './VehicleFields'
 import { readApiError } from './superAdmin'
+import { ModalLayer } from './ModalLayer'
 
 /** The resident's own details as the editor needs them. */
 export type EditableDetails = EmergencyContact & Vehicle & { name: string; occupation?: string | null; phone?: string | null; email?: string | null; permanentAddress?: string | null; isIndian: boolean; documentNumber?: string | null }
@@ -53,7 +54,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
   return (
     <>
       <button type="button" className="secondary-button my-details-edit" onClick={() => setIsOpen(true)}><Pencil size={14} /> Edit</button>
-      {isOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+      {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
         <form className="profile-modal" role="dialog" aria-modal="true" aria-labelledby="my-details-title" onSubmit={save}>
           <div className="modal-heading"><div><p className="eyebrow">Resident</p><h2 id="my-details-title">Edit my details</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
           <label>Name<input name="name" required maxLength={80} defaultValue={details.name} autoComplete="name" /></label>
@@ -71,7 +72,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
           {error && <p className="login-error" role="alert">{error}</p>}
           <div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}>{isSaving ? 'Saving…' : 'Save details'}</button></div>
         </form>
-      </div>}
+      </div></ModalLayer>}
     </>
   )
 }

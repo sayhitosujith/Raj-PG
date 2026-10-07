@@ -3,6 +3,7 @@ import { Camera, Wrench, X } from 'lucide-react'
 import { resizePropertyPhoto } from './imageResize'
 import { formatWhen, maintenanceCategoryLabels, maintenanceStatusLabels, maintenanceStatusTones, type MaintenanceCategory, type MaintenanceRequest } from './maintenance'
 import { readApiError } from './superAdmin'
+import { ModalLayer } from './ModalLayer'
 
 /** The resident's form: what's wrong, what kind, details and an optional photo (resized before upload). */
 function ReportForm({ onCreated, onClose }: { onCreated: (request: MaintenanceRequest) => void; onClose: () => void }) {
@@ -35,7 +36,7 @@ function ReportForm({ onCreated, onClose }: { onCreated: (request: MaintenanceRe
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal" role="dialog" aria-modal="true" aria-labelledby="report-problem-title" onSubmit={submit}>
         <div className="modal-heading"><div><p className="eyebrow">Complaints &amp; repairs</p><h2 id="report-problem-title">Report a problem</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <label>What's wrong?<input name="title" required maxLength={80} placeholder="e.g. Fan not working" /></label>
@@ -49,7 +50,7 @@ function ReportForm({ onCreated, onClose }: { onCreated: (request: MaintenanceRe
         {error && <p className="login-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}><Wrench size={15} /> {isSaving ? 'Sending…' : 'Send request'}</button></div>
       </form>
-    </div>
+    </div></ModalLayer>
   )
 }
 

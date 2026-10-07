@@ -9,6 +9,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
 import { Pagination } from './Pagination'
 import { portalListPageSize, usePagination } from './usePagination'
+import { ModalLayer } from './ModalLayer'
 
 const maxDaysAhead = 60
 
@@ -55,7 +56,7 @@ function RequestForm({ slots, holidays, onCreated, onClose }: { slots: SlotOptio
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal housekeeping-form" onSubmit={submit}>
         <div className="modal-heading"><div><p className="eyebrow">Housekeeping</p><h2>Request a cleaning</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <label>Date<input name="date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} min={todayDateInputValue()} max={daysFromToday(maxDaysAhead)} /></label>
@@ -68,7 +69,7 @@ function RequestForm({ slots, holidays, onCreated, onClose }: { slots: SlotOptio
         {error && <p className="login-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}><CalendarPlus size={16} /> {isSaving ? 'Sending…' : 'Request cleaning'}</button></div>
       </form>
-    </div>
+    </div></ModalLayer>
   )
 }
 
