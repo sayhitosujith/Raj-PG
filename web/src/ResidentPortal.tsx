@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Bell, CalendarDays, KeyRound, LogOut, Mail, PartyPopper, Phone, X } from 'lucide-react'
+import { Bell, Building2, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, LogOut, Mail, PartyPopper, Phone, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { Pagination } from './Pagination'
@@ -11,7 +11,7 @@ import { isIndian } from './identity'
 import { readApiError } from './superAdmin'
 import { MealTimings } from './MealTimings'
 import type { MealTimes } from './meals'
-import { ProfilePhotoPicker } from './ProfilePhotoPicker'
+import { ProfilePhotoPicker, RemovePhotoButton } from './ProfilePhotoPicker'
 import type { RentSummary } from './rent'
 import type { ResidentWorkspace } from './workspaceSettings'
 import { RentBanner, RentHighlight } from './RentBanner'
@@ -40,7 +40,7 @@ import { ExitPg, type ExitNotice } from './ExitPg'
 import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { PasskeySettings } from './PasskeySettings'
 import { rememberProperty } from './lastProperty'
-import { AppComingSoon } from './AppComingSoon'
+import { useTabLayout } from './useTabLayout'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
 import { HouseRules } from './HouseRules'
@@ -131,8 +131,14 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
-  // Profile has no tab of its own; the photo on the Home card opens it.
-  const openProfile = () => { setTab('profile'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  // Profile has no tab of its own: on phones and tablets the Home photo and "View Profile" open it;
+  // on desktop, where everything is one page, "View Profile" scrolls down to it.
+  const isTabLayout = useTabLayout()
+  const openProfile = () => {
+    if (!isTabLayout) { document.getElementById('your-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
+    setTab('profile')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
   const { greeting, dateLabel, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
   const announcementsPager = usePagination(announcements ?? [], portalListPageSize)
@@ -166,22 +172,25 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
 
   // Only the ID document number and address are checked (by the owner, against the upload); phone and email are as typed.
   const isAadharVerified = profile.aadharStatus === 'VERIFIED'
-  const details: Array<[string, ReactNode]> = [
-    ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>],
-    ['Room', profile.room],
-    ['Phone', profile.phone || '—'],
-    ['Email', profile.email || '—'],
-    ['Emergency contact', <EmergencyContactText contact={profile} />],
+  // Each detail with the icon its card shows (see .detail-card in App.css).
+  const details: Array<[string, ReactNode, LucideIcon]> = [
+    ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>, Building2],
+    ['Room', profile.room, DoorOpen],
+    ['Phone', profile.phone || '—', Phone],
+    ['Email', profile.email || '—', Mail],
+    ['Emergency contact', <EmergencyContactText contact={profile} />, Siren],
     isIndian(profile.nationality)
-      ? ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—']
-      : ['Passport number', profile.passportLast4 ? <>{`•••• ${profile.passportLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—'],
-    ['Joining date', formatJoinDate(profile.joinedAt)],
-    ['Days stayed', daysStayedLabel(profile.joinedAt)],
-    ['Food plan', profile.foodOpted ? 'With food' : 'Without food'],
+      ? ['Aadhaar number', profile.aadharLast4 ? <>{`XXXX XXXX ${profile.aadharLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard]
+      : ['Passport number', profile.passportLast4 ? <>{`•••• ${profile.passportLast4}`}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard],
+    ['Joining date', formatJoinDate(profile.joinedAt), CalendarDays],
+    ['Days stayed', daysStayedLabel(profile.joinedAt), Hourglass],
+    ['Food plan', profile.foodOpted ? 'With food' : 'Without food', UtensilsCrossed],
   ]
 
-  // Shared by the Home card (wide screens) and the Profile tab (phones).
-  const detailsList = <dl className="resident-details portal-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}<div className="resident-details-wide"><dt>Permanent address</dt><dd>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</dd></div></dl>
+  // One detail as a card: icon, label over value, and an arrow, in the portal's card style.
+  const detailCard = (label: string, value: ReactNode, Icon: LucideIcon, className = 'detail-card') => <div key={label} className={className}><span className="detail-card-icon" aria-hidden="true"><Icon size={18} /></span><dt>{label}</dt><dd>{value}</dd><ChevronRight className="detail-card-arrow" size={16} aria-hidden="true" /></div>
+  // Shared by the Home card (wide screens) and the Profile tab (phones and tablets).
+  const detailsList = <dl className="resident-details portal-details">{details.map(([label, value, icon]) => detailCard(label, value, icon))}{detailCard('Permanent address', <>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</>, House, 'detail-card resident-details-wide')}</dl>
   // Home card on wide screens, Profile tab on phones (CSS shows one), like the details list above.
   const exitPg = <ExitPg exit={profile.exit} amountDue={profile.rent.amountDue} deposit={profile.workspace.houseRules.securityDeposit} noticeDays={profile.exit.noticeDays} onChanged={onRefresh} onNotice={showNotice} />
   // Under the notification settings: in the Profile tab on phones, on the Home card on wide screens.
@@ -206,7 +215,7 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
         <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
         <section className="workspace-view">
           <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div><p className="eyebrow">Resident</p><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>My Details</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><TodayTile icon={<CalendarDays size={16} />} label="Today" value={dateLabel} title={dateLabel} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <RentHighlight rent={profile.rent} /><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
+          <RentHighlight rent={profile.rent} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
@@ -236,7 +245,6 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           <div className="workspace-view-heading"><div><p className="eyebrow">Food</p><h2>Meals</h2><p>{profile.foodOpted ? "Today's meals" : "Meal timings"} at {profile.property}.</p></div>{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}</div>
           <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu ?? undefined} />
         </section>
-        <div className="portal-panel" data-panel="info"><AppComingSoon /></div>
         <section className="workspace-view portal-profile" data-panel="profile">
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div><div className="portal-profile-exit">{exitPg}</div></div>
           <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, isIndian: profile.nationality === 'IN', documentLast4: profile.nationality === 'IN' ? profile.aadharLast4 : profile.passportLast4 }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>

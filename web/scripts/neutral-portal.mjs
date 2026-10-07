@@ -8,12 +8,12 @@ import postcss from 'postcss'
 const source = new URL('../src/App.css', import.meta.url)
 const target = new URL('../src/portalNeutral.css', import.meta.url)
 
-// A colour is green when its hue is between yellow-green and cyan-green and it is tinted at all (so
-// pale mints like #e6f2ee count); near-greys with only a faint green cast (borders like #e5e9e6)
-// are left alone.
+// A colour is green when its hue is between yellow-green and cyan-green and it is tinted at all,
+// however faintly: residents should see no green, so even near-white mints like #f7faf8 become a
+// neutral grey of the same lightness.
 function isGreen([r, g, b]) {
   const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  if (max - min < 8) return false
+  if (max - min < 3) return false
   const d = max - min
   let hue = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
   hue = (hue * 60 + 360) % 360
@@ -55,6 +55,10 @@ function scope(selector) {
   return `.portal-shell ${selector}`
 }
 
+// Cards that keep their own colours in the portal: the notification settings (WhatsApp green, email
+// blue, green switches) and Face ID sign-in. Their rules are not copied, so App.css applies as is.
+const keepsColour = /\.(switch\b|whatsapp-|notification-preferences|passkey-)/
+
 const input = postcss.parse(readFileSync(source, 'utf8'))
 const output = postcss.root()
 let ruleCount = 0
@@ -70,7 +74,7 @@ input.walkRules((rule) => {
     if (value) declarations.push(postcss.decl({ prop: decl.prop, value, important: decl.important }))
   })
   if (!declarations.length) return
-  const selectors = rule.selectors.map(scope).filter(Boolean)
+  const selectors = rule.selectors.filter((selector) => !keepsColour.test(selector)).map(scope).filter(Boolean)
   if (!selectors.length) return
   let node = postcss.rule({ selectors })
   declarations.forEach((decl) => node.append(decl))
