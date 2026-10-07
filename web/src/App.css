@@ -405,7 +405,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-copy small { color: var(--muted); font-size: 11px; white-space: nowrap; }
 /* Today's dishes under the time (Info tab); long menus are cut at three lines. */
 .meal-items { display: -webkit-box; overflow: hidden; margin-top: 2px; color: #45544f; font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+.meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
 .meal-tile.is-serving { border-color: var(--teal); background: var(--teal-soft); }
 .meal-tile.is-serving .meal-icon { color: white; background: var(--teal); }
 .meal-tile.is-next { border-color: #9fd0c2; }
@@ -474,6 +474,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident's property amenities, between the greeting and their photo. */
 .resident-amenities { display: grid; flex: 0 1 420px; gap: 8px; min-width: 0; margin-left: auto; animation: rise-in .35s ease both; }
 .resident-amenities .eyebrow { margin: 0; }
+/* In the resident Home card, between the blue details card and the rent card. */
+.workspace-view > .resident-amenities { margin: 16px 0 0; }
 .resident-amenity-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .resident-amenity { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #cfe7dc; border-radius: 999px; color: #2f5d55; background: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px #18352f0d; }
 .resident-amenity svg { color: var(--teal); }
@@ -583,8 +585,19 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 560px) { .portal-topbar .brand-logo { max-height: 64px; } }
 /* Property photo in the resident header, in place of the app logo: a rounded square that keeps
    the photo's centre, whatever its shape. */
-.portal-property-mark { flex: none; width: 64px; height: 64px; border: 2px solid white; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 14px rgb(22 92 74 / .18); }
-@media (max-width: 560px) { .portal-property-mark { width: 52px; height: 52px; border-radius: 12px; } }
+/* The resident's PG name, where the app logo sits on the owner pages: a sky-blue house tile that
+   gently bobs, and the name in the same blue gradient as the Home card with a slow shine passing
+   across it. It slides in once on load; long names are cut with an ellipsis. Motion stops for
+   people who ask for reduced motion. */
+.portal-property-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: min(64vw, 460px); animation: property-name-in .6s cubic-bezier(.2, .7, .3, 1) both; }
+.portal-property-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 6px 14px rgb(3 105 161 / .3); animation: property-icon-bob 3.2s ease-in-out .6s infinite; }
+.portal-property-text { overflow: hidden; padding-bottom: 2px; color: rgb(3 105 161); background: linear-gradient(100deg, rgb(3 105 161) 0%, rgb(14 165 233) 40%, rgb(125 211 252) 50%, rgb(14 165 233) 60%, rgb(3 105 161) 100%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font: 800 22px/1.2 Manrope, sans-serif; letter-spacing: -.5px; text-overflow: ellipsis; white-space: nowrap; animation: property-name-shine 6s linear infinite; }
+:root[data-theme="dark"] .portal-property-text { background-image: linear-gradient(100deg, rgb(125 211 252) 0%, rgb(186 230 253) 40%, rgb(255 255 255) 50%, rgb(186 230 253) 60%, rgb(125 211 252) 100%); }
+@keyframes property-name-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+@keyframes property-icon-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-4deg); } }
+@keyframes property-name-shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (max-width: 560px) { .portal-property-text { font-size: 18px; } .portal-property-icon { width: 30px; height: 30px; border-radius: 9px; } }
+@media (prefers-reduced-motion: reduce) { .portal-property-name, .portal-property-icon, .portal-property-text { animation: none; } }
 /* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
    vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
    text readable while the background stays transparent (a solid panel showed as a white box).
@@ -620,10 +633,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .referral-share { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .referral-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--muted); cursor: pointer; transition: color .15s, border-color .15s, transform .15s; }
 .referral-icon:hover, .referral-icon:focus-visible { transform: translateY(-1px); }
-.referral-icon.is-whatsapp:hover, .referral-icon.is-whatsapp:focus-visible { color: rgb(37 168 90); border-color: rgb(37 168 90); }
-.referral-icon.is-facebook:hover, .referral-icon.is-facebook:focus-visible { color: rgb(24 119 242); border-color: rgb(24 119 242); }
-.referral-icon.is-instagram:hover, .referral-icon.is-instagram:focus-visible { color: rgb(214 41 118); border-color: rgb(214 41 118); }
-.referral-icon.is-google:hover, .referral-icon.is-google:focus-visible { color: rgb(66 133 244); border-color: rgb(66 133 244); }
+/* Each share icon in its brand colour, so residents recognise the app at a glance. */
+.referral-icon.is-whatsapp { color: rgb(37 211 102); }
+.referral-icon.is-whatsapp:hover, .referral-icon.is-whatsapp:focus-visible { border-color: rgb(37 211 102); }
+.referral-icon.is-facebook { color: rgb(24 119 242); }
+.referral-icon.is-facebook:hover, .referral-icon.is-facebook:focus-visible { border-color: rgb(24 119 242); }
+.referral-icon.is-instagram { color: rgb(225 48 108); }
+.referral-icon.is-instagram:hover, .referral-icon.is-instagram:focus-visible { border-color: rgb(225 48 108); }
+.referral-icon.is-google:hover, .referral-icon.is-google:focus-visible { border-color: rgb(66 133 244); }
 @media (min-width: 900px) {
   .portal-terms { position: relative; padding-right: 230px; padding-left: 230px; }
   .referral-share { position: absolute; top: 50%; right: 4px; translate: 0 -50%; margin-top: 4px; }
@@ -1367,7 +1384,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 
 /* Resident portal: "Call owner" under the "My details" intro; Emergency 112 at the far right of the
    same row, solid red so it is findable at a glance. */
-.emergency-button.call-owner { margin-top: 12px; }
 /* Emergency and Report fire side by side at the top right of My Details, with Exit PG beneath. */
 .portal-emergency-actions { display: grid; justify-items: end; align-self: flex-start; gap: 8px; margin-left: auto; }
 .portal-emergency-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
@@ -1387,7 +1403,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Heading and contact lines on the left, the weather tile in the top-right corner level with the heading.
    A fixed two-column grid, so the tile stays there instead of wrapping under the email; only the
    narrowest cards stack it below. */
-.my-details-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin: 4px 0 12px; }
+.my-details-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
 .my-details-card > .today-tile { max-width: 220px; }
 @container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
@@ -1681,10 +1697,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    in dark mode, with the links and share icons tinted to suit. */
 .portal-terms { margin-top: 28px; padding: 14px 16px; border: 1px solid rgb(214 218 224); border-radius: 12px; background: linear-gradient(90deg, rgb(244 245 247), rgb(228 231 235)); color: rgb(40 100 84); }
 .portal-terms .text-link { color: rgb(22 124 104); }
-.portal-terms .referral-icon { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); color: rgb(22 124 104); }
+.portal-terms .referral-icon { border-color: rgb(210 214 220); background: rgb(255 255 255 / .7); }
 :root[data-theme="dark"] .portal-terms { border-color: rgb(58 62 70); background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43)); color: rgb(190 236 214); }
 :root[data-theme="dark"] .portal-terms .text-link { color: rgb(80 210 160); }
-:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); color: rgb(80 210 160); }
+:root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); }
 /* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
 @media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
 
@@ -1818,16 +1834,17 @@ div.portal-panel { display: contents; }
   .portal-shell .portal-terms { margin-top: auto; }
   .page-content[data-tab="info"] .portal-terms { margin-top: 20px; }
 }
-/* Info tab on phones: House rules grows to fill the space down to the footer, its rules stacked
-   one per row at the top of the card, instead of leaving an empty gap below it. */
+/* Info tab on phones: House rules stacked one per row, with the settings cards below them. */
 @media (max-width: 1024px) {
-  .page-content[data-tab="info"] [data-panel="info"] > .workspace-view:last-child { display: flex; flex: 1 0 auto; flex-direction: column; }
   .page-content[data-tab="info"] .house-rules { grid-template-columns: 1fr; align-content: start; gap: 10px; }
   .page-content[data-tab="info"] .house-rules li { padding: 16px; }
 }
 /* Meals on the Home tab (phones and tablets), under property info and the upcoming holidays: the weekly menu and meal timings
    leave the Home card there, which keeps only the cricket score, or nothing when no match is on. */
 .portal-info-meals { display: none; }
+/* Notification, Face ID and account settings on the Info tab (phones and tablets), under House rules. */
+.portal-info-settings { display: none; }
+@media (max-width: 1024px) { .page-content[data-tab="info"] .portal-info-settings { display: grid; gap: 10px; margin-top: 14px; } }
 @media (max-width: 1024px) {
   .page-content[data-tab="home"] .portal-info-meals { display: block; }
   .page-content .meals-row .weekly-menu-button, .page-content .meals-row .meal-timings { display: none; }
@@ -1998,4 +2015,11 @@ div.portal-panel { display: contents; }
 .portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: rgb(240 249 255); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
 :root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); }
+/* The today tiles sit close under the name card now that PG Manager moved up beside Emergency. On
+   narrow cards the block is a plain stack with one fixed gap, so no wrapped flex line or stretched
+   item can leave extra space between the name card and the tiles. */
+.portal-shell .portal-details-heading { row-gap: 14px; }
+@container (max-width: 620px) {
+  .portal-shell .portal-details-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; }
+}
 @media (max-width: 560px) { .portal-shell .portal-details-heading { padding: 12px 10px; } }

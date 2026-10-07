@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Briefcase, Building2, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, LogOut, Mail, PartyPopper, Phone, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { Briefcase, Building2, CalendarDays, ChevronRight, DoorOpen, Hourglass, House, IdCard, KeyRound, Mail, PartyPopper, Phone, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
@@ -53,7 +53,6 @@ import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
-import { RefreshButton } from './RefreshButton'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
 import { PageLoader } from './Loader'
@@ -130,7 +129,7 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 }
 
 /** Resident's own view: their details, their property's announcements, and their rent payments. */
-function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; lastRefreshedAt: Date; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
+function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
   useResidentTheme(profile.workspace.residentTheme)
@@ -215,23 +214,23 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
       <PortalScenery />
       <PortalAnimals />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        {/* The resident's own property photo in place of the app logo, so the portal feels like their home. */}
-        <div className="brand-row"><img className="portal-property-mark" src={profile.propertyImage} alt={profile.property} title={profile.property} /><span className="home-title portal-title">Resident Home</span></div>
-        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><RefreshButton variant="labelled" onRefresh={onRefresh} lastUpdated={lastRefreshedAt} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button className="secondary-button" aria-label="Sign out" onClick={onSignOut}><LogOut size={14} /><span className="button-label">Sign out</span></button></div>
+        {/* The resident's own PG by name in place of the app logo, so the portal feels like their home. */}
+        <div className="brand-row"><span className="portal-property-name" title={profile.property}><span className="portal-property-icon" aria-hidden="true"><House size={17} /></span><span className="portal-property-text">{profile.property}</span></span><span className="home-title portal-title">Resident Home</span></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={onSignOut}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />
         <div className="portal-panel" data-panel="home">
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <NextMealAlert refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div><ResidentAmenities amenities={profile.amenities} /></section>
+        <section className="welcome-row"><div><h1>{greeting}, {displayName(profile.name)} <span className="wave">✦</span></h1></div></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>{profile.name}</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email || idDocumentLine) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}</p>}</div><WeatherNow weather={weather} /></div><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><CalendarTile label={dateLabel} holidays={holidays} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <RentHighlight rent={profile.rent} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div><div className="my-details-card"><div className="my-details-main"><div className="my-details-title"><h2>{profile.name}</h2><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /></div>{(profile.phone || profile.email || idDocumentLine) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}</p>}</div><WeatherNow weather={weather} /></div></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={profile.ownerPhone ?? profile.workspace.contactPhone} /><EmergencyButton /><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="today-grid"><CalendarTile label={dateLabel} holidays={holidays} />{todayHoliday && <TodayTile icon={<PartyPopper size={16} />} label="Holiday" value={todayHoliday} title={todayHoliday} highlight />}<LocalClock /></div><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <ResidentAmenities amenities={profile.amenities} /><RentHighlight rent={profile.rent} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /></div>
+        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
         <section className="workspace-view portal-panel" data-panel="home">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
@@ -259,13 +258,11 @@ function ResidentHome({ profile, refreshSignal, lastRefreshedAt, onRefresh, onSi
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div><div className="portal-profile-exit">{exitPg}</div></div>
           <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>
           {detailsList}
-          {notifications}
           {/* Phones and tablets raise the fire alarm from here; the Home card keeps the button on desktop. */}
           <section className="profile-fire">
             <div><strong>Fire emergency</strong><small>Sets off the fire alarm for everyone in your building.</small></div>
             <ReportFireButton onRaised={onFireRaised} onNotice={showNotice} />
           </section>
-          {deleteAccount}
         </section>
         <PortalFooter businessName={profile.workspace.businessName} termsAndConditions={profile.workspace.termsAndConditions} privacyPolicy={profile.workspace.privacyPolicy} referralCode={profile.referralCode} onNotice={showNotice} />
       </main>
@@ -337,5 +334,5 @@ function ResidentPortalScreens({ onSignOut, onFireRaised }: { onSignOut: () => v
     )
   }
   if (profile.aadharStatus !== 'VERIFIED') return <ResidentIdVerification profile={profile} lastRefreshedAt={lastRefreshedAt} onRefresh={refreshPortal} onChanged={reloadProfile} onSignOut={onSignOut} />
-  return <ResidentHome profile={profile} refreshSignal={refreshSignal} lastRefreshedAt={lastRefreshedAt} onRefresh={refreshPortal} onSignOut={onSignOut} onFireRaised={onFireRaised} />
+  return <ResidentHome profile={profile} refreshSignal={refreshSignal} onRefresh={refreshPortal} onSignOut={onSignOut} onFireRaised={onFireRaised} />
 }

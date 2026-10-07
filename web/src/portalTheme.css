@@ -11,7 +11,7 @@
    meal, holiday, app) turn dark. */
 .portal-shell { --portal-icon: #1b2528; --portal-icon-on: #ffffff; }
 :root[data-theme="dark"] .portal-shell { --portal-icon: rgb(232 240 237); --portal-icon-on: rgb(16 24 22); }
-.portal-shell :is(.resident-amenity, .my-details-contact, .today-tile-icon, .meal-icon, .meal-alert, .food-opt-in, .detail-location, .emergency-button.call-owner, .weekly-menu-button, .portal-tabs button, .house-rule-icon, .house-rules-extra, .menu-meal-icon, .info-card h3, .info-faqs h3, .info-line .icon-button, .upi-direct.is-reported, .upi-qr-panel.is-paid, .referral-icon) svg,
+.portal-shell :is(.resident-amenity, .my-details-contact, .today-tile-icon, .meal-icon, .meal-alert, .food-opt-in, .detail-location, .emergency-button.call-owner, .weekly-menu-button, .portal-tabs button, .house-rule-icon, .house-rules-extra, .menu-meal-icon, .info-card h3, .info-faqs h3, .info-line .icon-button, .upi-direct.is-reported, .upi-qr-panel.is-paid) svg,
 .portal-shell .holiday-today-icon { color: var(--portal-icon); }
 .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon) { color: var(--portal-icon-on); background: var(--portal-icon); }
 .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon) svg { color: inherit; }
@@ -52,11 +52,12 @@
    which glared as white blocks on the dark cards; they get a soft translucent fill instead. */
 :root[data-theme="dark"] .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon) { color: var(--portal-icon); background: rgb(255 255 255 / .1); }
 :root[data-theme="dark"] .portal-shell .food-opt-in .primary-button { border: 1px solid rgb(255 255 255 / .18); color: var(--portal-text); background: rgb(255 255 255 / .1); box-shadow: none; }
-/* The property photo is often a dark logo; a light frame keeps it from vanishing into the dark header. */
-:root[data-theme="dark"] .portal-shell .portal-property-mark { border-color: rgb(232 240 237 / .85); box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 0 14px rgb(255 255 255 / .14); }
 /* Light view: a plain white page. The drifting glows, sky (sun, clouds, weather), trees and animals
    are dark-view only, so the light view reads as a clean white background behind the cards. */
 :root:not([data-theme="dark"]) .portal-shell { background: #ffffff; }
 :root:not([data-theme="dark"]) .portal-shell::before,
 :root:not([data-theme="dark"]) .portal-shell::after { content: none; }
 :root:not([data-theme="dark"]) .portal-shell :is(.portal-sky, .portal-scenery, .portal-animals) { display: none; }
+/* Sign out in the resident header: an icon-only red power button. */
+.portal-shell .portal-power-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; color: #fff; background: rgb(220 38 38); box-shadow: 0 4px 12px rgb(220 38 38 / .25); cursor: pointer; transition: background .15s, transform .15s; }
+.portal-shell .portal-power-button:hover, .portal-shell .portal-power-button:focus-visible { background: rgb(185 28 28); transform: translateY(-1px); }
