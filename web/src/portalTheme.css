@@ -6,6 +6,25 @@
    on :root; the dark theme's own surfaces are restored here, with a grey in place of the green tint. */
 :root[data-theme="dark"] .portal-shell { --line: #2b3532; --paper: #101514; --teal-soft: #252b2a; }
 
+/* The resident portal's theme colour, set by the owner in Settings (sky blue by default) and the
+   text colour on things filled with it. Every shade used in the portal is worked out from that one
+   colour, so a new colour recolours buttons, cards, the Home card, the tab bar and titles at once.
+   ResidentPortal sets --brand and --brand-on inline when the owner has chosen them. */
+.portal-shell {
+  --brand: #0ea5e9;
+  --brand-on: #ffffff;
+  --portal-error: #a3483b;
+  --brand-strong: color-mix(in srgb, var(--brand) 85%, #000);
+  --brand-deep: color-mix(in srgb, var(--brand) 70%, #000);
+  --brand-darker: color-mix(in srgb, var(--brand) 55%, #000);
+  --brand-night: color-mix(in srgb, var(--brand) 45%, #000);
+  --brand-light: color-mix(in srgb, var(--brand) 80%, #fff);
+  --brand-pale: color-mix(in srgb, var(--brand) 55%, #fff);
+  --brand-border: color-mix(in srgb, var(--brand) 30%, #fff);
+  --brand-soft: color-mix(in srgb, var(--brand) 12%, #fff);
+  --brand-tint: color-mix(in srgb, var(--brand) 6%, #fff);
+}
+
 /* Resident portal icons in near-black instead of the brand green (light in dark theme so they stay
    visible). Tinted icon tiles keep their (greyed) soft background; the solid ones (rent, current
    meal, holiday, app) turn dark. */
@@ -25,7 +44,7 @@
 .portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-tabs button, .portal-tabs button.is-active, .resident-amenity),
 :root[data-theme="dark"] .portal-shell :is(.portal-topbar .home-title, .portal-terms, .portal-tabs button, .portal-tabs button.is-active) { color: var(--portal-text); }
 /* In dark theme the portal's brand colour is light, so things filled with it carry dark text. */
-:root[data-theme="dark"] .portal-shell :is(.primary-button, .meal-tag, .pagination-button.is-current, .holiday-list li.is-today .holiday-date, .filter-tabs button.is-active, .booking-chip.is-selected) { color: rgb(16 24 22); }
+:root[data-theme="dark"] .portal-shell :is(.meal-tag, .pagination-button.is-current, .holiday-list li.is-today .holiday-date, .filter-tabs button.is-active, .booking-chip.is-selected) { color: rgb(16 24 22); }
 /* Exceptions that keep their original colours: the notification settings (WhatsApp green, email blue,
    green switches) and Face ID sign-in. The brand colours are restored on the cards themselves, so
    everything inside them inherits the originals rather than the portal's near-black. */
@@ -76,10 +95,10 @@
 .portal-shell .today-tile:is(.is-date, .is-time, .is-weather) .today-tile-icon svg { color: inherit; }
 .portal-shell .today-tile.is-date { --tile-icon: rgb(124 58 237); --tile-tint: rgb(237 233 254); }
 .portal-shell .today-tile.is-time { --tile-icon: rgb(217 119 6); --tile-tint: rgb(254 243 199); }
-.portal-shell .today-tile.is-weather { --tile-icon: rgb(2 132 199); --tile-tint: rgb(224 242 254); }
+.portal-shell .today-tile.is-weather { --tile-icon: var(--brand-strong); --tile-tint: var(--brand-soft); }
 :root[data-theme="dark"] .portal-shell .today-tile.is-date { --tile-icon: rgb(196 181 253); --tile-tint: rgb(76 29 149 / .45); }
 :root[data-theme="dark"] .portal-shell .today-tile.is-time { --tile-icon: rgb(252 211 77); --tile-tint: rgb(120 53 15 / .45); }
-:root[data-theme="dark"] .portal-shell .today-tile.is-weather { --tile-icon: rgb(125 211 252); --tile-tint: rgb(12 74 110 / .5); }
+:root[data-theme="dark"] .portal-shell .today-tile.is-weather { --tile-icon: var(--brand-pale); --tile-tint: color-mix(in srgb, var(--brand-night) 50%, transparent); }
 .portal-shell .info-card.is-wifi h3 svg { color: rgb(37 99 235); }
 .portal-shell .info-card.is-contacts h3 svg { color: rgb(8 145 178); }
 .portal-shell .info-card.is-details h3 svg { color: rgb(225 29 72); }
@@ -97,7 +116,7 @@
    generated light and dark card colours in both views. */
 :root .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
 /* On the blue details card the contact icons use light shades that read on blue. */
-.portal-shell .portal-details-heading .my-details-contact svg.lucide-phone { color: rgb(186 230 253); }
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-phone { color: var(--brand-border); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-mail { color: rgb(253 186 116); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-id-card { color: rgb(221 214 254); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-plane { color: rgb(251 207 232); }
@@ -123,11 +142,70 @@
 /* The profile detail icon tiles and the phone tab bar in the same sky-to-ocean blue as the Home card,
    with white icons and labels (the current tab on a frosted white pill). [data-theme] is always set,
    so these beat both the light and the generated dark colours. */
-:root[data-theme] .portal-shell .detail-card-icon { color: #fff; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 4px 10px rgb(3 105 161 / .22); }
+:root[data-theme] .portal-shell .detail-card-icon { color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 4px 10px color-mix(in srgb, var(--brand-deep) 22%, transparent); }
 :root[data-theme] .portal-shell .detail-card-icon svg { color: inherit; }
 @media (max-width: 1024px) {
-  :root[data-theme] .portal-shell .portal-tabs { border-top-color: transparent; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 -6px 18px rgb(3 105 161 / .25); }
-  :root[data-theme] .portal-shell :is(.portal-tabs button, .portal-tabs button.is-active) { color: rgb(224 242 254); }
+  :root[data-theme] .portal-shell .portal-tabs { border-top-color: transparent; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 -6px 18px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
+  :root[data-theme] .portal-shell :is(.portal-tabs button, .portal-tabs button.is-active) { color: var(--brand-soft); }
   :root[data-theme] .portal-shell :is(.portal-tabs button, .portal-tabs button.is-active) svg { color: inherit; }
   :root[data-theme] .portal-shell :is(.portal-tabs button.is-active) { color: #fff; background: rgb(255 255 255 / .2); }
 }
+/* Upcoming holidays in the Home card's blue: each date block is the sky-to-ocean gradient with white
+   text, each row has a thin blue edge on the left, and the rows slide in one after another, then lift
+   on hover. Motion stops for reduced motion. */
+:root[data-theme] .portal-shell .holiday-list li { border-left: 3px solid var(--brand); animation: holiday-slide-in .45s cubic-bezier(.2, .7, .3, 1) both; transition: transform .2s ease, box-shadow .2s ease; }
+:root[data-theme] .portal-shell .holiday-list li:nth-child(2) { animation-delay: .07s; }
+:root[data-theme] .portal-shell .holiday-list li:nth-child(3) { animation-delay: .14s; }
+:root[data-theme] .portal-shell .holiday-list li:nth-child(4) { animation-delay: .21s; }
+:root[data-theme] .portal-shell .holiday-list li:nth-child(n + 5) { animation-delay: .28s; }
+:root[data-theme] .portal-shell .holiday-list li:hover { transform: translateY(-2px); box-shadow: 0 8px 18px color-mix(in srgb, var(--brand-deep) 14%, transparent); }
+:root[data-theme] .portal-shell .holiday-date { color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 4px 10px color-mix(in srgb, var(--brand-deep) 22%, transparent); }
+:root[data-theme] .portal-shell .holiday-list li:hover .holiday-date { animation: holiday-date-pop .4s ease; }
+@keyframes holiday-slide-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+@keyframes holiday-date-pop { 50% { transform: scale(1.08) rotate(-3deg); } }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme] .portal-shell .holiday-list li, :root[data-theme] .portal-shell .holiday-list li:hover .holiday-date { animation: none; }
+  :root[data-theme] .portal-shell .holiday-list li:hover { transform: none; }
+}
+/* The Home card's blue carried through the rest of Home: holiday rows, meal tiles and the Weekly menu
+   button, the Property info cards, and every section title. A pale sky tint in light view, a deep
+   translucent blue in dark view. The meal being served keeps its orange. */
+:root[data-theme] .portal-shell :is(.holiday-list li, .meal-tile:not(.is-serving), .info-card) { border-color: var(--brand-border); background: var(--brand-tint); }
+:root[data-theme] .portal-shell .holiday-list li { border-left-color: var(--brand); }
+:root[data-theme] .portal-shell .meal-tile:not(.is-serving) .meal-icon { color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); }
+:root[data-theme] .portal-shell .meal-tile:not(.is-serving) .meal-icon svg { color: inherit; }
+:root[data-theme] .portal-shell .meal-tile.is-next .meal-tag { color: var(--brand-on); background: var(--brand); }
+:root[data-theme] .portal-shell .weekly-menu-button { border-color: transparent; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); }
+:root[data-theme] .portal-shell .weekly-menu-button svg { color: inherit; }
+:root[data-theme] .portal-shell .workspace-view-heading h2 { color: var(--brand-deep); }
+:root[data-theme="dark"] .portal-shell :is(.holiday-list li, .meal-tile:not(.is-serving), .info-card) { border-color: color-mix(in srgb, var(--brand-light) 30%, transparent); background: color-mix(in srgb, var(--brand-night) 28%, transparent); }
+:root[data-theme="dark"] .portal-shell .holiday-list li { border-left-color: var(--brand-light); }
+:root[data-theme="dark"] .portal-shell .workspace-view-heading h2 { color: var(--brand-pale); }
+/* Every card and button in the resident portal in the Home card's blue.
+   Cards (profile details, rent, house rules, UPI pay, and the request and payment lists, which become
+   separate cards) get the pale sky tint; main buttons the sky-to-ocean gradient with white text;
+   secondary buttons a light blue outline. Red buttons (Emergency, Exit PG, Delete account, sign out)
+   and the orange "now serving" meal keep their colours. Deep translucent blue in dark view. */
+:root[data-theme] .portal-shell :is(.portal-details > .detail-card, .rent-highlight, .house-rules li, .upi-direct, .crud-row) { border-color: var(--brand-border); background: var(--brand-tint); }
+:root[data-theme] .portal-shell .crud-list { gap: 8px; border-top: 0; }
+:root[data-theme] .portal-shell .crud-row { padding: 12px 14px; border: 1px solid var(--brand-border); border-radius: 10px; }
+:root[data-theme] .portal-shell :is(.house-rule-icon, .rent-highlight-icon) { color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); }
+:root[data-theme] .portal-shell :is(.house-rule-icon, .rent-highlight-icon) svg { color: inherit; }
+:root[data-theme] .portal-shell .primary-button { border-color: transparent; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 5px 12px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
+:root[data-theme] .portal-shell .primary-button:hover:not(:disabled) { background: linear-gradient(135deg, var(--brand-strong), var(--brand-darker)); }
+:root[data-theme] .portal-shell .primary-button svg { color: inherit; }
+:root[data-theme] .portal-shell .secondary-button:not(.weekly-menu-button, .delete-account-button) { border-color: var(--brand-pale); color: var(--brand-deep); background: #fff; }
+:root[data-theme] .portal-shell .secondary-button:not(.weekly-menu-button, .delete-account-button):hover { border-color: var(--brand); background: var(--brand-tint); }
+:root[data-theme] .portal-shell .secondary-button:not(.weekly-menu-button, .delete-account-button) svg { color: inherit; }
+:root[data-theme="dark"] .portal-shell :is(.portal-details > .detail-card, .rent-highlight, .house-rules li, .upi-direct, .crud-row) { border-color: color-mix(in srgb, var(--brand-light) 30%, transparent); background: color-mix(in srgb, var(--brand-night) 28%, transparent); }
+:root[data-theme="dark"] .portal-shell .secondary-button:not(.weekly-menu-button, .delete-account-button) { border-color: color-mix(in srgb, var(--brand-light) 45%, transparent); color: var(--brand-border); background: color-mix(in srgb, var(--brand-night) 35%, transparent); }
+:root[data-theme="dark"] .portal-shell .secondary-button:not(.weekly-menu-button, .delete-account-button):hover { background: color-mix(in srgb, var(--brand-night) 55%, transparent); }
+/* Error messages (form errors, "expired" dates) in the owner's chosen error colour, on a soft tint of it;
+   a lighter shade on a dark tint in dark view. */
+:root[data-theme] .portal-shell .login-error { color: var(--portal-error); background: color-mix(in srgb, var(--portal-error) 12%, #fff); }
+:root[data-theme] .portal-shell .expired-note { color: var(--portal-error); }
+:root[data-theme="dark"] .portal-shell .login-error { color: color-mix(in srgb, var(--portal-error) 55%, #fff); background: color-mix(in srgb, var(--portal-error) 22%, transparent); }
+:root[data-theme="dark"] .portal-shell .expired-note { color: color-mix(in srgb, var(--portal-error) 55%, #fff); }
+/* General text in the owner's chosen colour, light view only: dark view keeps its light text, which a
+   dark chosen colour would make unreadable. Without a choice these fall back to the usual colours. */
+:root:not([data-theme="dark"]) .portal-shell { --ink: var(--portal-ink, #202e35); --portal-text: var(--portal-ink, #1b2528); }

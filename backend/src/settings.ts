@@ -50,6 +50,7 @@ export const houseRulesOf = (settings: WorkspaceSettings) => ({ visitingHours: f
 export const slotOptionsOf = (settings: WorkspaceSettings) => (Object.keys(slotNames) as HousekeepingSlot[]).map((slot) => { const { value, label, hours } = slotDetails(settings, slot); return { value, label, hours } })
 
 const residentThemes: readonly ResidentTheme[] = ['AUTO', 'LIGHT', 'DARK']
+const hexColourPattern = /^#[0-9a-f]{6}$/i
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 
 // Each window is a start/end pair of "HH:MM" fields; overnight windows may end the next morning.
@@ -62,7 +63,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -142,6 +143,14 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     if (nullable && raw === null) { data[field] = null; continue }
     if (!isWholeNumber(raw, min, max)) return { error }
     data[field] = raw
+  }
+  // Portal colours as "#rrggbb"; null (or blank) resets to the default.
+  for (const [field, label] of [['portalThemeColor', 'Theme colour'], ['portalButtonTextColor', 'Button text colour'], ['portalErrorColor', 'Error message colour'], ['portalTextColor', 'Text colour']] as const) {
+    const colour = input[field]
+    if (colour === undefined) continue
+    if (colour === null || colour === '') { data[field] = null; continue }
+    if (typeof colour !== 'string' || !hexColourPattern.test(colour)) return { error: `${label} must be a colour like #0ea5e9.` }
+    data[field] = colour.toLowerCase()
   }
   if (input.residentTheme !== undefined) {
     if (!residentThemes.includes(input.residentTheme as ResidentTheme)) return { error: 'Resident view must be Auto, Light or Dark.' }

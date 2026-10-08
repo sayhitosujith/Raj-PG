@@ -600,9 +600,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    across it. It slides in once on load; long names are cut with an ellipsis. Motion stops for
    people who ask for reduced motion. */
 .portal-property-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: min(64vw, 460px); animation: property-name-in .6s cubic-bezier(.2, .7, .3, 1) both; }
-.portal-property-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: linear-gradient(135deg, rgb(14 165 233), rgb(3 105 161)); box-shadow: 0 6px 14px rgb(3 105 161 / .3); animation: property-icon-bob 3.2s ease-in-out .6s infinite; }
-.portal-property-text { overflow: hidden; padding-bottom: 2px; color: rgb(3 105 161); background: linear-gradient(100deg, rgb(3 105 161) 0%, rgb(14 165 233) 40%, rgb(125 211 252) 50%, rgb(14 165 233) 60%, rgb(3 105 161) 100%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font: 800 22px/1.2 Manrope, sans-serif; letter-spacing: -.5px; text-overflow: ellipsis; white-space: nowrap; animation: property-name-shine 6s linear infinite; }
-:root[data-theme="dark"] .portal-property-text { background-image: linear-gradient(100deg, rgb(125 211 252) 0%, rgb(186 230 253) 40%, rgb(255 255 255) 50%, rgb(186 230 253) 60%, rgb(125 211 252) 100%); }
+.portal-property-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 6px 14px color-mix(in srgb, var(--brand-deep) 30%, transparent); animation: property-icon-bob 3.2s ease-in-out .6s infinite; }
+.portal-property-text { overflow: hidden; padding-bottom: 2px; color: var(--brand-deep); background: linear-gradient(100deg, var(--brand-deep) 0%, var(--brand) 40%, var(--brand-pale) 50%, var(--brand) 60%, var(--brand-deep) 100%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font: 800 22px/1.2 Manrope, sans-serif; letter-spacing: -.5px; text-overflow: ellipsis; white-space: nowrap; animation: property-name-shine 6s linear infinite; }
+:root[data-theme="dark"] .portal-property-text { background-image: linear-gradient(100deg, var(--brand-pale) 0%, var(--brand-border) 40%, rgb(255 255 255) 50%, var(--brand-border) 60%, var(--brand-pale) 100%); }
 @keyframes property-name-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @keyframes property-icon-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-4deg); } }
 @keyframes property-name-shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
@@ -2033,16 +2033,16 @@ div.portal-panel { display: contents; }
 .portal-shell .page-content { max-width: none; }
 /* The resident's header block (details, emergency actions, today tiles, food opt-in) sits in its own
    card, a cyan-to-ocean-blue gradient (with soft light circles) so it stands out from the rent card below it. Narrower padding on phones keeps the tiles their full width. */
-.portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 0; border-radius: 16px; background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); box-shadow: 0 10px 28px rgb(3 105 161 / .25); }
+.portal-shell .portal-details-heading { padding: 14px 16px 16px; border: 0; border-radius: 16px; background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%); box-shadow: 0 10px 28px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
 /* The tiles inside stay white, so their text keeps its normal colours; only what sits straight on the
    blue (the move-out notes and link) turns light. */
 :root:not([data-theme="dark"]) .portal-shell .portal-details-heading :is(.today-grid, .meals-row) { background: rgb(255 255 255); }
 /* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
    out in white below it. Its Edit button and weather tile stay white. */
 .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
-.portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: rgb(240 249 255); }
+.portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: var(--brand-tint); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
-:root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, rgb(14 165 233) 0%, rgb(3 105 161) 100%); }
+:root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%); }
 /* The today tiles sit close under the name card now that PG Manager moved up beside Emergency. On
    narrow cards the block is a plain stack with one fixed gap, so no wrapped flex line or stretched
    item can leave extra space between the name card and the tiles. */
@@ -2064,7 +2064,7 @@ div.portal-panel { display: contents; }
 .portal-shell .resident-amenity:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgb(20 30 40 / .1); }
 .portal-shell .resident-amenity:hover svg { animation: amenity-wiggle .5s ease; }
 .portal-shell .workspace-view-heading h2 { position: relative; padding-bottom: 6px; }
-.portal-shell .workspace-view-heading h2::after { position: absolute; bottom: 0; left: 0; width: 44px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, rgb(14 165 233), rgb(125 211 252)); content: ''; transform-origin: left; animation: title-underline .7s cubic-bezier(.2, .7, .3, 1) .2s both; }
+.portal-shell .workspace-view-heading h2::after { position: absolute; bottom: 0; left: 0; width: 44px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--brand), var(--brand-pale)); content: ''; transform-origin: left; animation: title-underline .7s cubic-bezier(.2, .7, .3, 1) .2s both; }
 .portal-shell .info-card h3 svg { animation: info-icon-bob 3.6s ease-in-out infinite; }
 .portal-shell .info-card.is-wifi h3 svg { animation: wifi-pulse 2.4s ease-in-out infinite; }
 @keyframes contact-slide-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
@@ -2075,3 +2075,37 @@ div.portal-panel { display: contents; }
 @media (prefers-reduced-motion: reduce) {
   .portal-shell :is(.my-details-contact > span, .resident-amenity:hover svg, .workspace-view-heading h2::after, .info-card h3 svg) { animation: none; }
 }
+/* Settings > Resident portal colours: swatches, picker and a live preview in the chosen colours. */
+.colour-choice { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.colour-choice legend { margin-bottom: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.colour-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.colour-swatch { width: 28px; height: 28px; padding: 0; border: 2px solid rgb(255 255 255); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.colour-swatch.is-selected { box-shadow: 0 0 0 2px var(--ink); }
+/* The free picker looks like a button ("Pick colour" with the current colour); the native colour input
+   covers it invisibly, so a click anywhere on it opens the system picker. */
+.colour-picker { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--paper); font-size: 12px; font-weight: 700; cursor: pointer; }
+.colour-picker:hover { border-color: var(--muted); }
+.colour-picker-dot { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15); }
+.colour-picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.colour-hex { width: 86px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--paper); font: 600 12px ui-monospace, monospace; text-transform: lowercase; }
+/* Settings stacks its labels and makes inputs full width; the colour controls stay on one row. */
+.settings-fields .colour-picker { display: inline-flex; gap: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.settings-fields .colour-picker input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; }
+.settings-fields .colour-hex { flex: none; width: 92px; padding: 6px 8px; border-radius: 8px; font: 600 12px ui-monospace, monospace; }
+.settings-fields .colour-swatches .text-link { font-size: 11px; }
+.portal-colour-preview { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px; border: 1px dashed var(--line); border-radius: 12px; }
+.portal-colour-preview-card { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--brand) 30%, #fff); border-left: 3px solid var(--brand); border-radius: 10px; color: var(--ink); background: color-mix(in srgb, var(--brand) 6%, #fff); }
+.portal-colour-preview-card strong { color: color-mix(in srgb, var(--brand) 70%, #000); font-size: 13px; }
+.portal-colour-preview-card small { color: var(--muted); font-size: 11px; }
+.portal-colour-preview-text { flex-basis: 100%; color: var(--portal-ink); font-size: 13px; font-weight: 600; }
+.portal-colour-preview-label { flex-basis: 100%; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.portal-colour-preview-error { flex-basis: 100%; padding: 8px 10px; border-radius: 7px; color: var(--portal-error); background: color-mix(in srgb, var(--portal-error) 12%, #fff); font-size: 11px; }
+.portal-colour-preview-button { padding: 9px 14px; border-radius: 8px; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 70%, #000)); font-size: 12px; font-weight: 700; }
+/* The owner's other portal colours on the admin pages (see useAdminBrand): text on filled buttons,
+   error messages, and general text in light view (dark view keeps its light text). */
+:root[data-brand-on] .primary-button { color: var(--brand-on); }
+:root[data-brand-error] :is(.login-error, .expired-note) { color: var(--brand-error); }
+:root[data-brand-error] .login-error { background: color-mix(in srgb, var(--brand-error) 12%, #fff); }
+:root[data-brand-error][data-theme="dark"] :is(.login-error, .expired-note) { color: color-mix(in srgb, var(--brand-error) 55%, #fff); }
+:root[data-brand-error][data-theme="dark"] .login-error { background: color-mix(in srgb, var(--brand-error) 22%, transparent); }
+:root[data-brand-ink]:not([data-theme="dark"]) { --ink: var(--brand-ink); }

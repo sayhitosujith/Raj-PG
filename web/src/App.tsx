@@ -51,6 +51,7 @@ import { SettingsView, type SettingImage } from './SettingsView'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { ThemeToggle } from './ThemeToggle'
+import { useAdminBrand } from './useAdminBrand'
 import { defaultBusinessName, type WorkspaceSettings } from './workspaceSettings'
 import { WorkspaceMenu } from './WorkspaceMenu'
 import { HolidayList, useHolidays } from './holidays'
@@ -153,6 +154,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
   const profileName = currentAdmin.name
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null)
+  useAdminBrand(settings)
   const businessName = settings?.businessName ?? defaultBusinessName
   const holidays = useHolidays('/api/holidays')
   const fire = useFireAlerts('/api/fire-alerts')

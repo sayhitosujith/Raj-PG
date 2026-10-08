@@ -40,6 +40,11 @@ export type WorkspaceSettings = {
   eveningTo: string
   /** The resident portal's view, chosen by the owner; residents cannot change it. */
   residentTheme: ResidentTheme
+  /** The resident portal's theme colour, the text on things filled with it, error messages and general text, "#rrggbb"; null = default. */
+  portalThemeColor: string | null
+  portalButtonTextColor: string | null
+  portalErrorColor: string | null
+  portalTextColor: string | null
   /** Plain-text resident policies, linked from the resident portal; empty hides the link. */
   termsAndConditions: string
   privacyPolicy: string
@@ -60,4 +65,4 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
 /** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

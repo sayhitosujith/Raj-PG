@@ -52,6 +52,7 @@ import { NextMealAlert, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
+import { portalColourStyle } from './PortalColourFields'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
 import { useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
@@ -213,7 +214,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const deleteAccount = <DeleteAccountRequest requestedAt={profile.deletionRequestedAt} declinedAt={profile.deletionDeclinedAt} declineReason={profile.deletionDeclineReason} onChanged={onRefresh} onNotice={showNotice} />
   const notifications = <><NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} /><PasskeySettings onNotice={showNotice} /></>
   return (
-    <div className="portal-shell">
+    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor })}>
       {/* Sky (with the city) first, so the trees and animals in front stand before the buildings. */}
       <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
       <PortalScenery />

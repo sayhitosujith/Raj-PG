@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Sparkles, SunMoon, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Palette, Sparkles, SunMoon, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -10,6 +10,7 @@ import { readIdentityFields, type SuperAdmin } from './superAdmin'
 import { SuperAdminIdentityFields } from './SuperAdminIdentityFields'
 import type { ResidentTheme, WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
+import { PortalColourFields } from './PortalColourFields'
 
 type SaveResult = Promise<string | null>
 /** Image settings saved through PUT/DELETE /api/settings/<kind>. */
@@ -160,6 +161,10 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
+          </SettingsSection>
+
+          <SettingsSection icon={<Palette size={18} />} title="Resident portal colours" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal, the text on those buttons, the general text, and error messages." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null })}>
+            <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} />
           </SettingsSection>
 
           <SettingsSection icon={<SunMoon size={18} />} title="Resident view" description="Light or dark view for every resident's portal. Residents cannot change it themselves." onSubmit={(form) => onSaveSettings({ residentTheme: value(form, 'residentTheme') as ResidentTheme })}>
