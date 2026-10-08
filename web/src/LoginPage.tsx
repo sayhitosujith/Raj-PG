@@ -12,7 +12,7 @@ import { readApiError } from './superAdmin'
  * the credentials, so nobody has to pick a role first. Residents who turned on Face ID /
  * fingerprint sign-in in their profile get a one-tap button on the phone where they turned it on.
  */
-export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionResponse) => void }) {
+export function LoginPage({ onSignedIn, notice }: { onSignedIn: (session: SessionResponse) => void; /** A confirmation to show, e.g. after signing out. */ notice?: string }) {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [canUsePasskey, setCanUsePasskey] = useState(false)
@@ -61,6 +61,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (session: SessionRespons
         <label>Email<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus placeholder="Enter your email ID" /></label>
         <label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Enter your password" /></label>
         <p className="login-hint">Resident signing in for the first time? Enter the access key from your property owner as your password.</p>
+        {notice && !error && <p className="login-success" role="status">{notice}</p>}
         {error && <p className="login-error" role="alert">{error}</p>}
         <button type="submit" className="primary-button" disabled={isSubmitting}><LogIn size={16} /> {isSubmitting ? 'Signing in…' : 'Sign in'}</button>
         {canUsePasskey && <>

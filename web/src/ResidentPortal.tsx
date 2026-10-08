@@ -54,6 +54,7 @@ import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
 import { PropertyGallery } from './PropertyGallery'
 import { FeatureBadgesProvider } from './FeatureBadges'
+import { SignOutConfirm } from './SignOutConfirm'
 import { portalColourStyle } from './PortalColourFields'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
@@ -149,6 +150,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const { greeting, dateLabel, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isConfirmingSignOut, setIsConfirmingSignOut] = useState(false)
   // Hides the consent prompt as soon as acceptance succeeds, before the profile re-fetch lands.
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)
   const pendingConsent = profile.policyConsent && profile.policyConsent.version !== acceptedVersion ? profile.policyConsent : null
@@ -225,7 +227,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* The resident's own PG by name in place of the app logo, so the portal feels like their home. */}
         <div className="brand-row"><span className="portal-property-name" title={profile.property}><span className="portal-property-icon" aria-hidden="true"><House size={17} /></span><span className="portal-property-text">{profile.property}</span></span><span className="home-title portal-title">Resident Home</span></div>
-        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={onSignOut}><Power size={16} /></button></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />
@@ -278,6 +280,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       </main>
       {isChangingPassword && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div></ModalLayer>}
       {pendingConsent && <PolicyConsentModal consent={pendingConsent} workspace={profile.workspace} onSignOut={onSignOut} onAccepted={async (version) => { if (version) setAcceptedVersion(version); await onRefresh() }} />}
+      {isConfirmingSignOut && <SignOutConfirm title="Do you want to logout?" confirmLabel="Yes" cancelLabel="No" onConfirm={() => { setIsConfirmingSignOut(false); onSignOut() }} onCancel={() => setIsConfirmingSignOut(false)} />}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>
     </FeatureBadgesProvider>

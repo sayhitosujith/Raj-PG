@@ -65,6 +65,7 @@ import { useGreeting } from './useGreeting'
 import { LocationLink } from './LocationLink'
 import { RoomsManager } from './RoomsManager'
 import { PropertyPhotosManager } from './PropertyPhotosManager'
+import { SignOutConfirm } from './SignOutConfirm'
 import { resizePropertyPhoto } from './imageResize'
 import { Pagination } from './Pagination'
 import { PhoneField } from './PhoneField'
@@ -486,7 +487,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           </div>
         </div>
         {notice && <div className="toast" role="status">{notice}</div>}
-        {isSignOutModalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsSignOutModalOpen(false)}><div className="confirm-modal"><div className="confirm-icon"><ShieldCheck size={22} /></div><h2>Sign out?</h2><p>You will return to the login screen.</p><div className="modal-actions"><button className="secondary-button" onClick={() => setIsSignOutModalOpen(false)}>Cancel</button><button className="danger-button" onClick={() => { setIsSignOutModalOpen(false); void onSignOut() }}>Sign out</button></div></div></div>}
+        {isSignOutModalOpen && <SignOutConfirm title="Sign out?" detail="You will return to the login screen." confirmLabel="Sign out" cancelLabel="Cancel" onConfirm={() => { setIsSignOutModalOpen(false); void onSignOut() }} onCancel={() => setIsSignOutModalOpen(false)} />}
         {photosProperty?.id && <PropertyPhotosManager propertyId={photosProperty.id} propertyName={photosProperty.name} onClose={() => setPhotosProperty(null)} onNotice={showNotice} />}
         {roomsProperty?.id && <RoomsManager propertyId={roomsProperty.id} propertyName={roomsProperty.name} onClose={() => setRoomsProperty(null)} onNotice={showNotice} />}
         <FireAlarmOverlay alerts={fire.alerts} onClear={clearFireAlert} />

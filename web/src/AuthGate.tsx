@@ -5,7 +5,7 @@ import type { SessionResponse } from './session'
 import type { SuperAdmin } from './superAdmin'
 import { PageLoader } from './Loader'
 
-type AuthState = { status: 'checking' } | { status: 'signed-out' } | { status: 'super-admin'; admin: SuperAdmin } | { status: 'resident' }
+type AuthState = { status: 'checking' } | { status: 'signed-out'; notice?: string } | { status: 'super-admin'; admin: SuperAdmin } | { status: 'resident' }
 
 /**
  * Picks the experience for the current session: the owner dashboard for super admins, the
@@ -28,11 +28,11 @@ export function AuthGate({ children }: { children: (admin: SuperAdmin, signOut: 
 
   async function signOut() {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
-    setAuth({ status: 'signed-out' })
+    setAuth({ status: 'signed-out', notice: 'You have been logged out successfully.' })
   }
 
   if (auth.status === 'checking') return <PageLoader />
-  if (auth.status === 'signed-out') return <LoginPage onSignedIn={applySession} />
+  if (auth.status === 'signed-out') return <LoginPage onSignedIn={applySession} notice={auth.notice} />
   if (auth.status === 'resident') return <ResidentPortal onSignOut={signOut} />
   return children(auth.admin, signOut, (admin) => setAuth({ status: 'super-admin', admin }))
 }
