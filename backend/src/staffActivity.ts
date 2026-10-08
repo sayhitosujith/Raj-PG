@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import type { AuthContext } from './auth.js'
 import { prisma } from './db.js'
 import { staffAccess } from './staffAccess.js'
+import { requestPropertyId } from './staffGuard.js'
 
 /**
  * The audit log: each successful write any staff member makes is recorded in plain words ("Added
@@ -85,12 +86,14 @@ export async function recordStaffActivity(request: Request, response: Response, 
   const role = staffAccess(response).isOwner ? 'SUPER_ADMIN' : 'RECEPTIONIST'
   // Described now, while anything about to be deleted still exists.
   const action = await describe(method, path, body).catch(() => 'Made a change')
+  const propertyId = await requestPropertyId(path, body).catch(() => null)
+  const propertyName = propertyId ? (await prisma.property.findUnique({ where: { id: propertyId }, select: { name: true } }).catch(() => null))?.name ?? null : null
   response.on('finish', () => {
     if (response.statusCode >= 400) return
     const { userId } = response.locals.auth as AuthContext
     void (async () => {
       const staff = await prisma.superAdmin.findUnique({ where: { id: userId }, select: { name: true } })
-      await prisma.staffActivity.create({ data: { staffId: userId, staffName: staff?.name ?? 'A team member', staffRole: role, action } })
+      await prisma.staffActivity.create({ data: { staffId: userId, staffName: staff?.name ?? 'A team member', staffRole: role, action, propertyId, propertyName } })
     })().catch((error) => console.error('Recording staff activity failed:', error))
   })
   next()
@@ -114,7 +117,7 @@ staffActivityRouter.get('/staff-activity', async (_request, response) => {
 staffActivityRouter.get('/audit-logs', async (request, response) => {
   const from = typeof request.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(request.query.from) ? new Date(`${request.query.from}T00:00:00Z`) : null
   try {
-    response.json(await prisma.staffActivity.findMany({ where: from ? { createdAt: { gte: from } } : {}, orderBy: { createdAt: 'desc' }, take: 1000, select: { id: true, staffId: true, staffName: true, staffRole: true, action: true, createdAt: true } }))
+    response.json(await prisma.staffActivity.findMany({ where: from ? { createdAt: { gte: from } } : {}, orderBy: { createdAt: 'desc' }, take: 1000, select: { id: true, staffId: true, staffName: true, staffRole: true, action: true, propertyId: true, propertyName: true, createdAt: true } }))
   } catch (error) {
     console.error('Audit log failed:', error)
     response.status(503).json({ error: 'The audit log could not be loaded.' })

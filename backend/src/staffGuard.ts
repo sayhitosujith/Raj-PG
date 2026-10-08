@@ -52,6 +52,20 @@ const recordLookups: Array<{ path: RegExp; propertyOf: (id: string) => Promise<s
   { path: /^\/housekeeping\/([^/]+)/, propertyOf: (id) => prisma.housekeepingRequest.findUnique({ where: { id }, select: { residentId: true } }).then((row) => row ? viaResident(row.residentId) : null) },
 ]
 
+/**
+ * The property a staff request is about: the record in its path (resident, payment, request…), or a
+ * propertyId in its body; null when it is not about one property (settings, the team). Shared with the
+ * audit log, which shows it on each entry.
+ */
+export async function requestPropertyId(path: string, body: unknown) {
+  for (const { path: pattern, propertyOf } of recordLookups) {
+    const id = path.match(pattern)?.[1]
+    if (id) return (await propertyOf(decodeURIComponent(id))) ?? null
+  }
+  const fromBody = (body as { propertyId?: unknown } | undefined)?.propertyId
+  return typeof fromBody === 'string' && fromBody ? fromBody : null
+}
+
 export async function staffGuard(request: Request, response: Response, next: NextFunction) {
   const access = staffAccess(response)
   if (access.isOwner) { next(); return }

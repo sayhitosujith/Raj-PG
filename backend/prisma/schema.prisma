@@ -681,6 +681,9 @@ model StaffActivity {
   // SUPER_ADMIN or RECEPTIONIST at the time of the change.
   staffRole String   @default("RECEPTIONIST")
   action    String
+  // The property the change was about, when it was about one (kept by name so deleted ones still read).
+  propertyId   String?
+  propertyName String?
   createdAt DateTime @default(now())
 
   @@index([createdAt])

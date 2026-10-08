@@ -453,8 +453,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {isOwner && <NavItem icon={ShieldCheck} label="Team" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />}
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
           {isOwner && <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />}
-          {isOwner && <NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} />}
         </nav>
+        {/* Audit logs sits at the bottom of the menu, just above the database status. */}
+        {isOwner && <div className="sidebar-bottom-nav"><NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} /></div>}
         <div className="sidebar-footer"><div className="help-icon"><ShieldCheck size={18} /></div><div><strong>{dashboard.source === 'postgresql' ? 'Database connected' : 'Local API connected'}</strong><small>{dashboard.source === 'postgresql' ? 'Live PostgreSQL data' : 'Fallback data active'}</small></div></div>
       </aside>
 
