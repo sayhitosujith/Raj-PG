@@ -269,7 +269,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
     const closed = await prisma.resident.findUnique({ where: { id }, select: { deletedAt: true } })
     if (closed?.deletedAt) { response.status(409).json({ error: "This account was closed at the resident's request and is kept as a record; it cannot be edited." }); return }
     await prisma.$transaction(async (transaction) => {
-      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, room: { select: { propertyId: true, number: true } } } })
+      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, foodRequestedAt: true, room: { select: { propertyId: true, number: true } } } })
       const expired = findExpiredDocument(identity.fields, current)
       if (expired) throw new InputError(expired)
       const nationality = identity.fields.nationality ?? current.nationality
@@ -306,7 +306,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
       const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
       // An address the owner types is theirs to vouch for, so it is shown as verified again.
       const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
-      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
+      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
       if (isMoving && current.roomId) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
@@ -320,7 +320,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
 // Declines a resident's request to join the food plan; approving is a normal update with foodOpted: true.
 residentRouter.delete('/residents/:id/food-request', async (request, response) => {
   try {
-    await prisma.resident.update({ where: { id: request.params.id }, data: { foodRequestedAt: null } })
+    await prisma.resident.update({ where: { id: request.params.id }, data: { foodRequestedAt: null, foodDecidedAt: new Date(), foodApproved: false } })
     response.json(await findResidentSummary(request.params.id))
   } catch (error) {
     respondToWriteError(response, error, 'The food request could not be declined.')

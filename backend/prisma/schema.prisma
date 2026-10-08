@@ -150,6 +150,9 @@ model Resident {
   foodOpted               Boolean                  @default(true)
   // Set when a resident without food asks to join the food plan; cleared when the owner decides.
   foodRequestedAt         DateTime?
+  // The owner's last decision on a food request, so the resident is told: when, and approved or not.
+  foodDecidedAt           DateTime?
+  foodApproved            Boolean?
   sessions                Session[]
   housekeepingRequests    HousekeepingRequest[]
   rentPayments            RentPayment[]
