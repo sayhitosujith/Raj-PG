@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Palette, Sparkles, SunMoon, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Palette, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -11,6 +11,7 @@ import { SuperAdminIdentityFields } from './SuperAdminIdentityFields'
 import type { ResidentTheme, WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
 import { PortalColourFields } from './PortalColourFields'
+import { featureBadgeFeatures, featureBadgeLabels, type FeatureBadgeKind } from './FeatureBadges'
 
 type SaveResult = Promise<string | null>
 /** Image settings saved through PUT/DELETE /api/settings/<kind>. */
@@ -163,8 +164,19 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             </div>
           </SettingsSection>
 
-          <SettingsSection icon={<Palette size={18} />} title="Resident & Super Admin portal colors" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal and in these admin pages, the text on those buttons, the general text, input placeholders, and error messages." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null, portalPlaceholderColor: value(form, 'portalPlaceholderColor') || null })}>
-            <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} placeholder={settings.portalPlaceholderColor} />
+          <SettingsSection icon={<Palette size={18} />} title="Resident & Super Admin portal colors" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal and in these admin pages, the text on those buttons, the general text, input placeholders, error messages, and the New, Coming soon and Beta banners." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null, portalPlaceholderColor: value(form, 'portalPlaceholderColor') || null, portalNewBadgeColor: value(form, 'portalNewBadgeColor') || null, portalSoonBadgeColor: value(form, 'portalSoonBadgeColor') || null, portalBetaBadgeColor: value(form, 'portalBetaBadgeColor') || null })}>
+            <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} placeholder={settings.portalPlaceholderColor} newBadge={settings.portalNewBadgeColor} soonBadge={settings.portalSoonBadgeColor} betaBadge={settings.portalBetaBadgeColor} />
+          </SettingsSection>
+
+          <SettingsSection icon={<Tag size={18} />} title="Feature banners" description="Mark resident features as New, Coming soon or Beta with a banner on their card. New disappears for each resident once they use that feature." onSubmit={(form) => onSaveSettings({ featureBadges: Object.fromEntries(featureBadgeFeatures.map(({ key }) => [key, value(form, `badge-${key}`) || 'NONE'])) as WorkspaceSettings['featureBadges'] })}>
+            <div className="feature-badge-fields">
+              {featureBadgeFeatures.map(({ key, label }) => (
+                <label key={key}>{label}<select name={`badge-${key}`} defaultValue={settings.featureBadges?.[key] ?? ''}>
+                  <option value="">None</option>
+                  {(Object.keys(featureBadgeLabels) as FeatureBadgeKind[]).map((kind) => <option key={kind} value={kind}>{featureBadgeLabels[kind].setting}</option>)}
+                </select></label>
+              ))}
+            </div>
           </SettingsSection>
 
           <SettingsSection icon={<SunMoon size={18} />} title="Resident view" description="Light or dark view for every resident's portal. Residents cannot change it themselves." onSubmit={(form) => onSaveSettings({ residentTheme: value(form, 'residentTheme') as ResidentTheme })}>

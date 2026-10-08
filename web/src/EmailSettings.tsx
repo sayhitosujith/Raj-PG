@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle2, Mail, Send, TriangleAlert, XCircle } from 'lucide-react'
 import { readApiError } from './superAdmin'
+import { Pagination } from './Pagination'
+import { usePagination } from './usePagination'
 
 type Message = { id: string; residentName: string | null; to: string; kind: string; status: 'pending' | 'sent' | 'failed'; error: string | null; createdAt: string }
 type Status = { enabled: boolean; from: string; usingTestSender: boolean; alertsTo: string[]; recent: Message[] }
@@ -15,6 +17,8 @@ const kindLabels: Record<string, string> = { payment_received: 'Payment receipt'
  */
 export function EmailSettings({ onNotice }: { onNotice: (message: string) => void }) {
   const [status, setStatus] = useState<Status | null>(null)
+  // The most recent emails (the server sends the last 100), ten to a page.
+  const emailPager = usePagination(status?.recent ?? [])
   const [testTo, setTestTo] = useState('')
   const [isSending, setIsSending] = useState(false)
 
@@ -47,12 +51,15 @@ export function EmailSettings({ onNotice }: { onNotice: (message: string) => voi
           </form>
         </div>
         {status.recent.length > 0 && (
-          <div className="crud-list whatsapp-log">{status.recent.map((message) => (
+          <>
+          <div className="crud-list whatsapp-log">{emailPager.pageItems.map((message) => (
             <div className="crud-row" key={message.id}>
               <div className="crud-main"><strong>{message.residentName ?? message.to} · {kindLabels[message.kind] ?? message.kind}</strong><small>{new Date(message.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · {message.to}{message.error ? ` · ${message.error}` : ''}</small></div>
               <span className={`status-pill ${statusTone[message.status]}`}>{message.status}</span>
             </div>
           ))}</div>
+          <Pagination state={emailPager} label="emails" />
+          </>
         )}
       </>}
     </section>

@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Building2, Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle, MapPin, Phone, Wifi } from 'lucide-react'
+import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
 import { LocationLink } from './LocationLink'
+import { ModalLayer } from './ModalLayer'
+import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
 
 /** The Info tab's data, as /resident-portal/me sends it (see the backend's residentInfo.ts). */
 export type ResidentInfoData = {
@@ -34,13 +36,14 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
 }
 
 /**
- * The Info tab's useful details: Wi-Fi, important contacts (tap to call), the property's city and
- * location (a map link), check-in / check-out / gate times, and FAQs. Each card appears only when the owner has filled it in.
+ * The property's useful details on Home: Wi-Fi, important contacts (tap to call), the property's city
+ * and location (a map link), and check-in / check-out / gate times. Each card appears only when the
+ * owner has filled it in. FAQs are separate, on the Info tab (ResidentFaqs).
  */
 export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNotice: (message: string) => void }) {
   const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
   const hasDetails = Boolean(info.city || info.location) || times.length > 0
-  if (!info.wifi && !info.contacts.length && !hasDetails && !info.faqs.length) return null
+  if (!info.wifi && !info.contacts.length && !hasDetails) return null
   return (
     <section className="workspace-view resident-info">
       <div className="workspace-view-heading"><div><p className="eyebrow">Good to know</p><h2>Property info</h2><p>Wi-Fi, contacts and timings from your property owner.</p></div></div>
@@ -57,10 +60,39 @@ export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNot
           {times.map(([label, time]) => <div className="info-line" key={label}><span><Clock size={12} /> {label}</span><strong>{clockLabel(time)}</strong></div>)}
         </div>}
       </div>
-      {info.faqs.length > 0 && <div className="info-faqs">
-        <h3><HelpCircle size={16} /> FAQs</h3>
-        {info.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary>{faq.answer && <p>{faq.answer}</p>}</details>)}
-      </div>}
+    </section>
+  )
+}
+
+/**
+ * The owner's FAQs on the Info tab as one compact card (how many questions there are); tapping it
+ * opens them in a pop-up, where each question unfolds to its answer, so the tab stays short. The owner's
+ * banner for it (Settings > Feature banners) shows in the corner; "New" goes once it is opened. Read-only. Nothing when the owner has written none.
+ */
+export function ResidentFaqs({ faqs }: { faqs: ResidentInfoData['faqs'] }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const { badge, markSeen } = useFeatureBadge('faqs')
+  if (!faqs.length) return null
+  function open() {
+    setIsOpen(true)
+    markSeen()
+  }
+  return (
+    <section className="workspace-view resident-faqs">
+      <button type="button" className="faq-card" onClick={open}>
+        {badge && <FeatureRibbon badge={badge} />}
+        <span className="faq-card-icon" aria-hidden="true"><HelpCircle size={20} /></span>
+        <span className="faq-card-copy"><strong>FAQs</strong><small>{faqs.length} common {faqs.length === 1 ? 'question' : 'questions'}, answered by your property owner</small></span>
+        <ChevronRight size={18} aria-hidden="true" />
+      </button>
+      {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+        <div className="profile-modal faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-title">
+          <div className="modal-heading"><div><p className="eyebrow">Help</p><h2 id="faq-title">FAQs</h2></div><button type="button" className="icon-button" aria-label="Close FAQs" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
+          <div className="faq-list">
+            {faqs.map((faq) => <details key={faq.question}><summary><HelpCircle size={15} aria-hidden="true" />{faq.question}</summary>{faq.answer && <p>{faq.answer}</p>}</details>)}
+          </div>
+        </div>
+      </div></ModalLayer>}
     </section>
   )
 }

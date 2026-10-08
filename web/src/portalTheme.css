@@ -30,7 +30,7 @@
    meal, holiday, app) turn dark. */
 .portal-shell { --portal-icon: #1b2528; --portal-icon-on: #ffffff; }
 :root[data-theme="dark"] .portal-shell { --portal-icon: rgb(232 240 237); --portal-icon-on: rgb(16 24 22); }
-.portal-shell :is(.resident-amenity, .my-details-contact, .today-tile-icon, .meal-icon, .meal-alert, .food-opt-in, .detail-location, .emergency-button.call-owner, .weekly-menu-button, .portal-tabs button, .house-rule-icon, .house-rules-extra, .menu-meal-icon, .info-card h3, .info-faqs h3, .info-line .icon-button, .upi-direct.is-reported, .upi-qr-panel.is-paid) svg,
+.portal-shell :is(.resident-amenity, .my-details-contact, .today-tile-icon, .meal-icon, .meal-alert, .food-opt-in, .detail-location, .emergency-button.call-owner, .weekly-menu-button, .portal-tabs button, .house-rule-icon, .house-rules-extra, .menu-meal-icon, .info-card h3, .info-line .icon-button, .upi-direct.is-reported, .upi-qr-panel.is-paid) svg,
 .portal-shell .holiday-today-icon { color: var(--portal-icon); }
 .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon) { color: var(--portal-icon-on); background: var(--portal-icon); }
 .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon, .meal-tile.is-serving .meal-icon) svg { color: inherit; }
@@ -224,3 +224,10 @@
 :root[data-theme] .portal-shell :is(.portal-terms, .portal-tabs button.is-active.portal-terms) { color: var(--brand-on); }
 :root[data-theme] .portal-shell .portal-terms .text-link { color: var(--brand-on); text-decoration-color: color-mix(in srgb, var(--brand-on) 60%, transparent); }
 :root[data-theme] .portal-shell .portal-terms .referral-icon { border-color: rgb(255 255 255 / .6); background: rgb(255 255 255 / .95); }
+/* FAQs in the theme colour: the card's icon tile and each question in the pop-up. */
+:root[data-theme] .portal-shell .faq-card-icon { color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); }
+:root[data-theme] .portal-shell .faq-card-icon svg { color: inherit; }
+:root[data-theme] .portal-shell .faq-list details { border-color: var(--brand-border); background: var(--brand-tint); }
+:root[data-theme] .portal-shell .faq-list summary svg { color: var(--brand-deep); }
+:root[data-theme="dark"] .portal-shell .faq-list details { border-color: color-mix(in srgb, var(--brand-light) 30%, transparent); background: color-mix(in srgb, var(--brand-night) 28%, transparent); }
+:root[data-theme="dark"] .portal-shell .faq-list summary svg { color: var(--brand-pale); }

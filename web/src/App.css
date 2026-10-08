@@ -1071,14 +1071,17 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .whatsapp-optin input { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--teal); }
 .whatsapp-optin small { display: block; margin-top: 2px; color: var(--muted); font-weight: 400; }
 .whatsapp-checks { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 12px; }
-.whatsapp-checks li { display: flex; align-items: center; gap: 7px; }
+/* Each check is one wrapping line of text (icon, words, email addresses), not a row of flex items:
+   as flex items the addresses could not wrap and pushed the card, and the page, past the screen. */
+.whatsapp-checks li { line-height: 1.7; overflow-wrap: anywhere; }
+.whatsapp-checks li svg { margin-right: 7px; vertical-align: -3px; }
 .whatsapp-checks .is-ok { color: var(--teal); }
 .whatsapp-checks .is-missing { color: #b5523f; }
 .whatsapp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .whatsapp-actions form { display: flex; flex: 1 1 280px; gap: 8px; }
 .whatsapp-actions input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .whatsapp-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
-.whatsapp-log code, .whatsapp-settings code { padding: 1px 5px; border-radius: 4px; background: #eef3f0; font: 11px ui-monospace, monospace; }
+.whatsapp-log code, .whatsapp-settings code { padding: 1px 5px; border-radius: 4px; background: #eef3f0; font: 11px ui-monospace, monospace; overflow-wrap: anywhere; }
 .status-pill.coral { color: #b5523f; background: #fbe6e1; }
 
 /*
@@ -1458,7 +1461,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-lock-countdown { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 4px 0 2px; color: rgb(181 82 63); font-size: 12px; font-weight: 600; }
 .rent-lock-countdown b { font-variant-numeric: tabular-nums; }
 /* "Beta" beside the resident's WhatsApp and email update switches: the channels are still being rolled out. */
-.beta-tag { display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 999px; color: rgb(206 44 44); background: rgb(206 44 44 / .12); font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; vertical-align: 1px; }
+/* Beta, Coming soon and New banners take their colours from --badge-beta / --badge-soon / --badge-new,
+   which the owner can set in Settings; the fallbacks are the defaults. */
+.beta-tag, .coming-soon-tag, .new-badge { display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; vertical-align: 1px; }
+.beta-tag { color: var(--badge-beta, rgb(206 44 44)); background: color-mix(in srgb, var(--badge-beta, rgb(206 44 44)) 12%, transparent); }
+.coming-soon-tag { color: var(--badge-soon, #d97706); background: color-mix(in srgb, var(--badge-soon, #d97706) 14%, transparent); }
+.new-badge { color: #fff; background: var(--badge-new, #dc2626); }
 /* Rent card's right side: status chips, then on reminder days the reminder text (and countdown) under them. */
 .rent-highlight-side { display: grid; justify-items: end; gap: 6px; max-width: 420px; margin-left: auto; text-align: right; }
 .rent-highlight-side .rent-highlight-badges { margin-left: 0; }
@@ -1472,7 +1480,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Beta tag: a soft red ring pulses outward every couple of seconds to draw the eye, without moving
    the text; still for anyone who prefers reduced motion. */
 .beta-tag { animation: beta-pulse 2.2s ease-out infinite; }
-@keyframes beta-pulse { 0% { box-shadow: 0 0 0 0 rgb(206 44 44 / .45); } 70%, 100% { box-shadow: 0 0 0 6px rgb(206 44 44 / 0); } }
+@keyframes beta-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--badge-beta, rgb(206 44 44)) 45%, transparent); } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
 @media (prefers-reduced-motion: reduce) { .beta-tag { animation: none; } }
 /* Emergency 112: the same outward red ring as the Beta tag, wider and slower to suit a button, and the
    siren icon gives a short wiggle each cycle. Still for anyone who prefers reduced motion. */
@@ -1504,7 +1512,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .workspace-menu-panel > button { display: flex; align-items: center; gap: 8px; padding: 8px; border: 0; border-radius: 7px; color: var(--ink); background: transparent; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .workspace-menu-panel > button:hover, .workspace-menu-panel > button:focus-visible { color: var(--teal); background: #e5f3ed; }
 .workspace-menu-panel > button svg { color: var(--teal); }
-.settings-section { scroll-margin-top: 16px; }
+/* min-width: 0 lets a section shrink to its grid column; otherwise one long unbreakable line inside
+   (an address, a code, an error) widens the whole Settings grid past the screen. */
+.settings-section { min-width: 0; scroll-margin-top: 16px; }
+.whatsapp-log .crud-main { min-width: 0; }
+.whatsapp-log .crud-main small { overflow-wrap: anywhere; white-space: normal; }
 
 
 /* Public holidays: date tiles in the resident portal and the owner's overview; today's is highlighted. */
@@ -1885,8 +1897,8 @@ div.portal-panel { display: contents; }
 .resident-info { margin-top: 20px; }
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; margin-top: 16px; }
 .info-card { display: grid; align-content: start; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
-.info-card h3, .info-faqs h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 2px; color: var(--ink); font-size: 14px; }
-.info-card h3 svg, .info-faqs h3 svg { color: var(--teal); }
+.info-card h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 2px; color: var(--ink); font-size: 14px; }
+.info-card h3 svg { color: var(--teal); }
 .info-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; font-size: 12px; }
 .info-line > span { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 5px; min-width: 0; color: var(--muted); }
 .info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
@@ -1896,10 +1908,6 @@ div.portal-panel { display: contents; }
    and the row wraps so the pill drops onto its own line under "Location" (see .info-line). */
 .info-call { display: inline-flex; flex: 0 1 auto; max-width: 100%; border-radius: 14px; overflow-wrap: anywhere; align-items: center; gap: 5px; padding: 4px 10px; line-height: 1.3; border: 1px solid #9fd0c2; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: normal; }
 .info-call svg { flex: none; }
-.info-faqs { display: grid; gap: 6px; margin-top: 16px; }
-.info-faqs details { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
-.info-faqs summary { color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
-.info-faqs details p { margin: 6px 0 0; color: #45544f; font-size: 12px; line-height: 1.5; }
 
 /* Resident portal motion: sections rise in one after another on load, amenity chips pop in, the
    greeting's sparkle twinkles, cards lift a little under the pointer, and an amount still due pulses
@@ -2077,8 +2085,10 @@ div.portal-panel { display: contents; }
   .portal-shell :is(.my-details-contact > span, .resident-amenity:hover svg, .workspace-view-heading h2::after, .info-card h3 svg) { animation: none; }
 }
 /* Settings > Resident portal colours: swatches, picker and a live preview in the chosen colours. */
-.colour-choice { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
-.colour-choice legend { margin-bottom: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
+/* Each colour choice in its own bordered box; the legend floats inside it as the box's title
+   rather than sitting on the border line. */
+.colour-choice { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.colour-choice legend { float: left; width: 100%; margin: 0 0 4px; padding: 0; color: var(--ink); font-size: 12px; font-weight: 700; }
 .colour-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .colour-swatch { width: 28px; height: 28px; padding: 0; border: 2px solid rgb(255 255 255); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
 .colour-swatch.is-selected { box-shadow: 0 0 0 2px var(--ink); }
@@ -2100,6 +2110,8 @@ div.portal-panel { display: contents; }
 .portal-colour-preview-card small { color: var(--muted); font-size: 11px; }
 .portal-colour-preview-text { flex-basis: 100%; color: var(--portal-ink); font-size: 13px; font-weight: 600; }
 .portal-colour-preview-label { flex-basis: 100%; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.portal-colour-preview-badges { display: flex; flex-basis: 100%; align-items: center; gap: 4px; }
+.portal-colour-preview-badges > :first-child { margin-left: 0; }
 .portal-colour-preview-error { flex-basis: 100%; padding: 8px 10px; border-radius: 7px; color: var(--portal-error); background: color-mix(in srgb, var(--portal-error) 12%, #fff); font-size: 11px; }
 .portal-colour-preview-button { padding: 9px 14px; border-radius: 8px; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 70%, #000)); font-size: 12px; font-weight: 700; }
 /* The owner's other portal colours on the admin pages (see useAdminBrand): text on filled buttons,
@@ -2149,3 +2161,29 @@ div.portal-panel { display: contents; }
 .portal-shell .page-content > * { flex-shrink: 0; }
 .portal-shell .page-content > :is(.workspace-view, .portal-grid),
 .portal-shell .page-content > .portal-panel > .workspace-view { margin-top: 0; margin-bottom: 0; }
+/* Resident FAQs (Info tab): one compact card that opens the questions in a pop-up, where each
+   question unfolds to its answer. */
+.portal-shell .workspace-view.resident-faqs { padding: 0; overflow: hidden; }
+/* "New" ribbon across a card's top-left corner (NewRibbon). */
+.faq-card, .has-ribbon { position: relative; }
+.has-ribbon { overflow: hidden; }
+.new-ribbon { position: absolute; top: 9px; left: -24px; width: 84px; padding: 2px 0; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--badge-new, #dc2626) 80%, #fff), var(--badge-new, #dc2626)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-new, #dc2626) 35%, transparent); font-size: 9px; font-weight: 800; letter-spacing: .8px; text-align: center; text-transform: uppercase; transform: rotate(-45deg); animation: new-ribbon-pulse 2.4s ease-in-out infinite; }
+.new-ribbon.is-soon { background: linear-gradient(135deg, color-mix(in srgb, var(--badge-soon, #d97706) 80%, #fff), var(--badge-soon, #d97706)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-soon, #d97706) 35%, transparent); }
+.new-ribbon.is-beta { background: linear-gradient(135deg, color-mix(in srgb, var(--badge-beta, #ce2c2c) 80%, #fff), var(--badge-beta, #ce2c2c)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-beta, #ce2c2c) 35%, transparent); }
+/* Settings > Feature banners: one select per feature, two to a row where there is room. */
+.feature-badge-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; }
+@keyframes new-ribbon-pulse { 50% { filter: brightness(1.15); } }
+@media (prefers-reduced-motion: reduce) { .new-ribbon { animation: none; } }
+.faq-card { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 18px; border: 0; color: var(--ink); background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.faq-card:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.faq-card-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 11px; color: var(--teal); background: var(--teal-soft); }
+.faq-card-copy { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.faq-card-copy strong { font: 700 15px Manrope, sans-serif; }
+.faq-card-copy small { color: var(--muted); font-size: 12px; }
+.faq-modal { width: min(560px, 100%); }
+.faq-list { display: grid; gap: 8px; max-height: 65vh; overflow-y: auto; }
+.faq-list details { padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.faq-list summary { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary svg { flex: none; margin-top: 2px; color: var(--teal); }
+.faq-list details p { margin: 8px 0 0 23px; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-line; }

@@ -10,7 +10,7 @@ export const emailAdminRouter = Router()
 // Whether email is configured, who it is sent from, who gets booking alerts, and the latest emails.
 emailAdminRouter.get('/email/status', async (_request, response) => {
   try {
-    const [alertsTo, recent] = await Promise.all([bookingAlertRecipients(), prisma.outboundMessage.findMany({ where: { channel: 'email' }, orderBy: { createdAt: 'desc' }, take: 20, include: { resident: { select: { name: true } } } })])
+    const [alertsTo, recent] = await Promise.all([bookingAlertRecipients(), prisma.outboundMessage.findMany({ where: { channel: 'email' }, orderBy: { createdAt: 'desc' }, take: 100, include: { resident: { select: { name: true } } } })])
     response.json({
       enabled: isEmailEnabled(),
       from: emailFrom(),

@@ -489,6 +489,14 @@ model WorkspaceSettings {
   portalErrorColor        String?
   portalTextColor         String?
   portalPlaceholderColor  String?
+  // Colours of the "New", "Coming soon" and "Beta" banners on cards, "#rrggbb"; null = the defaults
+  // (red, amber, red).
+  portalNewBadgeColor     String?
+  portalSoonBadgeColor    String?
+  portalBetaBadgeColor    String?
+  // Which banner each resident feature shows: { feature: "NEW" | "SOON" | "BETA" }; a feature left out
+  // shows none. Starts as the banners the portal had before the owner could choose.
+  featureBadges           Json      @default("{\"faqs\":\"NEW\",\"passkeys\":\"NEW\",\"whatsapp\":\"BETA\",\"email\":\"BETA\"}")
   updatedAt               DateTime  @updatedAt
 }
 

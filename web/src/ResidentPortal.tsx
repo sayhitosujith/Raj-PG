@@ -37,7 +37,7 @@ import { CalendarTile } from './CalendarTile'
 import { CricketScore } from './CricketScore'
 import { PortalTabs, type PortalTab } from './PortalTabs'
 import { ResidentMaintenance } from './ResidentMaintenance'
-import { ResidentInfo, type ResidentInfoData } from './ResidentInfo'
+import { ResidentFaqs, ResidentInfo, type ResidentInfoData } from './ResidentInfo'
 import { ExitPg, type ExitNotice } from './ExitPg'
 import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { PasskeySettings } from './PasskeySettings'
@@ -53,6 +53,7 @@ import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
 import { PropertyGallery } from './PropertyGallery'
+import { FeatureBadgesProvider } from './FeatureBadges'
 import { portalColourStyle } from './PortalColourFields'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
@@ -215,7 +216,8 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const deleteAccount = <DeleteAccountRequest requestedAt={profile.deletionRequestedAt} declinedAt={profile.deletionDeclinedAt} declineReason={profile.deletionDeclineReason} onChanged={onRefresh} onNotice={showNotice} />
   const notifications = <><NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} /><PasskeySettings onNotice={showNotice} /></>
   return (
-    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor })}>
+    <FeatureBadgesProvider value={profile.workspace.featureBadges ?? {}}>
+    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor, newBadge: profile.workspace.portalNewBadgeColor, soonBadge: profile.workspace.portalSoonBadgeColor, betaBadge: profile.workspace.portalBetaBadgeColor })}>
       {/* Sky (with the city) first, so the trees and animals in front stand before the buildings. */}
       <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
       <PortalScenery />
@@ -237,7 +239,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
+        <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /><ResidentFaqs faqs={profile.info.faqs} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
         <PropertyGallery refreshSignal={refreshSignal} />
         <section className="workspace-view portal-panel" data-panel="home">
@@ -278,6 +280,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       {pendingConsent && <PolicyConsentModal consent={pendingConsent} workspace={profile.workspace} onSignOut={onSignOut} onAccepted={async (version) => { if (version) setAcceptedVersion(version); await onRefresh() }} />}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>
+    </FeatureBadgesProvider>
   )
 }
 

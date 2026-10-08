@@ -10,6 +10,7 @@ import { InlineLoader } from './Loader'
 import { Pagination } from './Pagination'
 import { portalListPageSize, usePagination } from './usePagination'
 import { ModalLayer } from './ModalLayer'
+import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
 
 const maxDaysAhead = 60
 
@@ -78,6 +79,7 @@ function RequestForm({ slots, holidays, onCreated, onClose }: { slots: SlotOptio
 export function ResidentHousekeeping({ holidays, refreshSignal, isPaused, slots, weeklyLimit, staff, onNotice }: { holidays: Holiday[]; refreshSignal: number; isPaused: boolean; slots: SlotOption[]; weeklyLimit: number | null; staff: string[]; onNotice: (message: string) => void }) {
   const [requests, setRequests] = useState<HousekeepingRequest[] | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
+  const { badge, markSeen } = useFeatureBadge('housekeeping')
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [remindingId, setRemindingId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -117,7 +119,7 @@ export function ResidentHousekeeping({ holidays, refreshSignal, isPaused, slots,
 
   const pager = usePagination(requests ?? [], portalListPageSize)
   return (
-    <section className="workspace-view housekeeping-card">
+    <section className={`workspace-view housekeeping-card${badge ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>{badge && <FeatureRibbon badge={badge} />}
       <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Housekeeping</h2><p>Request a room cleaning at a time that suits you.{weeklyLimit ? ` Up to ${weeklyLimit} ${weeklyLimit === 1 ? 'cleaning' : 'cleanings'} a week.` : ''}</p>{staff.length > 0 && <p className="housekeeping-staff-line"><Users size={14} aria-hidden="true" /> {staff.length} housekeeping {staff.length === 1 ? 'staff member' : 'staff'}: {staff.join(', ')}</p>}</div><div className="view-actions"><button className="primary-button" disabled={isPaused} title={isPaused ? 'Paused until your overdue rent is paid' : undefined} onClick={() => setIsRequesting(true)}><Sparkles size={16} /> Request housekeeping</button>{isPaused && <small className="paused-note">Paused until overdue rent is paid</small>}</div></div>
       {requests === null
         ? <InlineLoader />

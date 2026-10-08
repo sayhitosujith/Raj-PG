@@ -8,6 +8,9 @@ const colourSettings = [
   ['portalErrorColor', '--brand-error', 'brandError'],
   ['portalTextColor', '--brand-ink', 'brandInk'],
   ['portalPlaceholderColor', '--placeholder', 'brandPlaceholder'],
+  ['portalNewBadgeColor', '--badge-new', 'badgeNew'],
+  ['portalSoonBadgeColor', '--badge-soon', 'badgeSoon'],
+  ['portalBetaBadgeColor', '--badge-beta', 'badgeBeta'],
 ] as const
 
 /**

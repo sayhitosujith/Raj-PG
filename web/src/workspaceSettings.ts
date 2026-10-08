@@ -1,3 +1,5 @@
+import type { FeatureBadgeKind } from './FeatureBadges'
+
 /** Owner-editable workspace settings, as returned by GET /api/settings. */
 export type WorkspaceSettings = {
   businessName: string
@@ -46,6 +48,12 @@ export type WorkspaceSettings = {
   portalErrorColor: string | null
   portalTextColor: string | null
   portalPlaceholderColor: string | null
+  /** Colours of the "New", "Coming soon" and "Beta" banners; null = default. */
+  portalNewBadgeColor: string | null
+  portalSoonBadgeColor: string | null
+  portalBetaBadgeColor: string | null
+  /** Which banner each resident feature shows (Settings > Feature banners); a feature left out shows none. */
+  featureBadges: Partial<Record<string, FeatureBadgeKind>>
   /** Plain-text resident policies, linked from the resident portal; empty hides the link. */
   termsAndConditions: string
   privacyPolicy: string
@@ -66,4 +74,4 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
 /** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

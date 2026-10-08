@@ -1,4 +1,4 @@
-import type { HousekeepingSlot, ResidentTheme, WorkspaceSettings } from '@prisma/client'
+import type { HousekeepingSlot, Prisma, ResidentTheme, WorkspaceSettings } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
 import { findLogoProblem, findUpiQrProblem, photoVersion, sendLogo, sendUpiQr } from './photo.js'
@@ -50,6 +50,9 @@ export const houseRulesOf = (settings: WorkspaceSettings) => ({ visitingHours: f
 export const slotOptionsOf = (settings: WorkspaceSettings) => (Object.keys(slotNames) as HousekeepingSlot[]).map((slot) => { const { value, label, hours } = slotDetails(settings, slot); return { value, label, hours } })
 
 const residentThemes: readonly ResidentTheme[] = ['AUTO', 'LIGHT', 'DARK']
+// Resident features that can carry a banner (the same keys as web/src/FeatureBadges.tsx), and the banners.
+const featureBadgeKeys = ['faqs', 'passkeys', 'whatsapp', 'email', 'photos', 'housekeeping', 'repairs', 'referral'] as const
+const featureBadgeKinds = ['NEW', 'SOON', 'BETA'] as const
 const hexColourPattern = /^#[0-9a-f]{6}$/i
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -63,7 +66,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; featureBadges?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -144,8 +147,20 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     if (!isWholeNumber(raw, min, max)) return { error }
     data[field] = raw
   }
+  // Banners per resident feature; unknown features and kinds are refused, a missing feature shows none.
+  if (input.featureBadges !== undefined) {
+    if (typeof input.featureBadges !== 'object' || input.featureBadges === null || Array.isArray(input.featureBadges)) return { error: 'Feature banners must be a list of features.' }
+    const badges: Record<string, string> = {}
+    for (const [feature, kind] of Object.entries(input.featureBadges)) {
+      if (!featureBadgeKeys.includes(feature as (typeof featureBadgeKeys)[number])) return { error: `Unknown feature: ${feature}.` }
+      if (kind === null || kind === '' || kind === 'NONE') continue
+      if (!featureBadgeKinds.includes(kind as (typeof featureBadgeKinds)[number])) return { error: 'A banner must be New, Coming soon or Beta.' }
+      badges[feature] = kind as string
+    }
+    data.featureBadges = badges
+  }
   // Portal colours as "#rrggbb"; null (or blank) resets to the default.
-  for (const [field, label] of [['portalThemeColor', 'Theme colour'], ['portalButtonTextColor', 'Button text colour'], ['portalErrorColor', 'Error message colour'], ['portalTextColor', 'Text colour'], ['portalPlaceholderColor', 'Placeholder text colour']] as const) {
+  for (const [field, label] of [['portalThemeColor', 'Theme colour'], ['portalButtonTextColor', 'Button text colour'], ['portalErrorColor', 'Error message colour'], ['portalTextColor', 'Text colour'], ['portalPlaceholderColor', 'Placeholder text colour'], ['portalNewBadgeColor', 'New banner colour'], ['portalSoonBadgeColor', 'Coming soon banner colour'], ['portalBetaBadgeColor', 'Beta banner colour']] as const) {
     const colour = input[field]
     if (colour === undefined) continue
     if (colour === null || colour === '') { data[field] = null; continue }
@@ -193,7 +208,8 @@ settingsRouter.put('/settings', async (request, response) => {
     const parsed = parseSettings(request.body as SettingsInput, await getSettings())
     if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }
     const { id: _id, updatedAt: _updatedAt, ...changes } = parsed.data
-    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: changes })
+    // featureBadges is only ever set to an object here, never null, so it fits the update input.
+    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: changes as Prisma.WorkspaceSettingsUpdateInput })
     response.json(toClientSettings(cached))
   } catch (error) {
     cached = null
