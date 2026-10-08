@@ -7,6 +7,7 @@ const colourSettings = [
   ['portalButtonTextColor', '--brand-on', 'brandOn'],
   ['portalErrorColor', '--brand-error', 'brandError'],
   ['portalTextColor', '--brand-ink', 'brandInk'],
+  ['portalPlaceholderColor', '--placeholder', 'brandPlaceholder'],
 ] as const
 
 /**

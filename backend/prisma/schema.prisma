@@ -481,11 +481,13 @@ model WorkspaceSettings {
   // The resident portal's light/dark view, set by the owner: AUTO = light 7am–7pm, dark otherwise.
   residentTheme           ResidentTheme @default(AUTO)
   // The resident portal's theme colour, the text colour on things filled with it, error messages and
-  // general text (light view), as "#rrggbb"; null = the defaults (sky blue, white, brick red, charcoal).
+  // general text and input placeholders (light view), as "#rrggbb"; null = the defaults (sky blue,
+  // white, brick red, charcoal, soft grey).
   portalThemeColor        String?
   portalButtonTextColor   String?
   portalErrorColor        String?
   portalTextColor         String?
+  portalPlaceholderColor  String?
   updatedAt               DateTime  @updatedAt
 }
 

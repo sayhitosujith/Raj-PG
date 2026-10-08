@@ -2111,3 +2111,9 @@ div.portal-panel { display: contents; }
 :root[data-brand-error][data-theme="dark"] :is(.login-error, .expired-note) { color: color-mix(in srgb, var(--brand-error) 55%, #fff); }
 :root[data-brand-error][data-theme="dark"] .login-error { background: color-mix(in srgb, var(--brand-error) 22%, transparent); }
 :root[data-brand-ink]:not([data-theme="dark"]) { --ink: var(--brand-ink); }
+/* Placeholders (the hint text in empty inputs): softer than typed text, lighter and in italics, so a
+   hint is never mistaken for a value. The owner can choose its colour in Settings (--placeholder, set
+   on the resident portal or the page root); that applies in light view, dark view keeps a muted grey. */
+:root:not([data-theme="dark"]) :is(input, textarea)::placeholder { color: var(--placeholder, #9aa5a8); font-style: italic; font-weight: 400; opacity: 1; }
+:root[data-theme="dark"] :is(input, textarea)::placeholder { color: rgb(120 134 130); font-style: italic; font-weight: 400; opacity: 1; }
+.portal-colour-preview-input { flex-basis: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font: inherit; font-size: 12px; pointer-events: none; }

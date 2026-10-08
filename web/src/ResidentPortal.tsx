@@ -214,7 +214,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const deleteAccount = <DeleteAccountRequest requestedAt={profile.deletionRequestedAt} declinedAt={profile.deletionDeclinedAt} declineReason={profile.deletionDeclineReason} onChanged={onRefresh} onNotice={showNotice} />
   const notifications = <><NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} /><PasskeySettings onNotice={showNotice} /></>
   return (
-    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor })}>
+    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor })}>
       {/* Sky (with the city) first, so the trees and animals in front stand before the buildings. */}
       <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
       <PortalScenery />
