@@ -2221,3 +2221,20 @@ div.portal-panel { display: contents; }
 :root[data-theme="dark"] .resident-approval { border-color: rgb(217 119 6 / .35); background: rgb(120 53 15 / .3); }
 :root[data-theme="dark"] .resident-approval strong { color: rgb(252 211 77); }
 .approval-note { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+/* Team notifications (what a receptionist changed), in teal. */
+.notice-kind.is-team { color: rgb(15 118 110); background: rgb(204 251 241); }
+.notification-panel li.is-kind-team { border-color: rgb(153 246 228); border-left-color: rgb(13 148 136); background: rgb(240 253 250); }
+:root[data-theme="dark"] .notice-kind.is-team { color: rgb(94 234 212); background: rgb(19 78 74 / .5); }
+:root[data-theme="dark"] .notification-panel li.is-kind-team { border-color: rgb(13 148 136 / .35); border-left-color: rgb(45 212 191); background: rgb(19 78 74 / .3); }
+/* Audit logs: one row per change, newest first, with who and when. */
+.audit-log { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.audit-log li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.audit-log-main { display: grid; gap: 3px; min-width: 0; }
+.audit-log-main strong { color: var(--ink); font-size: 13px; overflow-wrap: anywhere; }
+.audit-log-main small { color: var(--muted); font-size: 11px; }
+.audit-log time { flex: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.audit-role { padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.audit-role.is-super_admin { color: rgb(15 118 110); background: rgb(204 251 241); }
+.audit-role.is-receptionist { color: rgb(146 64 14); background: rgb(254 243 199); }
+:root[data-theme="dark"] .audit-log li { background: rgb(255 255 255 / .03); }
+@media (max-width: 560px) { .audit-log li { flex-direction: column; align-items: flex-start; gap: 6px; } }

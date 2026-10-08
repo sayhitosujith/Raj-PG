@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "StaffActivity" ADD COLUMN "staffRole" TEXT NOT NULL DEFAULT 'RECEPTIONIST';

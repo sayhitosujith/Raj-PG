@@ -36,7 +36,9 @@ import { dashboardInsights } from './dashboardInsights.js'
 import { parsePropertyInfo } from './residentInfo.js'
 import { propertyPhotoAdminRouter, propertyPhotoResidentRouter } from './propertyPhotos.js'
 import { staffGuard } from './staffGuard.js'
+import { recordStaffActivity, staffActivityRouter } from './staffActivity.js'
 import { propertyIdWhere, propertyWhere, residentWhere, staffAccess } from './staffAccess.js'
+import { announceWrites, liveUpdatesRouter } from './liveUpdates.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -45,7 +47,14 @@ app.use(cors())
 // Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.
 app.post('/api/razorpay/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
 app.use(express.json({ limit: '6mb' }))
+// API answers are live data (notifications, rent, requests): never let the browser or Netlify's edge
+// reuse an old copy, or the app shows stale counts until a hard refresh. Image routes set their own
+// long cache (their URLs change when the image does), which replaces this.
+app.use('/api', (_request, response, next) => { response.set('Cache-Control', 'no-store'); next() })
 
+// Live updates: open pages are told the moment any write succeeds (see liveUpdates.ts).
+app.use('/api', announceWrites)
+app.use('/api', liveUpdatesRouter)
 app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
@@ -74,6 +83,9 @@ app.get('/api/health', async (_request, response) => {
 app.use('/api', requireRole(UserRole.SUPER_ADMIN))
 // Receptionists (not super admins) are limited to their own properties and to day-to-day work; see staffGuard.ts.
 app.use('/api', staffGuard)
+// Receptionists' changes are recorded for the super admins' notifications (see staffActivity.ts).
+app.use('/api', recordStaffActivity)
+app.use('/api', staffActivityRouter)
 app.use('/api', superAdminRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)

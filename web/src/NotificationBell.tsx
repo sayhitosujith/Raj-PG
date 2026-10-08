@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react'
 export type Notice = { id: string; title: string; detail?: string | null; at?: string | null; /** Shown as a small badge, e.g. "Announcement". */ kind: NoticeKind }
 
 /** What a notice is about, shown as its badge. */
-export type NoticeKind = 'Announcement' | 'Rent' | 'Move-out' | 'Repair' | 'Account' | 'Food' | 'ID check' | 'Housekeeping' | 'Reward'
+export type NoticeKind = 'Announcement' | 'Rent' | 'Move-out' | 'Repair' | 'Account' | 'Food' | 'ID check' | 'Housekeeping' | 'Reward' | 'Team'
 
 // When this resident read each notice, per device (localStorage): notice id -> time read (ms). A read
 // notice (one the resident clicked) is cleared from view; its record is kept, so it does

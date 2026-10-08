@@ -16,6 +16,7 @@ import {
   Plus,
   Settings,
   Palette,
+  History,
   ShieldCheck,
   Users,
   UtensilsCrossed,
@@ -36,7 +37,7 @@ import { ResidentsView, type ResidentsLoadState } from './ResidentsView'
 import { SuperAdminsView } from './SuperAdminsView'
 import { DeletedRecordsView } from './DeletedRecordsView'
 import { NotificationBell } from './NotificationBell'
-import { buildOwnerNotices, useOwnerRepairs } from './ownerNotices'
+import { buildOwnerNotices, staffActivityNotices, useOwnerRepairs, useStaffActivity } from './ownerNotices'
 import type { HousekeepingStatus, OwnerHousekeepingRequest } from './housekeeping'
 import { MealTimingFields } from './MealTimings'
 import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
@@ -73,6 +74,7 @@ import { PhoneField } from './PhoneField'
 import { listPageSize, usePagination } from './usePagination'
 import { PaymentsView } from './PaymentsView'
 import { IsSuperAdminProvider } from './staffContext'
+import { AuditLogsView } from './AuditLogsView'
 
 type IconType = typeof Home
 
@@ -189,7 +191,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const newHousekeepingCount = housekeeping.filter((request) => request.status === 'REQUESTED' || request.hasOpenReminder).length
   // The top bar's notifications: every resident request still waiting on the owner, with who asked.
   const ownerRepairs = useOwnerRepairs(refreshSignal)
-  const ownerNotices = buildOwnerNotices(residents, housekeeping, ownerRepairs, isOwner)
+  const staffActivity = useStaffActivity(refreshSignal, isOwner)
+  const ownerNotices = [...buildOwnerNotices(residents, housekeeping, ownerRepairs, isOwner), ...staffActivityNotices(staffActivity)]
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
   // null = closed; undefined resident = add mode.
   // prefill/onCreated are set when a booking request is being converted into a resident.
@@ -450,6 +453,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {isOwner && <NavItem icon={ShieldCheck} label="Team" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />}
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
           {isOwner && <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />}
+          {isOwner && <NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} />}
         </nav>
         <div className="sidebar-footer"><div className="help-icon"><ShieldCheck size={18} /></div><div><strong>{dashboard.source === 'postgresql' ? 'Database connected' : 'Local API connected'}</strong><small>{dashboard.source === 'postgresql' ? 'Live PostgreSQL data' : 'Fallback data active'}</small></div></div>
       </aside>
@@ -469,13 +473,14 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Referral Requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Announcements' && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && isOwner && <SuperAdminsView currentAdminId={currentAdmin.id} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} onAdminChange={onAdminChange} />}
+          {activeView === 'Audit logs' && isOwner && <AuditLogsView refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Deleted records' && <DeletedRecordsView refreshSignal={refreshSignal} securityDeposit={settings?.securityDeposit ?? null} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

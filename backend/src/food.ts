@@ -161,6 +161,29 @@ foodAdminRouter.get('/properties/:id/menu', async (request, response) => {
 })
 
 // Replaces the whole week at once, so the saved menu always matches what the owner sees in the form.
+const weekdayNames = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+/**
+ * The menu's changes as lines like "Monday lunch: veg biryani (was south indian veg meals)", in week
+ * order, or null when nothing changed. A meal removed reads "no menu"; one newly set has no "(was …)".
+ */
+export function describeMenuChanges(before: Array<{ weekday: number; meal: MealType | string; items: string }>, after: Array<{ weekday: number; meal: MealType | string; items: string }>) {
+  const key = (row: { weekday: number; meal: MealType | string }) => `${row.weekday}|${row.meal}`
+  const old = new Map(before.map((row) => [key(row), row.items]))
+  const next = new Map(after.map((row) => [key(row), row.items]))
+  const lines: string[] = []
+  for (let weekday = 1; weekday <= 7; weekday += 1) {
+    for (const meal of meals) {
+      const k = `${weekday}|${mealTypes[meal]}`
+      const was = old.get(k) ?? null
+      const now = next.get(k) ?? null
+      if (was === now) continue
+      lines.push(`${weekdayNames[weekday]} ${meal}: ${now ?? 'no menu'}${was ? ` (was ${was})` : ''}`)
+    }
+  }
+  return lines.length ? lines.join('\n') : null
+}
+
 foodAdminRouter.put('/properties/:id/menu', async (request, response) => {
   const { id } = request.params as { id: string }
   const days = (request.body as { days?: unknown }).days
@@ -178,7 +201,10 @@ foodAdminRouter.put('/properties/:id/menu', async (request, response) => {
   }
   try {
     await prisma.property.findUniqueOrThrow({ where: { id }, select: { id: true } })
-    await prisma.$transaction([prisma.menuItem.deleteMany({ where: { propertyId: id } }), prisma.menuItem.createMany({ data: rows })])
+    // Residents are told what changed (each day and meal, old and new), and only when something did.
+    const before = await prisma.menuItem.findMany({ where: { propertyId: id }, select: { weekday: true, meal: true, items: true } })
+    const changes = describeMenuChanges(before, rows)
+    await prisma.$transaction([prisma.menuItem.deleteMany({ where: { propertyId: id } }), prisma.menuItem.createMany({ data: rows }), ...(changes ? [prisma.property.update({ where: { id }, data: { menuUpdatedAt: new Date(), menuChanges: changes } })] : [])])
     response.json({ saved: rows.length })
   } catch (error) {
     respondToError(response, error, 'The menu could not be saved.')

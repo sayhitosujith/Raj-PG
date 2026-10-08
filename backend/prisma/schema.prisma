@@ -54,6 +54,10 @@ model Property {
   announcements       Announcement[]
   fireAlerts          FireAlert[]
   menuItems           MenuItem[]
+  // When the weekly menu last changed, so residents on the food plan are told.
+  menuUpdatedAt       DateTime?
+  // What that change was, one line per meal: "Monday lunch: veg biryani (was south indian veg meals)".
+  menuChanges         String?
   mealFeedback        MealFeedback[]
   photos              PropertyPhoto[]
   createdAt           DateTime             @default(now())
@@ -666,4 +670,18 @@ model PropertyPhoto {
   createdAt  DateTime @default(now())
 
   @@index([propertyId, createdAt])
+}
+
+// The audit log: every change a staff member saved (see staffActivity.ts). Receptionists' entries
+// also appear in the super admins' notifications.
+model StaffActivity {
+  id        String   @id @default(cuid())
+  staffId   String
+  staffName String
+  // SUPER_ADMIN or RECEPTIONIST at the time of the change.
+  staffRole String   @default("RECEPTIONIST")
+  action    String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

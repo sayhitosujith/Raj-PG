@@ -57,3 +57,21 @@ export function useOwnerRepairs(refreshSignal: number) {
   useRefreshSignal(refreshSignal, () => { void load() })
   return repairs
 }
+
+/** A receptionist's change, as GET /api/staff-activity lists it. */
+export type StaffActivity = { id: string; staffName: string; action: string; createdAt: string }
+
+/**
+ * The last week of receptionists' changes for a super admin's notifications, refreshed with the
+ * workspace (and at once through live updates); empty for receptionists, who may not read them.
+ */
+export function useStaffActivity(refreshSignal: number, enabled: boolean) {
+  const [activity, setActivity] = useState<StaffActivity[]>([])
+  const load = () => { if (enabled) void fetch('/api/staff-activity').then((response) => response.ok ? response.json() as Promise<StaffActivity[]> : null).then((list) => { if (list) setActivity(list) }, () => undefined) }
+  useEffect(() => { load() }, [enabled]) // eslint-disable-line react-hooks/exhaustive-deps -- reload when the role is known
+  useRefreshSignal(refreshSignal, load)
+  return enabled ? activity : []
+}
+
+/** Receptionists' changes as Team notifications: "Priya (receptionist)" over what they did. */
+export const staffActivityNotices = (activity: StaffActivity[]): Notice[] => activity.map((item) => ({ kind: 'Team', id: `staff-${item.id}`, title: item.action, detail: `By ${item.staffName} (receptionist)`, at: item.createdAt }))

@@ -47,6 +47,11 @@ function readSessionToken(request: Request) {
   return undefined
 }
 
+/** Whether the request carries a live session of either user type (used by the live-updates stream). */
+export async function hasLiveSession(request: Request) {
+  return Boolean(process.env.DATABASE_URL && await findLiveSession(request))
+}
+
 async function findLiveSession(request: Request) {
   const token = readSessionToken(request)
   if (!token) return null
