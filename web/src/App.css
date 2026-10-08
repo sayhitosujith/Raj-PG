@@ -1888,13 +1888,15 @@ div.portal-panel { display: contents; }
 .info-card { display: grid; align-content: start; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
 .info-card h3, .info-faqs h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 2px; color: var(--ink); font-size: 14px; }
 .info-card h3 svg, .info-faqs h3 svg { color: var(--teal); }
-.info-line { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; }
+.info-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; font-size: 12px; }
 .info-line > span { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 5px; min-width: 0; color: var(--muted); }
 .info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
 .info-line .icon-button { padding: 4px; color: var(--teal); }
 .info-secret { font-variant-numeric: tabular-nums; letter-spacing: .5px; }
-/* flex: none so the pill never shrinks below its label on a narrow card (the label would spill out). */
-.info-call { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 4px 10px; line-height: 1.3; border: 1px solid #9fd0c2; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: nowrap; }
+/* The pill never shrinks below its label (it would spill out); a long address instead wraps inside it
+   and the row wraps so the pill drops onto its own line under "Location" (see .info-line). */
+.info-call { display: inline-flex; flex: 0 1 auto; max-width: 100%; border-radius: 14px; overflow-wrap: anywhere; align-items: center; gap: 5px; padding: 4px 10px; line-height: 1.3; border: 1px solid #9fd0c2; color: var(--teal); background: var(--teal-soft); font-weight: 700; text-decoration: none; white-space: normal; }
+.info-call svg { flex: none; }
 .info-faqs { display: grid; gap: 6px; margin-top: 16px; }
 .info-faqs details { padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
 .info-faqs summary { color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
