@@ -264,7 +264,12 @@ residentPortalRouter.get('/resident-portal/weather', requireResident, requirePor
     const near = coordinates ? await weatherNear(coordinates.latitude, coordinates.longitude) : null
     const property = near ? null : await prisma.property.findUnique({ where: { id: response.locals.propertyId as string }, select: { city: true } })
     const weather = near ?? (property?.city ? await currentWeather(property.city) : null)
-    if (!weather) { response.status(204).send(); return }
+    if (!weather) {
+      // Says why the tile is hidden, so a missing city is told apart from a weather service failure
+      // (those log their HTTP status in weather.ts).
+      console.warn(`[weather] none for property ${response.locals.propertyId as string}: ${property && !property.city ? 'no city set on the property' : 'lookup failed'}`)
+      response.status(204).send(); return
+    }
     response.json(weather)
   } catch (error) {
     console.error('Weather lookup failed:', error)

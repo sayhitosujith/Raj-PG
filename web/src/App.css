@@ -1419,17 +1419,20 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The weather value wraps rather than being cut off ("Bengaluru · 24°C") when the tile is narrow. */
 .my-details-card > .today-tile .today-tile-copy strong { white-space: normal; }
 @container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
-/* Narrow cards: the Edit button and the first contact line (the phone) sit beside the weather tile,
-   filling the space under Edit; the other lines run the full card width below, so "Passport Number:
-   KL…" stays on one line. The contact list steps aside (display: contents) so each line is placed. */
+/* Narrow cards: the phone and email lines sit beside the weather tile; the other lines run the full
+   card width below, so "Passport Number: KL…" stays on one line, and the Edit button closes the card
+   at the bottom right. The contact list steps aside (display: contents) so each line is placed. */
 @container (min-width: 381px) and (max-width: 620px) {
   .my-details-card { row-gap: 6px; }
   .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
-  .my-details-title { grid-column: 1; grid-row: 1; }
   .my-details-card > .today-tile { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
   .my-details-main > :not(.my-details-title), .my-details-contact > span { grid-column: 1 / -1; }
-  .my-details-contact > span:first-child { grid-column: 1; grid-row: 2; align-self: center; }
+  .my-details-contact > span:first-child { grid-column: 1; grid-row: 1; align-self: center; }
+  .my-details-contact > span:nth-child(2) { grid-column: 1; grid-row: 2; align-self: center; }
+  .my-details-title { order: 1; grid-column: 1 / -1; justify-self: end; }
 }
+/* Very narrow cards (one column): Edit still closes the card, at the bottom right. */
+@container (max-width: 380px) { .my-details-main { display: flex; flex-direction: column; } .my-details-title { order: 1; align-self: flex-end; } }
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
 .workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
