@@ -2191,3 +2191,17 @@ div.portal-panel { display: contents; }
 .faq-list summary::-webkit-details-marker { display: none; }
 .faq-list summary svg { flex: none; margin-top: 2px; color: var(--teal); }
 .faq-list details p { margin: 8px 0 0 23px; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-line; }
+/* Owner admin, once a theme colour is chosen: the whole left menu in the theme colour, top to bottom a
+   little deeper, with labels, icons and counts in the button text colour and the selected item on a
+   frosted pill (like the resident tab bar). [data-theme] is always set, so these sit level with the
+   generated brand rules and win by coming later. The workspace switcher stays a white card. */
+:root[data-brand][data-theme] .sidebar { border-right-color: transparent; color: var(--brand-on, #fff); background: linear-gradient(180deg, var(--brand), color-mix(in srgb, var(--brand) 68%, #000)); }
+:root[data-brand][data-theme] .sidebar .nav-label { color: color-mix(in srgb, var(--brand-on, #fff) 65%, transparent); }
+:root[data-brand][data-theme] .sidebar .nav-item { color: color-mix(in srgb, var(--brand-on, #fff) 88%, transparent); }
+:root[data-brand][data-theme] .sidebar .nav-item:hover { color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 12%, transparent); }
+:root[data-brand][data-theme] .sidebar .nav-item.active { color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 22%, transparent); }
+:root[data-brand][data-theme] .sidebar :is(.nav-item b, .nav-item.active b) { color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 20%, transparent); }
+:root[data-brand][data-theme] .sidebar .sidebar-footer { border-top-color: color-mix(in srgb, var(--brand-on, #fff) 25%, transparent); }
+:root[data-brand][data-theme] .sidebar :is(.sidebar-footer small, .help-icon) { color: color-mix(in srgb, var(--brand-on, #fff) 75%, transparent); }
+:root[data-brand][data-theme] .sidebar .brand-row { color: var(--brand-on, #fff); }
+:root[data-brand][data-theme] .sidebar .sidebar-close { color: var(--brand-on, #fff); }
