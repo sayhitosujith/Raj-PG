@@ -52,6 +52,7 @@ import { NextMealAlert, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
+import { PropertyGallery } from './PropertyGallery'
 import { portalColourStyle } from './PortalColourFields'
 import { ResidentAmenities } from './PropertyFeatures'
 import { ResidentHousekeeping } from './ResidentHousekeeping'
@@ -238,6 +239,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         </div>
         <div className="portal-panel" data-panel="info"><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} /></div>
+        <PropertyGallery refreshSignal={refreshSignal} />
         <section className="workspace-view portal-panel" data-panel="home">
           <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />

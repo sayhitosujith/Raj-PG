@@ -7,6 +7,7 @@ const maxProfilePhotoBytes = 300_000
 const maxLogoBytes = 600_000
 const maxUpiQrBytes = 1_500_000
 const maxMaintenancePhotoBytes = 1_500_000
+const maxPropertyPhotoBytes = 600_000
 
 /** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
 function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
@@ -59,3 +60,9 @@ export const sendUpiQr = (response: Response, dataUrl: string | null | undefined
 export function photoVersion(updatedAt: Date | null | undefined) {
   return updatedAt ? updatedAt.getTime() : null
 }
+
+/** Why a property gallery photo is unacceptable, or null when it is fine (resized to ≤1280px in the browser). */
+export const findPropertyPhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxPropertyPhotoBytes, 'a photo')
+
+/** Sends a property gallery photo (private: the property's residents and owners). */
+export const sendPropertyPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No photo.')

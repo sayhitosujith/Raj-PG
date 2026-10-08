@@ -1853,8 +1853,12 @@ div.portal-panel { display: contents; }
    the footer sits at the bottom, just above the tab bar. */
 @media (max-width: 1024px) {
   .portal-shell { display: flex; flex-direction: column; }
-  .portal-shell .page-content { display: flex; flex: 1; flex-direction: column; width: 100%; }
+  .portal-shell .page-content { display: flex; flex: 1; flex-direction: column; gap: 16px; width: 100%; }
   .portal-shell .page-content > * { flex-shrink: 0; }
+  /* One fixed gap between cards (the stack's gap); the cards' own top and bottom margins, which
+     differed from card to card, are dropped. */
+  .portal-shell .page-content > :is(.workspace-view, .portal-grid),
+  .portal-shell .page-content > .portal-panel > .workspace-view { margin-top: 0; margin-bottom: 0; }
   .portal-shell .portal-terms { margin-top: auto; }
   .page-content[data-tab="info"] .portal-terms { margin-top: 20px; }
 }
@@ -2117,3 +2121,30 @@ div.portal-panel { display: contents; }
 :root:not([data-theme="dark"]) :is(input, textarea)::placeholder { color: var(--placeholder, #9aa5a8); font-style: italic; font-weight: 400; opacity: 1; }
 :root[data-theme="dark"] :is(input, textarea)::placeholder { color: rgb(120 134 130); font-style: italic; font-weight: 400; opacity: 1; }
 .portal-colour-preview-input { flex-basis: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font: inherit; font-size: 12px; pointer-events: none; }
+/* Owner: a property's photo gallery manager (thumbnails with a caption box and a remove button). */
+.property-photos-modal { width: min(720px, 100%); }
+.property-photos-hint { margin: 0 0 14px; color: var(--muted); font-size: 12px; }
+.property-photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 55vh; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.property-photos-grid li { position: relative; display: grid; gap: 6px; }
+.property-photos-grid img { width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; object-fit: cover; background: var(--line); }
+.property-photos-grid input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--paper); font: inherit; font-size: 12px; }
+.property-photos-grid .row-delete { position: absolute; top: 6px; right: 6px; background: rgb(255 255 255 / .92); }
+.property-photos-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; color: var(--muted); font-size: 12px; }
+/* Resident: the gallery strip on Home (scrolls sideways, snapping to each photo) and the full-screen viewer. */
+.property-gallery-strip { display: grid; grid-auto-columns: minmax(180px, 46%); grid-auto-flow: column; gap: 12px; margin: 16px 0 0; padding: 0 0 6px; overflow-x: auto; list-style: none; scroll-snap-type: x mandatory; }
+@media (min-width: 900px) { .property-gallery-strip { grid-auto-columns: minmax(200px, 24%); } }
+.property-gallery-strip li { scroll-snap-align: start; }
+.property-gallery-strip button { position: relative; display: block; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 12px; background: var(--line); cursor: zoom-in; }
+.property-gallery-strip img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .3s ease; }
+.property-gallery-strip button:hover img { transform: scale(1.04); }
+.property-gallery-strip span { position: absolute; right: 0; bottom: 0; left: 0; padding: 18px 10px 8px; color: #fff; background: linear-gradient(transparent, rgb(0 0 0 / .65)); font-size: 12px; font-weight: 700; text-align: left; }
+.gallery-viewer { position: fixed; z-index: 70; inset: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 16px; background: rgb(8 10 14 / .92); }
+.gallery-viewer figure { grid-column: 2; display: grid; justify-items: center; gap: 10px; margin: 0; }
+.gallery-viewer img { max-width: 100%; max-height: 78vh; border-radius: 10px; object-fit: contain; }
+.gallery-viewer figcaption { display: grid; justify-items: center; gap: 4px; color: #fff; font-size: 14px; font-weight: 700; text-align: center; }
+.gallery-viewer figcaption small { color: rgb(255 255 255 / .6); font-size: 11px; font-weight: 600; }
+.gallery-arrow, .gallery-close { display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; color: #fff; background: rgb(255 255 255 / .14); cursor: pointer; }
+.gallery-arrow:hover, .gallery-close:hover { background: rgb(255 255 255 / .26); }
+.gallery-arrow.is-prev { grid-column: 1; }
+.gallery-arrow.is-next { grid-column: 3; }
+.gallery-close { position: absolute; top: 14px; right: 14px; }

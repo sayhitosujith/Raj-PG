@@ -55,6 +55,7 @@ model Property {
   fireAlerts          FireAlert[]
   menuItems           MenuItem[]
   mealFeedback        MealFeedback[]
+  photos              PropertyPhoto[]
   createdAt           DateTime             @default(now())
 }
 
@@ -625,4 +626,18 @@ model RentConcession {
 enum ConcessionStatus {
   ACTIVE
   CANCELLED
+}
+
+// The owner's gallery of a property (rooms, dining hall, outside), shown to its residents. Images are
+// resized in the browser and stored as data URLs like the property's main image; at most 12 per
+// property, oldest first.
+model PropertyPhoto {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  caption    String?
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, createdAt])
 }

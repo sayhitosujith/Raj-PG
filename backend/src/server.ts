@@ -34,6 +34,7 @@ import { superAdminRouter } from './superAdmins.js'
 import { logIntegrations } from './startupReport.js'
 import { dashboardInsights } from './dashboardInsights.js'
 import { parsePropertyInfo } from './residentInfo.js'
+import { propertyPhotoAdminRouter, propertyPhotoResidentRouter } from './propertyPhotos.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -51,6 +52,7 @@ app.use('/api', cronRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)
 app.use('/api', razorpayResidentRouter)
+app.use('/api', propertyPhotoResidentRouter)
 
 app.get('/api/health', async (_request, response) => {
   if (!process.env.DATABASE_URL) {
@@ -86,6 +88,7 @@ app.use('/api', exitAdminRouter)
 app.use('/api', accountDeletionAdminRouter)
 app.use('/api', concessionAdminRouter)
 app.use('/api', maintenanceAdminRouter)
+app.use('/api', propertyPhotoAdminRouter)
 
 // Occupancy against the owner's declared capacity; older properties without one fall back to the
 // rooms that exist. A property can hold more occupied rooms than declared only if it was lowered
