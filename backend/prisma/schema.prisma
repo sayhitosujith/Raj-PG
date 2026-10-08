@@ -494,6 +494,9 @@ model WorkspaceSettings {
   portalNewBadgeColor     String?
   portalSoonBadgeColor    String?
   portalBetaBadgeColor    String?
+  // The page background behind the cards (light view), "#rrggbb"; null = white for residents and the
+  // admin's usual background.
+  portalBackgroundColor   String?
   // Which banner each resident feature shows: { feature: "NEW" | "SOON" | "BETA" }; a feature left out
   // shows none. Starts as the banners the portal had before the owner could choose.
   featureBadges           Json      @default("{\"faqs\":\"NEW\",\"passkeys\":\"NEW\",\"whatsapp\":\"BETA\",\"email\":\"BETA\"}")

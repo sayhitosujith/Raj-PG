@@ -121,12 +121,13 @@ function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, 
 }
 
 /** Settings page: the owner's account, workspace details, rent rules, deposit and notice, house rules, housekeeping, and resident policies. */
-export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onNotice, onBack }: { admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onNotice: (message: string) => void; onBack: () => void }) {
+export function SettingsView({ page = 'settings', admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onNotice, onBack }: { /** Which page: Settings (account, workspace and rules) or Views (colours, banners, light/dark). */ page?: 'settings' | 'views'; admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onNotice: (message: string) => void; onBack: () => void }) {
   return (
     <section className="workspace-view settings-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Settings</h2><p>Your account and how the workspace runs.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>{page === 'views' ? 'Views' : 'Settings'}</h2><p>{page === 'views' ? 'How the app looks: colours, feature banners and the light or dark view, for residents and these admin pages.' : 'Your account and how the workspace runs.'}</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
 
       <div className="settings-grid">
+        {page === 'settings' && (
         <SettingsSection icon={<UserRound size={18} />} title="My account" description="Your name, sign-in and identity details. Changing email or password needs your current password." onSubmit={(form) => {
           const changes: Record<string, string> = { name: value(form, 'name'), email: value(form, 'email'), ...readIdentityFields(form) }
           if (value(form, 'newPassword')) {
@@ -145,8 +146,10 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             <label>Confirm new password<input name="confirmPassword" type="password" minLength={10} autoComplete="new-password" /></label>
           </div>
         </SettingsSection>
+        )}
 
         {settings ? <>
+          {page === 'settings' && <>
           <SettingsSection icon={<Building2 size={18} />} title="Workspace details" description="Your business name appears in the sidebar; contact details are shown to residents." onSubmit={(form) => onSaveSettings({ businessName: value(form, 'businessName'), contactPhone: value(form, 'contactPhone'), contactEmail: value(form, 'contactEmail') })}>
             <ImageField noun="logo" title="Logo" hint="Replaces the raj.pg mark in the sidebar, the resident portal and the sign-in page. PNG with a transparent background works best." previewUrl={settings.logoVersion ? logoUrl(settings.logoVersion) : null} emptyIcon={<Building2 size={22} />} removeQuestion="Remove the logo and show the raj.pg mark again?" resize={resizeLogo} onSave={(image) => onSaveImage('logo', image)} />
             <label>Business name<input name="businessName" required maxLength={60} defaultValue={settings.businessName} /></label>
@@ -163,9 +166,11 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
           </SettingsSection>
+          </>}
 
-          <SettingsSection icon={<Palette size={18} />} title="Resident & Super Admin portal colors" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal and in these admin pages, the text on those buttons, the general text, input placeholders, error messages, and the New, Coming soon and Beta banners." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null, portalPlaceholderColor: value(form, 'portalPlaceholderColor') || null, portalNewBadgeColor: value(form, 'portalNewBadgeColor') || null, portalSoonBadgeColor: value(form, 'portalSoonBadgeColor') || null, portalBetaBadgeColor: value(form, 'portalBetaBadgeColor') || null })}>
-            <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} placeholder={settings.portalPlaceholderColor} newBadge={settings.portalNewBadgeColor} soonBadge={settings.portalSoonBadgeColor} betaBadge={settings.portalBetaBadgeColor} />
+          {page === 'views' && <>
+          <SettingsSection icon={<Palette size={18} />} title="Resident & Super Admin portal colors" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal and in these admin pages, the text on those buttons, the general text, input placeholders, error messages, the New, Coming soon and Beta banners, and the app background." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null, portalPlaceholderColor: value(form, 'portalPlaceholderColor') || null, portalNewBadgeColor: value(form, 'portalNewBadgeColor') || null, portalSoonBadgeColor: value(form, 'portalSoonBadgeColor') || null, portalBetaBadgeColor: value(form, 'portalBetaBadgeColor') || null, portalBackgroundColor: value(form, 'portalBackgroundColor') || null })}>
+            <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} placeholder={settings.portalPlaceholderColor} newBadge={settings.portalNewBadgeColor} soonBadge={settings.portalSoonBadgeColor} betaBadge={settings.portalBetaBadgeColor} background={settings.portalBackgroundColor} />
           </SettingsSection>
 
           <SettingsSection icon={<Tag size={18} />} title="Feature banners" description="Mark resident features as New, Coming soon or Beta with a banner on their card. New disappears for each resident once they use that feature." onSubmit={(form) => onSaveSettings({ featureBadges: Object.fromEntries(featureBadgeFeatures.map(({ key }) => [key, value(form, `badge-${key}`) || 'NONE'])) as WorkspaceSettings['featureBadges'] })}>
@@ -186,7 +191,9 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <option value="DARK">Always dark</option>
             </select></label>
           </SettingsSection>
+          </>}
 
+          {page === 'settings' && <>
           <WhatsAppSettings onNotice={onNotice} />
           <EmailSettings onNotice={onNotice} />
 
@@ -236,6 +243,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
               <p className="settings-hint">This starts as a general PG template, so review it and change anything that does not match your property. Up to 5,000 characters. Clear it and save to hide the link from residents.</p>
             </SettingsSection>
           ))}
+          </>}
         </> : <InlineLoader label="Loading workspace settings…" />}
       </div>
     </section>

@@ -2,24 +2,25 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { Pipette } from 'lucide-react'
 
 /** The portal's default theme, button text and error message colours, used when none is set. */
-export const defaultPortalColours = { theme: '#0ea5e9', text: '#ffffff', error: '#a3483b', ink: '#202e35', placeholder: '#9aa5a8', newBadge: '#dc2626', soonBadge: '#d97706', betaBadge: '#ce2c2c' }
+export const defaultPortalColours = { theme: '#0ea5e9', text: '#ffffff', error: '#a3483b', ink: '#202e35', placeholder: '#9aa5a8', newBadge: '#dc2626', soonBadge: '#d97706', betaBadge: '#ce2c2c', background: '#ffffff' }
 
 const themePresets = [['Sky blue', '#0ea5e9'], ['Indigo', '#4f46e5'], ['Purple', '#9333ea'], ['Teal', '#0d9488'], ['Orange', '#ea580c'], ['Red', '#dc2626'], ['Charcoal', '#1f2937']] as const
 const textPresets = [['White', '#ffffff'], ['Black', '#111827']] as const
 const inkPresets = [['Charcoal', '#202e35'], ['Black', '#111827'], ['Slate', '#334155'], ['Navy', '#1e3a8a'], ['Brown', '#44403c']] as const
 const placeholderPresets = [['Soft grey', '#9aa5a8'], ['Grey', '#6b7280'], ['Blue grey', '#7c93a8'], ['Warm grey', '#a8a29e']] as const
 const badgePresets = [['Red', '#dc2626'], ['Amber', '#d97706'], ['Green', '#16a34a'], ['Blue', '#2563eb'], ['Purple', '#9333ea'], ['Pink', '#db2777']] as const
+const backgroundPresets = [['White', '#ffffff'], ['Soft grey', '#f4f5f7'], ['Warm white', '#fbf7f2'], ['Sky tint', '#f0f9ff'], ['Lavender tint', '#f5f3ff'], ['Rose tint', '#fff1f2']] as const
 const errorPresets = [['Brick red', '#a3483b'], ['Red', '#dc2626'], ['Dark red', '#991b1b'], ['Orange', '#c2410c'], ['Pink', '#be185d']] as const
 
 /** The owner's portal colours, each "#rrggbb" or empty for the default. */
-export type PortalColours = { theme?: string | null; text?: string | null; error?: string | null; ink?: string | null; placeholder?: string | null; newBadge?: string | null; soonBadge?: string | null; betaBadge?: string | null }
+export type PortalColours = { theme?: string | null; text?: string | null; error?: string | null; ink?: string | null; placeholder?: string | null; newBadge?: string | null; soonBadge?: string | null; betaBadge?: string | null; background?: string | null }
 
 /**
  * The inline style that applies chosen colours to a resident portal (or a preview of one). The text
  * and placeholder colours apply in light view only (see portalTheme.css and App.css).
  */
-export function portalColourStyle({ theme, text, error, ink, placeholder, newBadge, soonBadge, betaBadge }: PortalColours) {
-  return { ...(theme ? { '--brand': theme } : {}), ...(text ? { '--brand-on': text } : {}), ...(error ? { '--portal-error': error } : {}), ...(ink ? { '--portal-ink': ink } : {}), ...(placeholder ? { '--placeholder': placeholder } : {}), ...(newBadge ? { '--badge-new': newBadge } : {}), ...(soonBadge ? { '--badge-soon': soonBadge } : {}), ...(betaBadge ? { '--badge-beta': betaBadge } : {}) } as CSSProperties
+export function portalColourStyle({ theme, text, error, ink, placeholder, newBadge, soonBadge, betaBadge, background }: PortalColours) {
+  return { ...(theme ? { '--brand': theme } : {}), ...(text ? { '--brand-on': text } : {}), ...(error ? { '--portal-error': error } : {}), ...(ink ? { '--portal-ink': ink } : {}), ...(placeholder ? { '--placeholder': placeholder } : {}), ...(newBadge ? { '--badge-new': newBadge } : {}), ...(soonBadge ? { '--badge-soon': soonBadge } : {}), ...(betaBadge ? { '--badge-beta': betaBadge } : {}), ...(background ? { '--app-bg': background } : {}) } as CSSProperties
 }
 
 /** The colour as a typed hex code; applied once it is a full "#rrggbb", so half-typed values do no harm. */
@@ -58,9 +59,9 @@ function ColourChoice({ name, label, presets, value, fallback, onChange }: { nam
  * The owner's colour choices for the resident portal, with a live preview of text, a card, a button
  * and an error message in them. Saved through the surrounding Settings form (hidden inputs
  * portalThemeColor, portalButtonTextColor, portalErrorColor, portalTextColor, portalPlaceholderColor
- * and the three banner colours); blank = default.
+ * the three banner colours and the app background); blank = default.
  */
-export function PortalColourFields({ theme, text, error, ink, placeholder, newBadge, soonBadge, betaBadge }: { theme: string | null; text: string | null; error: string | null; ink: string | null; placeholder: string | null; newBadge: string | null; soonBadge: string | null; betaBadge: string | null }) {
+export function PortalColourFields({ theme, text, error, ink, placeholder, newBadge, soonBadge, betaBadge, background }: { theme: string | null; text: string | null; error: string | null; ink: string | null; placeholder: string | null; newBadge: string | null; soonBadge: string | null; betaBadge: string | null; background: string | null }) {
   const [themeColour, setThemeColour] = useState(theme)
   const [textColour, setTextColour] = useState(text)
   const [errorColour, setErrorColour] = useState(error)
@@ -69,17 +70,19 @@ export function PortalColourFields({ theme, text, error, ink, placeholder, newBa
   const [newColour, setNewColour] = useState(newBadge)
   const [soonColour, setSoonColour] = useState(soonBadge)
   const [betaColour, setBetaColour] = useState(betaBadge)
+  const [backgroundColour, setBackgroundColour] = useState(background)
   return (
     <>
       <ColourChoice name="portalThemeColor" label="Theme colour" presets={themePresets} value={themeColour} fallback={defaultPortalColours.theme} onChange={setThemeColour} />
       <ColourChoice name="portalButtonTextColor" label="Button text colour" presets={textPresets} value={textColour} fallback={defaultPortalColours.text} onChange={setTextColour} />
+      <ColourChoice name="portalBackgroundColor" label="App background colour (light view)" presets={backgroundPresets} value={backgroundColour} fallback={defaultPortalColours.background} onChange={setBackgroundColour} />
       <ColourChoice name="portalTextColor" label="Text colour (light view)" presets={inkPresets} value={inkColour} fallback={defaultPortalColours.ink} onChange={setInkColour} />
       <ColourChoice name="portalPlaceholderColor" label="Placeholder text colour (light view)" presets={placeholderPresets} value={placeholderColour} fallback={defaultPortalColours.placeholder} onChange={setPlaceholderColour} />
       <ColourChoice name="portalErrorColor" label="Error message colour" presets={errorPresets} value={errorColour} fallback={defaultPortalColours.error} onChange={setErrorColour} />
       <ColourChoice name="portalNewBadgeColor" label="New banner colour" presets={badgePresets} value={newColour} fallback={defaultPortalColours.newBadge} onChange={setNewColour} />
       <ColourChoice name="portalSoonBadgeColor" label="Coming soon banner colour" presets={badgePresets} value={soonColour} fallback={defaultPortalColours.soonBadge} onChange={setSoonColour} />
       <ColourChoice name="portalBetaBadgeColor" label="Beta banner colour" presets={badgePresets} value={betaColour} fallback={defaultPortalColours.betaBadge} onChange={setBetaColour} />
-      <div className="portal-colour-preview" style={portalColourStyle({ theme: themeColour ?? defaultPortalColours.theme, text: textColour ?? defaultPortalColours.text, error: errorColour ?? defaultPortalColours.error, ink: inkColour ?? defaultPortalColours.ink, placeholder: placeholderColour ?? defaultPortalColours.placeholder, newBadge: newColour ?? defaultPortalColours.newBadge, soonBadge: soonColour ?? defaultPortalColours.soonBadge, betaBadge: betaColour ?? defaultPortalColours.betaBadge })} aria-label="Preview">
+      <div className="portal-colour-preview" style={portalColourStyle({ theme: themeColour ?? defaultPortalColours.theme, text: textColour ?? defaultPortalColours.text, error: errorColour ?? defaultPortalColours.error, ink: inkColour ?? defaultPortalColours.ink, placeholder: placeholderColour ?? defaultPortalColours.placeholder, newBadge: newColour ?? defaultPortalColours.newBadge, soonBadge: soonColour ?? defaultPortalColours.soonBadge, betaBadge: betaColour ?? defaultPortalColours.betaBadge, background: backgroundColour ?? defaultPortalColours.background })} aria-label="Preview">
         <span className="portal-colour-preview-label">Preview (how residents will see it)</span>
         <span className="portal-colour-preview-text">Good evening, Mark. Your rent for October is paid.</span>
         <input className="portal-colour-preview-input" placeholder="e.g. Fan not working" readOnly tabIndex={-1} aria-label="Example input with placeholder text" />

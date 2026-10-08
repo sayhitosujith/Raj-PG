@@ -15,6 +15,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  Palette,
   ShieldCheck,
   Users,
   UtensilsCrossed,
@@ -444,6 +445,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
           <NavItem icon={ShieldCheck} label="Super admins" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
+          <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />
         </nav>
         <div className="sidebar-footer"><div className="help-icon"><ShieldCheck size={18} /></div><div><strong>{dashboard.source === 'postgresql' ? 'Database connected' : 'Local API connected'}</strong><small>{dashboard.source === 'postgresql' ? 'Live PostgreSQL data' : 'Fallback data active'}</small></div></div>
       </aside>
@@ -467,8 +469,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Housekeeping' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Food' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
+          {activeView === 'Views' && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Settings' && <SettingsView admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

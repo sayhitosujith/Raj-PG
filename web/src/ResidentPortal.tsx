@@ -219,7 +219,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const notifications = <><NotificationPreferences whatsappOptIn={profile.whatsappOptIn} emailOptIn={profile.emailOptIn} hasEmail={Boolean(profile.email)} onChanged={onRefresh} onNotice={showNotice} /><PasskeySettings onNotice={showNotice} /></>
   return (
     <FeatureBadgesProvider value={profile.workspace.featureBadges ?? {}}>
-    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor, newBadge: profile.workspace.portalNewBadgeColor, soonBadge: profile.workspace.portalSoonBadgeColor, betaBadge: profile.workspace.portalBetaBadgeColor })}>
+    <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor, newBadge: profile.workspace.portalNewBadgeColor, soonBadge: profile.workspace.portalSoonBadgeColor, betaBadge: profile.workspace.portalBetaBadgeColor, background: profile.workspace.portalBackgroundColor })}>
       {/* Sky (with the city) first, so the trees and animals in front stand before the buildings. */}
       <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
       <PortalScenery />

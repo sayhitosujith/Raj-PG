@@ -71,9 +71,9 @@
    which glared as white blocks on the dark cards; they get a soft translucent fill instead. */
 :root[data-theme="dark"] .portal-shell :is(.rent-highlight-icon, .today-tile.is-highlight .today-tile-icon) { color: var(--portal-icon); background: rgb(255 255 255 / .1); }
 :root[data-theme="dark"] .portal-shell .food-opt-in .primary-button { border: 1px solid rgb(255 255 255 / .18); color: var(--portal-text); background: rgb(255 255 255 / .1); box-shadow: none; }
-/* Light view: a plain white page. The drifting glows, sky (sun, clouds, weather), trees and animals
+/* Light view: a plain page, white unless the owner chose an app background colour in Settings. The drifting glows, sky (sun, clouds, weather), trees and animals
    are dark-view only, so the light view reads as a clean white background behind the cards. */
-:root:not([data-theme="dark"]) .portal-shell { background: #ffffff; }
+:root:not([data-theme="dark"]) .portal-shell { background: var(--app-bg, #ffffff); }
 :root:not([data-theme="dark"]) .portal-shell::before,
 :root:not([data-theme="dark"]) .portal-shell::after { content: none; }
 :root:not([data-theme="dark"]) .portal-shell :is(.portal-sky, .portal-scenery, .portal-animals) { display: none; }
