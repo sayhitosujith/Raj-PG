@@ -163,7 +163,7 @@ export function SettingsView({ admin, settings, onSaveAccount, onSaveSettings, o
             </div>
           </SettingsSection>
 
-          <SettingsSection icon={<Palette size={18} />} title="Resident portal colours" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal, the text on those buttons, the general text, and error messages." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null })}>
+          <SettingsSection icon={<Palette size={18} />} title="Resident & Super Admin portal colors" description="The colour of buttons, cards, the Home card and the tab bar in every resident's portal and in these admin pages, the text on those buttons, the general text, and error messages." onSubmit={(form) => onSaveSettings({ portalThemeColor: value(form, 'portalThemeColor') || null, portalButtonTextColor: value(form, 'portalButtonTextColor') || null, portalErrorColor: value(form, 'portalErrorColor') || null, portalTextColor: value(form, 'portalTextColor') || null })}>
             <PortalColourFields theme={settings.portalThemeColor} text={settings.portalButtonTextColor} error={settings.portalErrorColor} ink={settings.portalTextColor} />
           </SettingsSection>
 
