@@ -1853,12 +1853,7 @@ div.portal-panel { display: contents; }
    the footer sits at the bottom, just above the tab bar. */
 @media (max-width: 1024px) {
   .portal-shell { display: flex; flex-direction: column; }
-  .portal-shell .page-content { display: flex; flex: 1; flex-direction: column; gap: 16px; width: 100%; }
-  .portal-shell .page-content > * { flex-shrink: 0; }
-  /* One fixed gap between cards (the stack's gap); the cards' own top and bottom margins, which
-     differed from card to card, are dropped. */
-  .portal-shell .page-content > :is(.workspace-view, .portal-grid),
-  .portal-shell .page-content > .portal-panel > .workspace-view { margin-top: 0; margin-bottom: 0; }
+  .portal-shell .page-content { flex: 1; width: 100%; }
   .portal-shell .portal-terms { margin-top: auto; }
   .page-content[data-tab="info"] .portal-terms { margin-top: 20px; }
 }
@@ -2148,3 +2143,9 @@ div.portal-panel { display: contents; }
 .gallery-arrow.is-prev { grid-column: 1; }
 .gallery-arrow.is-next { grid-column: 3; }
 .gallery-close { position: absolute; top: 14px; right: 14px; }
+/* Resident pages at every width: the page is one stack with a fixed 16px gap between cards; the
+   cards' own top and bottom margins, which differed from card to card, are dropped. */
+.portal-shell .page-content { display: flex; flex-direction: column; gap: 16px; }
+.portal-shell .page-content > * { flex-shrink: 0; }
+.portal-shell .page-content > :is(.workspace-view, .portal-grid),
+.portal-shell .page-content > .portal-panel > .workspace-view { margin-top: 0; margin-bottom: 0; }

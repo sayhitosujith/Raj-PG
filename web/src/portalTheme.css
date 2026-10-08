@@ -209,3 +209,18 @@
 /* General text in the owner's chosen colour, light view only: dark view keeps its light text, which a
    dark chosen colour would make unreadable. Without a choice these fall back to the usual colours. */
 :root:not([data-theme="dark"]) .portal-shell { --ink: var(--portal-ink, #202e35); --portal-text: var(--portal-ink, #1b2528); }
+/* The resident header in the theme colour, like the tab bar at the bottom: the PG name, its house tile
+   and the "Resident Home" title turn to the button text colour so they read on it. The name keeps its
+   slow shine, now a lighter sweep of that colour. */
+:root[data-theme] .portal-shell .portal-topbar { border-bottom-color: transparent; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
+:root[data-theme] .portal-shell .portal-topbar .portal-property-icon { color: var(--brand-on); background: color-mix(in srgb, var(--brand-on) 20%, transparent); box-shadow: none; }
+:root[data-theme] .portal-shell .portal-topbar .portal-property-text { color: var(--brand-on); background-image: linear-gradient(100deg, var(--brand-on) 0%, var(--brand-on) 40%, color-mix(in srgb, var(--brand-on) 55%, transparent) 50%, var(--brand-on) 60%, var(--brand-on) 100%); }
+:root[data-theme] .portal-shell .portal-topbar .home-title.portal-title { color: var(--brand-on); }
+:root[data-theme] .portal-shell .portal-topbar .secondary-button { border-color: rgb(255 255 255 / .5); color: var(--brand-deep); background: rgb(255 255 255 / .92); }
+/* The footer in the theme colour too, matching the header and tab bar: its text and the Terms and
+   Privacy links in the button text colour; the share icons keep their white circles and brand colours.
+   (:is with a tab-bar selector lifts these over the older footer text rule in dark view.) */
+:root[data-theme] .portal-shell .portal-terms { border-color: transparent; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); }
+:root[data-theme] .portal-shell :is(.portal-terms, .portal-tabs button.is-active.portal-terms) { color: var(--brand-on); }
+:root[data-theme] .portal-shell .portal-terms .text-link { color: var(--brand-on); text-decoration-color: color-mix(in srgb, var(--brand-on) 60%, transparent); }
+:root[data-theme] .portal-shell .portal-terms .referral-icon { border-color: rgb(255 255 255 / .6); background: rgb(255 255 255 / .95); }
