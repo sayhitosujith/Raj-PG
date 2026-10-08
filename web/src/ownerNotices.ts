@@ -24,17 +24,19 @@ function requester(resident: Pick<Resident, 'name' | 'phone' | 'room'> | undefin
  * room. Ids carry the request's state, so a fresh request shows up as unread even from the same
  * resident.
  */
-export function buildOwnerNotices(residents: Resident[], housekeeping: OwnerHousekeepingRequest[], repairs: OwnerMaintenanceRequest[] | null): Notice[] {
+export function buildOwnerNotices(residents: Resident[], housekeeping: OwnerHousekeepingRequest[], repairs: OwnerMaintenanceRequest[] | null, isSuperAdmin = true): Notice[] {
   const notices: Notice[] = []
   const byId = new Map(residents.map((resident) => [resident.id, resident]))
   for (const resident of residents) {
     if (!resident.active || resident.deletedAt) continue
     const by = requester(resident)
     if (resident.exitStatus === 'PENDING' && resident.exitDate) notices.push({ kind: 'Move-out', id: `exit-${resident.id}-${resident.exitDate}`, title: `Move-out request for ${shortDate(resident.exitDate)}`, detail: by })
+    // Only super admins can approve, so only they are told; receptionists see the pill on the resident.
+    if (resident.approvalPending && isSuperAdmin) notices.push({ kind: 'Account', id: `approval-${resident.id}`, title: `${resident.name} is waiting for your approval`, detail: `Added by a receptionist · ${by}` })
     if (resident.deletionRequestedAt) notices.push({ kind: 'Account', id: `deletion-${resident.id}-${resident.deletionRequestedAt}`, title: 'Account deletion request', detail: by, at: resident.deletionRequestedAt })
     if (resident.foodRequestedAt && !resident.foodOpted) notices.push({ kind: 'Food', id: `food-${resident.id}-${resident.foodRequestedAt}`, title: 'Wants to join the food plan', detail: by, at: resident.foodRequestedAt })
     for (const concession of resident.rentConcessions ?? []) notices.push({ kind: 'Reward', id: `reward-${concession.id}`, title: `${resident.name} gets ${concession.percent}% off ${formatMonth(concession.month)} rent`, detail: concession.reason })
-    if (resident.aadharStatus === 'PENDING') notices.push({ kind: 'ID check', id: `id-${resident.id}-${resident.aadharSubmittedAt ?? ''}`, title: `${identityDocumentName(resident.nationality)} submitted for verification`, detail: by, at: resident.aadharSubmittedAt })
+    if (resident.aadharStatus === 'PENDING' && isSuperAdmin) notices.push({ kind: 'ID check', id: `id-${resident.id}-${resident.aadharSubmittedAt ?? ''}`, title: `${identityDocumentName(resident.nationality)} submitted for verification`, detail: by, at: resident.aadharSubmittedAt })
   }
   for (const request of housekeeping) {
     if (request.status !== 'REQUESTED') continue

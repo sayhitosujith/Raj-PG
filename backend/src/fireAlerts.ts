@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from './db.js'
 import { notifyFireAlert, notifyInBackground } from './notifications.js'
+import { propertyIdWhere, staffAccess } from './staffAccess.js'
 
 /** An active fire alarm as both portals show it. */
 const alertSelect = { id: true, propertyId: true, raisedByName: true, createdAt: true, property: { select: { name: true } } } as const
@@ -28,7 +29,7 @@ export async function raiseFireAlert(propertyId: string, raisedBy: { name: strin
 export const fireAlertAdminRouter = Router()
 
 fireAlertAdminRouter.get('/fire-alerts', async (_request, response) => {
-  response.json({ alerts: await prisma.fireAlert.findMany({ where: { clearedAt: null }, orderBy: { createdAt: 'desc' }, select: alertSelect }) })
+  response.json({ alerts: await prisma.fireAlert.findMany({ where: { clearedAt: null, ...propertyIdWhere(staffAccess(response)) }, orderBy: { createdAt: 'desc' }, select: alertSelect }) })
 })
 
 fireAlertAdminRouter.post('/fire-alerts', async (request, response) => {

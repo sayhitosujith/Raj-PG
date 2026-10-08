@@ -5,6 +5,7 @@ import { formatMealWindow, mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
+import { propertyMinutesIntoDay } from './propertyTime'
 import { ModalLayer } from './ModalLayer'
 
 async function fetchMenu() {
@@ -187,5 +188,58 @@ export function NextMealAlert({ refreshSignal, onNotice }: { refreshSignal: numb
           : <><button type="button" className="primary-button" disabled={isSaving} onClick={eat}>Yes, I'll eat</button><button type="button" className="secondary-button" disabled={isSaving} onClick={skip}>Skip it</button></>}
       </div>
     </div>
+  )
+}
+
+// Meals the resident closed the rating prompt for, so it does not come back for them. Per device; if
+// storage is blocked the prompt may simply show once more.
+const ratedPromptKey = 'raj-pg-meal-rating-prompted'
+function readPrompted(): string[] { try { return JSON.parse(window.localStorage.getItem(ratedPromptKey) ?? '[]') as string[] } catch { return [] } }
+function savePrompted(key: string) { try { window.localStorage.setItem(ratedPromptKey, JSON.stringify([...readPrompted(), key].slice(-30))) } catch { /* shows again */ } }
+const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
+
+/**
+ * Asks "How was lunch?" by itself once each of today's meals is over (its end time has passed), for a
+ * meal the resident ate and has not rated yet. It checks every minute, so it appears at the end time
+ * without a reload, and shows once per meal: closing it (rated or not) is remembered on this device.
+ */
+export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
+  const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
+  const [minutes, setMinutes] = useState(() => propertyMinutesIntoDay(new Date()))
+  const [prompted, setPrompted] = useState(readPrompted)
+  const [open, setOpen] = useState<string | null>(null)
+  const load = () => fetchMenu().then(setDays, () => undefined)
+
+  useEffect(() => { void load() }, [])
+  useRefreshSignal(refreshSignal, () => { void load() })
+  useEffect(() => {
+    const timer = window.setInterval(() => setMinutes(propertyMinutesIntoDay(new Date())), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const today = days?.[0]
+  // The latest of today's finished meals still waiting for a rating.
+  const due = today?.meals.filter((meal) => meal.canRate && !meal.skipped && !meal.feedback && toMinutes(meal.to) <= minutes && !prompted.includes(`${today.date}-${meal.meal}`)).at(-1)
+  const key = open ?? (today && due ? `${today.date}-${due.meal}` : null)
+  // Once open it stays on that meal while the resident rates and comments, until they close it.
+  useEffect(() => { if (!open && key) setOpen(key) }, [open, key])
+  const meal = open && today ? today.meals.find((item) => `${today.date}-${item.meal}` === open) : null
+  if (!open || !meal) return null
+
+  const { label } = mealDetails.find((detail) => detail.meal === meal.meal)!
+  function close() {
+    savePrompted(open!)
+    setPrompted(readPrompted())
+    setOpen(null)
+  }
+  return (
+    <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+      <div className="profile-modal meal-rating-modal" role="dialog" aria-modal="true" aria-labelledby="meal-rating-title">
+        <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="meal-rating-title">How was {label.toLowerCase()}?</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
+        <p className="menu-modal-hint">{meal.items ?? label} · {formatMealWindow(meal)}. Your rating goes to the kitchen.</p>
+        <MealFeedback key={`${open}-${meal.feedback?.liked}`} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} />
+        <div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>{meal.feedback ? 'Done' : 'Not now'}</button></div>
+      </div>
+    </div></ModalLayer>
   )
 }

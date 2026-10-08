@@ -1,5 +1,6 @@
 import { formatMonthLabel, propertyNow, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
+import { propertyIdWhere, residentOwnedWhere, residentWhere, type StaffAccess } from './staffAccess.js'
 
 const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN')}`
 const shortRupees = (amount: number) => (amount >= 1_00_000 ? `₹${(amount / 1_00_000).toFixed(2)}L` : rupees(amount))
@@ -29,22 +30,26 @@ function relativeTime(date: Date) {
  * from last month, a tip about free rooms, and a recent-activity feed merged from rent payments, new
  * residents, booking requests, maintenance requests and move-out notices.
  */
-export async function dashboardInsights(properties: Array<{ name: string; totalRooms: number | null; rooms: Array<{ occupied: boolean }> }>) {
+export async function dashboardInsights(properties: Array<{ name: string; totalRooms: number | null; rooms: Array<{ occupied: boolean }> }>, access: StaffAccess = { isOwner: true }) {
+  // Everything below is limited to the caller's properties (all of them for a super admin).
+  const residents_ = residentWhere(access)
+  const byProperty = propertyIdWhere(access)
+  const rentOf = residentOwnedWhere(access)
   const thisMonth = monthStart(0)
   const lastMonth = monthStart(-1)
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const [collected, collectedLast, expected, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: thisMonth } } }),
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth } } }),
-    prisma.resident.aggregate({ _sum: { monthlyRent: true }, where: { active: true, roomId: { not: null }, rentTrackedFrom: { not: null } } }),
-    prisma.resident.count({ where: { joinedAt: { gte: thisMonth } } }),
-    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' } } }),
-    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, createdAt: { gte: weekAgo } } }),
-    prisma.rentPayment.findMany({ orderBy: { paidAt: 'desc' }, take: 6, select: { amount: true, month: true, paidAt: true, resident: { select: { name: true } } } }),
-    prisma.resident.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { name: true, createdAt: true, room: { select: { number: true, property: { select: { name: true } } } } } }),
-    prisma.booking.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { residentName: true, createdAt: true, property: { select: { name: true } } } }),
-    prisma.maintenanceRequest.findMany({ orderBy: { createdAt: 'desc' }, take: 4, select: { title: true, createdAt: true, property: { select: { name: true } } } }),
-    prisma.resident.findMany({ where: { exitRequestedAt: { not: null } }, orderBy: { exitRequestedAt: 'desc' }, take: 4, select: { name: true, exitRequestedAt: true, exitDate: true } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: thisMonth }, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth }, ...rentOf } }),
+    prisma.resident.aggregate({ _sum: { monthlyRent: true }, where: { active: true, roomId: { not: null }, rentTrackedFrom: { not: null }, ...residents_ } }),
+    prisma.resident.count({ where: { joinedAt: { gte: thisMonth }, ...residents_ } }),
+    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...byProperty } }),
+    prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, createdAt: { gte: weekAgo }, ...byProperty } }),
+    prisma.rentPayment.findMany({ where: rentOf, orderBy: { paidAt: 'desc' }, take: 6, select: { amount: true, month: true, paidAt: true, resident: { select: { name: true } } } }),
+    prisma.resident.findMany({ where: residents_, orderBy: { createdAt: 'desc' }, take: 4, select: { name: true, createdAt: true, room: { select: { number: true, property: { select: { name: true } } } } } }),
+    prisma.booking.findMany({ where: byProperty, orderBy: { createdAt: 'desc' }, take: 4, select: { residentName: true, createdAt: true, property: { select: { name: true } } } }),
+    prisma.maintenanceRequest.findMany({ where: byProperty, orderBy: { createdAt: 'desc' }, take: 4, select: { title: true, createdAt: true, property: { select: { name: true } } } }),
+    prisma.resident.findMany({ where: { exitRequestedAt: { not: null }, ...residents_ }, orderBy: { exitRequestedAt: 'desc' }, take: 4, select: { name: true, exitRequestedAt: true, exitDate: true } }),
   ])
 
   const collectedNow = collected._sum.amount ?? 0

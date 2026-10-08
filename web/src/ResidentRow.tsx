@@ -20,6 +20,7 @@ import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, vi
 import { ExpiryDate } from './ExpiryDate'
 import { exitBadge, ResidentExitPanel } from './ResidentExitPanel'
 import { AccountDeletionReview, deletionBadge } from './AccountDeletionReview'
+import { useIsSuperAdmin } from './staffContext'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -38,6 +39,7 @@ const formatDateTime = (value: string) => new Date(value).toLocaleDateString(und
  * Indian nationals, passport and visa for everyone else. Reject asks for a reason the resident sees.
  */
 function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; onVerify: (decision: AadharDecision) => Promise<string | null> }) {
+  const canDecide = useIsSuperAdmin()
   const [isRejecting, setIsRejecting] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -69,6 +71,7 @@ function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; o
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={300} placeholder={`Reason shown to the resident, e.g. '${isAadhar ? 'Card' : 'Passport'} photo is blurry — please upload a clearer one.'`} aria-label="Reason for rejecting" autoFocus />
             <div className="aadhar-verification-actions"><button type="button" className="secondary-button" onClick={() => { setIsRejecting(false); setReason('') }}>Cancel</button><button type="button" className="danger-button" disabled={!reason.trim() || isSaving} onClick={() => decide({ decision: 'reject', reason: reason.trim() })}>Reject</button></div>
           </div>
+        : !canDecide ? (canApprove || canReject) && <p className="approval-note">A super admin approves or rejects ID documents.</p>
         : (canApprove || canReject) && <div className="aadhar-verification-actions">
             {canReject && <button type="button" className="secondary-button" onClick={() => setIsRejecting(true)}>{resident.aadharStatus === 'VERIFIED' ? 'Revoke verification' : 'Reject'}</button>}
             {canApprove && <button type="button" className="primary-button" disabled={isSaving} onClick={() => decide({ decision: 'approve' })}><BadgeCheck size={15} /> Approve</button>}
@@ -85,6 +88,33 @@ const maxStaggerSteps = 10
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
+/**
+ * A resident a receptionist added, waiting for a super admin. Super admins approve (the resident can
+ * then sign in) or reject (the resident is removed and the room freed); receptionists see that it waits.
+ */
+function ResidentApprovalPanel({ resident, onChanged, onNotice }: { resident: Resident; onChanged: () => void; onNotice: (message: string) => void }) {
+  const canDecide = useIsSuperAdmin()
+  const [isSaving, setIsSaving] = useState(false)
+  async function decide(approve: boolean) {
+    if (!approve && !window.confirm(`Reject ${resident.name}? They will be removed and their room freed.`)) return
+    setIsSaving(true)
+    const response = await fetch(`/api/residents/${resident.id}/approval`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approve }) }).catch(() => null)
+    setIsSaving(false)
+    if (!response?.ok) { onNotice(response ? await readApiError(response, 'The decision could not be saved.') : 'Could not reach the server.'); return }
+    onNotice(approve ? `${resident.name} is approved and can now sign in.` : `${resident.name} was rejected and removed.`)
+    onChanged()
+  }
+  return (
+    <div className="resident-approval">
+      <div><strong>Waiting for approval</strong><small>{canDecide ? 'A receptionist added this resident. Approve to let them sign in, or reject to remove them and free the room.' : 'A super admin needs to approve this resident before they can sign in.'}</small></div>
+      {canDecide && <div className="aadhar-verification-actions">
+        <button type="button" className="secondary-button" disabled={isSaving} onClick={() => void decide(false)}>Reject</button>
+        <button type="button" className="primary-button" disabled={isSaving} onClick={() => void decide(true)}><BadgeCheck size={15} /> Approve</button>
+      </div>}
+    </div>
+  )
+}
+
 export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, securityDeposit, isRecord = false }: { resident: Resident; index: number; isExpanded: boolean; onToggle: () => void; onEdit: () => void; onClone: () => void; onDelete: () => void; securityDeposit: number | null; /** A closed account on the Deleted records page: everything shown, nothing that would act on it as a resident. */ isRecord?: boolean; onChanged: () => void; onNotice: (message: string) => void; onVerify: (decision: AadharDecision) => Promise<string | null>; onRecordRent: (month: string) => Promise<string | null>; onUndoRent: (paymentId: string) => Promise<string | null> }) {
   // Overdue residents are locked out of the app unless the owner allowed access up to a date.
   const rentBadge = resident.rent.state !== 'LOCK_DUE' ? rentBadges[resident.rent.state]
@@ -115,7 +145,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
         <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
-        <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>
+        {resident.approvalPending ? <span className="status-pill gold">Pending approval</span> : <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>}
         {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}
         {!isRecord && <button className="row-edit row-clone" aria-label={`Clone ${resident.name}`} title="Clone: add a new resident with the same property, rent and address" onClick={onClone}><CopyPlus size={14} /></button>}
         <button className="row-delete" aria-label={`${isRecord ? 'Delete record of' : 'Remove'} ${resident.name}`} title={isRecord ? 'Delete this record permanently' : 'Remove resident'} onClick={onDelete}><Trash2 size={14} /></button>
@@ -126,6 +156,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
         <div className="resident-details-inner">
           {!isRecord && <ResidentExitPanel resident={resident} deposit={securityDeposit} onChanged={onChanged} onNotice={onNotice} />}
           <AccountDeletionReview resident={resident} onChanged={onChanged} onNotice={onNotice} />
+          {!isRecord && resident.approvalPending && <ResidentApprovalPanel resident={resident} onChanged={onChanged} onNotice={onNotice} />}
           {!isRecord && <AadharVerificationPanel resident={resident} onVerify={onVerify} />}
           <RentPanel rent={resident.rent} onRecord={onRecordRent} onUndo={onUndoRent} concessions={resident.rentConcessions} onCancelConcession={cancelConcession} />
           <dl className="resident-details">

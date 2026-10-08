@@ -1,4 +1,4 @@
-import { Prisma, Sex, type SuperAdmin } from '@prisma/client'
+import { Prisma, Sex, type SuperAdmin, StaffRole } from '@prisma/client'
 import { Router } from 'express'
 import { isValidAadharNumber } from './aadhar.js'
 import type { AuthContext } from './auth.js'
@@ -15,7 +15,7 @@ import { indianNationality, passportNumberPattern } from './identityDocuments.js
  * number is included because only super admins can call these routes and they can edit it; the
  * list view masks it.
  */
-export type PublicSuperAdmin = Pick<SuperAdmin, 'id' | 'name' | 'email' | 'phone' | 'aadharNumber' | 'passportNumber' | 'sex' | 'nationality' | 'permanentAddress' | 'createdAt'>
+export type PublicSuperAdmin = Pick<SuperAdmin, 'id' | 'name' | 'email' | 'phone' | 'aadharNumber' | 'passportNumber' | 'sex' | 'nationality' | 'permanentAddress' | 'staffRole' | 'propertyIds' | 'createdAt'>
 
 /** Result of {@link createSuperAdmin}; carries an HTTP status so routes can relay failures as-is. */
 export type CreateSuperAdminResult = { ok: true; admin: PublicSuperAdmin } | { ok: false; status: 400 | 409; error: string }
@@ -54,15 +54,33 @@ export function normalizeEmail(email: string) {
 }
 
 /** Strips a super admin record down to its client-safe fields. */
-export function toPublicSuperAdmin({ id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, createdAt }: SuperAdmin): PublicSuperAdmin {
-  return { id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, createdAt }
+export function toPublicSuperAdmin({ id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, staffRole, propertyIds, createdAt }: SuperAdmin): PublicSuperAdmin {
+  return { id, name, email, phone, aadharNumber, passportNumber, sex, nationality, permanentAddress, staffRole, propertyIds, createdAt }
+}
+
+/** A staff member's role and, for receptionists, the properties they manage. */
+export type StaffRoleInput = { staffRole: StaffRole; propertyIds: string[] }
+
+/**
+ * Reads the role and assigned properties from a request body. Receptionists need at least one existing
+ * property; super admins reach everything, so any list sent for them is dropped. Absent role = no change.
+ */
+export async function parseStaffRole(body: { staffRole?: unknown; propertyIds?: unknown }): Promise<{ ok: true; value: StaffRoleInput | null } | { ok: false; error: string }> {
+  if (body.staffRole === undefined) return { ok: true, value: null }
+  if (body.staffRole !== StaffRole.SUPER_ADMIN && body.staffRole !== StaffRole.RECEPTIONIST) return { ok: false, error: 'Role must be Super admin or Receptionist.' }
+  if (body.staffRole === StaffRole.SUPER_ADMIN) return { ok: true, value: { staffRole: StaffRole.SUPER_ADMIN, propertyIds: [] } }
+  const ids = Array.isArray(body.propertyIds) ? [...new Set(body.propertyIds.filter((id): id is string => typeof id === 'string' && id.length > 0))] : []
+  if (!ids.length) return { ok: false, error: 'Choose at least one property for this receptionist.' }
+  const found = await prisma.property.count({ where: { id: { in: ids } } })
+  if (found !== ids.length) return { ok: false, error: 'One of the chosen properties no longer exists.' }
+  return { ok: true, value: { staffRole: StaffRole.RECEPTIONIST, propertyIds: ids } }
 }
 
 /**
  * Validates and stores a new super admin; shared by the API and the bootstrap script. The script
  * has no identity details to give, so `identity` is optional here and enforced by the route instead.
  */
-export async function createSuperAdmin(input: { name?: string; email?: string; password?: string }, identity: SuperAdminIdentity = {}): Promise<CreateSuperAdminResult> {
+export async function createSuperAdmin(input: { name?: string; email?: string; password?: string }, identity: SuperAdminIdentity = {}, role: StaffRoleInput | null = null): Promise<CreateSuperAdminResult> {
   const name = input.name?.trim()
   const email = input.email ? normalizeEmail(input.email) : ''
   if (!name) return { ok: false, status: 400, error: 'Name is required.' }
@@ -71,7 +89,7 @@ export async function createSuperAdmin(input: { name?: string; email?: string; p
   const duplicate = await findDuplicate(prisma, { email, aadharNumber: identity.aadharNumber, passportNumber: identity.passportNumber })
   if (duplicate) return { ok: false, status: 409, error: duplicate }
   try {
-    const admin = await prisma.superAdmin.create({ data: { ...identity, name, email, passwordHash: hashPassword(input.password) } })
+    const admin = await prisma.superAdmin.create({ data: { ...identity, ...(role ?? {}), name, email, passwordHash: hashPassword(input.password) } })
     return { ok: true, admin: toPublicSuperAdmin(admin) }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return { ok: false, status: 409, error: 'A super admin with this email already exists.' }
@@ -105,10 +123,12 @@ superAdminRouter.get('/super-admins', async (_request, response) => {
 
 superAdminRouter.post('/super-admins', async (request, response) => {
   try {
-    const body = request.body as { name?: string; email?: string; password?: string } & IdentityInput
+    const body = request.body as { name?: string; email?: string; password?: string; staffRole?: unknown; propertyIds?: unknown } & IdentityInput
     const parsed = parseSuperAdminIdentity(body)
     if (!parsed.ok) { response.status(400).json({ error: parsed.error }); return }
-    const result = await createSuperAdmin(body, parsed.identity)
+    const role = await parseStaffRole(body)
+    if (!role.ok) { response.status(400).json({ error: role.error }); return }
+    const result = await createSuperAdmin(body, parsed.identity, role.value)
     if (!result.ok) { response.status(result.status).json({ error: result.error }); return }
     response.status(201).json(result.admin)
   } catch (error) {
@@ -121,7 +141,7 @@ superAdminRouter.post('/super-admins', async (request, response) => {
 // is a sign-in credential, and Settings → My account asks for the current password before changing it.
 superAdminRouter.patch('/super-admins/:id', async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
-  const body = request.body as { name?: string; email?: string } & IdentityInput
+  const body = request.body as { name?: string; email?: string; staffRole?: unknown; propertyIds?: unknown } & IdentityInput
   const name = body.name?.trim()
   const email = normalizeEmail(body.email ?? '')
   if (!name || name.length > 60) { response.status(400).json({ error: 'Name is required (up to 60 characters).' }); return }
@@ -129,13 +149,17 @@ superAdminRouter.patch('/super-admins/:id', async (request, response) => {
   const parsed = parseSuperAdminIdentity(body)
   if (!parsed.ok) { response.status(400).json({ error: parsed.error }); return }
   try {
+    const role = await parseStaffRole(body)
+    if (!role.ok) { response.status(400).json({ error: role.error }); return }
     if (request.params.id === userId) {
-      const self = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId }, select: { email: true } })
+      const self = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId }, select: { email: true, staffRole: true } })
       if (self.email !== email) { response.status(403).json({ error: 'Change your own email under Settings → My account; it needs your current password.' }); return }
+      // Only super admins reach this route, so refusing a change to your own role always leaves one.
+      if (role.value && role.value.staffRole !== self.staffRole) { response.status(403).json({ error: 'You cannot change your own role.' }); return }
     }
     const duplicate = await findDuplicate(prisma, { email, aadharNumber: parsed.identity.aadharNumber, passportNumber: parsed.identity.passportNumber }, { superAdminId: request.params.id })
     if (duplicate) { response.status(409).json({ error: duplicate }); return }
-    const admin = await prisma.superAdmin.update({ where: { id: request.params.id }, data: { ...parsed.identity, name, email } })
+    const admin = await prisma.superAdmin.update({ where: { id: request.params.id }, data: { ...parsed.identity, ...(role.value ?? {}), name, email } })
     response.json(toPublicSuperAdmin(admin))
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Super admin was not found.' }); return }

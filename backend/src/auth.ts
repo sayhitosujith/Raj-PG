@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { UserRole } from '@prisma/client'
+import { StaffRole, UserRole } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
@@ -9,12 +9,16 @@ import { findDuplicate } from './duplicates.js'
 import { newAccessKeyMessage } from './rentLock.js'
 import { findAccessBlock } from './accessBlocks.js'
 import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
+import type { StaffAccess } from './staffAccess.js'
 
 const sessionCookieName = 'raj_pg_session'
 const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000
 
-/** The authenticated caller, exposed on `response.locals.auth` by {@link requireRole}. */
-export type AuthContext = { role: UserRole; userId: string; sessionId: string }
+/**
+ * The authenticated caller, exposed on `response.locals.auth` by {@link requireRole}. Staff sessions
+ * also carry what they may reach (see staffAccess.ts): super admins everything, admins their properties.
+ */
+export type AuthContext = { role: UserRole; userId: string; sessionId: string; staff?: StaffAccess }
 
 // Session tokens are 256 random bits, so an unsalted SHA-256 is enough to make a leaked
 // sessions table useless without the slow hashing that passwords need.
@@ -73,6 +77,12 @@ export function requireRole(role: UserRole) {
       if (!session) { response.status(401).json({ error: 'Sign in required.' }); return }
       if (session.role !== role) { response.status(403).json({ error: 'You do not have access to this resource.' }); return }
       const auth: AuthContext = { role, userId: session.superAdminId ?? session.residentId ?? '', sessionId: session.id }
+      if (session.superAdminId) {
+        // Read fresh on every request, so a changed role or property list applies at once.
+        const staff = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId }, select: { staffRole: true, propertyIds: true } })
+        if (!staff) { response.status(401).json({ error: 'Sign in required.' }); return }
+        auth.staff = staff.staffRole === StaffRole.SUPER_ADMIN ? { isOwner: true } : { isOwner: false, propertyIds: staff.propertyIds }
+      }
       if (session.residentId && await rejectBlocked(session.residentId, response)) return
       response.locals.auth = auth
       next()

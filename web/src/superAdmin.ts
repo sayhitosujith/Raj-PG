@@ -20,8 +20,16 @@ export type SuperAdmin = {
   /** ISO 3166-1 alpha-2 code, e.g. "IN". */
   nationality: string | null
   permanentAddress: string | null
+  /** SUPER_ADMIN: everything. RECEPTIONIST: day-to-day work for the properties in propertyIds only. */
+  staffRole: StaffRole
+  propertyIds: string[]
   createdAt: string
 }
+
+export type StaffRole = 'SUPER_ADMIN' | 'RECEPTIONIST'
+
+/** Whether this staff member is a super admin (the owner), who sees every page and property. */
+export const isSuperAdmin = (admin: Pick<SuperAdmin, 'staffRole'>) => admin.staffRole !== 'RECEPTIONIST'
 
 /** Form field names of the identity details, matching the API's body keys. */
 export const identityFieldNames = ['phone', 'aadharNumber', 'passportNumber', 'sex', 'nationality', 'permanentAddress'] as const

@@ -6,6 +6,7 @@ import { notifyInBackground, notifyNewBooking } from './notifications.js'
 import { getSettings } from './settings.js'
 import { referrerForCode } from './referrals.js'
 import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
+import { propertyIdWhere, staffAccess } from './staffAccess.js'
 
 /**
  * Booking requests. Most arrive through the public /book form, which the owner shares on social
@@ -109,7 +110,7 @@ export const bookingAdminRouter = Router()
 bookingAdminRouter.get('/bookings', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   try {
-    const bookings = await prisma.booking.findMany({ ...withProperty, orderBy: { createdAt: 'desc' } })
+    const bookings = await prisma.booking.findMany({ ...withProperty, where: propertyIdWhere(staffAccess(response)), orderBy: { createdAt: 'desc' } })
     response.json(bookings.map(toBookingSummary))
   } catch (error) { respondToError(response, error, 'Booking requests could not be loaded.') }
 })

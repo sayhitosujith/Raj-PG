@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from 'express'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyMaintenanceRaised, notifyMaintenanceUpdated } from './notifications.js'
 import { findMaintenancePhotoProblem, sendMaintenancePhoto } from './photo.js'
+import { propertyIdWhere, staffAccess } from './staffAccess.js'
 
 /** Kinds of complaint a resident can pick; the web app shows matching labels. */
 export const maintenanceCategories = ['plumbing', 'electrical', 'wifi', 'furniture', 'cleaning', 'appliance', 'other'] as const
@@ -55,7 +56,7 @@ export function residentMaintenanceRoutes(router: Router, guards: RequestHandler
 export const maintenanceAdminRouter = Router()
 
 maintenanceAdminRouter.get('/maintenance', async (_request, response) => {
-  const rows = await prisma.maintenanceRequest.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { ...viewSelect, property: { select: { name: true } }, resident: { select: { id: true, name: true, room: { select: { number: true } } } } } })
+  const rows = await prisma.maintenanceRequest.findMany({ where: propertyIdWhere(staffAccess(response)), orderBy: { createdAt: 'desc' }, take: 200, select: { ...viewSelect, property: { select: { name: true } }, resident: { select: { id: true, name: true, room: { select: { number: true } } } } } })
   response.json(rows.map(({ property, resident, ...row }) => ({ ...toView(row), property: property.name, resident: resident ? { id: resident.id, name: resident.name, room: resident.room?.number ?? null } : null })))
 })
 

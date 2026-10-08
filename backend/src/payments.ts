@@ -7,6 +7,7 @@ import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { isUpiClaim, recordClaimedRent } from './upiClaims.js'
 import { closeUpiQr, ensurePaymentQr, refreshQrPayment } from './upiQr.js'
 import { normalizePhone, phoneRequirement } from './validation.js'
+import { propertyIdWhere, staffAccess } from './staffAccess.js'
 
 /**
  * Payments the owner records by hand (cash, UPI, bank transfer, ...), separate from the monthly
@@ -80,7 +81,7 @@ export const paymentsAdminRouter = Router()
 paymentsAdminRouter.get('/payments', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
   try {
-    const payments = await prisma.payment.findMany({ ...withProperty, orderBy: { createdAt: 'desc' } })
+    const payments = await prisma.payment.findMany({ ...withProperty, where: propertyIdWhere(staffAccess(response)), orderBy: { createdAt: 'desc' } })
     response.json((await refreshPendingQrs(payments)).map(toPaymentSummary))
   } catch (error) { respondToError(response, error, 'Payments could not be loaded.') }
 })

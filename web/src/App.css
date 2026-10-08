@@ -2208,3 +2208,16 @@ div.portal-panel { display: contents; }
 :root[data-brand][data-theme] .sidebar .workspace-switcher { border-color: color-mix(in srgb, var(--brand-on, #fff) 30%, transparent); color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 14%, transparent); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher :is(strong, svg) { color: var(--brand-on, #fff); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher small { color: color-mix(in srgb, var(--brand-on, #fff) 75%, transparent); }
+/* Team page: the properties an admin manages, as a list of ticks. */
+.staff-properties { display: grid; gap: 6px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.staff-properties legend { padding: 0 4px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.profile-modal label.staff-property { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.profile-modal label.staff-property input { width: auto; }
+/* A resident waiting for a super admin's approval (added by a receptionist). */
+.resident-approval { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid rgb(253 230 138); border-radius: 10px; background: rgb(255 251 235); }
+.resident-approval > div:first-child { display: grid; gap: 2px; }
+.resident-approval strong { color: rgb(146 64 14); font-size: 13px; }
+.resident-approval small { color: var(--muted); font-size: 11px; }
+:root[data-theme="dark"] .resident-approval { border-color: rgb(217 119 6 / .35); background: rgb(120 53 15 / .3); }
+:root[data-theme="dark"] .resident-approval strong { color: rgb(252 211 77); }
+.approval-note { margin: 8px 0 0; color: var(--muted); font-size: 11px; }

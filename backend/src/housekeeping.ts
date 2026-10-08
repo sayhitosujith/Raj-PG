@@ -9,6 +9,7 @@ import { isRentLockDue } from './rent.js'
 import { requirePortalAccess } from './residentPortal.js'
 import { getSettings, slotDetails } from './settings.js'
 import type { WorkspaceSettings } from '@prisma/client'
+import { residentOwnedWhere, staffAccess } from './staffAccess.js'
 
 const maxNoteLength = 300
 const maxDaysAhead = 60
@@ -182,9 +183,10 @@ const urgency = (request: ReturnType<typeof toOwnerView>) => (request.hasOpenRem
 
 housekeepingAdminRouter.get('/housekeeping', async (_request, response) => {
   try {
+    const scope = residentOwnedWhere(staffAccess(response))
     const [open, closed] = await Promise.all([
-      prisma.housekeepingRequest.findMany({ where: { status: { in: openStatuses } }, orderBy: [{ date: 'asc' }, { slot: 'asc' }], select: withResident }),
-      prisma.housekeepingRequest.findMany({ where: { status: { notIn: openStatuses } }, orderBy: { updatedAt: 'desc' }, take: 100, select: withResident }),
+      prisma.housekeepingRequest.findMany({ where: { status: { in: openStatuses }, ...scope }, orderBy: [{ date: 'asc' }, { slot: 'asc' }], select: withResident }),
+      prisma.housekeepingRequest.findMany({ where: { status: { notIn: openStatuses }, ...scope }, orderBy: { updatedAt: 'desc' }, take: 100, select: withResident }),
     ])
     // Array.sort is stable, so within each urgency level the date order from the query is kept.
     const settings = await getSettings()

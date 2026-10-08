@@ -97,6 +97,9 @@ model Resident {
   aadharCardUrl           String?
   passportNumber          String?
   passportExpiry          DateTime?                @db.Date
+  // Added by a receptionist and not yet approved by a super admin: the room is held, but they cannot
+  // sign in. Super admins' own additions never wait.
+  approvalPending         Boolean                  @default(false)
   // Scan of the passport photo page, as a data URL like aadharCardUrl.
   passportScanUrl         String?
   visaNumber              String?
@@ -312,8 +315,17 @@ model SuperAdmin {
   // ISO 3166-1 alpha-2 code (e.g. "IN"); names and flags are derived from it on the client.
   nationality      String?
   permanentAddress String?
+  // SUPER_ADMIN: the owner, everything. RECEPTIONIST: day-to-day work (residents, requests, payments, food,
+  // announcements) for the properties in propertyIds only; no settings, views, team or deletions.
+  staffRole        StaffRole @default(SUPER_ADMIN)
+  propertyIds      String[]  @default([])
   sessions         Session[]
   createdAt        DateTime  @default(now())
+}
+
+enum StaffRole {
+  SUPER_ADMIN
+  RECEPTIONIST
 }
 
 enum Sex {

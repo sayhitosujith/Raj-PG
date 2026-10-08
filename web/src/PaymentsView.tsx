@@ -22,7 +22,7 @@ async function fetchPayments() {
 }
 
 /** The owner's hand-recorded payments: who paid, how, how much, for which property. */
-export function PaymentsView({ properties, residents, refreshSignal, onBack, onNotice }: { properties: PropertyOption[]; residents: Resident[]; refreshSignal: number; onBack: () => void; onNotice: (message: string) => void }) {
+export function PaymentsView({ showFinance = true, properties, residents, refreshSignal, onBack, onNotice }: { /** The business-wide money summary and expenses; super admins only. */ showFinance?: boolean; properties: PropertyOption[]; residents: Resident[]; refreshSignal: number; onBack: () => void; onNotice: (message: string) => void }) {
   const [payments, setPayments] = useState<Payment[]>([])
   // Bumped on every payment change so the finance summary below follows the list.
   const [financeVersion, setFinanceVersion] = useState(0)
@@ -88,7 +88,7 @@ export function PaymentsView({ properties, residents, refreshSignal, onBack, onN
         )) : <div className="workspace-empty"><div className="workspace-empty-icon"><ClipboardList size={22} /></div><h3>No payments yet</h3><p>Add the first payment to start tracking what has been collected.</p></div>}
       </div>
       <Pagination state={pager} label="Payments" />
-      <FinanceOverview properties={properties} version={financeVersion} refreshSignal={refreshSignal} onNotice={onNotice} />
+      {showFinance && <FinanceOverview properties={properties} version={financeVersion} refreshSignal={refreshSignal} onNotice={onNotice} />}
       {collecting && <PaymentQrModal payment={collecting} onClose={() => setCollecting(null)} onUpdated={upsert} />}
       {editing !== undefined && <PaymentFormModal payment={editing ?? undefined} properties={properties} residents={residents} onClose={() => setEditing(undefined)} onSaved={saved} />}
     </section>

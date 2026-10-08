@@ -121,13 +121,13 @@ function ImageField({ noun, title, hint, previewUrl, emptyIcon, removeQuestion, 
 }
 
 /** Settings page: the owner's account, workspace details, rent rules, deposit and notice, house rules, housekeeping, and resident policies. */
-export function SettingsView({ page = 'settings', admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onNotice, onBack }: { /** Which page: Settings (account, workspace and rules) or Views (colours, banners, light/dark). */ page?: 'settings' | 'views'; admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onNotice: (message: string) => void; onBack: () => void }) {
+export function SettingsView({ page = 'settings', admin, settings, onSaveAccount, onSaveSettings, onSaveImage, onNotice, onBack }: { /** Which page: Settings (account, workspace and rules), Views (colours, banners, light/dark), or just the account (receptionists). */ page?: 'settings' | 'views' | 'account'; admin: SuperAdmin; settings: WorkspaceSettings | null; onSaveAccount: (changes: Record<string, string>) => SaveResult; onSaveSettings: (changes: Partial<WorkspaceSettings>) => SaveResult; onSaveImage: (kind: SettingImage, image: string | null) => SaveResult; onNotice: (message: string) => void; onBack: () => void }) {
   return (
     <section className="workspace-view settings-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>{page === 'views' ? 'Views' : 'Settings'}</h2><p>{page === 'views' ? 'How the app looks: colours, feature banners and the light or dark view, for residents and these admin pages.' : 'Your account and how the workspace runs.'}</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>{page === 'views' ? 'Views' : 'Settings'}</h2><p>{page === 'views' ? 'How the app looks: colours, feature banners and the light or dark view, for residents and these admin pages.' : page === 'account' ? 'Your name, sign-in and identity details.' : 'Your account and how the workspace runs.'}</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
 
       <div className="settings-grid">
-        {page === 'settings' && (
+        {(page === 'settings' || page === 'account') && (
         <SettingsSection icon={<UserRound size={18} />} title="My account" description="Your name, sign-in and identity details. Changing email or password needs your current password." onSubmit={(form) => {
           const changes: Record<string, string> = { name: value(form, 'name'), email: value(form, 'email'), ...readIdentityFields(form) }
           if (value(form, 'newPassword')) {

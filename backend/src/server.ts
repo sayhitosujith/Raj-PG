@@ -35,6 +35,8 @@ import { logIntegrations } from './startupReport.js'
 import { dashboardInsights } from './dashboardInsights.js'
 import { parsePropertyInfo } from './residentInfo.js'
 import { propertyPhotoAdminRouter, propertyPhotoResidentRouter } from './propertyPhotos.js'
+import { staffGuard } from './staffGuard.js'
+import { propertyIdWhere, propertyWhere, residentWhere, staffAccess } from './staffAccess.js'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -70,6 +72,8 @@ app.get('/api/health', async (_request, response) => {
 
 // Everything below is the owner dashboard API, reserved for super admins.
 app.use('/api', requireRole(UserRole.SUPER_ADMIN))
+// Receptionists (not super admins) are limited to their own properties and to day-to-day work; see staffGuard.ts.
+app.use('/api', staffGuard)
 app.use('/api', superAdminRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
@@ -223,7 +227,7 @@ app.put('/api/properties/:id', async (request, response) => {
 
 app.get('/api/announcements', async (_request, response) => {
   if (!process.env.DATABASE_URL) { response.json([]); return }
-  const announcements = await prisma.announcement.findMany({ include: { property: true }, orderBy: { createdAt: 'desc' } })
+  const announcements = await prisma.announcement.findMany({ where: propertyIdWhere(staffAccess(response)), include: { property: true }, orderBy: { createdAt: 'desc' } })
   response.json(announcements.map((announcement) => ({ ...announcement, property: announcement.property.name })))
 })
 
@@ -247,6 +251,7 @@ app.delete('/api/announcements/:id', async (request, response) => {
 })
 
 app.get('/api/dashboard', async (_request, response) => {
+  const access = staffAccess(response)
   if (!process.env.DATABASE_URL) {
     response.json({ ...fallbackDashboard, source: 'fallback' })
     return
@@ -254,12 +259,12 @@ app.get('/api/dashboard', async (_request, response) => {
 
   try {
     const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ include: { rooms: true } }),
-      prisma.resident.count({ where: { active: true } }),
-      prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' } } }),
-      prisma.booking.count({ where: { status: 'new' } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: true } }),
+      prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
+      prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
+      prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),
     ])
-    const insights = await dashboardInsights(properties)
+    const insights = await dashboardInsights(properties, access)
 
     response.json({
       source: 'postgresql',
