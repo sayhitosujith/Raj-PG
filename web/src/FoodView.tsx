@@ -85,6 +85,8 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
       <div className="workspace-view-heading">
         <div><p className="eyebrow">Kitchen</p><h2>Food</h2><p>Plan the weekly menu, see how many are eating, and read residents' feedback.</p></div>
         <div className="view-actions">
+          {/* One property (e.g. a receptionist with a single PG): its name as a label, so it is clear whose menu this is. */}
+          {properties.length === 1 && <span className="food-property-select is-single" title="Property">{properties[0].name}</span>}
           {properties.length > 1 && <select className="food-property-select" value={propertyId} aria-label="Property" onChange={(event) => setChosenId(event.target.value)}>{properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select>}
           <button className="secondary-button" onClick={onBack}>Back to overview</button>
         </div>

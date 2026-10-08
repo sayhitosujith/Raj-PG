@@ -693,6 +693,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 
 /* Owner food screen. */
 .food-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px; margin-top: 20px; }
+.food-property-select.is-single { display: inline-flex; align-items: center; font-weight: 700; }
 .food-property-select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .headcount-days { display: grid; gap: 12px; }
 .headcount-days > div > small { color: var(--muted); font-size: 10px; font-weight: 700; }
