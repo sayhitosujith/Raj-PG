@@ -19,9 +19,8 @@ async function seed() {
   const created: Array<{ id: string; name: string }> = []
   for (const property of properties) {
     const record = await prisma.property.create({ data: { name: property.name, location: property.location, imageUrl: property.imageUrl, status: property.status } })
-    const rooms = await Promise.all(Array.from({ length: property.rooms }, (_, index) => prisma.room.create({ data: { number: String(index + 101), occupied: index < property.occupied, propertyId: record.id } })))
-    const occupiedRooms = rooms.filter((room) => room.occupied)
-    await Promise.all(occupiedRooms.map((room, index) => prisma.resident.create({ data: { name: `Resident ${index + 1}`, roomId: room.id } })))
+    const rooms = await Promise.all(Array.from({ length: property.rooms }, (_, index) => prisma.room.create({ data: { number: String(index + 101), propertyId: record.id } })))
+    await Promise.all(rooms.slice(0, property.occupied).map((room, index) => prisma.resident.create({ data: { name: `Resident ${index + 1}`, roomId: room.id } })))
     created.push(record)
   }
 

@@ -128,16 +128,17 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
       <form className="profile-modal resident-modal" onSubmit={save}>
         <div className="modal-heading"><div><p className="eyebrow">Residents</p><h2>{isEdit ? 'Edit resident' : 'Add resident'}</h2></div><button type="button" className="icon-button" aria-label="Close resident form" onClick={onClose}><X size={18} /></button></div>
         <ResidentPhotoField name={previewName} currentUrl={resident?.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} change={photoChange} onChange={setPhotoChange} onError={setError} />
+        {/* In pairs on wide screens (see .resident-modal in App.css): name and phone, email and occupation, property and room. */}
         <label>Resident name<input name="name" required onChange={(event) => setPreviewName(event.target.value)} defaultValue={resident?.name ?? prefill?.name} placeholder="e.g. Ananya Sharma" /></label>
-        <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={resident?.occupation ?? ''} placeholder="e.g. Software engineer, Student" /></label>
+        <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
+        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
         <EmergencyContactFields contact={resident} />
         <VehicleFields vehicle={resident} />
         <IdentityDocumentFields details={resident} defaultNationality={prefill?.nationality} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
-        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
         <fieldset className="food-plan">
           <legend>Food plan</legend>
           <div className="food-plan-options">

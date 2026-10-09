@@ -28,6 +28,11 @@ async function lockState(client: Prisma.TransactionClient, residentId: string) {
   return { isLocked: Boolean(resident && isRentLocked(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(settings))), settings }
 }
 
+/** Whether overdue rent locks the resident out right now ("Allow access until" counts as not locked). */
+export async function isLockedOut(residentId: string) {
+  return (await lockState(prisma, residentId)).isLocked
+}
+
 /** Why the resident is locked out, ready to show them, or null when they may use the app. */
 export async function findRentLockMessage(residentId: string) {
   const { isLocked, settings } = await lockState(prisma, residentId)

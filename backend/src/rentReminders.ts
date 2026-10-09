@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { Router, type Request } from 'express'
 import { prisma } from './db.js'
+import { revokeOverdueDoorAccess } from './doorAccessRevocation.js'
 import { isEmailEnabled } from './emailClient.js'
 import { notifyRent, recipientSelect } from './notifications.js'
 import { activeConcessions, rentStatus } from './rent.js'
@@ -12,6 +13,7 @@ import { isWhatsAppEnabled } from './whatsappClient.js'
  * the app can wake it on schedule; an external cron (cron-job.org) calls /api/cron/rent-reminders
  * once a day with the CRON_SECRET. Each resident gets reminders 1, 2 and 3 and the overdue notice
  * at most once per month and channel (notifyRent's dedupe key), so calling it more often is harmless.
+ * The same call also removes door access keys for overdue rent, so one daily cron covers both.
  */
 const dueDateLabel = (month: string, dueDay: number) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, dueDay)).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' })
 
@@ -47,7 +49,9 @@ cronRouter.all('/cron/rent-reminders', async (request, response) => {
   if (!process.env.CRON_SECRET) { response.status(503).json({ error: 'CRON_SECRET is not set on the server.' }); return }
   if (!hasCronSecret(request)) { response.status(401).json({ error: 'Invalid cron key.' }); return }
   try {
-    response.json(await runRentReminders())
+    // Door access first: it must happen even when no messaging channel is set up.
+    const doorAccess = await revokeOverdueDoorAccess()
+    response.json({ ...await runRentReminders(), doorAccess })
   } catch (error) {
     console.error('Rent reminder run failed:', error)
     response.status(503).json({ error: 'The reminder run failed.' })

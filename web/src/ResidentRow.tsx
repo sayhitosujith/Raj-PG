@@ -8,6 +8,7 @@ import { RentPanel } from './RentPanel'
 import { isAwaitingSignIn } from './residentFilters'
 import { LocationLink } from './LocationLink'
 import { AccessKeyReset } from './AccessKeyReset'
+import { DoorKeyManager } from './DoorAccessKey'
 import { FoodRequestReview } from './FoodRequestReview'
 import { formatAadhar } from './aadharNumber'
 import { PhoneText } from './PhoneField'
@@ -181,6 +182,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             <div><dt>Occupation</dt><dd>{resident.occupation || '—'}</dd></div>
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
+            <div><dt>Door access key</dt><dd className="sign-in-cell">{isRecord ? (resident.doorAccessKey ?? 'Not issued') : <DoorKeyManager residentId={resident.id} residentName={resident.name} doorAccessKey={resident.doorAccessKey} revokedAt={resident.doorAccessKeyRevokedAt} onChanged={onChanged} onNotice={onNotice} />}</dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
             <div><dt>Days stayed</dt><dd>{daysStayedLabel(resident.joinedAt)}</dd></div>
             <div><dt>Food plan</dt><dd className="sign-in-cell">{resident.foodOpted ? 'With food' : 'Without food'}{resident.rentFromProperty ? ' · rent from property prices' : ''}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>

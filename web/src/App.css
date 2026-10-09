@@ -56,6 +56,15 @@ button { cursor: pointer; }
 .current-card-link:hover { text-decoration: underline; }
 .resident-modal .access-key-control { margin-top: 4px; }
 .resident-modal .modal-actions { margin-top: 16px; }
+/* Wide screens: a roomier form with single-line fields in pairs. Everything else (photo, address,
+   grouped sections, checkboxes, access key, actions) spans both columns. */
+@media (min-width: 760px) {
+  .resident-modal { width: min(100%, 880px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; align-content: start; }
+  .resident-modal > * { grid-column: 1 / -1; }
+  .resident-modal > :is(label, .phone-field, .country-field):not(.whatsapp-optin):not(:has(textarea)) { grid-column: auto; }
+  .resident-modal .emergency-contact-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+  .resident-modal .emergency-contact-fields > :is(label, .phone-field) { margin-top: 0; }
+}
 .login-shell { min-height: 100vh; display: grid; place-items: center; padding: 20px 16px; background: var(--paper); }
 .login-card { width: min(100%, 380px); display: grid; padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: 0 20px 60px #18352f14; }
 .login-card .brand-row { margin-bottom: 26px; }
@@ -200,20 +209,24 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .residents-count { margin: 0 0 6px; color: var(--muted); font-size: 11px; }
 
 .resident-card { padding-bottom: 0; animation: rise-in .35s ease both; animation-delay: calc(var(--stagger, 0) * 40ms); }
-.resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1.4fr) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
+/* The name column has a capped width so the contact column starts at the same place in every row,
+   right after the names, instead of floating mid-row; the contact column takes the rest. */
+.resident-card .resident-row { grid-template-columns: 38px minmax(0, clamp(200px, 28%, 340px)) minmax(0, 1fr) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
 .resident-card .resident-row:hover { background: #f5f9f6; }
 .resident-card.is-expanded .resident-row { background: #f2f7f4; }
 .resident-avatar { transition: transform .25s ease; }
 .resident-card .resident-row:hover .resident-avatar { transform: scale(1.06); }
 .resident-room small { color: #98a09d; font-size: 9px; white-space: nowrap; }
 /* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
-.resident-phone { min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; }
+/* One evenly spaced list: every line (with or without a copy icon) is the same height. */
+.resident-phone { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; line-height: 18px; }
 /* Email under the phone; long addresses are cut with an ellipsis (full address on hover). */
 .resident-email { display: block; min-width: 0; overflow: hidden; color: rgb(37 99 235); font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .resident-email:hover { color: var(--teal); text-decoration: underline; }
 /* Owner's resident row: email in blue, and each ID line led by a coloured label (passport or Aadhaar
    violet, visa pink) so the documents are easy to pick out; values stay in the normal text colour. */
-.document-label { font-weight: 700; }
+/* Fixed width so the Passport, Visa and Aadhaar numbers start at the same edge. */
+.document-label { display: inline-block; min-width: 54px; font-weight: 700; }
 .document-label.is-id { color: rgb(124 58 237); }
 .document-label.is-visa { color: rgb(219 39 119); }
 :root[data-theme="dark"] .resident-email { color: rgb(96 165 250); }
@@ -221,13 +234,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .document-label.is-visa { color: rgb(244 114 182); }
 /* A little space between the emergency contact's name line and the number below it. */
 .emergency-contact-call { display: inline-block; margin-top: 4px; }
-.resident-contact-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.resident-contact-line + .resident-contact-line { margin-top: 3px; }
+.resident-contact-line { display: flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; height: 18px; }
 /* Faint until hovered so a column of copy icons does not compete with the contact details. */
 .contact-copy { flex: none; display: grid; place-items: center; padding: 3px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; opacity: .55; cursor: pointer; transition: opacity .15s, color .15s, background .15s; }
 .contact-copy:hover, .contact-copy:focus-visible { opacity: 1; color: var(--teal); background: var(--teal-soft); }
 /* Aadhaar (in full) or passport, under the email. */
-.resident-document { display: block; margin-top: 3px; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.resident-document { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .resident-card .resident-room { display: flex; align-items: center; gap: 10px; }
 .resident-room-meta { display: grid; gap: 4px; }
 .resident-room .rent-chip { margin-top: 0; }
@@ -861,6 +873,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .access-key-issue { display: inline-flex; align-items: center; gap: 4px; padding: 0; font-weight: 700; }
 .access-key-reveal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .access-key-reveal code { padding: 4px 8px; border-radius: 6px; color: var(--ink); background: var(--teal-soft); font: 700 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .04em; }
+.door-key-revoked { color: var(--coral); font-size: 11px; font-weight: 600; line-height: 1.4; }
+.door-key-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.door-key-line { display: inline-flex; align-items: center; gap: 4px; }
+.door-key-line code { font: 700 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
 .access-key-reveal small { flex-basis: 100%; color: var(--muted); font-size: 10px; }
 
 /* Food plan requests: the resident's opt-in prompt and the owner's approve/decline. */
@@ -879,18 +895,19 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Rooms manager (per property) and the resident form's room picker. */
 .rooms-modal { width: min(100%, 560px); max-height: calc(100vh - 48px); overflow-y: auto; }
 .rooms-summary { margin: 10px 0 14px; color: var(--muted); font-size: 11px; font-weight: 700; }
-.rooms-add { display: grid; grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-bottom: 8px; }
-.rooms-add:last-of-type { grid-template-columns: 100px minmax(0, 1fr) auto; }
+.rooms-add { display: grid; grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.rooms-add:last-of-type { grid-template-columns: 100px minmax(0, 1fr) auto auto; }
 .rooms-add span { color: #55635f; font-size: 11px; font-weight: 700; }
-.rooms-add input { min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
-.rooms-add input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
+.rooms-add input, .rooms-add select, .rooms-list li select { min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.rooms-add input:focus, .rooms-add select:focus, .rooms-list li select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
 .rooms-add .primary-button, .rooms-add .secondary-button { width: auto; padding: 8px 14px; font-size: 11px; }
-.rooms-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
-.rooms-list li { display: grid; grid-template-columns: auto 1fr auto; column-gap: 7px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
+.rooms-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.rooms-list li { display: grid; grid-template-columns: auto 1fr auto auto; column-gap: 7px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
 .rooms-list li svg { grid-row: span 2; color: var(--teal); }
 .rooms-list li strong { color: var(--ink); font-size: 12px; }
-.rooms-list li small { grid-column: 2; color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rooms-list li .icon-button { grid-column: 3; grid-row: 1 / span 2; }
+.rooms-list li select { grid-column: 3; grid-row: 1; padding: 3px 6px; font-size: 10px; }
+.rooms-list li small { grid-column: 2 / 4; color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rooms-list li .icon-button { grid-column: 4; grid-row: 1 / span 2; }
 .rooms-list li.is-occupied { background: var(--teal-soft); }
 .room-select-empty { margin-top: 14px; color: #55635f; font-size: 11px; font-weight: 700; }
 .room-select-empty p { margin: 6px 0 0; padding: 9px 11px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-weight: 400; line-height: 1.5; }
@@ -2237,6 +2254,7 @@ div.portal-panel { display: contents; }
 .audit-role { padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .audit-role.is-super_admin { color: rgb(15 118 110); background: rgb(204 251 241); }
 .audit-role.is-receptionist { color: rgb(146 64 14); background: rgb(254 243 199); }
+.audit-role.is-system { color: rgb(71 85 105); background: rgb(226 232 240); }
 :root[data-theme="dark"] .audit-log li { background: rgb(255 255 255 / .03); }
 @media (max-width: 560px) { .audit-log li { flex-direction: column; align-items: flex-start; gap: 6px; } }
 /* The menu's last item (Audit logs), kept at the bottom just above the database status. */

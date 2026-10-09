@@ -211,9 +211,8 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     if (dues.total > 0) { response.status(409).json({ error: `Clear ₹${dues.total.toLocaleString('en-IN')} in dues before completing the move-out.` }); return }
     const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : null
     await prisma.$transaction([
-      // Their password and access key are cleared too, so moving back in needs a new access key.
-      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
-      ...(resident.roomId ? [prisma.room.update({ where: { id: resident.roomId }, data: { occupied: false } })] : []),
+      // Their password, access key and door access key are cleared too, so moving back in needs a new access key.
+      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
       prisma.session.deleteMany({ where: { residentId: id } }),
     ])
     response.status(204).send()

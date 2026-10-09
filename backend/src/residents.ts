@@ -1,16 +1,17 @@
 import { AadharVerificationStatus, Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
-import { createAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
+import { createAccessKey, createDoorAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { findDuplicate } from './duplicates.js'
 import { documentDataUrlPattern, findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
 import { prisma, withDatabaseRetry } from './db.js'
+import { roomBedsSelect } from './occupancy.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
 import { residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 import { findInvalidField, pickTextFields, toResidentWrite, type TextField } from './residentFields.js'
-import { isRentLocked } from './rentLock.js'
+import { isLockedOut, isRentLocked } from './rentLock.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyResidentCredentials } from './notifications.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
@@ -47,11 +48,11 @@ class InputError extends Error {}
 // separately because the summary query never loads the credential hashes.
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean, rates: DailyRates) {
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
-  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, room, rentPayments } = resident
+  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     rentFromProperty: Boolean(room && room.property.rentWithFood !== null && room.property.rentWithoutFood !== null), room: room?.number ?? '—', propertyId: room?.propertyId ?? '', property: room?.property.name ?? resident.movedOutFrom ?? 'Moved out', location: room?.property.location ?? '', movedOutFrom: resident.movedOutFrom }
@@ -88,15 +89,21 @@ function parseResidentIdentity(body: ResidentBody): { fields: IdentityFields } |
 }
 
 /**
- * Reserves one of the owner's rooms for a resident: the free room with that number, or without a
- * number the lowest-numbered free room. Rooms are never created here; the owner defines them under
- * Properties, so a typo can never invent a room.
+ * Reserves a bed in one of the owner's rooms for a resident: in the room with that number, or without
+ * a number in the lowest-numbered room with a free bed. Rooms are never created here; the owner
+ * defines them under Properties, so a typo can never invent a room.
  */
 async function claimRoom(transaction: Prisma.TransactionClient, propertyId: string, roomNumber?: string) {
-  const freeRoom = await transaction.room.findFirst({ where: { propertyId, resident: { is: null }, ...(roomNumber ? { number: roomNumber } : {}) }, orderBy: { number: 'asc' } })
-  if (freeRoom) return transaction.room.update({ where: { id: freeRoom.id }, data: { occupied: true } })
-  if (roomNumber && await transaction.room.count({ where: { propertyId, number: roomNumber } })) throw new RoomUnavailableError(`Room ${roomNumber} is already occupied.`)
-  throw new RoomUnavailableError(roomNumber ? `Room ${roomNumber} does not exist in this property. Add it under Properties, then Rooms.` : 'This property has no free rooms. Add rooms under Properties, then Rooms.')
+  const rooms = await transaction.room.findMany({ where: { propertyId, ...(roomNumber ? { number: roomNumber } : {}) }, select: { id: true, number: true, ...roomBedsSelect }, orderBy: { number: 'asc' } })
+  const freeRoom = rooms.find((room) => room._count.residents < room.beds)
+  if (freeRoom) {
+    // Lock the room and count again: two residents saved at the same moment must not both take its last bed.
+    await transaction.$queryRaw`SELECT id FROM "Room" WHERE id = ${freeRoom.id} FOR UPDATE`
+    if (await transaction.resident.count({ where: { roomId: freeRoom.id } }) < freeRoom.beds) return freeRoom
+    throw new RoomUnavailableError(`The last bed in room ${freeRoom.number} was just taken. Choose another room.`)
+  }
+  if (roomNumber && rooms.length) throw new RoomUnavailableError(`Room ${roomNumber} is full.`)
+  throw new RoomUnavailableError(roomNumber ? `Room ${roomNumber} does not exist in this property. Add it under Properties, then Rooms.` : 'This property has no free beds. Add rooms or beds under Properties, then Rooms.')
 }
 
 /**
@@ -307,7 +314,6 @@ residentRouter.put('/residents/:id', async (request, response) => {
       // An address the owner types is theirs to vouch for, so it is shown as verified again.
       const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
       await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
-      if (isMoving && current.roomId) await transaction.room.update({ where: { id: current.roomId }, data: { occupied: false } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
     })
@@ -353,6 +359,31 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
 
 // Lets the owner choose a resident's password so they can tell the resident what it is; the
 // password itself is stored only as a hash. Retires the access key and signs the resident out.
+// Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE
+// removes it. Super admins only (see staffGuard). Anyone who has left gets no key.
+residentRouter.post('/residents/:id/door-key', async (request, response) => {
+  try {
+    const resident = await prisma.resident.findUniqueOrThrow({ where: { id: request.params.id }, select: { deletedAt: true, movedOutAt: true } })
+    if (resident.deletedAt || resident.movedOutAt) { response.status(409).json({ error: 'This resident no longer lives here, so they cannot get a door access key.' }); return }
+    // The daily run would take it away again; the owner records the rent or allows access until a date first.
+    if (await isLockedOut(request.params.id)) { response.status(409).json({ error: 'Rent is overdue, so door access is paused. Record the payment or allow access until a date first.' }); return }
+    const doorAccessKey = createDoorAccessKey()
+    await prisma.resident.update({ where: { id: request.params.id }, data: { doorAccessKey, doorAccessKeyRevokedAt: null } })
+    response.json({ doorAccessKey })
+  } catch (error) {
+    respondToWriteError(response, error, 'Door access key could not be saved.')
+  }
+})
+
+residentRouter.delete('/residents/:id/door-key', async (request, response) => {
+  try {
+    await prisma.resident.update({ where: { id: request.params.id }, data: { doorAccessKey: null, doorAccessKeyRevokedAt: null } })
+    response.status(204).end()
+  } catch (error) {
+    respondToWriteError(response, error, 'Door access key could not be removed.')
+  }
+})
+
 residentRouter.post('/residents/:id/password', async (request, response) => {
   const { id } = request.params
   const { password } = request.body as { password?: string }
@@ -397,10 +428,9 @@ residentRouter.post('/residents/:id/aadhar-verification', async (request, respon
   }
 })
 
-/** Deletes a resident outright and frees their room (also how a rejected addition is removed). */
+/** Deletes a resident outright, freeing their bed (also how a rejected addition is removed). */
 async function deleteResident(id: string) {
-  const resident = await prisma.resident.delete({ where: { id } })
-  if (resident.roomId) await prisma.room.update({ where: { id: resident.roomId }, data: { occupied: false } })
+  await prisma.resident.delete({ where: { id } })
 }
 
 // A super admin's decision on a resident a receptionist added: approve lets them sign in; reject removes

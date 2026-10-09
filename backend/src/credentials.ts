@@ -1,10 +1,15 @@
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
+import { randomBytes, randomInt, scryptSync, timingSafeEqual } from 'node:crypto'
 
 const accessKeyPattern = /^RAJ-[0-9A-F]{8}$/
 
 function equalHex(expectedHex: string, actual: Buffer) {
   const expected = Buffer.from(expectedHex, 'hex')
   return expected.length === actual.length && timingSafeEqual(expected, actual)
+}
+
+/** Generates a 6-digit door lock PIN; leading zeros kept, since keypads accept them. */
+export function createDoorAccessKey() {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0')
 }
 
 /** Generates a resident access key in the only format the API accepts. */

@@ -24,6 +24,7 @@ import { brandingRouter, settingsRouter } from './settings.js'
 import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
 import { roomsAdminRouter } from './rooms.js'
+import { bedCounts, roomBedsSelect } from './occupancy.js'
 import { holidaysAdminRouter } from './holidays.js'
 import { fireAlertAdminRouter } from './fireAlerts.js'
 import { exitAdminRouter } from './exits.js'
@@ -106,13 +107,11 @@ app.use('/api', concessionAdminRouter)
 app.use('/api', maintenanceAdminRouter)
 app.use('/api', propertyPhotoAdminRouter)
 
-// Occupancy against the owner's declared capacity; older properties without one fall back to the
-// rooms that exist. A property can hold more occupied rooms than declared only if it was lowered
-// before this check existed, so the percentage is capped at 100.
-function occupancySummary(property: { totalRooms: number | null; rooms: Array<{ occupied: boolean }> }) {
-  const occupied = property.rooms.filter((room) => room.occupied).length
-  const total = property.totalRooms ?? property.rooms.length
-  return { occupancy: `${total ? Math.min(100, Math.round((occupied / total) * 100)) : 0}%`, rooms: `${occupied} / ${total}`, totalRooms: total }
+// Occupancy in beds (see bedCounts); older properties without a declared room count fall back to the
+// rooms that exist. Capped at 100% in case a property was made smaller than it once was.
+function occupancySummary(property: Parameters<typeof bedCounts>[0]) {
+  const { taken, total } = bedCounts(property)
+  return { occupancy: `${total ? Math.min(100, Math.round((taken / total) * 100)) : 0}%`, beds: `${taken} / ${total}`, totalRooms: property.totalRooms ?? property.rooms.length }
 }
 
 // Optional city for the residents' weather; blank clears it, absent leaves it alone.
@@ -168,7 +167,7 @@ app.post('/api/properties', async (request, response) => {
   if (!process.env.DATABASE_URL) {
     response.status(201).json({
       source: 'fallback',
-      property: { name: name.trim(), location: location.trim(), image: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', occupancy: '0%', rooms: '0 / 0', status: 'Healthy', tone: 'sage' },
+      property: { name: name.trim(), location: location.trim(), image: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', occupancy: '0%', beds: '0 / 0', status: 'Healthy', tone: 'sage' },
     })
     return
   }
@@ -228,7 +227,7 @@ app.put('/api/properties/:id', async (request, response) => {
     }
     // Price and residents' rents change together, so a resident never shows a stale rent.
     const property = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: { occupied: true } } } })
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: roomBedsSelect } } })
       if (Object.keys(rents.data).length) await syncPropertyRents(transaction, updated.id)
       return updated
     })
@@ -271,7 +270,7 @@ app.get('/api/dashboard', async (_request, response) => {
 
   try {
     const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: true } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect } } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),

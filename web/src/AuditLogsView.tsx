@@ -6,7 +6,9 @@ import { useRefreshSignal } from './useAutoRefresh'
 import { usePagination } from './usePagination'
 
 /** One entry of the audit log, as GET /api/audit-logs lists it. */
-type AuditEntry = { id: string; staffId: string; staffName: string; staffRole: 'SUPER_ADMIN' | 'RECEPTIONIST'; action: string; propertyId: string | null; propertyName: string | null; createdAt: string }
+const roleLabels: Record<AuditEntry['staffRole'], string> = { SUPER_ADMIN: 'Super admin', RECEPTIONIST: 'Receptionist', SYSTEM: 'Automatic' }
+
+type AuditEntry = { id: string; staffId: string; staffName: string; /** SYSTEM: changes the app made on its own, e.g. door access removed for overdue rent. */ staffRole: 'SUPER_ADMIN' | 'RECEPTIONIST' | 'SYSTEM'; action: string; propertyId: string | null; propertyName: string | null; createdAt: string }
 
 const periods = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['', 'All time']] as const
 
@@ -53,7 +55,7 @@ export function AuditLogsView({ refreshSignal, onBack }: { refreshSignal: number
         <label className="toolbar-search"><Search size={15} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search changes or names" aria-label="Search the audit log" /></label>
         <select value={person} onChange={(event) => setPerson(event.target.value)} aria-label="Filter by person"><option value="">Everyone</option>{people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>
         <select value={property} onChange={(event) => setProperty(event.target.value)} aria-label="Filter by property"><option value="">All properties</option>{propertyChoices.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>
-        <select value={role} onChange={(event) => setRole(event.target.value)} aria-label="Filter by role"><option value="">All roles</option><option value="SUPER_ADMIN">Super admins</option><option value="RECEPTIONIST">Receptionists</option></select>
+        <select value={role} onChange={(event) => setRole(event.target.value)} aria-label="Filter by role"><option value="">All roles</option><option value="SUPER_ADMIN">Super admins</option><option value="RECEPTIONIST">Receptionists</option><option value="SYSTEM">Automatic</option></select>
         <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Period">{periods.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
       </div>
       {loadError && !entries ? <p className="login-error" role="alert">The audit log could not be loaded.</p>
@@ -63,7 +65,7 @@ export function AuditLogsView({ refreshSignal, onBack }: { refreshSignal: number
             <ol className="audit-log">
               {pager.pageItems.map((entry) => (
                 <li key={entry.id}>
-                  <div className="audit-log-main"><strong>{entry.action}</strong><small>{entry.propertyName && <><span className="audit-property"><Building2 size={11} aria-hidden="true" /> {entry.propertyName}</span> · </>}{entry.staffName} · <span className={`audit-role is-${entry.staffRole.toLowerCase()}`}>{entry.staffRole === 'SUPER_ADMIN' ? 'Super admin' : 'Receptionist'}</span></small></div>
+                  <div className="audit-log-main"><strong>{entry.action}</strong><small>{entry.propertyName && <><span className="audit-property"><Building2 size={11} aria-hidden="true" /> {entry.propertyName}</span> · </>}{entry.staffName} · <span className={`audit-role is-${entry.staffRole.toLowerCase()}`}>{roleLabels[entry.staffRole]}</span></small></div>
                   <time dateTime={entry.createdAt}>{when(entry.createdAt)}</time>
                 </li>
               ))}

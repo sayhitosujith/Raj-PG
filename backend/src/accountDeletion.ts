@@ -33,7 +33,6 @@ async function closeAccount(id: string) {
         deletionRequestedAt: null, deletionDeclinedAt: null, deletionDeclineReason: null, deletedAt: now, ...(movedOutFrom ? { movedOutFrom } : {}),
       },
     }),
-    ...(resident.roomId ? [prisma.room.update({ where: { id: resident.roomId }, data: { occupied: false } })] : []),
   ])
   return true
 }
