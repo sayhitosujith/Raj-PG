@@ -66,7 +66,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; featureBadges?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -160,7 +160,7 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     data.featureBadges = badges
   }
   // Portal colours as "#rrggbb"; null (or blank) resets to the default.
-  for (const [field, label] of [['portalThemeColor', 'Theme colour'], ['portalButtonTextColor', 'Button text colour'], ['portalErrorColor', 'Error message colour'], ['portalTextColor', 'Text colour'], ['portalPlaceholderColor', 'Placeholder text colour'], ['portalNewBadgeColor', 'New banner colour'], ['portalSoonBadgeColor', 'Coming soon banner colour'], ['portalBetaBadgeColor', 'Beta banner colour'], ['portalBackgroundColor', 'App background colour']] as const) {
+  for (const [field, label] of [['portalThemeColor', 'Theme colour'], ['portalButtonTextColor', 'Button text colour'], ['portalErrorColor', 'Error message colour'], ['portalTextColor', 'Text colour'], ['portalPlaceholderColor', 'Placeholder text colour'], ['portalNewBadgeColor', 'New banner colour'], ['portalSoonBadgeColor', 'Coming soon banner colour'], ['portalBetaBadgeColor', 'Beta banner colour'], ['portalBackgroundColor', 'App background colour'], ['portalCardColor', 'Main card background colour'], ['portalChildCardColor', 'Inner card background colour']] as const) {
     const colour = input[field]
     if (colour === undefined) continue
     if (colour === null || colour === '') { data[field] = null; continue }

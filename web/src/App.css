@@ -2242,3 +2242,7 @@ div.portal-panel { display: contents; }
 /* The menu's last item (Audit logs), kept at the bottom just above the database status. */
 .sidebar-bottom-nav { margin-bottom: 8px; }
 .audit-property { display: inline-flex; align-items: center; gap: 3px; color: var(--ink); font-weight: 700; }
+/* The admin's card backgrounds, once chosen in Views (light view only). */
+:root[data-card-bg]:not([data-theme="dark"]) :is(.workspace-view, .panel, .stat-card) { background: var(--card-bg); }
+:root[data-child-card-bg]:not([data-theme="dark"]) :is(.settings-section, .property-card, .workspace-summary div, .resident-row, .audit-log li, .colour-choice) { background: var(--child-card-bg); }
+.portal-colour-preview-card { background: var(--child-card-bg, color-mix(in srgb, var(--brand) 6%, #fff)) !important; }

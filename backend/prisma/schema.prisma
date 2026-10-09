@@ -516,6 +516,10 @@ model WorkspaceSettings {
   // The page background behind the cards (light view), "#rrggbb"; null = white for residents and the
   // admin's usual background.
   portalBackgroundColor   String?
+  // Backgrounds of the main section cards and of the small cards inside them (light view), "#rrggbb";
+  // null = the defaults (white, and the theme colour's light tint in the resident portal).
+  portalCardColor         String?
+  portalChildCardColor    String?
   // Which banner each resident feature shows: { feature: "NEW" | "SOON" | "BETA" }; a feature left out
   // shows none. Starts as the banners the portal had before the owner could choose.
   featureBadges           Json      @default("{\"faqs\":\"NEW\",\"passkeys\":\"NEW\",\"whatsapp\":\"BETA\",\"email\":\"BETA\"}")

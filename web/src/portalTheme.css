@@ -231,3 +231,8 @@
 :root[data-theme] .portal-shell .faq-list summary svg { color: var(--brand-deep); }
 :root[data-theme="dark"] .portal-shell .faq-list details { border-color: color-mix(in srgb, var(--brand-light) 30%, transparent); background: color-mix(in srgb, var(--brand-night) 28%, transparent); }
 :root[data-theme="dark"] .portal-shell .faq-list summary svg { color: var(--brand-pale); }
+/* Card backgrounds chosen in Views (light view only; dark view keeps its own). Main cards are the big
+   section cards; inner cards are the small ones inside them. Without a choice: white main cards and
+   inner cards in the theme colour's light tint. */
+:root:not([data-theme="dark"]) .portal-shell :is(.workspace-view) { background: var(--card-bg, #fff); }
+:root:not([data-theme="dark"]) .portal-shell :is(.portal-details > .detail-card, .rent-highlight, .house-rules li, .upi-direct, .crud-row, .holiday-list li, .meal-tile:not(.is-serving), .info-card, .faq-list details) { background: var(--child-card-bg, var(--brand-tint)); }

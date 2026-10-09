@@ -12,6 +12,8 @@ const colourSettings = [
   ['portalSoonBadgeColor', '--badge-soon', 'badgeSoon'],
   ['portalBetaBadgeColor', '--badge-beta', 'badgeBeta'],
   ['portalBackgroundColor', '--app-bg', 'appBg'],
+  ['portalCardColor', '--card-bg', 'cardBg'],
+  ['portalChildCardColor', '--child-card-bg', 'childCardBg'],
 ] as const
 
 /**
