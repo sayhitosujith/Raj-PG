@@ -846,6 +846,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Property prices (with / without food) and the resident form's food plan picker. */
 .rent-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rent-prices label { display: grid; gap: 5px; color: #55635f; font-size: 11px; font-weight: 700; }
+/* Price by sharing type: one row per room size, with-food and without-food side by side. */
+.sharing-prices { display: grid; grid-template-columns: minmax(96px, 1.1fr) repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-items: center; margin-top: 12px; }
+.sharing-prices-head { color: #9da7a3; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+.sharing-prices-name { display: grid; gap: 1px; min-width: 0; color: #55635f; font-size: 11px; font-weight: 700; }
+.sharing-prices-name small { overflow: hidden; color: #9da7a3; font-size: 9px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.sharing-prices input { min-width: 0; padding: 6px 9px; font-size: 12px; }
+.rent-prices input[aria-invalid], .sharing-prices input[aria-invalid] { border-color: var(--coral); box-shadow: 0 0 0 3px #ee7b5e26; }
 .feature-hint { color: var(--muted); font-size: 10px; line-height: 1.5; }
 .feature-group legend svg { vertical-align: -2px; }
 .food-plan { margin: 14px 0 0; padding: 0; border: 0; }

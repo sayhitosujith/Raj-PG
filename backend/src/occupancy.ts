@@ -1,5 +1,8 @@
 import type { Prisma } from '@prisma/client'
 
+/** The most residents one room can hold (also the largest sharing type that can be priced). */
+export const maxBeds = 10
+
 /** What each room must load for bed counts: its size and how many residents are in it. */
 export const roomBedsSelect = { beds: true, _count: { select: { residents: true } } } satisfies Prisma.RoomSelect
 

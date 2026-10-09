@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
+import { maxBeds } from './occupancy.js'
+import { syncPropertyRents } from './propertyRent.js'
 
 /**
  * A property's rooms, defined by the owner (e.g. 101-110, 201-210, G1), each with a number of beds
@@ -10,7 +12,6 @@ import { prisma } from './db.js'
  */
 const roomNumberPattern = /^[A-Za-z0-9-]{1,12}$/
 const maxRoomsPerRequest = 200
-const maxBeds = 10
 
 /** A bed count from a request: a whole number from 1 to maxBeds, or null when it is not one. */
 const parseBeds = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= maxBeds ? value : null
@@ -69,7 +70,8 @@ roomsAdminRouter.post('/properties/:id/rooms', async (request, response) => {
   }
 })
 
-// Changes how many residents a room holds. It cannot go below the residents already in it.
+// Changes how many residents a room holds. It cannot go below the residents already in it. The
+// residents' rent follows, since a different sharing type can have a different price.
 roomsAdminRouter.patch('/properties/:id/rooms/:roomId', async (request, response) => {
   const { id, roomId } = request.params as { id: string; roomId: string }
   const beds = parseBeds((request.body as { beds?: unknown }).beds)
@@ -79,7 +81,10 @@ roomsAdminRouter.patch('/properties/:id/rooms/:roomId', async (request, response
     if (!room) { response.status(404).json({ error: 'Room was not found.' }); return }
     const living = room._count.residents
     if (beds < living) { response.status(409).json({ error: `${living} residents live in room ${room.number}, so it needs at least ${living} beds. Move someone first.` }); return }
-    await prisma.room.update({ where: { id: roomId }, data: { beds } })
+    await prisma.$transaction(async (transaction) => {
+      await transaction.room.update({ where: { id: roomId }, data: { beds } })
+      await syncPropertyRents(transaction, id)
+    })
     response.json(await listRooms(id))
   } catch (error) {
     respondToError(response, error, 'The room could not be updated.')

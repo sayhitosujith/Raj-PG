@@ -14,7 +14,7 @@ import { prisma } from './db.js'
 import { normalizePhone } from './validation.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
-import { parsePropertyRents, syncPropertyRents } from './propertyRent.js'
+import { parsePropertyRents, parseSharingPrices, syncPropertyRents } from './propertyRent.js'
 import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
@@ -40,6 +40,9 @@ import { staffGuard } from './staffGuard.js'
 import { recordStaffActivity, staffActivityRouter } from './staffActivity.js'
 import { propertyIdWhere, propertyWhere, residentWhere, staffAccess } from './staffAccess.js'
 import { announceWrites, liveUpdatesRouter } from './liveUpdates.js'
+
+// The price-by-sharing fields the dashboard and Edit property need.
+const sharingPriceFields = { beds: true, rentWithFood: true, rentWithoutFood: true } as const
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -163,6 +166,8 @@ app.post('/api/properties', async (request, response) => {
   if ('error' in totalRooms) { response.status(400).json({ error: totalRooms.error }); return }
   const rents = parsePropertyRents({ rentWithFood, rentWithoutFood })
   if ('error' in rents) { response.status(400).json({ error: rents.error }); return }
+  const sharing = parseSharingPrices((request.body as { sharingPrices?: unknown }).sharingPrices)
+  if ('error' in sharing) { response.status(400).json({ error: sharing.error }); return }
 
   if (!process.env.DATABASE_URL) {
     response.status(201).json({
@@ -174,7 +179,8 @@ app.post('/api/properties', async (request, response) => {
 
   try {
     const property = await prisma.property.create({
-      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...notice, ...info.data, ...tenantType, ...amenities, ...totalRooms, ...rents.data },
+      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...notice, ...info.data, ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows?.length ? { sharingPrices: { create: sharing.rows } } : {}) },
+      include: { sharingPrices: { select: sharingPriceFields } },
     })
     response.status(201).json({ source: 'postgresql', property: { ...property, image: property.imageUrl, ...occupancySummary({ ...property, rooms: [] }), tone: 'sage', mealTimes: toMealTimes(property) } })
   } catch (error) {
@@ -218,6 +224,8 @@ app.put('/api/properties/:id', async (request, response) => {
   if ('error' in totalRooms) { response.status(400).json({ error: totalRooms.error }); return }
   const rents = parsePropertyRents({ rentWithFood, rentWithoutFood })
   if ('error' in rents) { response.status(400).json({ error: rents.error }); return }
+  const sharing = parseSharingPrices((request.body as { sharingPrices?: unknown }).sharingPrices)
+  if ('error' in sharing) { response.status(400).json({ error: sharing.error }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Property updates require a database connection.' }); return }
   try {
     // Capacity cannot drop below the rooms the owner has defined.
@@ -227,8 +235,8 @@ app.put('/api/properties/:id', async (request, response) => {
     }
     // Price and residents' rents change together, so a resident never shows a stale rent.
     const property = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data }, include: { rooms: { select: roomBedsSelect } } })
-      if (Object.keys(rents.data).length) await syncPropertyRents(transaction, updated.id)
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows ? { sharingPrices: { deleteMany: {}, create: sharing.rows } } : {}) }, include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } })
+      if (Object.keys(rents.data).length || sharing.rows) await syncPropertyRents(transaction, updated.id)
       return updated
     })
     const { rooms: _rooms, ...fields } = property
@@ -270,7 +278,7 @@ app.get('/api/dashboard', async (_request, response) => {
 
   try {
     const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect } } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),
@@ -315,6 +323,7 @@ app.get('/api/dashboard', async (_request, response) => {
           amenities: property.amenities,
           rentWithFood: property.rentWithFood,
           rentWithoutFood: property.rentWithoutFood,
+          sharingPrices: [...property.sharingPrices].sort((a, b) => a.beds - b.beds),
         }
       }),
       activity: insights.activity,

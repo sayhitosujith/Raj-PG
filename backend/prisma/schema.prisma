@@ -34,6 +34,8 @@ model Property {
   // Optional pricing: when both are set, residents' rent follows their food choice (see propertyRent.ts).
   rentWithFood        Int?
   rentWithoutFood     Int?
+  // Prices for particular sharing types; any sharing type without one uses the two rents above.
+  sharingPrices       SharingPrice[]
   // Move-out notice in days for this property; null falls back to the notice period in Settings.
   noticePeriodDays    Int?
   // The resident Info tab (see residentInfo.ts): Wi-Fi, contacts ("Label: number" per line), times ("HH:MM").
@@ -61,6 +63,19 @@ model Property {
   mealFeedback        MealFeedback[]
   photos              PropertyPhoto[]
   createdAt           DateTime             @default(now())
+}
+
+// A property's rent for one sharing type (room size), with and without food; see propertyRent.ts.
+model SharingPrice {
+  id              String   @id @default(cuid())
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  // 1 = single, 2 = double sharing… (matches Room.beds).
+  beds            Int
+  rentWithFood    Int
+  rentWithoutFood Int
+
+  @@unique([propertyId, beds])
 }
 
 model Room {

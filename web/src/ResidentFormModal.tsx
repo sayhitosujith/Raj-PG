@@ -11,6 +11,8 @@ import { EmergencyContactFields, emergencyContactFields } from './EmergencyConta
 import { VehicleFields, vehicleFields } from './VehicleFields'
 import { readApiError } from './superAdmin'
 import { RoomSelect } from './RoomSelect'
+import { priceFor } from './pricing'
+import { sharingLabel } from './rooms'
 import { ModalLayer } from './ModalLayer'
 
 const minimumPasswordLength = 10
@@ -55,8 +57,12 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   // Property and food plan decide the rent when the property sets prices, so both are tracked live.
   const [propertyId, setPropertyId] = useState(resident?.propertyId ?? prefill?.propertyId ?? '')
   const [foodOpted, setFoodOpted] = useState(resident?.foodOpted ?? prefill?.foodOpted ?? true)
+  // The chosen room's bed count: a sharing type can have its own price.
+  const [roomBeds, setRoomBeds] = useState<number | null>(null)
   const selectedProperty = properties.find((property) => property.id === propertyId)
-  const pricedRent = selectedProperty?.rentWithFood && selectedProperty.rentWithoutFood ? (foodOpted ? selectedProperty.rentWithFood : selectedProperty.rentWithoutFood) : null
+  // The property's price for the chosen room's sharing type and a food choice (null when it sets none).
+  const rentFor = (withFood: boolean) => priceFor(selectedProperty, roomBeds, withFood)
+  const pricedRent = rentFor(foodOpted)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [portalPassword, setPortalPassword] = useState('')
@@ -134,7 +140,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={resident?.occupation ?? ''} placeholder="e.g. Software engineer, Student" /></label>
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} />
+        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} onBedsChange={setRoomBeds} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
         <EmergencyContactFields contact={resident} />
         <VehicleFields vehicle={resident} />
@@ -146,7 +152,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
               <label key={String(option)} className={`food-plan-option${foodOpted === option ? ' is-selected' : ''}`}>
                 <input type="radio" name="foodOpted" checked={foodOpted === option} onChange={() => setFoodOpted(option)} />
                 <strong>{option ? 'With food' : 'Without food'}</strong>
-                {selectedProperty?.rentWithFood && selectedProperty.rentWithoutFood ? <small>₹{(option ? selectedProperty.rentWithFood : selectedProperty.rentWithoutFood).toLocaleString('en-IN')} / month</small> : <small>{option ? 'Menu, skips and meal alerts' : 'No food features'}</small>}
+                {rentFor(option) !== null ? <small>₹{rentFor(option)?.toLocaleString('en-IN')} / month</small> : <small>{option ? 'Menu, skips and meal alerts' : 'No food features'}</small>}
               </label>
             ))}
           </div>
@@ -154,7 +160,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label className="whatsapp-optin"><input type="checkbox" name="whatsappOptIn" defaultChecked={resident?.whatsappOptIn ?? prefill?.whatsappOptIn ?? true} /><span>WhatsApp updates <small>Rent reminders, receipts and notices on WhatsApp. The resident can turn this off in their portal.</small></span></label>
         <label className="whatsapp-optin"><input type="checkbox" name="emailOptIn" defaultChecked={resident?.emailOptIn ?? prefill?.emailOptIn ?? true} /><span>Email updates <small>Rent reminders and notices by email. Payment receipts are always emailed when there is an email address.</small></span></label>
         {pricedRent !== null
-          ? <p className="priced-rent">Monthly rent <strong>₹{pricedRent.toLocaleString('en-IN')}</strong> <span>set by {selectedProperty?.name} for {foodOpted ? 'with food' : 'without food'}; change it in the property's prices</span></p>
+          ? <p className="priced-rent">Monthly rent <strong>₹{pricedRent.toLocaleString('en-IN')}</strong> <span>set by {selectedProperty?.name} for {roomBeds ? `${sharingLabel(roomBeds).toLowerCase()}, ` : ''}{foodOpted ? 'with food' : 'without food'}; change it in the property's prices</span></p>
           : <label>Monthly rent (₹) <span>(reminder days are set in Settings; leave blank to not track)</span><input name="monthlyRent" type="number" inputMode="numeric" min={0} max={1000000} step={1} defaultValue={resident?.rent.monthlyRent ?? prefill?.monthlyRent ?? undefined} placeholder="e.g. 8500" /></label>}
         <label>Joining date<input name="joinedAt" type="date" required defaultValue={resident ? resident.joinedAt.slice(0, 10) : prefill?.joinedAt?.slice(0, 10) ?? todayDateInputValue()} /></label>
         {isEdit && <label>Allow access until <span>(optional; lets them use the app with overdue rent up to this date)</span><input name="rentAccessUntil" type="date" defaultValue={resident.rentAccessUntil?.slice(0, 10) ?? ''} /></label>}

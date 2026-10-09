@@ -1,4 +1,5 @@
 import { AirVent, ArrowUpDown, Cctv, ShieldCheck, ShowerHead, Tv, UtensilsCrossed, Wifi } from 'lucide-react'
+import { maxBeds } from './rooms'
 
 /** Who a PG is for; null for properties created before this was asked. */
 export type TenantType = 'MEN' | 'WOMEN' | 'COLIVING'
@@ -25,7 +26,15 @@ export const amenityOptions: Array<{ value: AmenityCode; label: string; icon: ty
 /** e.g. "Men only"; used in compact places like the overview row. */
 export const tenantHint = (type: TenantType | null | undefined) => tenantOptions.find((option) => option.value === type)?.hint ?? null
 
+// Every row of the sharing price table that is on the form; the API drops rows left blank, so sending
+// them all replaces the stored list.
+function readSharingPrices(form: FormData) {
+  return Array.from({ length: maxBeds }, (_, index) => index + 1)
+    .filter((beds) => form.has(`sharing-${beds}-withFood`))
+    .map((beds) => ({ beds, rentWithFood: form.get(`sharing-${beds}-withFood`), rentWithoutFood: form.get(`sharing-${beds}-withoutFood`) }))
+}
+
 /** Reads the PropertyFeatureFields inputs back into the API shape. */
 export function readPropertyFeatures(form: FormData) {
-  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), noticePeriodDays: form.get('noticePeriodDays'), wifiName: form.get('wifiName'), wifiPassword: form.get('wifiPassword'), contacts: form.get('contacts'), checkInTime: form.get('checkInTime'), checkOutTime: form.get('checkOutTime'), gateClosingTime: form.get('gateClosingTime') }
+  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), sharingPrices: readSharingPrices(form), noticePeriodDays: form.get('noticePeriodDays'), wifiName: form.get('wifiName'), wifiPassword: form.get('wifiPassword'), contacts: form.get('contacts'), checkInTime: form.get('checkInTime'), checkOutTime: form.get('checkOutTime'), gateClosingTime: form.get('gateClosingTime') }
 }

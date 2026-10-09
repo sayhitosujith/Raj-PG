@@ -1,25 +1,29 @@
 import { DoorOpen, IndianRupee, Users, Wifi } from 'lucide-react'
 import { amenityOptions, tenantOptions, type AmenityCode, type TenantType } from './propertyFeatureOptions'
+import { checkPricePair, type SharingPrice } from './pricing'
+import { SharingPriceTable } from './SharingPriceTable'
 
 /** A property's resident-facing details: Wi-Fi, important contacts and times ("HH:MM"). */
 export type PropertyInfoValues = { wifiName?: string | null; wifiPassword?: string | null; contacts?: string | null; checkInTime?: string | null; checkOutTime?: string | null; gateClosingTime?: string | null }
 
 /**
- * Number of rooms, rent with/without food, "PG for" (required, one of three) and amenity
+ * Number of rooms, rent with/without food (standard, and by sharing type), "PG for" (required, one of three) and amenity
  * checkboxes for the add/edit property forms. Uncontrolled inputs; read them back with
  * readPropertyFeatures.
  */
-export function PropertyFeatureFields({ totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, noticePeriodDays, info }: { totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; noticePeriodDays?: number | null; info?: PropertyInfoValues }) {
+export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, sharingPrices = [], noticePeriodDays, info }: { /** Set when editing, to show which rooms each sharing price covers. */ propertyId?: string; totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; sharingPrices?: SharingPrice[]; noticePeriodDays?: number | null; info?: PropertyInfoValues }) {
   return (
     <div className="property-features">
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Number of rooms</span><input name="totalRooms" type="number" inputMode="numeric" min={1} max={1000} step={1} required defaultValue={totalRooms || undefined} placeholder="e.g. 20" /></label>
-      <fieldset className="feature-group">
+      <fieldset className="feature-group" onInput={checkPricePair}>
         <legend><IndianRupee size={13} /> Monthly rent</legend>
         <div className="rent-prices">
-          <label>With food<input name="rentWithFood" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithFood ?? undefined} placeholder="e.g. 15000" /></label>
-          <label>Without food<input name="rentWithoutFood" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithoutFood ?? undefined} placeholder="e.g. 12000" /></label>
+          <label>With food<input name="rentWithFood" data-price-pair="standard" data-food="with" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithFood ?? undefined} placeholder="e.g. 15000" /></label>
+          <label>Without food<input name="rentWithoutFood" data-price-pair="standard" data-food="without" type="number" inputMode="numeric" min={1} max={1000000} step={1} defaultValue={rentWithoutFood ?? undefined} placeholder="e.g. 12000" /></label>
         </div>
-        <small className="feature-hint">Residents' rent follows their food plan. Leave both blank to set rent per resident instead.</small>
+        <small className="feature-hint">Standard price for every room. Residents' rent follows their food plan. Leave both blank to set rent per resident instead.</small>
+        <SharingPriceTable propertyId={propertyId} prices={sharingPrices} />
+        <small className="feature-hint">Optional. A room's beds (set under Rooms) pick its row; blank rows use the standard price above.</small>
       </fieldset>
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Move-out notice (days)</span><input name="noticePeriodDays" type="number" inputMode="numeric" min={0} max={180} step={1} defaultValue={noticePeriodDays ?? undefined} placeholder="Settings" /></label>
       <small className="feature-hint">How far ahead residents of this property must give notice to move out. Leave blank to use the notice period in Settings.</small>
