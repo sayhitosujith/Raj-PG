@@ -667,7 +667,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .referral-icon.is-instagram:hover, .referral-icon.is-instagram:focus-visible { border-color: rgb(225 48 108); }
 .referral-icon.is-google:hover, .referral-icon.is-google:focus-visible { border-color: rgb(66 133 244); }
 @media (min-width: 900px) {
-  .portal-terms { position: relative; padding-right: 230px; padding-left: 230px; }
+  .portal-terms { position: relative; padding-right: 300px; padding-left: 300px; }
   .referral-share { position: absolute; top: 50%; right: 4px; translate: 0 -50%; margin-top: 4px; }
 }
 .terms-modal { width: min(100%, 620px); }
@@ -1765,15 +1765,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .portal-terms { border-color: rgb(58 62 70); background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43)); color: rgb(190 236 214); }
 :root[data-theme="dark"] .portal-terms .text-link { color: rgb(80 210 160); }
 :root[data-theme="dark"] .portal-terms .referral-icon { border-color: rgb(78 84 94); background: rgb(255 255 255 / .06); }
+/* "Refer a friend" and its share icons as one card. Border and fill follow the footer's text colour, so
+   the card reads on the default grey footer, a brand-coloured one, and dark view alike. */
+.portal-terms .referral-share { padding: 6px 8px 6px 14px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); box-shadow: 0 4px 14px rgb(0 0 0 / .08); font-weight: 600; }
 /* Keep room for the share icons pinned to the right on wide screens (see .referral-share). */
-@media (min-width: 900px) { .portal-terms { padding-right: 230px; padding-left: 230px; } .referral-share { right: 16px; } }
+@media (min-width: 900px) { .portal-terms { padding-right: 300px; padding-left: 300px; } .referral-share { right: 16px; } }
 
 /* Bottom of the resident portal in green, edge to edge: the footer becomes a full-width band that
    meets the bottom of the page, and the tree strip behind it is tinted green to match. */
 .portal-shell .page-content { padding-bottom: 0; }
 .portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(214 218 224); border-radius: 0; }
 :root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(58 62 70); }
-@media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 230px); padding-left: calc(50vw - 50% + 230px); } .referral-share { right: calc(50vw - 50% + 16px); } }
+@media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 300px); padding-left: calc(50vw - 50% + 300px); } .referral-share { right: calc(50vw - 50% + 16px); } }
 .portal-shell .scenery-back { color: rgb(60 66 76 / .1); }
 .portal-shell .scenery-front { color: rgb(40 150 110 / .24); }
 :root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(70 190 140 / .12); }
@@ -2271,3 +2274,12 @@ div.portal-panel { display: contents; }
 :root[data-card-bg]:not([data-theme="dark"]) :is(.workspace-view, .panel, .stat-card) { background: var(--card-bg); }
 :root[data-child-card-bg]:not([data-theme="dark"]) :is(.settings-section, .property-card, .workspace-summary div, .resident-row, .audit-log li, .colour-choice) { background: var(--child-card-bg); }
 .portal-colour-preview-card { background: var(--child-card-bg, color-mix(in srgb, var(--brand) 6%, #fff)) !important; }
+/* Resident portal: the main and inner card colours chosen under Views (light view only), as the admin
+   pages get them above. .portal-shell carries the colours as --card-bg / --child-card-bg and is flagged
+   only when one is chosen, so the portal keeps its own tints otherwise. */
+:root:not([data-theme="dark"]) .portal-shell[data-card-bg] :is(.workspace-view, .whatsapp-preference, .passkey-settings) { background: var(--card-bg); }
+:root:not([data-theme="dark"]) .portal-shell[data-child-card-bg] :is(.house-rules li, .holiday-list li:not(.is-today), .today-tile:not(.is-highlight), .passkey-list li, .info-card, .portal-details > .detail-card) { background: var(--child-card-bg); }
+/* The Refer a friend card with its corner ribbon: squarer corners and room on the left so the ribbon
+   shows, and still pinned to the footer's right on wide screens (.has-ribbon sets position: relative). */
+.portal-terms .referral-share.has-ribbon { padding: 9px 10px 9px 38px; border-radius: 12px; }
+@media (min-width: 900px) { .portal-terms .referral-share.has-ribbon { position: absolute; } }

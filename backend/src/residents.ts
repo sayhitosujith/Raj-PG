@@ -12,6 +12,8 @@ import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 import { findInvalidField, pickTextFields, toResidentWrite, type TextField } from './residentFields.js'
 import { isLockedOut, isRentLocked } from './rentLock.js'
+import { closeAccount } from './accountDeletion.js'
+import type { AuthContext } from './auth.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyResidentCredentials } from './notifications.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
@@ -52,7 +54,7 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     rentFromProperty: Boolean(room && rentFor(room.property, room.beds, true) !== null), room: room?.number ?? '—', propertyId: room?.propertyId ?? '', property: room?.property.name ?? resident.movedOutFrom ?? 'Moved out', location: room?.property.location ?? '', movedOutFrom: resident.movedOutFrom }
@@ -429,7 +431,7 @@ residentRouter.post('/residents/:id/aadhar-verification', async (request, respon
   }
 })
 
-/** Deletes a resident outright, freeing their bed (also how a rejected addition is removed). */
+/** Erases a resident outright: a rejected addition, or a closed record the owner deletes for good. */
 async function deleteResident(id: string) {
   await prisma.resident.delete({ where: { id } })
 }
@@ -455,13 +457,33 @@ residentRouter.post('/residents/:id/approval', async (request, response) => {
   }
 })
 
+// Removing a resident closes the account rather than erasing it, so the record (with who removed it)
+// moves to Deleted records. Super admins only (see staffGuard.ts).
 residentRouter.delete('/residents/:id', async (request, response) => {
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident deletion requires a database connection.' }); return }
   try {
-    await deleteResident(request.params.id)
+    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { deletedAt: true } })
+    if (!resident) { response.status(404).json({ error: 'Resident was not found.' }); return }
+    if (resident.deletedAt) { response.status(409).json({ error: 'This resident is already in Deleted records.' }); return }
+    const { userId } = response.locals.auth as AuthContext
+    const staff = await prisma.superAdmin.findUnique({ where: { id: userId }, select: { name: true } })
+    await closeAccount(request.params.id, staff?.name ?? 'A team member')
     response.status(204).send()
   } catch (error) {
-    console.error('Resident deletion failed:', error)
-    response.status(404).json({ error: 'Resident could not be deleted.' })
+    console.error('Resident removal failed:', error)
+    response.status(503).json({ error: 'Resident could not be removed.' })
+  }
+})
+
+// Deletes a record on the Deleted records page for good. Only closed accounts: a live resident is removed
+// (and kept) first, so one click can never erase someone. Super admins only (see staffGuard.ts).
+residentRouter.delete('/residents/:id/record', async (request, response) => {
+  try {
+    const { count } = await prisma.resident.deleteMany({ where: { id: request.params.id, deletedAt: { not: null } } })
+    if (!count) { response.status(404).json({ error: 'That record was not found in Deleted records.' }); return }
+    response.status(204).send()
+  } catch (error) {
+    console.error('Record deletion failed:', error)
+    response.status(503).json({ error: 'The record could not be deleted.' })
   }
 })

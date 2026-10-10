@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { ModalLayer } from './ModalLayer'
-import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 import type { PropertyPhoto } from './PropertyPhotosManager'
 import { useRefreshSignal } from './useAutoRefresh'
 
@@ -13,7 +13,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 export function PropertyGallery({ refreshSignal }: { refreshSignal: number }) {
   const [photos, setPhotos] = useState<PropertyPhoto[]>([])
   const [open, setOpen] = useState<number | null>(null)
-  const { badge, markSeen } = useFeatureBadge('photos')
+  const { ribbon, tag, markSeen } = useFeatureBadge('photos')
   const load = () => fetch('/api/resident-portal/photos').then((response) => response.ok ? response.json() as Promise<{ photos: PropertyPhoto[] }> : null).then((body) => { if (body) setPhotos(body.photos) }, () => undefined)
   useEffect(() => { void load() }, [])
   useRefreshSignal(refreshSignal, () => { void load() })
@@ -33,8 +33,8 @@ export function PropertyGallery({ refreshSignal }: { refreshSignal: number }) {
   if (!photos.length) return null
   const shown = open === null ? null : photos[open]
   return (
-    <section className={`workspace-view portal-panel property-gallery${badge ? ' has-ribbon' : ''}`} data-panel="home" onClickCapture={markSeen}>{badge && <FeatureRibbon badge={badge} />}
-      <div className="workspace-view-heading"><div><p className="eyebrow">Gallery</p><h2>Photos</h2><p>Your PG, from your property owner. Tap a photo to see it full size.</p></div></div>
+    <section className={`workspace-view portal-panel property-gallery${ribbon ? ' has-ribbon' : ''}`} data-panel="home" onClickCapture={markSeen}>{ribbon && <FeatureRibbon badge={ribbon} />}
+      <div className="workspace-view-heading"><div><p className="eyebrow">Gallery</p><h2>Photos{tag && <FeatureTag badge={tag} />}</h2><p>Your PG, from your property owner. Tap a photo to see it full size.</p></div></div>
       <ul className="property-gallery-strip">
         {photos.map((photo, index) => (
           <li key={photo.id}><button type="button" onClick={() => setOpen(index)} aria-label={`Open photo${photo.caption ? `: ${photo.caption}` : ` ${index + 1}`}`}>

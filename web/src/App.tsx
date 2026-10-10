@@ -42,6 +42,7 @@ import type { HousekeepingStatus, OwnerHousekeepingRequest } from './housekeepin
 import { MealTimingFields } from './MealTimings'
 import { PropertyFeatureFields, PropertyFeatureTags } from './PropertyFeatures'
 import type { SharingPrice } from './pricing'
+import { displayName } from './displayName'
 import { readPropertyFeatures, tenantHint, type TenantType } from './propertyFeatureOptions'
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
@@ -414,11 +415,11 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   }
 
   async function deleteResident(resident: Resident) {
-    if (!window.confirm(`Remove ${resident.name} from ${resident.property}?`)) return
+    if (!window.confirm(`Remove ${resident.name} from ${resident.property}? They move to Deleted records with every detail kept; their bed is freed and they can no longer sign in.`)) return
     const response = await fetch(`/api/residents/${resident.id}`, { method: 'DELETE' })
-    if (!response.ok) { showNotice('Could not remove resident.'); return }
+    if (!response.ok) { showNotice(await readApiError(response, 'Could not remove resident.')); return }
     setResidents((current) => current.filter((item) => item.id !== resident.id))
-    showNotice(`${resident.name} removed.`)
+    showNotice(`${resident.name} moved to Deleted records.`)
   }
 
   // Both property forms. Resized in the browser, so a full-size phone photo is accepted instead of
@@ -470,7 +471,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwner ? 'Super admin' : 'Receptionist'}</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
-          <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {profileName.split(' ')[0]} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
+          <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
 
           {activeView === 'Residents' && <ResidentsView residents={residents} securityDeposit={settings?.securityDeposit ?? null} loadState={residentsLoadState} onRetry={retryResidents} onAdd={() => setResidentForm({})} onEdit={(resident) => setResidentForm({ resident })} onClone={(resident) => setResidentForm({ prefill: clonePrefill(resident) })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined) }} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Properties' && isOwner && <PropertiesView canManage={isOwner} properties={properties} stats={stats} onAdd={() => setIsPropertyModalOpen(true)} onEdit={(property) => setEditingProperty(property)} onRooms={(property) => setRoomsProperty(property)} onPhotos={(property) => setPhotosProperty(property)} onDelete={deleteProperty} onBack={() => handleNavigation('Overview')} />}

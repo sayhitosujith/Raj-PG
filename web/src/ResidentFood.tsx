@@ -25,27 +25,35 @@ async function toggleSkip(date: string, meal: ResidentMeal) {
   return error ?? (meal.skipped ? 'You are back in for that meal.' : 'Meal skipped. The kitchen will cook for one less.')
 }
 
-/** Thumbs up/down plus an optional comment for one of today's served meals. */
+/**
+ * Thumbs up/down plus an optional comment for one of today's served meals. The choice shows the moment
+ * it is tapped and saves in the background (the menu reload is not waited for), going back to what was
+ * saved before if the server refuses it.
+ */
 function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved: () => Promise<void>; onNotice: (message: string) => void }) {
   const [comment, setComment] = useState(meal.feedback?.comment ?? '')
+  const [liked, setLiked] = useState(meal.feedback?.liked)
+  const [savedComment, setSavedComment] = useState(meal.feedback?.comment ?? '')
   const [isSaving, setIsSaving] = useState(false)
 
-  async function save(liked: boolean) {
+  async function save(choice: boolean) {
+    const previous = liked
+    setLiked(choice)
     setIsSaving(true)
-    const error = await send('/api/resident-portal/food/feedback', { meal: meal.meal, liked, comment })
+    const error = await send('/api/resident-portal/food/feedback', { meal: meal.meal, liked: choice, comment })
     setIsSaving(false)
-    if (error) { onNotice(error); return }
-    await onSaved()
+    if (error) { setLiked(previous); onNotice(error); return }
+    setSavedComment(comment)
     onNotice('Thanks for the feedback.')
+    void onSaved()
   }
 
-  const liked = meal.feedback?.liked
   return (
     <div className="meal-feedback">
       <span>How was it?</span>
       <button type="button" className={`icon-button${liked === true ? ' is-active' : ''}`} aria-label="Thumbs up" aria-pressed={liked === true} disabled={isSaving} onClick={() => save(true)}><ThumbsUp size={14} /></button>
       <button type="button" className={`icon-button${liked === false ? ' is-active is-negative' : ''}`} aria-label="Thumbs down" aria-pressed={liked === false} disabled={isSaving} onClick={() => save(false)}><ThumbsDown size={14} /></button>
-      {meal.feedback && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); void save(meal.feedback!.liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={isSaving || comment === (meal.feedback.comment ?? '')}>Save</button></form>}
+      {liked !== undefined && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); void save(liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={isSaving || comment === savedComment}>Save</button></form>}
     </div>
   )
 }
@@ -97,7 +105,7 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
                 <div className="menu-meal-body">
                   <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small>{meal.skipped && <span className="status-pill gold">Skipping</span>}</div>
                   <p className={meal.items ? undefined : 'is-empty'}>{meal.items ?? 'Menu not set yet'}</p>
-                  {meal.canRate && <MealFeedback key={`${key}-${meal.feedback?.liked}`} meal={meal} onSaved={load} onNotice={onNotice} />}
+                  {meal.canRate && <MealFeedback key={key} meal={meal} onSaved={load} onNotice={onNotice} />}
                 </div>
                 {meal.canSkip && <button type="button" className="secondary-button" disabled={savingKey === key} onClick={() => changeSkip(day.date, meal)}>{meal.skipped ? 'Undo skip' : 'Skip'}</button>}
               </li>
@@ -237,7 +245,7 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
       <div className="profile-modal meal-rating-modal" role="dialog" aria-modal="true" aria-labelledby="meal-rating-title">
         <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="meal-rating-title">How was {label.toLowerCase()}?</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
         <p className="menu-modal-hint">{meal.items ?? label} · {formatMealWindow(meal)}. Your rating goes to the kitchen.</p>
-        <MealFeedback key={`${open}-${meal.feedback?.liked}`} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} />
+        <MealFeedback key={open} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} />
         <div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>{meal.feedback ? 'Done' : 'Not now'}</button></div>
       </div>
     </div></ModalLayer>

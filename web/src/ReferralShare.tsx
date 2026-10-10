@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Facebook, Instagram } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { bookingLink, bookingSourceLabels } from './booking'
-import { FeatureTag, useFeatureBadge } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 
 // Google's four-colour "G" (lucide ships no brand logos); its colours are fixed, unlike the other icons.
 const GoogleMark = () => <svg viewBox="0 0 48 48" width="15" height="15" aria-hidden="true">
@@ -30,7 +30,7 @@ const platforms: Array<{ key: SharePlatform; icon: ReactNode; shareUrl?: (link: 
  */
 export function ReferralShare({ businessName, referralCode, onNotice }: { businessName: string; /** The resident's code, so a friend who joins earns them a reward. */ referralCode?: string | null; onNotice: (message: string) => void }) {
   const text = `Looking for a place to stay? Book a room at ${businessName}:`
-  const { badge, markSeen } = useFeatureBadge('referral')
+  const { ribbon, tag, markSeen } = useFeatureBadge('referral')
 
   async function copyLink(platform: SharePlatform) {
     const link = bookingLink(platform, referralCode)
@@ -38,8 +38,9 @@ export function ReferralShare({ businessName, referralCode, onNotice }: { busine
   }
 
   return (
-    <span className="referral-share" onClickCapture={markSeen}>
-      Refer a friend{badge && <FeatureTag badge={badge} />}
+    <span className={`referral-share${ribbon ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>
+      {ribbon && <FeatureRibbon badge={ribbon} />}
+      Refer a friend{tag && <FeatureTag badge={tag} />}
       {platforms.map(({ key, icon, shareUrl }) => {
         const label = bookingSourceLabels[key]
         return shareUrl

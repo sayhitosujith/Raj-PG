@@ -4,7 +4,7 @@ import { resizePropertyPhoto } from './imageResize'
 import { formatWhen, maintenanceCategoryLabels, maintenanceStatusLabels, maintenanceStatusTones, type MaintenanceCategory, type MaintenanceRequest } from './maintenance'
 import { readApiError } from './superAdmin'
 import { ModalLayer } from './ModalLayer'
-import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 
 /** The resident's form: what's wrong, what kind, details and an optional photo (resized before upload). */
 function ReportForm({ onCreated, onClose }: { onCreated: (request: MaintenanceRequest) => void; onClose: () => void }) {
@@ -62,7 +62,7 @@ function ReportForm({ onCreated, onClose }: { onCreated: (request: MaintenanceRe
 export function ResidentMaintenance({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
   const [requests, setRequests] = useState<MaintenanceRequest[] | null>(null)
   const [isReporting, setIsReporting] = useState(false)
-  const { badge, markSeen } = useFeatureBadge('repairs')
+  const { ribbon, tag, markSeen } = useFeatureBadge('repairs')
   useEffect(() => {
     let isCurrent = true
     fetch('/api/resident-portal/maintenance').then((response) => (response.ok ? response.json() as Promise<MaintenanceRequest[]> : [])).then((rows) => { if (isCurrent) setRequests(rows) }, () => { if (isCurrent) setRequests([]) })
@@ -70,8 +70,8 @@ export function ResidentMaintenance({ refreshSignal, onNotice }: { refreshSignal
   }, [refreshSignal])
 
   return (
-    <section className={`workspace-view portal-tab-services${badge ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>{badge && <FeatureRibbon badge={badge} />}
-      <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Complaints &amp; repairs</h2><p>Something broken or not working? Tell your property owner and track it here.</p></div><button type="button" className="primary-button" onClick={() => setIsReporting(true)}><Wrench size={15} /> Report a problem</button></div>
+    <section className={`workspace-view portal-tab-services${ribbon ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>{ribbon && <FeatureRibbon badge={ribbon} />}
+      <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Complaints &amp; repairs{tag && <FeatureTag badge={tag} />}</h2><p>Something broken or not working? Tell your property owner and track it here.</p></div><button type="button" className="primary-button" onClick={() => setIsReporting(true)}><Wrench size={15} /> Report a problem</button></div>
       {requests === null ? <p className="portal-empty">Loading…</p> : requests.length ? (
         <div className="crud-list">
           {requests.map((request) => (

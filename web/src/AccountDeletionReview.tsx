@@ -8,7 +8,7 @@ const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { d
 
 /** Header badge for a resident who asked to delete their account, or whose account was closed. */
 export function deletionBadge(resident: Resident) {
-  if (resident.deletedAt) return { label: 'Account deleted', tone: 'muted' }
+  if (resident.deletedAt) return resident.deletedByName ? { label: `Removed by ${resident.deletedByName}`, tone: 'muted' } : { label: 'Closed at their request', tone: 'muted' }
   if (resident.deletionRequestedAt) return { label: 'Deletion requested', tone: 'coral' }
   return null
 }

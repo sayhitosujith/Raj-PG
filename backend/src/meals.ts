@@ -11,6 +11,9 @@ type MealColumns = Pick<Property, `${Meal}From` | `${Meal}To`>
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 const labels: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' }
 
+/** Selects only the six meal columns, so reading meal times never loads the property's photo. */
+export const mealColumnsSelect = { breakfastFrom: true, breakfastTo: true, lunchFrom: true, lunchTo: true, dinnerFrom: true, dinnerTo: true } satisfies Record<keyof MealColumns, true>
+
 /** Groups the six stored columns into the API shape. */
 export function toMealTimes(property: MealColumns): MealTimes {
   return Object.fromEntries(meals.map((meal) => [meal, { from: property[`${meal}From`], to: property[`${meal}To`] }])) as MealTimes

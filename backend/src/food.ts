@@ -3,7 +3,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
-import { meals, toMealTimes } from './meals.js'
+import { mealColumnsSelect, meals, toMealTimes } from './meals.js'
 import { requirePortalAccess } from './residentPortal.js'
 
 /**
@@ -46,6 +46,11 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 export const foodResidentRouter = Router()
 const requireResident = requireRole(UserRole.RESIDENT)
 
+/** A property's meal times, reading only those columns (not the whole row with its photo). */
+async function mealTimesOf(propertyId: string) {
+  return toMealTimes(await prisma.property.findUniqueOrThrow({ where: { id: propertyId }, select: mealColumnsSelect }))
+}
+
 // Residents without a food plan have no menu to skip or rate.
 async function requireFoodPlan(_request: Request, response: Response, next: NextFunction) {
   const { userId } = response.locals.auth as AuthContext
@@ -62,14 +67,13 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
     const now = propertyNow()
     const today = parseDateOnly(now.date) as Date
     const until = addDays(today, daysShown)
-    const [property, menu, skips, feedback] = await Promise.all([
-      prisma.property.findUniqueOrThrow({ where: { id: propertyId } }),
+    const [times, menu, skips, feedback] = await Promise.all([
+      mealTimesOf(propertyId),
       prisma.menuItem.findMany({ where: { propertyId } }),
       prisma.mealSkip.findMany({ where: { residentId: userId, date: { gte: today, lt: until } } }),
       prisma.mealFeedback.findMany({ where: { residentId: userId, date: today } }),
     ])
-    const times = toMealTimes(property)
-    const days = Array.from({ length: daysShown }, (_, index) => {
+    const days =Array.from({ length: daysShown }, (_, index) => {
       const date = addDays(today, index)
       const key = isoDate(date)
       const weekday = weekdayOf(date)
@@ -107,8 +111,8 @@ foodResidentRouter.put('/resident-portal/food/skips', requireResident, requirePo
     const now = propertyNow()
     const today = parseDateOnly(now.date) as Date
     if (date < today || date >= addDays(today, daysShown)) { response.status(400).json({ error: `Meals can be skipped up to ${daysShown} days ahead.` }); return }
-    const property = await prisma.property.findUniqueOrThrow({ where: { id: response.locals.propertyId as string } })
-    if (!mealRules(isoDate(date), toMealTimes(property)[meal], now).canSkip) { response.status(409).json({ error: 'That meal has already started, so it can no longer be changed.' }); return }
+    const times = await mealTimesOf(response.locals.propertyId as string)
+    if (!mealRules(isoDate(date), times[meal], now).canSkip) { response.status(409).json({ error: 'That meal has already started, so it can no longer be changed.' }); return }
     const key = { residentId: userId, date, meal: mealTypes[meal] }
     if (skipped) await prisma.mealSkip.upsert({ where: { residentId_date_meal: key }, create: key, update: {} })
     else await prisma.mealSkip.deleteMany({ where: key })
@@ -130,9 +134,9 @@ foodResidentRouter.put('/resident-portal/food/feedback', requireResident, requir
     // Feedback is for today's meals only, once served; the date is the server's, not the client's.
     const now = propertyNow()
     const date = parseDateOnly(now.date) as Date
-    const property = await prisma.property.findUniqueOrThrow({ where: { id: propertyId } })
-    if (!mealRules(now.date, toMealTimes(property)[meal], now).hasStarted) { response.status(409).json({ error: 'You can rate a meal once it has been served.' }); return }
-    if (await prisma.mealSkip.count({ where: { residentId: userId, date, meal: mealTypes[meal] } })) { response.status(409).json({ error: 'You skipped this meal.' }); return }
+    const [times, skipped] = await Promise.all([mealTimesOf(propertyId), prisma.mealSkip.count({ where: { residentId: userId, date, meal: mealTypes[meal] } })])
+    if (!mealRules(now.date, times[meal], now).hasStarted) { response.status(409).json({ error: 'You can rate a meal once it has been served.' }); return }
+    if (skipped) { response.status(409).json({ error: 'You skipped this meal.' }); return }
     const saved = await prisma.mealFeedback.upsert({
       where: { residentId_date_meal: { residentId: userId, date, meal: mealTypes[meal] } },
       create: { residentId: userId, propertyId, date, meal: mealTypes[meal], liked, comment },

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Mail } from 'lucide-react'
 import { readApiError } from './superAdmin'
-import { FeatureTag, useFeatureBadge, type FeatureKey } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge, type FeatureKey } from './FeatureBadges'
 import { WhatsAppIcon } from './WhatsAppIcon'
 
 type Channel = 'whatsappOptIn' | 'emailOptIn'
@@ -9,11 +9,12 @@ type Channel = 'whatsappOptIn' | 'emailOptIn'
 /** One on/off row; saving goes through the parent so both rows share one request shape. */
 function PreferenceRow({ feature, icon, iconClass, title, detail, isOn, isSaving, onToggle }: { feature: FeatureKey; icon: ReactNode; iconClass: string; title: string; detail: string; isOn: boolean; isSaving: boolean; onToggle: () => void }) {
   // The owner's banner for this channel (Beta by default); "New" goes once the switch is used.
-  const { badge, markSeen } = useFeatureBadge(feature)
+  const { ribbon, tag, markSeen } = useFeatureBadge(feature)
   return (
-    <div className="whatsapp-preference">
+    <div className={`whatsapp-preference${ribbon ? ' has-ribbon' : ''}`}>
+      {ribbon && <FeatureRibbon badge={ribbon} />}
       <span className={`whatsapp-preference-icon ${iconClass}`}>{icon}</span>
-      <div><strong>{title}{badge && <FeatureTag badge={badge} />}</strong><small>{detail}</small></div>
+      <div><strong>{title}{tag && <FeatureTag badge={tag} />}</strong><small>{detail}</small></div>
       <button type="button" role="switch" aria-checked={isOn} className={`switch${isOn ? ' is-on' : ''}`} disabled={isSaving} onClick={() => { markSeen(); onToggle() }}><span className="sr-only">{title}</span></button>
     </div>
   )

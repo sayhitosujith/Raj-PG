@@ -14,13 +14,14 @@ export async function cancelAccountDeletion(residentId: string) {
 }
 
 /**
- * Carries out an approved request by closing the account, not erasing it: every detail is kept for
- * the owner's records (shown on the Deleted records page), while the person stops being a resident.
- * They are moved out (the room is freed), their sign-in is cleared, and WhatsApp and email updates
- * stop. Their open sessions end on their next request (see accountDeletedBlock), so the portal can
- * tell them why instead of just dropping to the sign-in page.
+ * Closes an account, not erasing it: every detail is kept for the owner's records (shown on the
+ * Deleted records page), while the person stops being a resident. Used for an approved "Delete my
+ * account" request, and when a staff member removes a resident (`removedBy` names them). They are
+ * moved out (the bed is freed), their sign-in and door access key are cleared, and WhatsApp and email
+ * updates stop. Their open sessions end on their next request (see accountDeletedBlock), so the
+ * portal can tell them why instead of just dropping to the sign-in page.
  */
-async function closeAccount(id: string) {
+export async function closeAccount(id: string, removedBy?: string) {
   const resident = await prisma.resident.findUnique({ where: { id }, select: { roomId: true, room: { select: { number: true, property: { select: { name: true } } } } } })
   if (!resident) return false
   const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : undefined
@@ -29,8 +30,8 @@ async function closeAccount(id: string) {
     prisma.resident.update({
       where: { id },
       data: {
-        passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, whatsappOptIn: false, emailOptIn: false, active: false, roomId: null, movedOutAt: now,
-        deletionRequestedAt: null, deletionDeclinedAt: null, deletionDeclineReason: null, deletedAt: now, ...(movedOutFrom ? { movedOutFrom } : {}),
+        passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, doorAccessKey: null, doorAccessKeyRevokedAt: null, whatsappOptIn: false, emailOptIn: false, active: false, roomId: null, movedOutAt: now,
+        deletionRequestedAt: null, deletionDeclinedAt: null, deletionDeclineReason: null, deletedAt: now, deletedByName: removedBy ?? null, ...(movedOutFrom ? { movedOutFrom } : {}),
       },
     }),
   ])
@@ -68,7 +69,9 @@ export const accountDeletedCode = 'ACCOUNT_DELETED'
 
 /** Why a resident whose account was closed can no longer use the app, ready to show them, or null for everyone else. */
 export async function accountDeletedBlock(residentId: string) {
-  const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { deletedAt: true } })
+  const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { deletedAt: true, deletedByName: true } })
   if (!resident?.deletedAt) return null
-  return { message: `Your account was closed on ${resident.deletedAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}, as you asked, and you can no longer sign in. Your property owner keeps your records as the law requires.`, code: accountDeletedCode }
+  const when = resident.deletedAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })
+  const how = resident.deletedByName ? 'by your property owner' : 'as you asked'
+  return { message: `Your account was closed on ${when}, ${how}, and you can no longer sign in. Your property owner keeps your records as the law requires.`, code: accountDeletedCode }
 }

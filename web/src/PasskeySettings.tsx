@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Fingerprint, Trash2 } from 'lucide-react'
 import { addPasskey, canUseDeviceUnlock, type Passkey } from './passkeys'
 import { readApiError } from './superAdmin'
-import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -17,7 +17,7 @@ export function PasskeySettings({ onNotice }: { onNotice: (message: string) => v
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   // The owner's banner for this card; "New" goes once the resident tries turning it on.
-  const { badge, markSeen } = useFeatureBadge('passkeys')
+  const { ribbon, tag, markSeen } = useFeatureBadge('passkeys')
 
   useEffect(() => {
     void canUseDeviceUnlock().then(setCanAdd)
@@ -50,11 +50,11 @@ export function PasskeySettings({ onNotice }: { onNotice: (message: string) => v
   // Nothing to show on a device that cannot use it and has none saved.
   if (!canAdd && !passkeys?.length) return null
   return (
-    <section className={`passkey-settings${badge ? ' has-ribbon' : ''}`}>
-      {badge && <FeatureRibbon badge={badge} />}
+    <section className={`passkey-settings${ribbon ? ' has-ribbon' : ''}`}>
+      {ribbon && <FeatureRibbon badge={ribbon} />}
       <div className="passkey-settings-head">
         <span className="passkey-settings-icon"><Fingerprint size={18} /></span>
-        <div><strong>Face ID / fingerprint sign-in</strong><small>Sign in on this phone without typing your password. Your face or fingerprint stays on your phone.</small></div>
+        <div><strong>Face ID / fingerprint sign-in{tag && <FeatureTag badge={tag} />}</strong><small>Sign in on this phone without typing your password. Your face or fingerprint stays on your phone.</small></div>
         {canAdd && <button type="button" className="secondary-button" disabled={isSaving} onClick={() => { markSeen(); void turnOn() }}>{isSaving ? 'Waiting for your phone…' : 'Turn on'}</button>}
       </div>
       {passkeys && passkeys.length > 0 && <ul className="passkey-list">

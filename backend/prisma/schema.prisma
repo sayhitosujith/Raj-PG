@@ -159,6 +159,8 @@ model Resident {
   deletionDeclinedAt      DateTime?
   deletionDeclineReason   String?
   deletedAt               DateTime?
+  // Who closed the account when a staff member removed the resident; null when the resident asked.
+  deletedByName           String?
   // Portal content stays locked until an owner approves the resident's identity documents: Aadhaar,
   // or passport and visa for non-Indians. Named before passports were supported.
   aadharStatus            AadharVerificationStatus @default(NOT_SUBMITTED)

@@ -16,11 +16,11 @@ export const featureBadgeFeatures = [
 ] as const
 export type FeatureKey = (typeof featureBadgeFeatures)[number]['key']
 
-/** Each banner's name in Settings, on a corner ribbon (short), and as an inline tag. */
-export const featureBadgeLabels: Record<FeatureBadgeKind, { setting: string; ribbon: string; tag: string }> = {
-  NEW: { setting: 'New', ribbon: 'New', tag: 'New' },
-  SOON: { setting: 'Coming soon', ribbon: 'Soon', tag: 'Coming soon' },
-  BETA: { setting: 'Beta', ribbon: 'Beta', tag: 'Beta' },
+/** Each banner's name in Settings, and on its corner ribbon (short, to fit). */
+export const featureBadgeLabels: Record<FeatureBadgeKind, { setting: string; ribbon: string }> = {
+  NEW: { setting: 'New', ribbon: 'New' },
+  SOON: { setting: 'Coming soon', ribbon: 'Soon' },
+  BETA: { setting: 'Beta', ribbon: 'Beta' },
 }
 
 /** The owner's banners for the resident portal; ResidentPortal provides them from the workspace settings. */
@@ -30,10 +30,11 @@ export const FeatureBadgesProvider = FeatureBadgesContext.Provider
 const seenPrefix = 'staynest-seen:'
 
 /**
- * The banner a feature shows right now, and `markSeen` for when the resident uses it. "New" lasts
- * only until the resident first uses the feature on this device (remembered in local storage; if
- * storage is unavailable it shows again next visit); "Coming soon" and "Beta" stay until the owner
- * removes them.
+ * The banner a feature shows right now, split by how it is drawn, the same way on every card: New and
+ * Coming soon as a corner `ribbon`, Beta as a small `tag` beside the title. Plus `markSeen` for when
+ * the resident uses the feature: "New" lasts only until then on this device (remembered in local
+ * storage; if storage is unavailable it shows again next visit); "Coming soon" and "Beta" stay until
+ * the owner removes them.
  */
 export function useFeatureBadge(feature: FeatureKey) {
   const kind = useContext(FeatureBadgesContext)[feature] ?? null
@@ -44,16 +45,16 @@ export function useFeatureBadge(feature: FeatureKey) {
     setIsSeen(true)
     try { window.localStorage.setItem(key, '1') } catch { /* shows again next visit */ }
   }
-  return { badge: kind === 'NEW' && isSeen ? null : kind, markSeen }
+  const shown = kind === 'NEW' && isSeen ? null : kind
+  return { ribbon: shown === 'BETA' ? null : shown, tag: shown === 'BETA' ? shown : null, markSeen }
 }
 
-/** A banner across a card's top-left corner; the card needs the `has-ribbon` class (see App.css). */
+/** A New or Coming soon banner across a card's top-left corner; the card needs the `has-ribbon` class (see App.css). */
 export function FeatureRibbon({ badge }: { badge: FeatureBadgeKind }) {
   return <span className={`new-ribbon is-${badge.toLowerCase()}`}>{featureBadgeLabels[badge].ribbon}</span>
 }
 
-/** A banner as a small inline tag, beside a title. */
+/** A Beta banner as a small inline tag beside a feature's title. */
 export function FeatureTag({ badge }: { badge: FeatureBadgeKind }) {
-  const className = badge === 'NEW' ? 'new-badge' : badge === 'SOON' ? 'coming-soon-tag' : 'beta-tag'
-  return <span className={className}>{featureBadgeLabels[badge].tag}</span>
+  return <span className="beta-tag">{featureBadgeLabels[badge].setting}</span>
 }

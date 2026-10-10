@@ -47,7 +47,7 @@ export function DeletedRecordsView({ refreshSignal, securityDeposit, onBack, onN
 
   async function deletePermanently(record: Resident) {
     if (!window.confirm(`Delete ${record.name}'s record permanently? Their details, documents and rent history are removed for good. This cannot be undone.`)) return
-    const response = await fetch(`/api/residents/${record.id}`, { method: 'DELETE' }).catch(() => null)
+    const response = await fetch(`/api/residents/${record.id}/record`, { method: 'DELETE' }).catch(() => null)
     if (!response?.ok) { onNotice('Could not delete the record.'); return }
     setRecords((current) => current?.filter((item) => item.id !== record.id) ?? current)
     onNotice(`${record.name}'s record was deleted permanently.`)
@@ -55,11 +55,11 @@ export function DeletedRecordsView({ refreshSignal, securityDeposit, onBack, onN
 
   return (
     <section className="workspace-view residents-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Deleted records</h2><p>Accounts closed at the resident's request, kept with their full details.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Deleted records</h2><p>Residents your team removed, and accounts closed at the resident's request, kept with their full details.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
       {!records
         ? (loadError ? <div className="workspace-empty"><h3>Deleted records could not be loaded</h3><p>Check your connection and try again.</p><button className="primary-button" onClick={() => void load()}>Retry</button></div> : <InlineLoader label="Loading deleted records…" />)
         : !records.length
-          ? <div className="workspace-empty"><div className="workspace-empty-icon"><Archive size={22} /></div><h3>No deleted records</h3><p>When you approve a resident's request to delete their account, it moves here.</p></div>
+          ? <div className="workspace-empty"><div className="workspace-empty-icon"><Archive size={22} /></div><h3>No deleted records</h3><p>When you remove a resident, or approve a resident's request to delete their account, it moves here.</p></div>
           : <div className="resident-list">{records.map((record, index) => (
               <div key={record.id} className="deleted-record">
                 {record.deletedAt && <small className="deleted-record-date">Closed on {shortDate(record.deletedAt)}</small>}

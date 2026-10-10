@@ -3,7 +3,7 @@ import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle
 import { copyWithNotice } from './clipboard'
 import { LocationLink } from './LocationLink'
 import { ModalLayer } from './ModalLayer'
-import { FeatureRibbon, useFeatureBadge } from './FeatureBadges'
+import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 
 /** The Info tab's data, as /resident-portal/me sends it (see the backend's residentInfo.ts). */
 export type ResidentInfoData = {
@@ -71,7 +71,7 @@ export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNot
  */
 export function ResidentFaqs({ faqs }: { faqs: ResidentInfoData['faqs'] }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { badge, markSeen } = useFeatureBadge('faqs')
+  const { ribbon, tag, markSeen } = useFeatureBadge('faqs')
   if (!faqs.length) return null
   function open() {
     setIsOpen(true)
@@ -80,9 +80,9 @@ export function ResidentFaqs({ faqs }: { faqs: ResidentInfoData['faqs'] }) {
   return (
     <section className="workspace-view resident-faqs">
       <button type="button" className="faq-card" onClick={open}>
-        {badge && <FeatureRibbon badge={badge} />}
+        {ribbon && <FeatureRibbon badge={ribbon} />}
         <span className="faq-card-icon" aria-hidden="true"><HelpCircle size={20} /></span>
-        <span className="faq-card-copy"><strong>FAQs</strong><small>{faqs.length} common {faqs.length === 1 ? 'question' : 'questions'}, answered by your property owner</small></span>
+        <span className="faq-card-copy"><strong>FAQs{tag && <FeatureTag badge={tag} />}</strong><small>{faqs.length} common {faqs.length === 1 ? 'question' : 'questions'}, answered by your property owner</small></span>
         <ChevronRight size={18} aria-hidden="true" />
       </button>
       {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>

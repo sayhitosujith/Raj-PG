@@ -35,6 +35,7 @@ const ownerOnly: Rule[] = [
   { method: 'DELETE', path: /^\/properties\/[^/]+\/rooms\/[^/]+$/ },
   { path: /^\/residents\/deleted$/ },
   { method: 'DELETE', path: /^\/residents\/[^/]+$/ },
+  { method: 'DELETE', path: /^\/residents\/[^/]+\/record$/ },
   { path: /^\/residents\/[^/]+\/deletion\/decision$/ },
   { path: /^\/residents\/[^/]+\/approval$/ },
   { path: /^\/residents\/[^/]+\/aadhar-verification$/ },
