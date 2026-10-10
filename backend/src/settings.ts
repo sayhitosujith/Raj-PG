@@ -258,16 +258,20 @@ settingsRouter.get('/settings/upi-qr', async (_request, response) => {
 
 /**
  * Public branding for the sign-in page, which shows before anyone is signed in. Only the business
- * name and logo are exposed; everything else in settings stays behind the super admin guard.
+ * name, logo and the colours chosen under Views (so sign-in looks like the rest of the app) are
+ * exposed; everything else in settings stays behind the super admin guard.
  */
 export const brandingRouter = Router()
+
+const publicColourFields = ['portalThemeColor', 'portalButtonTextColor', 'portalErrorColor', 'portalTextColor', 'portalPlaceholderColor', 'portalNewBadgeColor', 'portalSoonBadgeColor', 'portalBetaBadgeColor', 'portalBackgroundColor', 'portalCardColor', 'portalChildCardColor'] as const
 
 brandingRouter.get('/branding', async (_request, response) => {
   try {
     const settings = await getSettings()
-    response.json({ businessName: settings.businessName, logoVersion: photoVersion(settings.logoUpdatedAt) })
+    const colours = Object.fromEntries(publicColourFields.map((field) => [field, settings[field]]))
+    response.json({ businessName: settings.businessName, logoVersion: photoVersion(settings.logoUpdatedAt), colours })
   } catch {
-    response.json({ businessName: null, logoVersion: null })
+    response.json({ businessName: null, logoVersion: null, colours: null })
   }
 })
 

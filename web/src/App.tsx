@@ -270,9 +270,15 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     return null
   }
 
-  useEffect(() => {
-    fetch('/api/settings').then((response) => response.ok ? response.json() as Promise<WorkspaceSettings> : Promise.reject(new Error('Settings request failed'))).then(setSettings).catch(() => undefined)
-  }, [])
+  // Also refreshed in the background, so colours or settings changed in another window apply here
+  // without a reload. Replaced only when something changed, so open forms are not reset for nothing.
+  function loadSettings() {
+    fetch('/api/settings').then((response) => response.ok ? response.json() as Promise<WorkspaceSettings> : Promise.reject(new Error('Settings request failed')))
+      .then((next) => setSettings((current) => current && JSON.stringify(current) === JSON.stringify(next) ? current : next)).catch(() => undefined)
+  }
+
+  useEffect(loadSettings, [])
+  useAutoRefresh(loadSettings)
 
   // Settings changes (rent days, slot hours) alter what residents and requests show, so reload them too.
   async function saveSettings(changes: Partial<WorkspaceSettings>) {

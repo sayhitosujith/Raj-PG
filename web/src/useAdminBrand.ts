@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import type { WorkspaceSettings } from './workspaceSettings'
 
 // Each chosen colour: the CSS variable it sets on the page root, and the flag that turns its rules on.
 const colourSettings = [
@@ -16,13 +15,16 @@ const colourSettings = [
   ['portalChildCardColor', '--child-card-bg', 'childCardBg'],
 ] as const
 
+/** The Views colours, by settings field; each null (or missing) means the default. */
+export type PageColours = Partial<Record<(typeof colourSettings)[number][0], string | null>>
+
 /**
- * Applies the owner's portal colours to the admin pages too. They go on the page root rather than
+ * Applies the owner's portal colours to the admin pages and the sign-in page too. They go on the page root rather than
  * the app's own element, because pop-ups open at the top of the page (see ModalLayer). The admin's
  * green is only replaced once a theme colour is chosen; until then it stays exactly as designed.
  * Leaving the admin (signing out) takes them off again.
  */
-export function useAdminBrand(settings: WorkspaceSettings | null) {
+export function useAdminBrand(settings: PageColours | null) {
   const colours = colourSettings.map(([field]) => settings?.[field] ?? null)
   useEffect(() => {
     const root = document.documentElement

@@ -1380,16 +1380,42 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .expired-note { color: #b5523f; font-weight: 700; }
 .resident-password-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .resident-password-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
-/* Sign-in page: Mt Fuji over the Tokyo skyline at sunset behind the card. Photo by Claudio Pantoni on
-   Unsplash (photo-1741230127615-8334deb6b463), Unsplash License: free for commercial use; desktop gets a
-   landscape crop around Fuji, phones the full portrait frame. Self-hosted in public/ so sign-in depends on no third party;
-   a smaller copy serves phones. The overlay keeps the card readable; the gradient underneath shows
-   while the photo loads. Colours are rgb() so the generated dark theme leaves them alone. */
-.login-shell.has-city { position: relative; isolation: isolate; overflow: hidden; }
-.city-backdrop { position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji.jpg') center 30% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); }
-@media (max-width: 960px) { .city-backdrop { background: linear-gradient(180deg, rgb(24 18 44 / .1), rgb(24 18 44 / .38)), url('/login-fuji-small.jpg') center 42% / cover no-repeat, linear-gradient(180deg, rgb(52 62 108), rgb(216 112 124) 54%, rgb(252 212 140) 86%); } }
-:root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); }
-@media (max-width: 960px) { :root[data-theme="dark"] .city-backdrop { background-image: linear-gradient(180deg, rgb(8 10 22 / .55), rgb(8 10 22 / .78)), url('/login-fuji-small.jpg'), linear-gradient(180deg, rgb(10 14 32), rgb(84 46 78) 62%, rgb(190 110 72) 92%); } }
+/* Sign-in page: the logo and the last resident's property photo on the left (wide screens), and the
+   card on a curved two-tone background in the portal theme colour (--brand from public branding, teal
+   by default). The shapes are plain CSS, so the page loads no images of its own. Fixed colours are
+   rgb() so the generated dark theme leaves them alone. */
+.login-split { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; padding: 0; place-items: stretch; --login-brand: var(--brand, var(--teal)); --login-surface: var(--app-bg, rgb(251 252 249)); }
+:root[data-theme="dark"] .login-split { --login-surface: rgb(16 20 26); }
+.login-showcase { display: none; }
+.login-stage { position: relative; isolation: isolate; display: grid; place-items: center; padding: 40px 16px; overflow: hidden; background: var(--login-brand); }
+.login-curve, .login-rings { position: absolute; z-index: -1; pointer-events: none; }
+/* A pale tint of the theme colour at the top left, partly covered by a light wave down the left side. */
+.login-curve.is-pale { top: -14%; left: 2%; width: 52%; aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, var(--login-brand) 42%, rgb(255 255 255)); }
+.login-curve.is-light { top: -12%; left: -18%; width: 58%; height: 130%; border-radius: 0 100% 100% 0 / 0 58% 42% 0; background: var(--login-surface); transform: rotate(-10deg); }
+/* Thin concentric rings in the bottom-right corner. */
+.login-rings { right: -110px; bottom: -110px; width: 300px; aspect-ratio: 1; border-radius: 50%; background: repeating-radial-gradient(circle, transparent 0 16px, rgb(255 255 255 / .38) 16px 18px); }
+.login-showcase-photo { display: grid; justify-items: center; gap: 12px; margin: 0; }
+.login-showcase-photo img { width: min(100%, 440px); aspect-ratio: 4 / 3; border-radius: 22px; object-fit: cover; box-shadow: 0 24px 60px rgb(22 40 50 / .18); }
+.login-showcase-photo figcaption { color: var(--ink); font: 700 18px Manrope, sans-serif; }
+.login-welcome { max-width: 340px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.login-welcome strong { display: block; margin-bottom: 6px; color: var(--ink); font: 800 26px Manrope, sans-serif; }
+:root[data-theme="dark"] :is(.login-showcase-photo figcaption, .login-welcome strong) { color: rgb(220 236 230); }
+/* The card in the theme colour too: the Sign in button, the success notice, focused fields and the
+   Face ID button (button text, error, text and placeholder colours come from useAdminBrand's rules). */
+.login-split .login-card .primary-button { background: linear-gradient(135deg, var(--login-brand), color-mix(in srgb, var(--login-brand) 72%, rgb(0 0 0))); box-shadow: 0 6px 16px color-mix(in srgb, var(--login-brand) 32%, transparent); }
+.login-split .login-card .primary-button:hover:not(:disabled) { background: linear-gradient(135deg, color-mix(in srgb, var(--login-brand) 85%, rgb(0 0 0)), color-mix(in srgb, var(--login-brand) 60%, rgb(0 0 0))); }
+.login-split .login-card .login-success { color: color-mix(in srgb, var(--login-brand) 65%, rgb(0 0 0)); background: color-mix(in srgb, var(--login-brand) 12%, rgb(255 255 255)); }
+.login-split .login-card input:focus { border-color: var(--login-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-brand) 20%, transparent); }
+.login-split .login-card .login-passkey { border-color: color-mix(in srgb, var(--login-brand) 45%, rgb(255 255 255)); color: color-mix(in srgb, var(--login-brand) 70%, rgb(0 0 0)); }
+:root[data-theme="dark"] .login-split .login-card :is(.login-success, .login-passkey) { color: color-mix(in srgb, var(--login-brand) 55%, rgb(255 255 255)); }
+:root[data-theme="dark"] .login-split .login-card .login-success { background: color-mix(in srgb, var(--login-brand) 18%, transparent); }
+:root[data-card-bg]:not([data-theme="dark"]) .login-split .login-card { background: var(--card-bg); }
+@media (min-width: 900px) {
+  .login-split { grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr); }
+  .login-showcase { display: grid; align-content: center; justify-items: center; gap: 28px; padding: 48px 40px; text-align: center; background: var(--login-surface); }
+  /* The left side already shows the logo and property, so the card drops its own copy. */
+  .login-split .login-card .brand-row { display: none; }
+}
 
 /* Resident portal on phones: denser layout so the page is shorter to scroll. Container queries
    (each card is a container) keep it right whatever the card width; the viewport query only
