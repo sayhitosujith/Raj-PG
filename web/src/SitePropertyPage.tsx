@@ -1,12 +1,11 @@
-import { ArrowLeft, Building2, CalendarClock, Clock, DoorOpen, LogIn, LogOut, MapPin, MoonStar, Users, WalletCards } from 'lucide-react'
-import { LocationLink } from './LocationLink'
+import { ArrowLeft, Building2, CalendarClock, Clock, DoorOpen, LogIn, LogOut, MoonStar, Users, WalletCards } from 'lucide-react'
 import { formatClock, formatMealWindow, mealDetails } from './meals'
 import { tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sitePaths } from './router'
 import type { SiteData } from './siteData'
 import { SiteLink } from './SiteLink'
-import { AmenityChips, FreeBeds, PriceTable, SiteHeading } from './SiteParts'
+import { AmenityChips, FreeBeds, PriceTable, PropertyAddress, SiteHeading } from './SiteParts'
 
 /** One property's page: photos, prices by sharing type, amenities, timings and the way to book. */
 export function SitePropertyPage({ site, propertyId }: { site: SiteData; propertyId: string }) {
@@ -41,8 +40,7 @@ export function SitePropertyPage({ site, propertyId }: { site: SiteData; propert
         <h1>{property.name}</h1>
         <p className="site-meta">
           {forWhom && <span><Users size={14} aria-hidden="true" /> {forWhom}</span>}
-          {property.city && <span><MapPin size={14} aria-hidden="true" /> {property.city}</span>}
-          {property.location && <LocationLink className="site-location" property={property.name} location={property.location} />}
+          <PropertyAddress property={property} />
           <FreeBeds property={property} />
         </p>
         {photos.length > 0 && (

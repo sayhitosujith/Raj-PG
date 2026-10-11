@@ -4,12 +4,13 @@ import { mealColumnsSelect, toMealTimes } from './meals.js'
 import { bedCounts, roomBedsSelect } from './occupancy.js'
 import { contentVersion, sendPublicPropertyPhoto } from './photo.js'
 import { pricingSelect } from './propertyRent.js'
+import { policiesOf } from './policies.js'
 import { getSettings, houseRulesOf } from './settings.js'
 
 /**
  * The public website (/, /pg/:id, /food-and-rules, /contact): what someone looking for a PG may see
  * before signing up. Marketing details only: names, locations, prices, free beds, amenities, photos,
- * weekly menus and house rules. Never Wi-Fi details, important contacts, the manager's number or
+ * weekly menus, house rules and the Terms and Privacy policy. Never Wi-Fi details, important contacts, the manager's number or
  * anything about residents. Mounted before the sign-in guard.
  */
 export const publicSiteRouter = Router()
@@ -35,6 +36,7 @@ publicSiteRouter.get('/public/site', async (_request, response) => {
       contactPhone: settings.contactPhone,
       contactEmail: settings.contactEmail,
       houseRules,
+      ...policiesOf(settings),
       properties: properties.map((property) => {
         const { taken, total } = bedCounts(property)
         return {

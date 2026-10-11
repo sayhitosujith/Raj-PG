@@ -38,6 +38,7 @@ export function navigate(to: string, { replace = false } = {}) {
 /** The website's addresses, in one place so links and the page switch cannot drift apart. */
 export const sitePaths = {
   home: '/',
+  locations: '/#locations',
   properties: '/#properties',
   property: (id: string) => `/pg/${encodeURIComponent(id)}`,
   foodAndRules: '/food-and-rules',

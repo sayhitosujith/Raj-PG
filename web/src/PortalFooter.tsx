@@ -1,10 +1,7 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
 import indiaFlag from 'flag-icons/flags/4x3/in.svg'
 import { ReferralShare } from './ReferralShare'
-import { ModalLayer } from './ModalLayer'
-
-type Policy = { title: string; text: string }
+import { PolicyDialog, type Policy } from './PolicyDialog'
 
 /**
  * The resident portal's footer: links to the resident policies, each opening in a modal,
@@ -24,7 +21,7 @@ export function PortalFooter({ businessName, termsAndConditions, privacyPolicy, 
         <ReferralShare businessName={businessName} referralCode={referralCode} onNotice={onNotice} />
         <span className="made-in-india">Made in India <img src={indiaFlag} alt="" width={18} height={13} /></span>
       </footer>
-      {open && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setOpen(null)}><div className="profile-modal terms-modal" role="dialog" aria-labelledby="policy-title"><div className="modal-heading"><div><p className="eyebrow">{businessName}</p><h2 id="policy-title">{open.title}</h2></div><button type="button" className="icon-button" aria-label={`Close ${open.title.toLowerCase()}`} onClick={() => setOpen(null)}><X size={18} /></button></div><p className="terms-text">{open.text}</p></div></div></ModalLayer>}
+      {open && <PolicyDialog businessName={businessName} policy={open} onClose={() => setOpen(null)} />}
     </>
   )
 }

@@ -1,8 +1,7 @@
-import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { Building2, Mail, MessageCircle, Phone } from 'lucide-react'
 import { BookingForm } from './BookingForm'
-import { LocationLink } from './LocationLink'
 import { whatsappLink, type SiteData } from './siteData'
-import { SiteHeading } from './SiteParts'
+import { PropertyAddress, SiteHeading } from './SiteParts'
 
 /** Contact and "book a visit": call, WhatsApp, email and where each PG is, beside the booking form. */
 export function SiteContact({ site }: { site: SiteData }) {
@@ -18,7 +17,7 @@ export function SiteContact({ site }: { site: SiteData }) {
         </ul>
         {site.properties.length > 0 && <>
           <h3 className="site-subheading">Where to find us</h3>
-          <ul className="site-addresses">{site.properties.map((property) => <li key={property.id}><MapPin size={16} aria-hidden="true" /><div><strong>{property.name}</strong>{property.city && <span>{property.city}</span>}{property.location && <LocationLink className="site-location" property={property.name} location={property.location} />}</div></li>)}</ul>
+          <ul className="site-addresses">{site.properties.map((property) => <li key={property.id}><Building2 size={16} aria-hidden="true" /><div><strong>{property.name}</strong><PropertyAddress property={property} /></div></li>)}</ul>
         </>}
       </div>
       <div className="site-booking" id="book">

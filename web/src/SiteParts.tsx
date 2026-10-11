@@ -3,12 +3,23 @@ import { amenityOptions, tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
 import { sitePaths } from './router'
-import { startingPrice, type SiteProperty } from './siteData'
+import { addressOf, mapLinkOf, startingPrice, type SiteProperty } from './siteData'
 import { SiteLink } from './SiteLink'
 
 /** A section's eyebrow, title and lead line, the same on every page. */
 export function SiteHeading({ eyebrow, title, lead }: { eyebrow: string; title: string; lead?: string }) {
   return <div className="site-heading"><p className="site-eyebrow">{eyebrow}</p><h2>{title}</h2>{lead && <p>{lead}</p>}</div>
+}
+
+/**
+ * A property's full address as a map link: the owner's own map link when they pasted one, otherwise a
+ * map search for the address. Not for use inside another link (a property card shows plain text).
+ */
+export function PropertyAddress({ property }: { property: SiteProperty }) {
+  const address = addressOf(property)
+  const href = mapLinkOf(property) ?? (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.name}, ${address}`)}` : null)
+  if (!href) return null
+  return <a className="site-location" href={href} target="_blank" rel="noopener noreferrer" title="Open in Google Maps"><MapPin size={14} aria-hidden="true" /> {address || 'Open map'}</a>
 }
 
 /** "Free beds" as a badge: how many, or that the property is full right now. */
@@ -33,8 +44,8 @@ export function PropertyCard({ property }: { property: SiteProperty }) {
       <div className="site-property-photo">{property.image ? <img src={property.image} alt="" loading="lazy" /> : <Building2 size={40} aria-hidden="true" />}<FreeBeds property={property} /></div>
       <div className="site-property-body">
         <h3>{property.name}</h3>
-        <p className="site-meta">{forWhom && <span><Users size={13} aria-hidden="true" /> {forWhom}</span>}{property.city && <span><MapPin size={13} aria-hidden="true" /> {property.city}</span>}</p>
-        <AmenityChips amenities={property.amenities.slice(0, 4)} />
+        <p className="site-meta">{forWhom && <span><Users size={13} aria-hidden="true" /> {forWhom}</span>}{addressOf(property) && <span><MapPin size={13} aria-hidden="true" /> {addressOf(property)}</span>}</p>
+        <AmenityChips amenities={property.amenities} />
         <p className="site-price">{from ? <>From <strong>{formatRupees(from)}</strong> / month</> : 'Ask us for prices'}</p>
       </div>
     </SiteLink>

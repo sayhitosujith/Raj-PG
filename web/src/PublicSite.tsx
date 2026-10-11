@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { LogIn, Menu, X } from 'lucide-react'
+import { LogIn, Menu, MessageCircle, X } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { useBranding, useBrandingAutoRefresh } from './branding'
 import { PageLoader } from './Loader'
 import { sitePaths } from './router'
-import { fetchSite, type SiteData } from './siteData'
+import { fetchSite, whatsappLink, type SiteData } from './siteData'
 import { SiteContact } from './SiteContact'
 import { SiteFoodRules } from './SiteFoodRules'
+import { SiteFooter } from './SiteFooter'
 import { SiteHome } from './SiteHome'
 import { SiteLink } from './SiteLink'
 import { SitePropertyPage } from './SitePropertyPage'
@@ -16,6 +17,7 @@ import './site.css'
 
 const navItems = [
   { label: 'Home', to: sitePaths.home },
+  { label: 'Locations', to: sitePaths.locations },
   { label: 'Our PGs', to: sitePaths.properties },
   { label: 'Food & rules', to: sitePaths.foodAndRules },
   { label: 'Contact', to: sitePaths.contact },
@@ -30,6 +32,7 @@ export function PublicSite({ path }: { path: string }) {
   const [site, setSite] = useState<SiteData | null>(null)
   const [hasFailed, setHasFailed] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   useAdminBrand(useBranding().colours)
   useBrandingAutoRefresh()
 
@@ -43,7 +46,24 @@ export function PublicSite({ path }: { path: string }) {
     return () => { document.title = previous }
   }, [site])
 
+  // A link to a section on another page ("/#locations" from a PG's page) lands before that page has its
+  // data, so the section is scrolled to once the page has rendered.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (site && hash) document.getElementById(hash)?.scrollIntoView({ block: 'start' })
+  }, [site, path])
+
+  // The header sits see-through over the home page's photo slider, and turns solid once you scroll.
+  useEffect(() => {
+    const update = () => setIsScrolled(window.scrollY > 40)
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
   const closeMenu = () => setIsMenuOpen(false)
+  const isHome = !path.startsWith('/pg/') && path !== sitePaths.foodAndRules && path !== sitePaths.contact
+  const isOverHero = isHome && Boolean(site) && !isScrolled && !isMenuOpen
   const isCurrent = (to: string) => to === path || (to === sitePaths.properties && path.startsWith('/pg/'))
   const page = !site ? null
     : path.startsWith('/pg/') ? <SitePropertyPage site={site} propertyId={decodeURIComponent(path.slice('/pg/'.length))} />
@@ -52,8 +72,8 @@ export function PublicSite({ path }: { path: string }) {
     : <SiteHome site={site} />
 
   return (
-    <div className="site">
-      <header className="site-header">
+    <div className={`site${isHome ? ' is-home' : ''}`}>
+      <header className={`site-header${isOverHero ? ' is-over-hero' : ''}`}>
         <SiteLink to={sitePaths.home} className="site-brand" onNavigate={closeMenu}><BrandMark /></SiteLink>
         <button type="button" className="site-menu-button" aria-expanded={isMenuOpen} aria-controls="site-nav" aria-label={isMenuOpen ? 'Close menu' : 'Open menu'} onClick={() => setIsMenuOpen((open) => !open)}>{isMenuOpen ? <X size={22} /> : <Menu size={22} />}</button>
         <nav id="site-nav" className={`site-nav${isMenuOpen ? ' is-open' : ''}`} aria-label="Website">
@@ -72,16 +92,9 @@ export function PublicSite({ path }: { path: string }) {
           : page ?? <PageLoader />}
       </main>
 
-      <footer className="site-footer">
-        <div className="site-footer-brand"><BrandMark />{site && <p>Comfortable PG living by {site.businessName}.</p>}</div>
-        <nav aria-label="Website footer">{navItems.map((item) => <SiteLink key={item.label} to={item.to}>{item.label}</SiteLink>)}</nav>
-        <div className="site-footer-contact">
-          {site?.contactPhone && <a href={`tel:${site.contactPhone}`}>{site.contactPhone}</a>}
-          {site?.contactEmail && <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>}
-          <SiteLink to={sitePaths.login}>Resident or owner? Sign in</SiteLink>
-        </div>
-        <p className="site-copyright">© {new Date().getFullYear()} {site?.businessName ?? ''}</p>
-      </footer>
+      {site?.contactPhone && <a className="site-whatsapp" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp" title="Chat with us on WhatsApp"><MessageCircle size={26} aria-hidden="true" /></a>}
+
+      <SiteFooter site={site} />
     </div>
   )
 }
