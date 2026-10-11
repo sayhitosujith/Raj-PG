@@ -36,7 +36,7 @@
 .site-muted { display: flex; align-items: center; gap: 8px; color: var(--site-muted); }
 
 /* Header: brand and a menu button on phones; the links inline from 960px */
-.site-header { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px var(--site-gutter); border-bottom: 1px solid var(--site-line); background: color-mix(in srgb, var(--site-card) 92%, transparent); backdrop-filter: blur(10px); }
+.site-header { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px var(--site-gutter); border-bottom: 1px solid var(--site-line); background: var(--site-card); }
 .site-brand { display: flex; align-items: center; color: inherit; text-decoration: none; }
 .site-menu-button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--site-line); border-radius: 10px; color: var(--site-ink); background: var(--site-card); cursor: pointer; }
 .site-nav { display: none; flex-basis: 100%; flex-direction: column; gap: 4px; padding: 8px 0 4px; }
@@ -46,9 +46,9 @@
 .site-nav-link[aria-current="page"] { color: var(--site-brand-deep); background: var(--site-brand-soft); }
 .site-nav-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
 .site-signin { min-height: 42px; padding: 0 14px; }
-/* Buttons on dark backgrounds (the hero photo, the header over it, the navy band, the closing band). */
-.site.site :is(.site-hero, .site-header.is-over-hero, .site-band, .site-cta-band) .secondary-button { border-color: rgb(255 255 255 / .65); color: rgb(255 255 255); background: rgb(255 255 255 / .12); backdrop-filter: blur(6px); }
-.site.site :is(.site-hero, .site-header.is-over-hero, .site-band, .site-cta-band) .secondary-button:hover { background: rgb(255 255 255 / .22); }
+/* Buttons on dark backgrounds (the navy band, the closing band). */
+.site.site :is(.site-band, .site-cta-band) .secondary-button { border-color: rgb(255 255 255 / .65); color: rgb(255 255 255); background: rgb(255 255 255 / .12); backdrop-filter: blur(6px); }
+.site.site :is(.site-band, .site-cta-band) .secondary-button:hover { background: rgb(255 255 255 / .22); }
 @media (min-width: 960px) {
   .site-header { flex-wrap: nowrap; padding-block: 14px; }
   .site-menu-button { display: none; }
@@ -66,23 +66,27 @@
 .site-heading-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .site-subheading { margin: 28px 0 12px !important; font-size: 18px; }
 
-/* Hero: a full-screen slider of the property photos under a navy overlay, the header see-through on
-   top of it (see .is-over-hero), the copy low on the left and a "scroll to explore" cue. Full width:
-   it steps outside .site-main's side gutters. */
+/* Hero: a theme-colour gradient with soft glowing circles (SiteHero.tsx, no photos), the copy on a
+   frosted-glass panel in the middle. Full width: it steps outside .site-main's side gutters; the
+   header stays white and fixed above it. */
 .site.is-home .site-header { position: fixed; right: 0; left: 0; }
-.site-hero { position: relative; isolation: isolate; display: grid; place-items: center; min-height: 100vh; min-height: 100svh; margin: 0 calc(50% - 50vw); padding: 120px calc(50vw - 50%) 96px; overflow: hidden; color: rgb(255 255 255); background: linear-gradient(135deg, var(--site-navy), var(--site-brand-deep)); }
-.site-hero-slide { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 6s ease; }
-.site-hero-slide.is-active { opacity: 1; transform: scale(1); }
-.site-hero::after { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(4 24 38 / .6) 0%, rgb(4 24 38 / .5) 50%, rgb(4 24 38 / .78) 100%); content: ''; }
-.site-hero-copy { display: grid; justify-items: center; gap: 16px; max-width: 760px; text-align: center; animation: site-rise .9s ease both; }
-.site-hero .site-eyebrow { color: color-mix(in srgb, var(--site-brand) 55%, rgb(255 255 255)); }
-.site-hero h1 { font-size: clamp(34px, 7vw, 64px); line-height: 1.05; text-shadow: 0 2px 20px rgb(0 0 0 / .25); }
-.site-lead { max-width: 600px; font-size: clamp(15px, 2vw, 18px); line-height: 1.55; opacity: .92; }
+.site-hero { position: relative; isolation: isolate; display: grid; place-items: center; min-height: 100vh; min-height: 100svh; margin: 0 calc(50% - 50vw); padding: 112px calc(50vw - 50%) 88px; overflow: hidden; background: linear-gradient(135deg, var(--site-brand) 0%, color-mix(in srgb, var(--site-brand) 45%, var(--site-navy)) 55%, var(--site-navy) 100%); }
+/* Soft circles of light drifting behind the glass panel, for depth without a photo */
+.site-hero-glow { position: absolute; z-index: -1; border-radius: 50%; filter: blur(60px); animation: site-drift 18s ease-in-out infinite alternate; }
+.site-hero-glow.is-one { top: 8%; left: 6%; width: 38vw; height: 38vw; background: color-mix(in srgb, var(--site-brand) 70%, rgb(255 255 255)); opacity: .45; }
+.site-hero-glow.is-two { right: 4%; bottom: 6%; width: 32vw; height: 32vw; background: rgb(250 204 21); opacity: .22; animation-delay: -6s; }
+.site-hero-glow.is-three { top: 40%; left: 55%; width: 22vw; height: 22vw; background: rgb(255 255 255); opacity: .18; animation-delay: -12s; }
+@keyframes site-drift { to { transform: translate(4vw, -3vh) scale(1.1); } }
+/* The owner's banner image, when one is set, under a dark wash so the glass panel's white text reads */
+.site-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.site-hero.has-image::after { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .18) 0%, rgb(0 0 0 / .12) 55%, rgb(0 0 0 / 0) 72%, var(--site-surface) 100%); content: ''; }
+.site-hero-panel { width: min(100%, 900px); }
+.site-hero-copy { display: grid; justify-items: center; gap: 14px; text-align: center; animation: site-rise .9s ease both; }
+.site-hero .site-eyebrow { color: rgb(255 255 255); text-shadow: 0 1px 8px rgb(0 0 0 / .45); }
+.site-hero h1 { color: rgb(255 255 255); text-shadow: 0 2px 6px rgb(0 0 0 / .35), 0 4px 24px rgb(0 0 0 / .35); font-size: clamp(32px, 5.6vw, 62px); line-height: 1.06; }
+.site-lead { max-width: 640px; color: rgb(255 255 255); text-shadow: 0 1px 10px rgb(0 0 0 / .5); font-size: clamp(16px, 2vw, 21px); line-height: 1.55; }
 .site-actions { display: flex; flex-wrap: wrap; justify-content: inherit; gap: 10px; margin-top: 6px; }
-.site-hero-dots { position: absolute; right: max(16px, calc((100% - 1180px) / 2)); bottom: 40px; display: flex; gap: 8px; }
-.site-hero-dots button { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 999px; background: rgb(255 255 255 / .45); cursor: pointer; transition: width .3s, background .3s; }
-.site-hero-dots button.is-active { width: 28px; background: rgb(255 255 255); }
-.site-scroll-cue { position: absolute; bottom: 18px; left: 50%; display: grid; justify-items: center; gap: 2px; color: rgb(255 255 255 / .85); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; translate: -50% 0; }
+.site-scroll-cue { position: absolute; bottom: 16px; left: 50%; display: grid; justify-items: center; gap: 2px; color: rgb(255 255 255 / .9); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; translate: -50% 0; }
 .site-scroll-cue svg { animation: site-bob 1.8s ease-in-out infinite; }
 @keyframes site-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes site-bob { 50% { transform: translateY(5px); } }
@@ -245,14 +249,8 @@
 @media (min-width: 720px) { .site-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .site-footer-grid { grid-template-columns: 1.3fr .9fr 1.2fr 1.3fr; gap: 40px; } }
 
-/* Header over the home page's photo slider: see-through with white text until the page scrolls */
-.site-header { transition: background .3s, border-color .3s, box-shadow .3s; }
-.site-header.is-over-hero { border-bottom-color: transparent; background: transparent; backdrop-filter: none; }
-.site-header.is-over-hero .site-nav-link, .site-header.is-over-hero .site-theme-toggle { color: rgb(255 255 255); }
-.site-header.is-over-hero .site-nav-link:hover, .site-header.is-over-hero .site-nav-link[aria-current="page"] { color: rgb(255 255 255); background: rgb(255 255 255 / .16); }
-.site-header.is-over-hero .site-menu-button { border-color: rgb(255 255 255 / .5); color: rgb(255 255 255); background: rgb(255 255 255 / .1); }
-.site-header.is-over-hero .brand-logo { padding: 4px 8px; border-radius: 10px; background: rgb(255 255 255 / .92); }
-.site-header:not(.is-over-hero) { box-shadow: 0 6px 20px rgb(10 30 45 / .06); }
+/* The header is white on every page, with a soft shadow so it stands off the hero photo. */
+.site-header { box-shadow: 0 6px 20px rgb(10 30 45 / .06); }
 
 /* About: a photo beside the copy, with live counters */
 .site-about { display: grid; gap: 28px; align-items: center; padding-top: 64px; }
@@ -317,7 +315,37 @@
 .site-whatsapp:hover { transform: scale(1.06); }
 @keyframes site-pulse { 0%, 100% { box-shadow: 0 10px 24px rgb(37 211 102 / .45), 0 0 0 0 rgb(37 211 102 / .4); } 50% { box-shadow: 0 10px 24px rgb(37 211 102 / .45), 0 0 0 12px rgb(37 211 102 / 0); } }
 
-@media (prefers-reduced-motion: reduce) { .site-hero-slide, .site-hero-copy, .site-scroll-cue svg, .site-plan, .site-photo-grid img, .site-whatsapp { animation: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .site-hero-glow, .site-hero-copy, .site-scroll-cue svg, .site-plan, .site-photo-grid img, .site-whatsapp { animation: none; transition: none; } }
+
+/* Phones: the hero's buttons stacked full width under the centred headline. */
+@media (max-width: 719px) {
+  .site-hero .site-actions { flex-direction: column; width: min(100%, 300px); }
+  .site-hero .site-cta { width: 100%; min-height: 50px; font-size: 15px; }
+}
+
+/* "Get the app" sheet: slides up from the bottom on phones, over a dimmed page */
+.site-sheet-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; background: rgb(4 24 38 / .35); animation: site-fade .25s ease both; }
+.site-sheet { display: grid; gap: 12px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); border-top: 3px solid var(--site-brand); border-radius: 22px 22px 0 0; color: var(--site-ink); background: var(--site-card); box-shadow: 0 -12px 40px rgb(4 24 38 / .25); animation: site-sheet-up .35s cubic-bezier(.2, .8, .2, 1) both; }
+.site-sheet-app { display: flex; align-items: center; gap: 12px; }
+.site-sheet-app img { border-radius: 12px; box-shadow: 0 4px 12px rgb(4 24 38 / .2); }
+.site-sheet-app div { display: grid; flex: 1; }
+.site-sheet-app strong { font: 800 16px Manrope, sans-serif; }
+.site-sheet-app small { color: var(--site-muted); font-size: 12px; }
+.site-sheet-close { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; color: var(--site-muted); background: transparent; cursor: pointer; }
+.site-sheet h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.site-sheet-star { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: rgb(255 255 255); background: rgb(245 158 11); }
+.site-sheet > p { color: var(--site-muted); font-size: 13px; line-height: 1.5; }
+.site-sheet-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 0; list-style: none; font-size: 12px; font-weight: 600; }
+.site-sheet-features li { display: flex; align-items: center; gap: 6px; }
+.site-sheet-features svg { color: var(--site-brand-deep); }
+.site-sheet-help { display: grid; gap: 6px; margin: 0; padding: 10px 12px 10px 28px; border-radius: 12px; background: var(--site-brand-soft); font-size: 13px; line-height: 1.5; }
+p.site-sheet-help { padding-left: 12px; }
+.site-sheet-help svg { vertical-align: -2px; }
+.site-sheet .site-sheet-install { min-height: 52px; border-radius: 14px; font-size: 15px; }
+.site-sheet .site-sheet-browser { min-height: 46px; border-radius: 14px; font-size: 14px; }
+@keyframes site-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes site-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .site-sheet, .site-sheet-backdrop { animation: none; } }
 
 /* Dark view */
 :root[data-theme="dark"] .site { --site-surface: rgb(14 18 22); --site-card: rgb(22 28 34); --site-line: rgb(48 56 64); --site-ink: rgb(232 238 236); --site-muted: rgb(160 172 170); --site-brand-soft: color-mix(in srgb, var(--site-brand) 20%, rgb(22 28 34)); --site-brand-deep: color-mix(in srgb, var(--site-brand) 60%, rgb(255 255 255)); }
@@ -326,4 +354,10 @@
 
 @media (prefers-reduced-motion: reduce) { .site-property-card, .site-gallery img, .site-location-card { transition: none; } }
 /* The hero's copy sits centred on the screen, so its buttons centre too. */
-.site-hero .site-actions { justify-content: center; }
+.site-hero .site-actions { justify-content: center; margin-top: 12px; }
+/* The hero's buttons: larger and squarer, the Enquire one white with theme-coloured text. */
+.site-hero .site-cta { min-height: 52px; padding: 0 30px; border-radius: 6px; font-size: 16px; }
+.site.site .site-hero .secondary-button { border: 1px solid color-mix(in srgb, var(--site-brand) 45%, rgb(255 255 255)); color: var(--site-brand-deep); background: rgb(255 255 255 / .88); }
+.site.site .site-hero .secondary-button:hover { background: rgb(255 255 255); }
+/* Over a banner the cue sits on the faded, light bottom, so it turns dark. */
+.site-hero.has-image .site-scroll-cue { color: var(--site-muted); }

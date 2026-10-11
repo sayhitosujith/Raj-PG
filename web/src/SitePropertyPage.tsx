@@ -3,6 +3,7 @@ import { formatClock, formatMealWindow, mealDetails } from './meals'
 import { tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sitePaths } from './router'
+import { isShown } from './siteContent'
 import type { SiteData } from './siteData'
 import { SiteLink } from './SiteLink'
 import { AmenityChips, FreeBeds, PriceTable, PropertyAddress, SiteHeading } from './SiteParts'
@@ -66,7 +67,7 @@ export function SitePropertyPage({ site, propertyId }: { site: SiteData; propert
           <section className="site-section">
             <SiteHeading eyebrow="Food" title="Meal timings" />
             <ul className="site-meal-times">{mealDetails.map(({ meal, label, icon: Icon }) => <li key={meal}><Icon size={18} aria-hidden="true" /><strong>{label}</strong><span>{formatMealWindow(property.mealTimes[meal])}</span></li>)}</ul>
-            <SiteLink to={sitePaths.foodAndRules} className="site-text-link">See the weekly menu</SiteLink>
+            {isShown(site.content, 'foodAndRules') && <SiteLink to={sitePaths.foodAndRules} className="site-text-link">See the weekly menu</SiteLink>}
           </section>
           <section className="site-section">
             <SiteHeading eyebrow="Good to know" title="Timings and house rules" />

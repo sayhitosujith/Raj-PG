@@ -5,25 +5,15 @@ import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
 import { sitePaths } from './router'
 import { locationOf, locationsOf, photosOf, roomOptionsOf, startingPrice, unknownLocation, whatsappLink, type SiteData } from './siteData'
+import { defaultAboutPoints, defaultAboutText, defaultAboutTitle, defaultHeadline, defaultPerks, defaultTagline, isShown } from './siteContent'
 import { SiteCarousel } from './SiteCarousel'
 import { SiteCounter } from './SiteCounter'
 import { SiteHero } from './SiteHero'
 import { SiteLink } from './SiteLink'
 import { AmenityChips, PropertyCard, SiteHeading } from './SiteParts'
 
-// What every resident gets through the app, whichever property they choose.
-const perks = [
-  { icon: UtensilsCrossed, title: 'Food plan', text: 'See the weekly menu ahead, and skip a meal in one tap.' },
-  { icon: Sparkles, title: 'Housekeeping on request', text: 'Book a room cleaning at a time that suits you.' },
-  { icon: Wrench, title: 'Repairs tracked', text: 'Report a problem from your phone and follow it until it is fixed.' },
-  { icon: ShieldCheck, title: 'Verified residents', text: "Every resident's ID is checked by the property owner." },
-]
-
-const aboutPoints = [
-  'Furnished rooms, from single to shared, at clear monthly prices.',
-  'Rent, meals, housekeeping and repairs, all in one resident app.',
-  'A team that answers, usually the same day.',
-]
+// The "Why stay with us" cards' icons, in card order (the owner edits only their text).
+const perkIcons = [UtensilsCrossed, Sparkles, Wrench, ShieldCheck]
 
 const steps = [
   { icon: MessageCircle, title: 'Tell us what you need', text: 'Send a request with your move-in date and budget.' },
@@ -31,16 +21,17 @@ const steps = [
   { icon: KeyRound, title: 'Move in', text: 'Sign in to the resident app for rent, meals and requests.' },
 ]
 
-const heroPhotoCount = 5
 const galleryPhotoCount = 8
 
 /**
- * The website's home page, laid out like a hospitality site: a full-screen photo slider, about with
+ * The website's home page, laid out like a hospitality site: a full-screen gradient hero, about with
  * live counters, locations, the PGs as a carousel, room options like plan cards, why stay with us, a
- * photo gallery, how joining works and a get-in-touch band. Everything comes from live data.
+ * photo gallery, how joining works and a get-in-touch band. Everything comes from live data; the text
+ * is the owner's from the admin Website page where they wrote it, built-in otherwise, and the sections
+ * they turned off are left out.
  */
 export function SiteHome({ site }: { site: SiteData }) {
-  const { properties } = site
+  const { properties, content } = site
   // '' shows every location; a name shows only the PGs there.
   const [location, setLocation] = useState('')
   const locations = locationsOf(properties)
@@ -51,10 +42,11 @@ export function SiteHome({ site }: { site: SiteData }) {
   const totalBeds = properties.reduce((sum, property) => sum + property.totalBeds, 0)
   const amenities = amenityOptions.map((option) => option.value).filter((value) => properties.some((property) => property.amenities.includes(value)))
   const photos = photosOf(properties)
-  // A different photo from the hero's first slide when there is one.
-  const aboutPhoto = photos[1] ?? photos[0]
+  const aboutPhoto = photos[0]
   const roomOptions = roomOptionsOf(properties)
   const bestValue = roomOptions.length > 1 ? roomOptions.reduce((best, option) => option.withoutFood < best.withoutFood ? option : best).beds : null
+  const facts = { businessName: site.businessName, cities, propertyCount: properties.length, lowestPrice: prices.length ? Math.min(...prices) : null }
+  const perks = (content.perks ?? defaultPerks).map((card, index) => ({ ...card, icon: perkIcons[index % perkIcons.length] }))
 
   // A location card filters the PGs and brings them into view.
   function showLocation(name: string) {
@@ -64,10 +56,10 @@ export function SiteHome({ site }: { site: SiteData }) {
 
   return (
     <>
-      <SiteHero photos={photos.slice(0, heroPhotoCount).map((photo) => photo.url)}>
+      <SiteHero image={site.bannerUrl}>
         <p className="site-eyebrow">{site.businessName}</p>
-        <h1>Comfortable PG living{cities.length ? ` in ${cities.join(', ')}` : ''}</h1>
-        <p className="site-lead">Furnished rooms, home-style food and an app for everything from rent to repairs.{prices.length ? ` Rooms from ${formatRupees(Math.min(...prices))} a month.` : ''}</p>
+        <h1>{content.headline ?? defaultHeadline(facts)}</h1>
+        <p className="site-lead">{content.tagline ?? defaultTagline(facts)}</p>
         <div className="site-actions">
           <SiteLink to={sitePaths.properties} className="primary-button site-cta">View PGs</SiteLink>
           <SiteLink to={sitePaths.bookVisit} className="secondary-button site-cta">Enquire now</SiteLink>
@@ -77,8 +69,8 @@ export function SiteHome({ site }: { site: SiteData }) {
       <section className="site-section site-about" id="about">
         <div className="site-about-photo">{aboutPhoto ? <img src={aboutPhoto.url} alt="" loading="lazy" /> : <Home size={48} aria-hidden="true" />}</div>
         <div className="site-about-copy">
-          <SiteHeading eyebrow={`About ${site.businessName}`} title="A home away from home" lead={`${site.businessName} runs ${properties.length === 1 ? 'a PG' : `${properties.length} PGs`}${cities.length ? ` in ${cities.join(', ')}` : ''}, made for students and working professionals who want a clean, safe and easy place to live.`} />
-          <ul className="site-about-points">{aboutPoints.map((point) => <li key={point}><BadgeCheck size={18} aria-hidden="true" /> {point}</li>)}</ul>
+          <SiteHeading eyebrow={`About ${site.businessName}`} title={content.aboutTitle ?? defaultAboutTitle} lead={content.aboutText ?? defaultAboutText(facts)} />
+          <ul className="site-about-points">{(content.aboutPoints ?? defaultAboutPoints).map((point) => <li key={point}><BadgeCheck size={18} aria-hidden="true" /> {point}</li>)}</ul>
           <div className="site-counters">
             <SiteCounter value={properties.length} label={properties.length === 1 ? 'PG' : 'PGs'} />
             <SiteCounter value={Math.max(cities.length, 1)} label={cities.length === 1 ? 'Location' : 'Locations'} />
@@ -88,7 +80,7 @@ export function SiteHome({ site }: { site: SiteData }) {
         </div>
       </section>
 
-      {locations.length > 0 && (
+      {locations.length > 0 && isShown(content, 'locations') && (
         <section className="site-section" id="locations">
           <SiteHeading eyebrow="Available locations" title="Where you can stay" lead="Pick an area to see the PGs there." />
           <ul className="site-locations">{locations.map((area) => (
@@ -106,7 +98,7 @@ export function SiteHome({ site }: { site: SiteData }) {
 
       <section className="site-section" id="properties">
         <SiteHeading eyebrow="Featured" title="Our PGs" lead={freeBeds ? `${freeBeds} ${freeBeds === 1 ? 'bed is' : 'beds are'} free right now. Live prices and availability.` : 'Live prices and availability, straight from our records.'} />
-        {locations.length > 1 && (
+        {locations.length > 1 && isShown(content, 'locations') && (
           <div className="site-filter" role="group" aria-label="Filter by location">
             {['', ...locations.map((area) => area.name)].map((name) => <button key={name || 'all'} type="button" className={`site-filter-chip${location === name ? ' is-selected' : ''}`} aria-pressed={location === name} onClick={() => setLocation(name)}>{name || 'All locations'}</button>)}
           </div>
@@ -116,7 +108,7 @@ export function SiteHome({ site }: { site: SiteData }) {
           : <p className="site-muted"><Home size={16} aria-hidden="true" /> Our properties will be listed here soon.</p>}
       </section>
 
-      {roomOptions.length > 0 && (
+      {roomOptions.length > 0 && isShown(content, 'roomOptions') && (
         <section className="site-section site-band" id="rooms">
           <SiteHeading eyebrow="Room options" title="Pick the room that suits you" lead="The lowest monthly rent for each room type across our PGs." />
           <ul className="site-plans">{roomOptions.map((option) => (
@@ -141,7 +133,7 @@ export function SiteHome({ site }: { site: SiteData }) {
         {amenities.length > 0 && <AmenityChips amenities={amenities} />}
       </section>
 
-      {photos.length > 1 && (
+      {photos.length > 1 && isShown(content, 'gallery') && (
         <section className="site-section" id="gallery">
           <SiteHeading eyebrow="Gallery" title="Take a look inside" lead="Real photos of our rooms and spaces." />
           <ul className="site-photo-grid">{photos.slice(0, galleryPhotoCount).map((photo, index) => (
@@ -152,10 +144,12 @@ export function SiteHome({ site }: { site: SiteData }) {
         </section>
       )}
 
-      <section className="site-section">
-        <SiteHeading eyebrow="How it works" title="From enquiry to move-in" />
-        <ol className="site-steps">{steps.map(({ icon: Icon, title, text }, index) => <li key={title}><span className="site-step-number">{index + 1}</span><Icon size={20} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></li>)}</ol>
-      </section>
+      {isShown(content, 'steps') && (
+        <section className="site-section">
+          <SiteHeading eyebrow="How it works" title="From enquiry to move-in" />
+          <ol className="site-steps">{steps.map(({ icon: Icon, title, text }, index) => <li key={title}><span className="site-step-number">{index + 1}</span><Icon size={20} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></li>)}</ol>
+        </section>
+      )}
 
       <section className="site-cta-band">
         <h2>Ready to see your room?</h2>

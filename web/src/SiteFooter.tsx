@@ -3,14 +3,15 @@ import { Clock, Download, Mail, MapPin, MessageCircle, Phone } from 'lucide-reac
 import { BrandMark } from './BrandMark'
 import { PolicyDialog, type Policy } from './PolicyDialog'
 import { sitePaths } from './router'
+import { emptySiteContent, visibleLinks } from './siteContent'
 import { addressOf, whatsappLink, type SiteData } from './siteData'
 import { SiteLink } from './SiteLink'
 
 const quickLinks = [
   { label: 'Home', to: sitePaths.home },
-  { label: 'Locations', to: sitePaths.locations },
+  { label: 'Locations', to: sitePaths.locations, section: 'locations' as const },
   { label: 'Our PGs', to: sitePaths.properties },
-  { label: 'Food & rules', to: sitePaths.foodAndRules },
+  { label: 'Food & rules', to: sitePaths.foodAndRules, section: 'foodAndRules' as const },
   { label: 'Contact us', to: sitePaths.contact },
   { label: 'Book a visit', to: sitePaths.bookVisit },
 ]
@@ -47,7 +48,7 @@ export function SiteFooter({ site }: { site: SiteData | null }) {
 
         <div className="site-footer-links">
           <h3>Quick links</h3>
-          <nav aria-label="Website footer">{quickLinks.map((item) => <SiteLink key={item.label} to={item.to}>{item.label}</SiteLink>)}</nav>
+          <nav aria-label="Website footer">{visibleLinks(quickLinks, site?.content ?? emptySiteContent).map((item) => <SiteLink key={item.label} to={item.to}>{item.label}</SiteLink>)}</nav>
           {policyLinks.length > 0 && <><h3>Legal &amp; policies</h3><div className="site-footer-stack">{policyLinks}</div></>}
         </div>
 

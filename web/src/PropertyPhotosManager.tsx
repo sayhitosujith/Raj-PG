@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, Trash2, X } from 'lucide-react'
-import { resizePropertyPhoto } from './imageResize'
+import { resizeGalleryPhoto } from './imageResize'
 import { InlineLoader } from './Loader'
 import { ModalLayer } from './ModalLayer'
 import { readApiError } from './superAdmin'
@@ -41,7 +41,7 @@ export function PropertyPhotosManager({ propertyId, propertyName, onClose, onNot
     let room = list.max - list.photos.length
     for (const file of Array.from(files)) {
       if (room <= 0) { onNotice(`A property can have up to ${list.max} photos.`); break }
-      const resized = await resizePropertyPhoto(file)
+      const resized = await resizeGalleryPhoto(file)
       if ('error' in resized) { onNotice(resized.error); continue }
       if (await send(base, { method: 'POST', body: JSON.stringify({ image: resized.dataUrl }) }, 'The photo could not be saved.')) room -= 1
     }

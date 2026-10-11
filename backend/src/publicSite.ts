@@ -2,15 +2,16 @@ import { Router } from 'express'
 import { prisma } from './db.js'
 import { mealColumnsSelect, toMealTimes } from './meals.js'
 import { bedCounts, roomBedsSelect } from './occupancy.js'
-import { contentVersion, sendPublicPropertyPhoto } from './photo.js'
+import { contentVersion, sendBanner, sendPublicPropertyPhoto } from './photo.js'
 import { pricingSelect } from './propertyRent.js'
 import { policiesOf } from './policies.js'
 import { getSettings, houseRulesOf } from './settings.js'
+import { bannerUrlOf, siteContentOf } from './siteContent.js'
 
 /**
  * The public website (/, /pg/:id, /food-and-rules, /contact): what someone looking for a PG may see
  * before signing up. Marketing details only: names, locations, prices, free beds, amenities, photos,
- * weekly menus, house rules and the Terms and Privacy policy. Never Wi-Fi details, important contacts, the manager's number or
+ * weekly menus, house rules, the Terms and Privacy policy, and the owner's website text. Never Wi-Fi details, important contacts, the manager's number or
  * anything about residents. Mounted before the sign-in guard.
  */
 export const publicSiteRouter = Router()
@@ -37,6 +38,8 @@ publicSiteRouter.get('/public/site', async (_request, response) => {
       contactEmail: settings.contactEmail,
       houseRules,
       ...policiesOf(settings),
+      content: siteContentOf(settings.siteContent),
+      bannerUrl: bannerUrlOf(settings),
       properties: properties.map((property) => {
         const { taken, total } = bedCounts(property)
         return {
@@ -55,6 +58,15 @@ publicSiteRouter.get('/public/site', async (_request, response) => {
   } catch (error) {
     console.error('Public site load failed:', error)
     response.status(503).json({ error: 'The site could not be loaded.' })
+  }
+})
+
+publicSiteRouter.get('/public/site-banner', async (_request, response) => {
+  try {
+    sendBanner(response, (await getSettings()).siteBannerUrl)
+  } catch (error) {
+    console.error('Website banner failed:', error)
+    response.status(503).json({ error: 'The banner could not be loaded.' })
   }
 })
 

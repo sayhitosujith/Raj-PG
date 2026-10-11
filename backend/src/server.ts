@@ -22,6 +22,7 @@ import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
 import { rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
+import { siteContentRouter } from './siteContent.js'
 import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
 import { roomsAdminRouter } from './rooms.js'
@@ -102,6 +103,7 @@ app.use('/api', whatsappAdminRouter)
 app.use('/api', financeAdminRouter)
 app.use('/api', emailAdminRouter)
 app.use('/api', settingsRouter)
+app.use('/api', siteContentRouter)
 app.use('/api', foodAdminRouter)
 app.use('/api', roomsAdminRouter)
 app.use('/api', holidaysAdminRouter)

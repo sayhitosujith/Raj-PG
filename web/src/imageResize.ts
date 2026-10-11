@@ -8,6 +8,12 @@ const logoMaxSide = 400
 const upiQrMaxSide = 1000
 /** Longest side of a stored property photo. Kept modest: the owner dashboard, refreshed every minute (see slowRefreshIntervalMs), embeds every property photo. */
 const propertyPhotoMaxSide = 1200
+/** Gallery photos show large on each PG's website page, so they keep more detail than covers. */
+const galleryPhotoMaxSide = 1920
+/** The website banner fills the screen: 2560px stays sharp on large and high-density displays. */
+const bannerMaxSide = 2560
+/** Narrowest banner accepted: below this, filling a desktop screen means visible stretching. */
+const bannerMinWidth = 1600
 
 type Result = { dataUrl: string } | { error: string }
 
@@ -27,6 +33,9 @@ function draw(bitmap: ImageBitmap, width: number, height: number, source: [numbe
   canvas.height = height
   const context = canvas.getContext('2d')
   if (!context) return null
+  // Browsers default to fast, low-quality scaling, which softens shrunk photos; ask for the best.
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
   context.drawImage(bitmap, ...source, 0, 0, width, height)
   bitmap.close()
   return canvas
@@ -65,19 +74,33 @@ function hasTransparency(canvas: HTMLCanvasElement) {
 }
 
 /**
- * Shrinks a property photo to 1200px on its longest side, without cropping. Ordinary photos become
- * JPEG (5–10 MB phone photos upload as roughly 150–250 KB). JPEG cannot store transparency, so an
- * image with a transparent background (such as a logo) is kept as PNG instead; not WebP, which is
- * smaller but cannot go into the PDF rent receipts that show this photo.
+ * Shrinks a photo to `maxSide` on its longest side, without cropping, at JPEG `quality` (0–1). Ordinary photos become JPEG.
+ * JPEG cannot store transparency, so an image with a transparent background (such as a logo) is kept
+ * as PNG instead; not WebP, which is smaller but cannot go into the PDF rent receipts.
  */
-export async function resizePropertyPhoto(file: File): Promise<Result> {
+async function resizePhoto(file: File, maxSide: number, quality: number, minWidth = 0): Promise<Result> {
   const bitmap = await decode(file)
   if ('error' in bitmap) return bitmap
-  const scale = Math.min(1, propertyPhotoMaxSide / Math.max(bitmap.width, bitmap.height))
+  // Shown wider than it is, a small image can only be stretched and blurred, so it is refused instead.
+  if (bitmap.width < minWidth) {
+    const width = bitmap.width
+    bitmap.close()
+    return { error: `This image is only ${width}px wide, so it would look blurry stretched across a screen. Choose one at least ${minWidth}px wide: the original photo from your phone or camera, not one saved from WhatsApp, a website or a screenshot.` }
+  }
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
   const canvas = draw(bitmap, Math.round(bitmap.width * scale), Math.round(bitmap.height * scale), [0, 0, bitmap.width, bitmap.height])
   if (!canvas) return { error: 'Your browser could not process the image.' }
-  return { dataUrl: hasTransparency(canvas) ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.8) }
+  return { dataUrl: hasTransparency(canvas) ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality) }
 }
+
+/** A property cover (or repair) photo at 1200px (5–10 MB phone photos upload as roughly 200–300 KB). */
+export const resizePropertyPhoto = (file: File) => resizePhoto(file, propertyPhotoMaxSide, 0.88)
+
+/** A property gallery photo at 1920px, high quality (usually 400–900 KB). */
+export const resizeGalleryPhoto = (file: File) => resizePhoto(file, galleryPhotoMaxSide, 0.9)
+
+/** The website's full-screen banner at 2560px, high quality (usually 0.8–2 MB as JPEG). */
+export const resizeBannerImage = (file: File) => resizePhoto(file, bannerMaxSide, 0.92, bannerMinWidth)
 
 async function resizeToFitPng(file: File, maxSide: number): Promise<Result> {
   const bitmap = await decode(file)

@@ -1,6 +1,7 @@
 import type { BookableProperty } from './booking'
 import type { Meal, MealTimes } from './meals'
 import type { SharingPrice } from './pricing'
+import type { SiteContent } from './siteContent'
 import type { HouseRules } from './workspaceSettings'
 
 /** One property as the public website shows it (see backend publicSite.ts). */
@@ -23,7 +24,7 @@ export type SiteProperty = BookableProperty & {
 }
 
 /** Everything the public website shows. */
-export type SiteData = { businessName: string; contactPhone: string | null; contactEmail: string | null; houseRules: HouseRules; /** The owner's policies (Settings); empty when cleared. */ termsAndConditions: string; privacyPolicy: string; properties: SiteProperty[] }
+export type SiteData = { businessName: string; contactPhone: string | null; contactEmail: string | null; houseRules: HouseRules; /** The owner's policies (Settings); empty when cleared. */ termsAndConditions: string; privacyPolicy: string; /** The owner's website text and switched-off sections (admin Website page). */ content: SiteContent; /** The banner image chosen on the Website page, or null for the gradient. */ bannerUrl: string | null; properties: SiteProperty[] }
 
 export async function fetchSite() {
   const response = await fetch('/api/public/site')

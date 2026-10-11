@@ -16,6 +16,20 @@ export async function getSettings() {
   return cached
 }
 
+/**
+ * Saves some settings fields and refreshes the cache, for modules that own a part of the settings
+ * (such as the website content). A failed save clears the cache so the next read goes to the database.
+ */
+export async function updateSettings(data: Prisma.WorkspaceSettingsUpdateInput) {
+  try {
+    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data })
+    return cached
+  } catch (error) {
+    cached = null
+    throw error
+  }
+}
+
 /** Rent cycle days plus the late fee, e.g. { dueDay: 3, reminderOneDay: 1, reminderTwoDay: 2, reminderThreeDay: 3, lateFee: 200 }. */
 export type RentRules = { dueDay: number; reminderOneDay: number; reminderTwoDay: number; reminderThreeDay: number; lateFee: number }
 export const rentRulesOf = (settings: WorkspaceSettings): RentRules => ({ dueDay: settings.rentDueDay, reminderOneDay: settings.rentReminderOneDay, reminderTwoDay: settings.rentReminderTwoDay, reminderThreeDay: settings.rentReminderThreeDay, lateFee: settings.lateFee })
@@ -187,7 +201,8 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
 
 /** Settings as sent to browsers: the logo and UPI QR image are served separately, referenced by version. */
 export function toClientSettings(settings: WorkspaceSettings) {
-  const { logoUrl: _logoUrl, logoUpdatedAt, upiQrUrl: _upiQrUrl, upiQrUpdatedAt, ...fields } = settings
+  // Images go by their own URLs, so the settings (re-fetched every few seconds) stay small.
+  const { logoUrl: _logoUrl, logoUpdatedAt, upiQrUrl: _upiQrUrl, upiQrUpdatedAt, siteBannerUrl: _siteBannerUrl, ...fields } = settings
   return { ...fields, ...policiesOf(settings), logoVersion: photoVersion(logoUpdatedAt), upiQrVersion: photoVersion(upiQrUpdatedAt) }
 }
 

@@ -550,6 +550,13 @@ model WorkspaceSettings {
   portalChildCardColor    String?
   // Which banner each resident feature shows: { feature: "NEW" | "SOON" | "BETA" }; a feature left out
   // shows none. Starts as the banners the portal had before the owner could choose.
+  // The owner's own text for the public website and the sections they turned off (see siteContent.ts);
+  // null keeps the built-in text and every section.
+  siteContent             Json?
+  // The website's full-screen banner image (data URL) and when it changed, to version its public URL;
+  // without one the banner shows the theme-colour gradient.
+  siteBannerUrl           String?
+  siteBannerUpdatedAt     DateTime?
   featureBadges           Json      @default("{\"faqs\":\"NEW\",\"passkeys\":\"NEW\",\"whatsapp\":\"BETA\",\"email\":\"BETA\"}")
   updatedAt               DateTime  @updatedAt
 }

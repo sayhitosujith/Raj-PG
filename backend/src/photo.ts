@@ -8,7 +8,8 @@ const maxProfilePhotoBytes = 300_000
 const maxLogoBytes = 600_000
 const maxUpiQrBytes = 1_500_000
 const maxMaintenancePhotoBytes = 1_500_000
-const maxPropertyPhotoBytes = 600_000
+const maxPropertyPhotoBytes = 1_500_000
+const maxBannerBytes = 3_000_000
 
 /** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
 function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
@@ -62,8 +63,14 @@ export function photoVersion(updatedAt: Date | null | undefined) {
   return updatedAt ? updatedAt.getTime() : null
 }
 
-/** Why a property gallery photo is unacceptable, or null when it is fine (resized to ≤1280px in the browser). */
+/** Why a property gallery photo is unacceptable, or null when it is fine (resized to ≤1920px in the browser). */
 export const findPropertyPhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxPropertyPhotoBytes, 'a photo')
+
+/** Why an uploaded website banner is unacceptable, or null when it is fine (resized to ≤2560px in the browser). */
+export const findBannerProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxBannerBytes, 'a banner image')
+
+/** Sends the website banner; public, as the website shows it to every visitor. */
+export const sendBanner = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No banner image.')
 
 /** Sends a property cover or gallery photo to anyone: the public website shows them to visitors. */
 export const sendPublicPropertyPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No photo.')
