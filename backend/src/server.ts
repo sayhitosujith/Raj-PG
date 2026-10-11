@@ -4,6 +4,7 @@ import express from 'express'
 import { UserRole } from '@prisma/client'
 import { authRouter, requireRole } from './auth.js'
 import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
+import { publicSiteRouter } from './publicSite.js'
 import { notifyAnnouncement, notifyInBackground } from './notifications.js'
 import { cronRouter } from './rentReminders.js'
 import { whatsappAdminRouter } from './whatsappAdmin.js'
@@ -63,6 +64,7 @@ app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
 app.use('/api', bookingPublicRouter)
+app.use('/api', publicSiteRouter)
 app.use('/api', cronRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)

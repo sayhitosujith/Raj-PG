@@ -1,5 +1,5 @@
 /** Booking-request sources and statuses; the keys must match the backend's lists in bookings.ts. */
-export const bookingSourceLabels = { instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', google: 'Google', direct: 'Direct link', phone: 'Phone call', walk_in: 'Walk-in' } as const
+export const bookingSourceLabels = { instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', google: 'Google', website: 'Website', direct: 'Direct link', phone: 'Phone call', walk_in: 'Walk-in' } as const
 /** Sources a shared link can carry; phone and walk-in are only for requests the owner adds. */
 export const shareableSources = ['instagram', 'facebook', 'whatsapp', 'google', 'direct'] as const
 export const bookingStatusLabels = { new: 'New', contacted: 'Contacted', accepted: 'Accepted', declined: 'Declined' } as const

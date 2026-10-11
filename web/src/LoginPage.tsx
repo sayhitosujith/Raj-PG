@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Fingerprint, LogIn } from 'lucide-react'
+import { ArrowLeft, Fingerprint, LogIn } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { useBranding, useBrandingAutoRefresh } from './branding'
 import { useAdminBrand } from './useAdminBrand'
@@ -8,6 +8,8 @@ import { readLastProperty } from './lastProperty'
 import type { SessionResponse } from './session'
 import { ThemeToggle } from './ThemeToggle'
 import { readApiError } from './superAdmin'
+import { sitePaths } from './router'
+import { SiteLink } from './SiteLink'
 
 /**
  * One sign-in form for super admins and residents. The server works out the account type from
@@ -83,6 +85,7 @@ export function LoginPage({ onSignedIn, notice }: { onSignedIn: (session: Sessio
             <p className="login-divider"><span>or</span></p>
             <button type="button" className="secondary-button login-passkey" disabled={isSubmitting} onClick={() => void signInWithDevice()}><Fingerprint size={16} /> Sign in with Face ID / fingerprint</button>
           </>}
+          <SiteLink to={sitePaths.home} className="login-back"><ArrowLeft size={14} aria-hidden="true" /> Back to website</SiteLink>
         </form>
       </section>
     </main>

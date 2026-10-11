@@ -9,9 +9,8 @@ import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma } from './db.js'
 import { toMealTimes } from './meals.js'
-import { findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage, sendUpiQr } from './photo.js'
+import { contentVersion, findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage, sendUpiQr } from './photo.js'
 import { rentSummary } from './rent.js'
-import { createHash } from 'node:crypto'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
@@ -77,7 +76,7 @@ export const residentPortalRouter = Router()
  */
 function propertyImageUrl(imageUrl: string) {
   if (!imageUrl.startsWith('data:')) return imageUrl
-  return `/api/resident-portal/property-image?v=${createHash('sha1').update(imageUrl).digest('hex').slice(0, 10)}`
+  return `/api/resident-portal/property-image?v=${contentVersion(imageUrl)}`
 }
 
 residentPortalRouter.post('/resident-portal/login', async (request, response) => {

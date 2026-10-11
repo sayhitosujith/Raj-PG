@@ -17,7 +17,8 @@ export const mealDetails: Array<{ meal: Meal; label: string; icon: typeof Coffee
 
 const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
 
-function formatClock(time: string, withPeriod: boolean) {
+/** "7:30", or "7:30 pm" with the period, from a stored "19:30"; whole hours drop the minutes ("7 pm"). */
+export function formatClock(time: string, withPeriod: boolean) {
   const [hours, minutes] = time.split(':').map(Number)
   const clock = `${hours % 12 || 12}${minutes ? `:${String(minutes).padStart(2, '0')}` : ''}`
   return withPeriod ? `${clock} ${hours < 12 ? 'am' : 'pm'}` : clock

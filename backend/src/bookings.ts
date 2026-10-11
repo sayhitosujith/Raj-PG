@@ -14,7 +14,7 @@ import { propertyIdWhere, staffAccess } from './staffAccess.js'
  * phone and walk-in enquiries by hand. Requests are triaged new -> contacted -> accepted/declined
  * and can be turned into a resident.
  */
-const publicSources = ['instagram', 'facebook', 'whatsapp', 'google', 'direct'] as const
+const publicSources = ['instagram', 'facebook', 'whatsapp', 'google', 'website', 'direct'] as const
 const ownerSources = [...publicSources, 'phone', 'walk_in'] as const
 const statuses = ['new', 'contacted', 'accepted', 'declined'] as const
 const maxMessageLength = 500

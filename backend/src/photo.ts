@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { Response } from 'express'
 
 const imageDataUrlPattern = /^data:(image\/jpeg|image\/png|image\/webp);base64,(.+)$/s
@@ -63,6 +64,12 @@ export function photoVersion(updatedAt: Date | null | undefined) {
 
 /** Why a property gallery photo is unacceptable, or null when it is fine (resized to ≤1280px in the browser). */
 export const findPropertyPhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxPropertyPhotoBytes, 'a photo')
+
+/** Sends a property cover or gallery photo to anyone: the public website shows them to visitors. */
+export const sendPublicPropertyPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'public', 'No photo.')
+
+/** A short hash of an inline image for its URL, so browsers cache it until the image changes. */
+export const contentVersion = (dataUrl: string) => createHash('sha1').update(dataUrl).digest('hex').slice(0, 10)
 
 /** Sends a property gallery photo (private: the property's residents and owners). */
 export const sendPropertyPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No photo.')

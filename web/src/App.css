@@ -2309,3 +2309,6 @@ div.portal-panel { display: contents; }
    shows, and still pinned to the footer's right on wide screens (.has-ribbon sets position: relative). */
 .portal-terms .referral-share.has-ribbon { padding: 9px 10px 9px 38px; border-radius: 12px; }
 @media (min-width: 900px) { .portal-terms .referral-share.has-ribbon { position: absolute; } }
+/* Sign-in card: the way back to the public website. */
+.login-back { display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 14px; color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
+.login-back:hover { color: var(--ink); text-decoration: underline; }
