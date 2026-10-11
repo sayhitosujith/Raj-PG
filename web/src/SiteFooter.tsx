@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
-import { Clock, Download, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Clock, Download, Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Twitter, Youtube } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { PolicyDialog, type Policy } from './PolicyDialog'
 import { sitePaths } from './router'
-import { emptySiteContent, visibleLinks } from './siteContent'
+import { GoogleMark } from './ReferralShare'
+import { defaultContactNote, defaultFooterText, emptySiteContent, isShown, socialPlatforms, visibleLinks, type SocialPlatform } from './siteContent'
 import { addressOf, whatsappLink, type SiteData } from './siteData'
 import { SiteLink } from './SiteLink'
 
@@ -16,22 +17,35 @@ const quickLinks = [
   { label: 'Book a visit', to: sitePaths.bookVisit },
 ]
 
+const socialIcons: Record<SocialPlatform, ReactNode> = {
+  facebook: <Facebook size={17} aria-hidden="true" />,
+  instagram: <Instagram size={17} aria-hidden="true" />,
+  youtube: <Youtube size={17} aria-hidden="true" />,
+  x: <Twitter size={17} aria-hidden="true" />,
+  linkedin: <Linkedin size={17} aria-hidden="true" />,
+  google: <GoogleMark />,
+}
+
 /**
  * The website's footer: the brand with a short line, quick links and policies, contact details with
  * each PG's address, and the resident app card with a QR code to sign in on a phone. Then a bottom bar
- * with the copyright and policy links. Only details the owner has entered are shown.
+ * with the copyright and policy links. The text, social media icons and app card follow the admin Website
+ * page; only details the owner has entered are shown.
  */
 export function SiteFooter({ site }: { site: SiteData | null }) {
   const [openPolicy, setOpenPolicy] = useState<Policy | null>(null)
   const [appQr, setAppQr] = useState('')
   const signInUrl = `${window.location.origin}${sitePaths.login}`
+  const content = site?.content ?? emptySiteContent
+  const showsAppCard = isShown(content, 'appCard')
 
   // The QR library is only needed here, so it loads with the footer rather than with the whole app.
   useEffect(() => {
+    if (!showsAppCard) return
     let isCurrent = true
     import('qrcode').then(({ toDataURL }) => toDataURL(signInUrl, { margin: 1, width: 220 })).then((url) => { if (isCurrent) setAppQr(url) }, () => undefined)
     return () => { isCurrent = false }
-  }, [signInUrl])
+  }, [signInUrl, showsAppCard])
 
   const policies = site ? [{ title: 'Terms and conditions', text: site.termsAndConditions }, { title: 'Privacy policy', text: site.privacyPolicy }].filter((policy) => policy.text) : []
   const cities = site ? [...new Set(site.properties.map((property) => property.city?.trim()).filter((city): city is string => Boolean(city)))] : []
@@ -42,8 +56,11 @@ export function SiteFooter({ site }: { site: SiteData | null }) {
       <div className="site-footer-grid">
         <div className="site-footer-brand">
           <BrandMark />
-          {site && <p>{site.businessName} offers comfortable, furnished PG rooms{cities.length ? ` in ${cities.join(', ')}` : ''}, with food, housekeeping and a resident app for rent, meals and requests.</p>}
-          {site?.contactPhone && <a className="site-footer-social" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><MessageCircle size={17} aria-hidden="true" /></a>}
+          {site && <p>{content.footerText ?? defaultFooterText({ businessName: site.businessName, cities })}</p>}
+          <div className="site-footer-socials">
+            {site?.contactPhone && <a className="site-footer-social" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><MessageCircle size={17} aria-hidden="true" /></a>}
+            {socialPlatforms.filter((platform) => content.social[platform.key]).map((platform) => <a key={platform.key} className="site-footer-social" href={content.social[platform.key]} target="_blank" rel="noopener noreferrer" aria-label={platform.label} title={platform.label}>{socialIcons[platform.key]}</a>)}
+          </div>
         </div>
 
         <div className="site-footer-links">
@@ -56,12 +73,12 @@ export function SiteFooter({ site }: { site: SiteData | null }) {
           <h3>Contact info</h3>
           <ul>
             {site?.properties.map((property) => addressOf(property) && <li key={property.id}><MapPin size={16} aria-hidden="true" /><span><strong>{property.name}</strong>{addressOf(property)}</span></li>)}
-            {site?.contactPhone && <li><Phone size={16} aria-hidden="true" /><span><a href={`tel:${site.contactPhone}`}>{site.contactPhone}</a><small><Clock size={11} aria-hidden="true" /> Call or WhatsApp, we usually reply the same day</small></span></li>}
+            {site?.contactPhone && <li><Phone size={16} aria-hidden="true" /><span><a href={`tel:${site.contactPhone}`}>{site.contactPhone}</a><small><Clock size={11} aria-hidden="true" /> {content.contactNote ?? defaultContactNote}</small></span></li>}
             {site?.contactEmail && <li><Mail size={16} aria-hidden="true" /><span><a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a></span></li>}
           </ul>
         </div>
 
-        <div className="site-footer-app">
+        {showsAppCard && <div className="site-footer-app">
           <h3>Resident app</h3>
           <div className="site-app-card">
             {appQr ? <img src={appQr} alt="QR code to open the resident app" width={110} height={110} /> : <span className="site-app-qr-placeholder" aria-hidden="true" />}
@@ -71,7 +88,7 @@ export function SiteFooter({ site }: { site: SiteData | null }) {
               <SiteLink to={sitePaths.login} className="primary-button site-cta">Sign in</SiteLink>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="site-footer-bottom">

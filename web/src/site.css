@@ -361,3 +361,5 @@ p.site-sheet-help { padding-left: 12px; }
 .site.site .site-hero .secondary-button:hover { background: rgb(255 255 255); }
 /* Over a banner the cue sits on the faded, light bottom, so it turns dark. */
 .site-hero.has-image .site-scroll-cue { color: var(--site-muted); }
+/* The footer's social media icons in a row (WhatsApp first, then the owner's links). */
+.site-footer-socials { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Globe, Image as ImageIcon, LayoutList, Save, Sparkles, Type } from 'lucide-react'
+import { Globe, Image as ImageIcon, LayoutList, PanelBottom, Save, Sparkles, Type } from 'lucide-react'
 import { InlineLoader } from './Loader'
-import { defaultAboutPoints, defaultAboutText, defaultAboutTitle, defaultHeadline, defaultPerks, defaultTagline, siteSections, type SiteContent, type SiteFacts, type SiteSection } from './siteContent'
+import { defaultAboutPoints, defaultAboutText, defaultAboutTitle, defaultContactNote, defaultFooterText, defaultHeadline, defaultPerks, defaultTagline, siteSections, socialPlatforms, type SiteContent, type SiteFacts, type SiteSection, type SocialPlatform } from './siteContent'
 import { fetchSite, locationsOf, startingPrice, unknownLocation } from './siteData'
 import { readApiError } from './superAdmin'
 import { WebsiteBannerField } from './WebsiteBannerField'
 
 // The editor's working copy: every box as text (empty means "use the built-in text").
-type Draft = { headline: string; tagline: string; aboutTitle: string; aboutText: string; aboutPoints: string; perks: Array<{ title: string; text: string }>; hidden: SiteSection[] }
+type Draft = { headline: string; tagline: string; aboutTitle: string; aboutText: string; aboutPoints: string; perks: Array<{ title: string; text: string }>; footerText: string; contactNote: string; social: Partial<Record<SocialPlatform, string>>; hidden: SiteSection[] }
 
 const perkSlots = 4
 
@@ -15,6 +15,7 @@ const toDraft = (content: SiteContent): Draft => ({
   headline: content.headline ?? '', tagline: content.tagline ?? '', aboutTitle: content.aboutTitle ?? '', aboutText: content.aboutText ?? '',
   aboutPoints: (content.aboutPoints ?? []).join('\n'),
   perks: Array.from({ length: perkSlots }, (_, index) => content.perks?.[index] ?? { title: '', text: '' }),
+  footerText: content.footerText ?? '', contactNote: content.contactNote ?? '', social: content.social,
   hidden: content.hidden,
 })
 
@@ -22,12 +23,13 @@ const toBody = (draft: Draft) => ({
   headline: draft.headline, tagline: draft.tagline, aboutTitle: draft.aboutTitle, aboutText: draft.aboutText,
   aboutPoints: draft.aboutPoints.split('\n').map((point) => point.trim()).filter(Boolean),
   perks: draft.perks.filter((card) => card.title.trim() || card.text.trim()),
+  footerText: draft.footerText, contactNote: draft.contactNote, social: draft.social,
   hidden: draft.hidden,
 })
 
 /**
  * The owner's Website page: the banner image (saved on its own, see WebsiteBannerField), the public site's text (hero headline and tagline, the About section and
- * its points, the "Why stay with us" cards) and switches for its sections. A box left empty keeps the
+ * its points, the "Why stay with us" cards, the footer and its social media links) and switches for its sections. A box left empty keeps the
  * built-in text, which shows in it as a grey example, so nothing has to be written for the site to work.
  */
 export function WebsiteEditor({ onNotice, onBack }: { onNotice: (message: string) => void; onBack: () => void }) {
@@ -101,6 +103,18 @@ export function WebsiteEditor({ onNotice, onBack }: { onNotice: (message: string
               </div>
             ))}</div>
             <small>Fill in any card to use your own cards instead of the four examples.</small>
+          </fieldset>
+
+          <fieldset className="website-editor-card website-editor-wide">
+            <legend><PanelBottom size={16} aria-hidden="true" /> Footer &amp; social media</legend>
+            <div className="website-editor-perks">
+              <label>Footer text<textarea rows={3} value={draft.footerText} maxLength={400} onChange={(event) => update({ footerText: event.target.value })} placeholder={facts ? defaultFooterText(facts) : ''} /></label>
+              <label>Note under your phone number<input value={draft.contactNote} maxLength={120} onChange={(event) => update({ contactNote: event.target.value })} placeholder={defaultContactNote} /></label>
+            </div>
+            <div className="website-editor-perks">{socialPlatforms.map((platform) => (
+              <label key={platform.key}>{platform.label}<input type="url" inputMode="url" value={draft.social[platform.key] ?? ''} maxLength={300} onChange={(event) => update({ social: { ...draft.social, [platform.key]: event.target.value } })} placeholder={platform.example} /></label>
+            ))}</div>
+            <small>Paste the full link to your page (starting with https://). Icons show in the footer only for the links you fill in; WhatsApp uses your contact phone from Settings.</small>
           </fieldset>
 
           <fieldset className="website-editor-card website-editor-wide">

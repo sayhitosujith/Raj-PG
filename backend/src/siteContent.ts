@@ -4,13 +4,20 @@ import { findBannerProblem, photoVersion } from './photo.js'
 import { getSettings, updateSettings } from './settings.js'
 
 /**
- * The owner's own text for the public website, edited on the admin Website page, and the sections they
- * turned off. Any text left blank (null) keeps the website's built-in text, so a new workspace has a
+ * The owner's own text for the public website (including the footer and its social media links), edited
+ * on the admin Website page, and the sections they turned off. Any text left blank (null) keeps the website's built-in text, so a new workspace has a
  * complete site before anyone writes a word.
  */
 
 /** Website parts the owner can turn off; all show unless listed in `hidden`. */
-export const siteSections = ['locations', 'roomOptions', 'gallery', 'steps', 'foodAndRules', 'whatsapp'] as const
+export const siteSections = ['locations', 'roomOptions', 'gallery', 'steps', 'foodAndRules', 'whatsapp', 'appCard'] as const
+
+/** Social media the footer can link to, with the name used in error messages. */
+const socialPlatforms = { facebook: 'Facebook', instagram: 'Instagram', youtube: 'YouTube', x: 'X (Twitter)', linkedin: 'LinkedIn', google: 'Google' } as const
+type SocialPlatform = keyof typeof socialPlatforms
+const isSocialPlatform = (value: string): value is SocialPlatform => value in socialPlatforms
+// Only full web addresses, so a link can never become a javascript: URL.
+const isWebLink = (value: string) => /^https?:\/\/[^\s]+$/i.test(value)
 type SiteSection = (typeof siteSections)[number]
 type Card = { title: string; text: string }
 
@@ -23,11 +30,17 @@ export type SiteContent = {
   aboutPoints: string[] | null
   /** The four "Why stay with us" cards; null keeps the built-in ones. */
   perks: Card[] | null
+  /** The footer's line about the business; null keeps the built-in one. */
+  footerText: string | null
+  /** The note under the phone number in the footer; null keeps the built-in one. */
+  contactNote: string | null
+  /** Social media links shown as icons in the footer; only the ones set. */
+  social: Partial<Record<SocialPlatform, string>>
   hidden: SiteSection[]
 }
 
-const limits = { headline: 90, tagline: 240, aboutTitle: 80, aboutText: 600, point: 140, points: 5, perkTitle: 40, perkText: 160, perks: 4 }
-const empty: SiteContent = { headline: null, tagline: null, aboutTitle: null, aboutText: null, aboutPoints: null, perks: null, hidden: [] }
+const limits = { headline: 90, tagline: 240, aboutTitle: 80, aboutText: 600, point: 140, points: 5, perkTitle: 40, perkText: 160, perks: 4, footerText: 400, contactNote: 120, link: 300 }
+const empty: SiteContent = { headline: null, tagline: null, aboutTitle: null, aboutText: null, aboutPoints: null, perks: null, footerText: null, contactNote: null, social: {}, hidden: [] }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 const isSection = (value: unknown): value is SiteSection => siteSections.includes(value as SiteSection)
@@ -41,6 +54,8 @@ export function siteContentOf(stored: Prisma.JsonValue | null): SiteContent {
   return {
     headline: text(stored.headline), tagline: text(stored.tagline), aboutTitle: text(stored.aboutTitle), aboutText: text(stored.aboutText),
     aboutPoints: points.length ? points : null, perks: perks.length ? perks : null,
+    footerText: text(stored.footerText), contactNote: text(stored.contactNote),
+    social: isRecord(stored.social) ? Object.fromEntries(Object.entries(stored.social).filter((entry): entry is [SocialPlatform, string] => isSocialPlatform(entry[0]) && typeof entry[1] === 'string' && isWebLink(entry[1]))) : {},
     hidden: Array.isArray(stored.hidden) ? stored.hidden.filter(isSection) : [],
   }
 }
@@ -55,8 +70,8 @@ export function parseSiteContent(body: unknown): { content: SiteContent } | { er
     if (trimmed.length > max) return { error: `${name} can be up to ${max} characters.` }
     return trimmed || null
   }
-  const content: SiteContent = { ...empty }
-  for (const [key, name, max] of [['headline', 'Headline', limits.headline], ['tagline', 'Tagline', limits.tagline], ['aboutTitle', 'About title', limits.aboutTitle], ['aboutText', 'About text', limits.aboutText]] as const) {
+  const content: SiteContent = { ...empty, social: {} }
+  for (const [key, name, max] of [['headline', 'Headline', limits.headline], ['tagline', 'Tagline', limits.tagline], ['aboutTitle', 'About title', limits.aboutTitle], ['aboutText', 'About text', limits.aboutText], ['footerText', 'Footer text', limits.footerText], ['contactNote', 'Contact note', limits.contactNote]] as const) {
     const value = optionalText(body[key], name, max)
     if (isRecord(value)) return value as { error: string }
     content[key] = value
@@ -85,6 +100,17 @@ export function parseSiteContent(body: unknown): { content: SiteContent } | { er
       if (title && text) perks.push({ title, text })
     }
     content.perks = perks.length ? perks : null
+  }
+  if (body.social !== undefined && body.social !== null) {
+    if (!isRecord(body.social)) return { error: 'Social links must be a list of web addresses.' }
+    for (const [platform, link] of Object.entries(body.social)) {
+      if (!isSocialPlatform(platform)) return { error: 'Unknown social media site.' }
+      const value = optionalText(link, `${socialPlatforms[platform]} link`, limits.link)
+      if (isRecord(value)) return value as { error: string }
+      if (!value) continue
+      if (!isWebLink(value)) return { error: `The ${socialPlatforms[platform]} link must be a full web address starting with https://` }
+      content.social[platform] = value
+    }
   }
   if (body.hidden !== undefined) {
     if (!Array.isArray(body.hidden) || !body.hidden.every(isSection)) return { error: 'Unknown website section.' }
