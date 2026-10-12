@@ -368,3 +368,12 @@ p.site-sheet-help { padding-left: 12px; }
 /* The footer's social media icons in a row (WhatsApp first, then the owner's links). */
 .site-footer-socials { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (min-width: 720px) and (max-width: 959px) { .site-header { padding-inline: 32px; } }
+/* Property cards: the name's link covers the whole card, so the card stays one click target, while the
+   PG's own website link sits above it (z-index) and opens on its own (SiteParts PropertyCard). */
+.site-property-card { position: relative; }
+.site-property-link { color: inherit; text-decoration: none; }
+.site-property-link::after { position: absolute; inset: 0; z-index: 0; content: ''; }
+.site-property-link:focus-visible { outline: none; }
+.site-property-card:has(.site-property-link:focus-visible) { outline: 3px solid color-mix(in srgb, var(--site-brand) 55%, transparent); outline-offset: 2px; }
+.site-property-website { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; justify-self: start; max-width: 100%; overflow: hidden; color: var(--site-brand-deep); font-size: 13px; font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.site-property-website:hover { text-decoration: underline; }

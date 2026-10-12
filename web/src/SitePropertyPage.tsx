@@ -1,4 +1,4 @@
-import { ArrowLeft, Building2, CalendarClock, Clock, DoorOpen, LogIn, LogOut, MoonStar, Users, WalletCards } from 'lucide-react'
+import { ArrowLeft, Building2, CalendarClock, Clock, DoorOpen, Globe, LogIn, LogOut, MoonStar, Users, WalletCards } from 'lucide-react'
 import { formatClock, formatMealWindow, mealDetails } from './meals'
 import { tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
@@ -42,6 +42,7 @@ export function SitePropertyPage({ site, propertyId }: { site: SiteData; propert
         <p className="site-meta">
           {forWhom && <span><Users size={14} aria-hidden="true" /> {forWhom}</span>}
           <PropertyAddress property={property} />
+          {property.websiteUrl && <a className="site-location" href={property.websiteUrl} target="_blank" rel="noopener noreferrer"><Globe size={14} aria-hidden="true" /> Website</a>}
           <FreeBeds property={property} />
         </p>
         {photos.length > 0 && (

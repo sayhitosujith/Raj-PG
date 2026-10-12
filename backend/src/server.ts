@@ -311,6 +311,7 @@ app.get('/api/dashboard', async (_request, response) => {
           city: property.city,
           ownerPhone: property.ownerPhone,
           noticePeriodDays: property.noticePeriodDays,
+          websiteUrl: property.websiteUrl,
           wifiName: property.wifiName,
           wifiPassword: property.wifiPassword,
           contacts: property.contacts,

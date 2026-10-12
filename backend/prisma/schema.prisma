@@ -15,6 +15,8 @@ model Property {
   city                String?
   // Owner's phone (E.164) for residents' "Call owner" button; falls back to the workspace contact phone.
   ownerPhone          String?
+  // The PG's own website, if it has one (a full https:// address); shown on the public site and in the portal's Info tab.
+  websiteUrl          String?
   imageUrl            String
   status              String               @default("Healthy")
   // Meal service windows shown to residents, as 24-hour "HH:MM" local (IST) times.

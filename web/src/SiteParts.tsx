@@ -1,4 +1,4 @@
-import { BedDouble, Building2, MapPin, Users } from 'lucide-react'
+import { BedDouble, Building2, Globe, MapPin, Users } from 'lucide-react'
 import { amenityOptions, tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
@@ -39,17 +39,29 @@ export function AmenityChips({ amenities }: { amenities: string[] }) {
 export function PropertyCard({ property }: { property: SiteProperty }) {
   const from = startingPrice(property)
   const forWhom = tenantHint(property.tenantType)
+  // The name's link stretches over the whole card (see .site-property-link in site.css), so the card stays
+  // one big click target while the PG's own website link sits on top and opens on its own.
   return (
-    <SiteLink to={sitePaths.property(property.id)} className="site-property-card">
+    <article className="site-property-card">
       <div className="site-property-photo">{property.image ? <img src={property.image} alt="" loading="lazy" /> : <Building2 size={40} aria-hidden="true" />}<FreeBeds property={property} /></div>
       <div className="site-property-body">
-        <h3>{property.name}</h3>
+        <h3><SiteLink to={sitePaths.property(property.id)} className="site-property-link">{property.name}</SiteLink></h3>
         <p className="site-meta">{forWhom && <span><Users size={13} aria-hidden="true" /> {forWhom}</span>}{addressOf(property) && <span><MapPin size={13} aria-hidden="true" /> {addressOf(property)}</span>}</p>
         <AmenityChips amenities={property.amenities} />
         <p className="site-price">{from ? <>From <strong>{formatRupees(from)}</strong> / month</> : 'Ask us for prices'}</p>
+        {property.websiteUrl && <a className="site-property-website" href={property.websiteUrl} target="_blank" rel="noopener noreferrer" title={property.websiteUrl}><Globe size={14} aria-hidden="true" /> {websiteLabel(property.websiteUrl)}</a>}
       </div>
-    </SiteLink>
+    </article>
   )
+}
+
+/** "yourpg.com" from "https://www.yourpg.com/rooms": the short name a card shows for a website link. */
+function websiteLabel(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
 }
 
 /**

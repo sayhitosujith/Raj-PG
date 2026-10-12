@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
+import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, Globe, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
 import { LocationLink } from './LocationLink'
 import { ModalLayer } from './ModalLayer'
@@ -14,6 +14,8 @@ export type ResidentInfoData = {
   property: string
   location: string
   city: string
+  /** The PG's own website, if the owner added one. */
+  website: string | null
   rules: string[]
   faqs: Array<{ question: string; answer: string }>
 }
@@ -42,7 +44,7 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
  */
 export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNotice: (message: string) => void }) {
   const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
-  const hasDetails = Boolean(info.city || info.location) || times.length > 0
+  const hasDetails = Boolean(info.city || info.location || info.website) || times.length > 0
   if (!info.wifi && !info.contacts.length && !hasDetails) return null
   return (
     <section className="workspace-view resident-info">
@@ -57,6 +59,7 @@ export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNot
           <h3><DoorOpen size={16} /> Property details</h3>
           {info.city && <div className="info-line"><span><Building2 size={12} /> City</span><strong>{info.city}</strong></div>}
           {info.location && <div className="info-line"><span><MapPin size={12} /> Location</span><LocationLink className="info-call" property={info.property} location={info.location} /></div>}
+          {info.website && <div className="info-line"><span><Globe size={12} /> Website</span><a className="info-call" href={info.website} target="_blank" rel="noopener noreferrer">Visit website</a></div>}
           {times.map(([label, time]) => <div className="info-line" key={label}><span><Clock size={12} /> {label}</span><strong>{clockLabel(time)}</strong></div>)}
         </div>}
       </div>

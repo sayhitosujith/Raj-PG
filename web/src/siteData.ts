@@ -7,6 +7,8 @@ import type { HouseRules } from './workspaceSettings'
 /** One property as the public website shows it (see backend publicSite.ts). */
 export type SiteProperty = BookableProperty & {
   city: string | null
+  /** The PG's own website, if the owner added one. */
+  websiteUrl: string | null
   amenities: string[]
   sharingPrices: SharingPrice[]
   freeBeds: number

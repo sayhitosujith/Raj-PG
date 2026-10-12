@@ -21,7 +21,7 @@ export const publicSiteRouter = Router()
 const coverUrl = (propertyId: string, imageUrl: string) => imageUrl.startsWith('data:') ? `/api/public/properties/${propertyId}/cover?v=${contentVersion(imageUrl)}` : imageUrl
 
 const siteProperty = {
-  id: true, name: true, location: true, city: true, tenantType: true, amenities: true, totalRooms: true, noticePeriodDays: true, imageUrl: true, checkInTime: true, checkOutTime: true, gateClosingTime: true,
+  id: true, name: true, location: true, city: true, websiteUrl: true, tenantType: true, amenities: true, totalRooms: true, noticePeriodDays: true, imageUrl: true, checkInTime: true, checkOutTime: true, gateClosingTime: true,
   ...pricingSelect, ...mealColumnsSelect,
   rooms: { select: roomBedsSelect },
   photos: { select: { id: true, caption: true }, orderBy: { createdAt: 'asc' } },
@@ -43,7 +43,7 @@ publicSiteRouter.get('/public/site', async (_request, response) => {
       properties: properties.map((property) => {
         const { taken, total } = bedCounts(property)
         return {
-          id: property.id, name: property.name, location: property.location, city: property.city, tenantType: property.tenantType, amenities: property.amenities,
+          id: property.id, name: property.name, location: property.location, city: property.city, websiteUrl: property.websiteUrl, tenantType: property.tenantType, amenities: property.amenities,
           rentWithFood: property.rentWithFood, rentWithoutFood: property.rentWithoutFood, sharingPrices: [...property.sharingPrices].sort((a, b) => a.beds - b.beds),
           freeBeds: Math.max(0, total - taken), totalBeds: total,
           noticePeriodDays: property.noticePeriodDays ?? houseRules.noticePeriodDays,

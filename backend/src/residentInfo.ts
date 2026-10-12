@@ -1,5 +1,5 @@
 /**
- * The resident portal's Info tab: per-property Wi-Fi, important contacts and check-in / check-out /
+ * The resident portal's Info tab: per-property Wi-Fi, important contacts, website and check-in / check-out /
  * gate times, plus the owner's own house rules and FAQs from Settings. Stored as plain text so the
  * owner edits them in ordinary text boxes; parsed into lists here for the portal.
  */
@@ -7,13 +7,15 @@
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/
 const maxContactsLength = 1500
 const maxWifiLength = 64
+const maxWebsiteLength = 300
 
 /** The property fields this covers, as the add/edit property form sends them. */
-type PropertyInfoInput = Partial<Record<'wifiName' | 'wifiPassword' | 'contacts' | 'checkInTime' | 'checkOutTime' | 'gateClosingTime', unknown>>
+type PropertyInfoInput = Partial<Record<'wifiName' | 'wifiPassword' | 'contacts' | 'websiteUrl' | 'checkInTime' | 'checkOutTime' | 'gateClosingTime', unknown>>
 
 /**
  * Validates the Info fields of a property body. Blank clears a field; absent leaves it alone.
- * Times must be "HH:MM"; contacts are free text, one per line.
+ * Times must be "HH:MM"; contacts are free text, one per line; the website a full http(s) address
+ * (so it can never become a javascript: link).
  */
 export function parsePropertyInfo(body: PropertyInfoInput): { data: Record<string, string | null> } | { error: string } {
   const data: Record<string, string | null> = {}
@@ -30,6 +32,13 @@ export function parsePropertyInfo(body: PropertyInfoInput): { data: Record<strin
     const text = (body.contacts ?? '').trim()
     if (text.length > maxContactsLength) return { error: `Contacts can be up to ${maxContactsLength} characters.` }
     data.contacts = text || null
+  }
+  if (body.websiteUrl !== undefined) {
+    if (body.websiteUrl !== null && typeof body.websiteUrl !== 'string') return { error: 'Website must be a web address.' }
+    const text = (body.websiteUrl ?? '').trim()
+    if (text.length > maxWebsiteLength) return { error: `The website address can be up to ${maxWebsiteLength} characters.` }
+    if (text && !/^https?:\/\/[^\s]+$/i.test(text)) return { error: 'Website must be a full web address starting with https://' }
+    data.websiteUrl = text || null
   }
   for (const [field, label] of [['checkInTime', 'Check-in time'], ['checkOutTime', 'Check-out time'], ['gateClosingTime', 'Gate closing time']] as const) {
     const value = body[field]
@@ -57,13 +66,14 @@ function parseFaqs(text: string) {
   })
 }
 
-type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
+type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; websiteUrl: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
 
 /** Everything the Info tab shows, for the resident's property and the business. */
 export function residentInfoOf(property: PropertyInfo | null | undefined, settings: { extraHouseRules: string; faqs: string }) {
   return {
     wifi: property?.wifiName ? { name: property.wifiName, password: property.wifiPassword } : null,
     contacts: parseContacts(property?.contacts ?? null),
+    website: property?.websiteUrl ?? null,
     times: { checkIn: property?.checkInTime ?? null, checkOut: property?.checkOutTime ?? null, gateClosing: property?.gateClosingTime ?? null },
     property: property?.name ?? '',
     location: property?.location ?? '',
