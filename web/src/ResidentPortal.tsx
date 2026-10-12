@@ -187,7 +187,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   // The ID that matches nationality, in full, for the My Details card: Aadhaar for Indian nationals,
   // passport for everyone else (as in the details list below).
   const idDocumentLine = isIndian(profile.nationality)
-    ? profile.aadharNumber && <span className="my-details-id"><strong className="my-details-id-label">Aadhaar Number</strong>: {formatAadhar(profile.aadharNumber, true)}</span>
+    ? profile.aadharNumber && <span className="my-details-id"><strong className="my-details-id-label">Aadhaar Number</strong>: {formatAadhar(profile.aadharNumber)}</span>
     : profile.passportNumber && <span className="my-details-id"><strong className="my-details-id-label">Passport Number</strong>: {profile.passportNumber}</span>
   // Non-Indian residents also see their visa and when it expires, flagged once it has passed.
   const visaLine = !isIndian(profile.nationality) && profile.visaNumber && <span className="my-details-id"><strong className="my-details-id-label">Visa</strong>: {profile.visaType ? visaTypeLabels[profile.visaType] ?? profile.visaType : profile.visaNumber} · expires <ExpiryDate value={profile.visaExpiry} /></span>
@@ -200,7 +200,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
     ['Emergency contact', <EmergencyContactText contact={profile} />, Siren],
     ['Vehicle', vehicleText(profile), vehicleIcon(profile.vehicleType)],
     isIndian(profile.nationality)
-      ? ['Aadhaar number', profile.aadharNumber ? <>{formatAadhar(profile.aadharNumber, true)}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard]
+      ? ['Aadhaar number', profile.aadharNumber ? <>{formatAadhar(profile.aadharNumber)}{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard]
       : ['Passport number', profile.passportNumber ? <>{profile.passportNumber} · expires <ExpiryDate value={profile.passportExpiry} />{isAadharVerified && <VerifiedBadge />}</> : '—', IdCard],
     ...(isIndian(profile.nationality) ? [] : [['Visa', profile.visaNumber ? <>{visaText(profile)} · expires <ExpiryDate value={profile.visaExpiry} /></> : '—', Plane] as [string, ReactNode, LucideIcon]]),
     ['Joining date', formatJoinDate(profile.joinedAt), CalendarDays],

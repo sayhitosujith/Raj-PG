@@ -66,7 +66,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
           <VehicleFields vehicle={details} />
           <p className="my-details-note">Your phone or email is how you sign in. A new address shows as unverified until your property owner checks it.</p>
           <div className="my-details-document">
-            <div><strong>{details.isIndian ? 'Aadhaar number' : 'Passport number'}</strong><small>{details.documentNumber ? (details.isIndian ? formatAadhar(details.documentNumber, true) : details.documentNumber) : 'Not on file'}</small></div>
+            <div><strong>{details.isIndian ? 'Aadhaar number' : 'Passport number'}</strong><small>{details.documentNumber ? (details.isIndian ? formatAadhar(details.documentNumber) : details.documentNumber) : 'Not on file'}</small></div>
             <button type="button" className="secondary-button" disabled={isSaving} onClick={changeDocument}>Change {documentName}</button>
           </div>
           {error && <p className="login-error" role="alert">{error}</p>}
