@@ -36,7 +36,9 @@
 .site-muted { display: flex; align-items: center; gap: 8px; color: var(--site-muted); }
 
 /* Header: brand and a menu button on phones; the links inline from 960px */
-.site-header { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px var(--site-gutter); border-bottom: 1px solid var(--site-line); background: var(--site-card); }
+/* The header spans the whole screen: the logo near the left edge, the menu and buttons near the right
+   (its own side padding, not the content width the rest of the page keeps). */
+.site-header { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--site-line); background: var(--site-card); }
 .site-brand { display: flex; align-items: center; color: inherit; text-decoration: none; }
 .site-menu-button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--site-line); border-radius: 10px; color: var(--site-ink); background: var(--site-card); cursor: pointer; }
 .site-nav { display: none; flex-basis: 100%; flex-direction: column; gap: 4px; padding: 8px 0 4px; }
@@ -50,7 +52,7 @@
 .site.site :is(.site-band, .site-cta-band) .secondary-button { border-color: rgb(255 255 255 / .65); color: rgb(255 255 255); background: rgb(255 255 255 / .12); backdrop-filter: blur(6px); }
 .site.site :is(.site-band, .site-cta-band) .secondary-button:hover { background: rgb(255 255 255 / .22); }
 @media (min-width: 960px) {
-  .site-header { flex-wrap: nowrap; padding-block: 14px; }
+  .site-header { flex-wrap: nowrap; padding: 14px 48px; }
   .site-menu-button { display: none; }
   .site-nav, .site-nav.is-open { display: flex; flex-basis: auto; flex-direction: row; align-items: center; gap: 2px; padding: 0; }
   .site-nav-actions { margin: 0 0 0 12px; }
@@ -70,7 +72,7 @@
    frosted-glass panel in the middle. Full width: it steps outside .site-main's side gutters; the
    header stays white and fixed above it. */
 .site.is-home .site-header { position: fixed; right: 0; left: 0; }
-.site-hero { position: relative; isolation: isolate; display: grid; place-items: center; min-height: 100vh; min-height: 100svh; margin: 0 calc(50% - 50vw); padding: 112px calc(50vw - 50%) 88px; overflow: hidden; background: linear-gradient(135deg, var(--site-brand) 0%, color-mix(in srgb, var(--site-brand) 45%, var(--site-navy)) 55%, var(--site-navy) 100%); }
+.site-hero { position: relative; isolation: isolate; display: grid; place-items: start center; min-height: 100vh; min-height: 100svh; margin: 0 calc(50% - 50vw); padding: calc(84px + 12vh) calc(50vw - 50%) 88px; overflow: hidden; background: linear-gradient(135deg, var(--site-brand) 0%, color-mix(in srgb, var(--site-brand) 45%, var(--site-navy)) 55%, var(--site-navy) 100%); }
 /* Soft circles of light drifting behind the glass panel, for depth without a photo */
 .site-hero-glow { position: absolute; z-index: -1; border-radius: 50%; filter: blur(60px); animation: site-drift 18s ease-in-out infinite alternate; }
 .site-hero-glow.is-one { top: 8%; left: 6%; width: 38vw; height: 38vw; background: color-mix(in srgb, var(--site-brand) 70%, rgb(255 255 255)); opacity: .45; }
@@ -80,10 +82,12 @@
 /* The owner's banner image, when one is set, under a dark wash so the glass panel's white text reads */
 .site-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
 .site-hero.has-image::after { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .18) 0%, rgb(0 0 0 / .12) 55%, rgb(0 0 0 / 0) 72%, var(--site-surface) 100%); content: ''; }
-.site-hero-panel { width: min(100%, 900px); }
+.site-hero-panel { width: min(100%, 1400px); }
 .site-hero-copy { display: grid; justify-items: center; gap: 14px; text-align: center; animation: site-rise .9s ease both; }
 .site-hero .site-eyebrow { color: rgb(255 255 255); text-shadow: 0 1px 8px rgb(0 0 0 / .45); }
-.site-hero h1 { color: rgb(255 255 255); text-shadow: 0 2px 6px rgb(0 0 0 / .35), 0 4px 24px rgb(0 0 0 / .35); font-size: clamp(32px, 5.6vw, 62px); line-height: 1.06; }
+.site-hero h1 { color: rgb(255 255 255); text-shadow: 0 2px 6px rgb(0 0 0 / .35), 0 4px 24px rgb(0 0 0 / .35); font-size: clamp(32px, 3.2vw, 58px); line-height: 1.06; text-wrap: balance; }
+/* Phones and tablets: the headline wraps, so it can be larger there. */
+@media (max-width: 959px) { .site-hero h1 { font-size: clamp(32px, 6vw, 52px); } }
 .site-lead { max-width: 640px; color: rgb(255 255 255); text-shadow: 0 1px 10px rgb(0 0 0 / .5); font-size: clamp(16px, 2vw, 21px); line-height: 1.55; }
 .site-actions { display: flex; flex-wrap: wrap; justify-content: inherit; gap: 10px; margin-top: 6px; }
 .site-scroll-cue { position: absolute; bottom: 16px; left: 50%; display: grid; justify-items: center; gap: 2px; color: rgb(255 255 255 / .9); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; translate: -50% 0; }
@@ -363,3 +367,4 @@ p.site-sheet-help { padding-left: 12px; }
 .site-hero.has-image .site-scroll-cue { color: var(--site-muted); }
 /* The footer's social media icons in a row (WhatsApp first, then the owner's links). */
 .site-footer-socials { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (min-width: 720px) and (max-width: 959px) { .site-header { padding-inline: 32px; } }

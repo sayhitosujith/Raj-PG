@@ -50,7 +50,8 @@ export const defaultPerks: Card[] = [
 /** Facts the built-in headline, tagline and about text are written from. */
 export type SiteFacts = { businessName: string; cities: string[]; propertyCount: number; lowestPrice: number | null }
 
-export const defaultHeadline = ({ cities }: SiteFacts) => `Comfortable PG living${cities.length ? ` in ${cities.join(', ')}` : ''}`
+/** The hero headline when the owner has not written one. */
+export const defaultHeadline = 'Comfortable PG living across India'
 export const defaultTagline = ({ lowestPrice }: SiteFacts) => `Furnished rooms, home-style food and an app for everything from rent to repairs.${lowestPrice ? ` Rooms from ${formatRupees(lowestPrice)} a month.` : ''}`
 export const defaultAboutText = ({ businessName, cities, propertyCount }: SiteFacts) => `${businessName} runs ${propertyCount === 1 ? 'a PG' : `${propertyCount} PGs`}${cities.length ? ` in ${cities.join(', ')}` : ''}, made for students and working professionals who want a clean, safe and easy place to live.`
 export const defaultFooterText = ({ businessName, cities }: Pick<SiteFacts, 'businessName' | 'cities'>) => `${businessName} offers comfortable, furnished PG rooms${cities.length ? ` in ${cities.join(', ')}` : ''}, with food, housekeeping and a resident app for rent, meals and requests.`

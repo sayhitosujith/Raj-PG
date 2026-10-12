@@ -83,7 +83,7 @@ export function WebsiteEditor({ onNotice, onBack }: { onNotice: (message: string
 
           <fieldset className="website-editor-card">
             <legend><Type size={16} aria-hidden="true" /> Top of the page</legend>
-            <label>Headline<input value={draft.headline} maxLength={90} onChange={(event) => update({ headline: event.target.value })} placeholder={facts ? defaultHeadline(facts) : 'Comfortable PG living'} /></label>
+            <label>Headline<input value={draft.headline} maxLength={90} onChange={(event) => update({ headline: event.target.value })} placeholder={defaultHeadline} /></label>
             <label>Tagline<textarea rows={3} value={draft.tagline} maxLength={240} onChange={(event) => update({ tagline: event.target.value })} placeholder={facts ? defaultTagline(facts) : ''} /></label>
           </fieldset>
 

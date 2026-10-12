@@ -58,7 +58,7 @@ export function SiteHome({ site }: { site: SiteData }) {
     <>
       <SiteHero image={site.bannerUrl}>
         <p className="site-eyebrow">{site.businessName}</p>
-        <h1>{content.headline ?? defaultHeadline(facts)}</h1>
+        <h1>{content.headline ?? defaultHeadline}</h1>
         <p className="site-lead">{content.tagline ?? defaultTagline(facts)}</p>
         <div className="site-actions">
           <SiteLink to={sitePaths.properties} className="primary-button site-cta">View PGs</SiteLink>
