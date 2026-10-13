@@ -479,6 +479,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .amenity-option svg { color: #98a09d; transition: color .2s; }
 .amenity-option:has(input:checked) { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
 .amenity-option:has(input:checked) svg { color: var(--teal); }
+/* The property form's "add your own amenity" row under the tick-boxes. */
+.amenity-add { display: flex; gap: 8px; margin-top: 10px; }
+.amenity-add input { flex: 1; min-width: 0; }
+.amenity-add .secondary-button { display: inline-flex; flex: none; align-items: center; gap: 4px; }
+.amenity-custom { position: relative; display: inline-flex; }
+.amenity-remove { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: #6b7672; background: white; cursor: pointer; }
+.amenity-remove:hover { border-color: #e0a3a3; color: #b42318; background: #fff1f1; }
 .property-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .property-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; color: #55635f; background: #f1f5f2; font-size: 10px; font-weight: 600; }
 .property-tag svg { color: var(--teal); }

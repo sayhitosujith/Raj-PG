@@ -1,5 +1,5 @@
 import { BedDouble, Building2, Globe, MapPin, Users } from 'lucide-react'
-import { amenityOptions, tenantHint } from './propertyFeatureOptions'
+import { amenityItems, tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
 import { sitePaths } from './router'
@@ -30,7 +30,7 @@ export function FreeBeds({ property }: { property: SiteProperty }) {
 
 /** The amenities a property offers, with their icons. */
 export function AmenityChips({ amenities }: { amenities: string[] }) {
-  const offered = amenityOptions.filter((option) => amenities.includes(option.value))
+  const offered = amenityItems(amenities)
   if (!offered.length) return null
   return <ul className="site-amenities">{offered.map(({ value, label, icon: Icon }) => <li key={value}><Icon size={15} aria-hidden="true" /> {label}</li>)}</ul>
 }

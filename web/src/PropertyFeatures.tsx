@@ -1,5 +1,6 @@
 import { DoorOpen, IndianRupee, Users, Wifi } from 'lucide-react'
-import { amenityOptions, tenantOptions, type AmenityCode, type TenantType } from './propertyFeatureOptions'
+import { AmenityPicker } from './AmenityPicker'
+import { amenityItems, tenantOptions, type TenantType } from './propertyFeatureOptions'
 import { checkPricePair, type SharingPrice } from './pricing'
 import { SharingPriceTable } from './SharingPriceTable'
 
@@ -8,10 +9,10 @@ export type PropertyInfoValues = { wifiName?: string | null; wifiPassword?: stri
 
 /**
  * Number of rooms, rent with/without food (standard, and by sharing type), "PG for" (required, one of three) and amenity
- * checkboxes for the add/edit property forms. Uncontrolled inputs; read them back with
+ * checkboxes (with the owner's own amenities) for the add/edit property forms. Uncontrolled inputs; read them back with
  * readPropertyFeatures.
  */
-export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, sharingPrices = [], noticePeriodDays, info }: { /** Set when editing, to show which rooms each sharing price covers. */ propertyId?: string; totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; sharingPrices?: SharingPrice[]; noticePeriodDays?: number | null; info?: PropertyInfoValues }) {
+export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amenities = [], rentWithFood, rentWithoutFood, sharingPrices = [], noticePeriodDays, info, amenitySuggestions = [] }: { /** Set when editing, to show which rooms each sharing price covers. */ propertyId?: string; totalRooms?: number; tenantType?: TenantType | null; amenities?: string[]; rentWithFood?: number | null; rentWithoutFood?: number | null; sharingPrices?: SharingPrice[]; noticePeriodDays?: number | null; info?: PropertyInfoValues; /** The owner's own amenities from their other PGs, offered here too. */ amenitySuggestions?: string[] }) {
   return (
     <div className="property-features">
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Number of rooms</span><input name="totalRooms" type="number" inputMode="numeric" min={1} max={1000} step={1} required defaultValue={totalRooms || undefined} placeholder="e.g. 20" /></label>
@@ -55,15 +56,7 @@ export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amen
       </fieldset>
       <fieldset className="feature-group">
         <legend>Amenities</legend>
-        <div className="amenity-options">
-          {amenityOptions.map(({ value, label, icon: Icon }) => (
-            <label key={value} className="amenity-option">
-              <input type="checkbox" name="amenities" value={value} defaultChecked={amenities.includes(value)} />
-              <Icon size={14} />
-              <span>{label}</span>
-            </label>
-          ))}
-        </div>
+        <AmenityPicker amenities={amenities} suggestions={amenitySuggestions} />
       </fieldset>
     </div>
   )
@@ -71,12 +64,12 @@ export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amen
 
 /** The amenities a resident's property offers, for their home screen; nothing when none are set. */
 export function ResidentAmenities({ amenities = [] }: { amenities?: string[] }) {
-  const offered = amenityOptions.filter((option) => amenities.includes(option.value))
+  const offered = amenityItems(amenities)
   if (!offered.length) return null
   return (
     <div className="resident-amenities" aria-label="Amenities at your property">
       <p className="eyebrow">Amenities</p>
-      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className={`resident-amenity is-${value.toLowerCase()}`}><Icon size={14} /> {label}</span>)}</div>
+      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className="resident-amenity"><Icon size={14} /> {label}</span>)}</div>
     </div>
   )
 }
@@ -84,7 +77,7 @@ export function ResidentAmenities({ amenities = [] }: { amenities?: string[] }) 
 /** Compact "PG for" + amenity tags for a property card. */
 export function PropertyFeatureTags({ tenantType, amenities = [] }: { tenantType?: TenantType | null; amenities?: string[] }) {
   const tenant = tenantOptions.find((option) => option.value === tenantType)
-  const offered = amenityOptions.filter((option) => amenities.includes(option.value as AmenityCode))
+  const offered = amenityItems(amenities)
   return (
     <div className="property-tags">
       <span className={`property-tag tenant${tenant ? '' : ' is-unset'}`}><Users size={11} /> {tenant ? tenant.hint : 'PG for: not set'}</span>

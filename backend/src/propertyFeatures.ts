@@ -6,12 +6,27 @@ import { TenantType } from '@prisma/client'
  */
 export const amenityCodes = ['HOT_WATER', 'TV', 'WIFI', 'SECURITY', 'LIFT', 'AC', 'FOOD', 'CCTV'] as const
 
-/** Validated amenity list, de-duplicated and in the canonical order, or an error. */
+const maxCustomAmenities = 12
+const maxCustomAmenityLength = 30
+
+/**
+ * Validated amenity list, or an error. Besides the codes above, an owner may add their own amenities
+ * (e.g. "Gym"), stored as their name in the same list. Codes come first in the canonical order, then
+ * the owner's own in the order given, de-duplicated ignoring case.
+ */
 export function parseAmenities(value: unknown): { amenities: string[] } | { error: string } {
   if (!Array.isArray(value)) return { error: 'Amenities must be a list.' }
-  const unknown = value.find((code) => !amenityCodes.includes(code))
-  if (unknown !== undefined) return { error: `Unknown amenity: ${String(unknown)}.` }
-  return { amenities: amenityCodes.filter((code) => value.includes(code)) }
+  if (value.some((item) => typeof item !== 'string')) return { error: 'Amenities must be names.' }
+  const custom: string[] = []
+  for (const item of value as string[]) {
+    const name = item.trim().replace(/\s+/g, ' ')
+    if (!name || (amenityCodes as readonly string[]).includes(name)) continue
+    if (name.length > maxCustomAmenityLength) return { error: `An amenity name can be up to ${maxCustomAmenityLength} characters.` }
+    if (/[\p{Cc}<>]/u.test(name)) return { error: `"${name}" has characters an amenity name cannot use.` }
+    if (!custom.some((existing) => existing.toLowerCase() === name.toLowerCase())) custom.push(name)
+  }
+  if (custom.length > maxCustomAmenities) return { error: `Add up to ${maxCustomAmenities} amenities of your own.` }
+  return { amenities: [...amenityCodes.filter((code) => value.includes(code)), ...custom] }
 }
 
 /** Who the PG is for. Required when creating a property; optional on update. */

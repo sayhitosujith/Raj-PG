@@ -1,4 +1,4 @@
-import { AirVent, ArrowUpDown, Cctv, ShieldCheck, ShowerHead, Tv, UtensilsCrossed, Wifi } from 'lucide-react'
+import { AirVent, ArrowUpDown, Cctv, ShieldCheck, ShowerHead, Sparkles, Tv, UtensilsCrossed, Wifi } from 'lucide-react'
 import { maxBeds } from './rooms'
 
 /** Who a PG is for; null for properties created before this was asked. */
@@ -22,6 +22,36 @@ export const amenityOptions: Array<{ value: AmenityCode; label: string; icon: ty
   { value: 'FOOD', label: 'Food', icon: UtensilsCrossed },
   { value: 'CCTV', label: 'CCTV', icon: Cctv },
 ]
+
+/** Longest name and most of their own amenities an owner can add (the API enforces the same). */
+export const maxCustomAmenityLength = 30
+export const maxCustomAmenities = 12
+
+/** An amenity to show: the built-in ones with their own icon, the owner's own (e.g. "Gym") with a generic one. */
+export type AmenityItem = { value: string; label: string; icon: typeof Wifi }
+
+const isAmenityCode = (value: string): value is AmenityCode => amenityOptions.some((option) => option.value === value)
+
+/** Amenities ready to show: built-in ones in their usual order, then the owner's own once each, as entered. */
+export function amenityItems(amenities: string[]): AmenityItem[] {
+  return [
+    ...amenityOptions.filter((option) => amenities.includes(option.value)),
+    ...customAmenitiesOf([amenities]).map((value) => ({ value, label: value, icon: Sparkles })),
+  ]
+}
+
+/** The owner's own amenities across several properties, once each (ignoring case), so one PG's "Gym" is offered on the others. */
+export function customAmenitiesOf(lists: string[][]) {
+  const names: string[] = []
+  for (const value of lists.flat()) if (!isAmenityCode(value) && !names.some((name) => name.toLowerCase() === value.toLowerCase())) names.push(value)
+  return names
+}
+
+/** The built-in amenity a typed name means (e.g. "wifi" → WIFI), so it is ticked rather than added twice. */
+export function builtInAmenityNamed(name: string) {
+  const key = name.toLowerCase().replace(/[^a-z]/g, '')
+  return amenityOptions.find((option) => option.label.toLowerCase().replace(/[^a-z]/g, '') === key || option.value.toLowerCase().replace(/_/g, '') === key)?.value ?? null
+}
 
 /** e.g. "Men only"; used in compact places like the overview row. */
 export const tenantHint = (type: TenantType | null | undefined) => tenantOptions.find((option) => option.value === type)?.hint ?? null

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BadgeCheck, CalendarCheck, Home, KeyRound, MapPin, MessageCircle, Phone, ShieldCheck, Sparkles, UtensilsCrossed, Wrench } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
-import { amenityOptions } from './propertyFeatureOptions'
+import { amenityItems } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
 import { sitePaths } from './router'
@@ -41,7 +41,7 @@ export function SiteHome({ site }: { site: SiteData }) {
   const prices = properties.map(startingPrice).filter((price): price is number => price !== null)
   const freeBeds = properties.reduce((sum, property) => sum + property.freeBeds, 0)
   const totalBeds = properties.reduce((sum, property) => sum + property.totalBeds, 0)
-  const amenities = amenityOptions.map((option) => option.value).filter((value) => properties.some((property) => property.amenities.includes(value)))
+  const amenities = amenityItems(properties.flatMap((property) => property.amenities)).map((item) => item.value)
   const photos = photosOf(properties)
   const aboutPhoto = photos[0]
   const roomOptions = roomOptionsOf(properties)
