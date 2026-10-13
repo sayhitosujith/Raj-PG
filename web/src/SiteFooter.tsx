@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Clock, Download, Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Twitter, Youtube } from 'lucide-react'
+import { Clock, Download, Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Twitter, Youtube } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { PolicyDialog, type Policy } from './PolicyDialog'
 import { sitePaths } from './router'
@@ -7,6 +7,7 @@ import { GoogleMark } from './ReferralShare'
 import { defaultContactNote, defaultFooterText, emptySiteContent, isShown, socialPlatforms, visibleLinks, type SocialPlatform } from './siteContent'
 import { addressOf, whatsappLink, type SiteData } from './siteData'
 import { SiteLink } from './SiteLink'
+import { WhatsAppIcon } from './WhatsAppIcon'
 
 const quickLinks = [
   { label: 'Home', to: sitePaths.home },
@@ -58,15 +59,18 @@ export function SiteFooter({ site }: { site: SiteData | null }) {
           <BrandMark />
           {site && <p>{content.footerText ?? defaultFooterText({ businessName: site.businessName, cities })}</p>}
           <div className="site-footer-socials">
-            {site?.contactPhone && <a className="site-footer-social" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><MessageCircle size={17} aria-hidden="true" /></a>}
+            {site?.contactPhone && <a className="site-footer-social" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><WhatsAppIcon size={17} /></a>}
             {socialPlatforms.filter((platform) => content.social[platform.key]).map((platform) => <a key={platform.key} className="site-footer-social" href={content.social[platform.key]} target="_blank" rel="noopener noreferrer" aria-label={platform.label} title={platform.label}>{socialIcons[platform.key]}</a>)}
           </div>
         </div>
 
+        {/* Quick links and policies sit side by side on a phone, so the footer is not one long list. */}
         <div className="site-footer-links">
-          <h3>Quick links</h3>
-          <nav aria-label="Website footer">{visibleLinks(quickLinks, site?.content ?? emptySiteContent).map((item) => <SiteLink key={item.label} to={item.to}>{item.label}</SiteLink>)}</nav>
-          {policyLinks.length > 0 && <><h3>Legal &amp; policies</h3><div className="site-footer-stack">{policyLinks}</div></>}
+          <div>
+            <h3>Quick links</h3>
+            <nav aria-label="Website footer">{visibleLinks(quickLinks, site?.content ?? emptySiteContent).map((item) => <SiteLink key={item.label} to={item.to}>{item.label}</SiteLink>)}</nav>
+          </div>
+          {policyLinks.length > 0 && <div><h3>Legal &amp; policies</h3><div className="site-footer-stack">{policyLinks}</div></div>}
         </div>
 
         <div className="site-footer-contact">

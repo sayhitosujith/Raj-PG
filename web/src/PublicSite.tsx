@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { LogIn, Menu, MessageCircle, X } from 'lucide-react'
+import { LogIn, Menu, X } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { BrandMark } from './BrandMark'
 import { useBranding, useBrandingAutoRefresh } from './branding'
 import { PageLoader } from './Loader'
@@ -87,7 +88,7 @@ export function PublicSite({ path }: { path: string }) {
           : page ?? <PageLoader />}
       </main>
 
-      {site?.contactPhone && isShown(content, 'whatsapp') && <a className="site-whatsapp" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp" title="Chat with us on WhatsApp"><MessageCircle size={26} aria-hidden="true" /></a>}
+      {site?.contactPhone && isShown(content, 'whatsapp') && <a className="site-whatsapp" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp" title="Chat with us on WhatsApp"><WhatsAppIcon size={28} /></a>}
 
       <SiteFooter site={site} />
       {site && <SiteAppSheet businessName={site.businessName} />}

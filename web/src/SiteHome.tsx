@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BadgeCheck, CalendarCheck, Home, KeyRound, MapPin, MessageCircle, Phone, ShieldCheck, Sparkles, UtensilsCrossed, Wrench } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { amenityOptions } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
@@ -157,7 +158,7 @@ export function SiteHome({ site }: { site: SiteData }) {
         <div className="site-actions">
           <SiteLink to={sitePaths.bookVisit} className="primary-button site-cta">Enquire now</SiteLink>
           {site.contactPhone && <a className="secondary-button site-cta" href={`tel:${site.contactPhone}`}><Phone size={16} aria-hidden="true" /> Call us</a>}
-          {site.contactPhone && <a className="secondary-button site-cta" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true" /> WhatsApp</a>}
+          {site.contactPhone && <a className="secondary-button site-cta" href={whatsappLink(site.contactPhone)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={16} /> WhatsApp</a>}
         </div>
       </section>
     </>
