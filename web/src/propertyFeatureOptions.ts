@@ -30,7 +30,8 @@ export const maxCustomAmenities = 12
 /** An amenity to show: the built-in ones with their own icon, the owner's own (e.g. "Gym") with a generic one. */
 export type AmenityItem = { value: string; label: string; icon: typeof Wifi }
 
-const isAmenityCode = (value: string): value is AmenityCode => amenityOptions.some((option) => option.value === value)
+/** Whether a stored amenity is one of the built-in codes rather than the owner's own name. */
+export const isAmenityCode = (value: string): value is AmenityCode => amenityOptions.some((option) => option.value === value)
 
 /** Amenities ready to show: built-in ones in their usual order, then the owner's own once each, as entered. */
 export function amenityItems(amenities: string[]): AmenityItem[] {

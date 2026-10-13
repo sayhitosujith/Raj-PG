@@ -468,17 +468,21 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .feature-group legend { margin-bottom: 7px; padding: 0; color: #55635f; font-size: 11px; font-weight: 700; }
 .tenant-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .property-modal .tenant-option { position: relative; display: grid; gap: 2px; margin: 0; padding: 9px 8px; border: 1px solid var(--line); border-radius: 9px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
-.tenant-option input, .amenity-option input { position: absolute; opacity: 0; pointer-events: none; }
+.tenant-option input { position: absolute; opacity: 0; pointer-events: none; }
 .tenant-option strong { color: var(--ink); font-size: 12px; }
 .property-modal .tenant-option small { margin: 0; color: var(--muted); font-size: 10px; font-weight: 400; }
 .tenant-option:hover, .amenity-option:hover { border-color: #9fd0c2; }
 .tenant-option:has(input:checked) { border-color: var(--teal); background: var(--teal-soft); }
-.tenant-option:has(input:focus-visible), .amenity-option:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
+.tenant-option:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
 .amenity-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .property-modal .amenity-option { position: relative; display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: #55635f; font-size: 11px; font-weight: 700; cursor: pointer; transition: border-color .2s, background .2s, color .2s; }
 .amenity-option svg { color: #98a09d; transition: color .2s; }
-.amenity-option:has(input:checked) { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
-.amenity-option:has(input:checked) svg { color: var(--teal); }
+.property-modal .amenity-option.is-chosen { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); cursor: default; }
+.amenity-option.is-chosen svg { color: var(--teal); }
+/* Amenities not on this PG yet, as "+ name" buttons under its chips. */
+.amenity-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.amenity-suggestion { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px dashed var(--line); border-radius: 999px; color: #55635f; background: none; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.amenity-suggestion:hover { border-color: var(--teal); color: var(--teal); }
 /* The property form's "add your own amenity" row under the tick-boxes. */
 .amenity-add { display: flex; gap: 8px; margin-top: 10px; }
 .amenity-add input { flex: 1; min-width: 0; }
