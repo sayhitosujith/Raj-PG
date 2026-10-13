@@ -120,6 +120,7 @@
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-mail { color: rgb(253 186 116); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-id-card { color: rgb(221 214 254); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-plane { color: rgb(251 207 232); }
+.portal-shell .portal-details-heading .my-details-contact svg.lucide-globe { color: rgb(167 243 208); }
 /* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
    Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */
 .portal-shell .resident-amenity svg { color: var(--amenity, var(--portal-icon)); }
