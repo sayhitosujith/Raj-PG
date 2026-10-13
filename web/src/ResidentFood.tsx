@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { BellRing, ThumbsDown, ThumbsUp, UtensilsCrossed, X } from 'lucide-react'
-import { relativeDayLabel, type ResidentMeal, type ResidentMenuDay } from './food'
+import { ThumbsDown, ThumbsUp, UtensilsCrossed, X } from 'lucide-react'
+import { relativeDayLabel, type ResidentFood, type ResidentMeal, type ResidentMenuDay } from './food'
 import { formatMealWindow, mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
@@ -8,21 +8,37 @@ import { InlineLoader } from './Loader'
 import { propertyMinutesIntoDay } from './propertyTime'
 import { ModalLayer } from './ModalLayer'
 
-async function fetchMenu() {
+async function fetchFood() {
   const response = await fetch('/api/resident-portal/food')
   if (!response.ok) throw new Error('load failed')
-  return ((await response.json()) as { days: ResidentMenuDay[] }).days
+  return (await response.json()) as ResidentFood
 }
+const fetchMenu = async () => (await fetchFood()).days
 
 async function send(url: string, body: unknown) {
   const response = await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   return response.ok ? null : await readApiError(response, 'That could not be saved.')
 }
 
-/** Flips a meal between skipped and eating; returns the notice to show (an error or a confirmation). */
-async function toggleSkip(date: string, meal: ResidentMeal) {
-  const error = await send('/api/resident-portal/food/skips', { date, meal: meal.meal, skipped: !meal.skipped })
-  return error ?? (meal.skipped ? 'You are back in for that meal.' : 'Meal skipped. The kitchen will cook for one less.')
+/** Saves eat (true) or skip (false) for meals of one day; returns an error message, or null when saved. */
+const saveChoices = (date: string, choices: Partial<Record<Meal, boolean>>) => send('/api/resident-portal/food/choices', { date, choices })
+
+/** Eat / Skip as a pair of buttons for one meal; neither is pressed while it is not answered. */
+function MealChoiceToggle({ label, answer, disabled, onChoose }: { label: string; answer: boolean | null; disabled?: boolean; onChoose: (eating: boolean) => void }) {
+  return (
+    <div className="meal-choice" role="group" aria-label={`${label}: eat or skip`}>
+      <button type="button" className={answer === true ? 'is-eat' : undefined} aria-pressed={answer === true} disabled={disabled} onClick={() => onChoose(true)}>Eat</button>
+      <button type="button" className={answer === false ? 'is-skip' : undefined} aria-pressed={answer === false} disabled={disabled} onClick={() => onChoose(false)}>Skip</button>
+    </div>
+  )
+}
+
+/** The status a meal shows once it can no longer be changed, or while it still needs an answer. */
+function choiceStatus(meal: ResidentMeal) {
+  if (meal.answer === null && meal.canChange) return <span className="status-pill gold">Answer by 9 pm the day before</span>
+  if (meal.canChange) return null
+  if (meal.answer === null && !meal.eating) return <span className="status-pill coral">No answer · not eating</span>
+  return meal.eating ? <span className="status-pill sage">Eating</span> : <span className="status-pill gold">Skipping</span>
 }
 
 /**
@@ -59,9 +75,9 @@ function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved
 }
 
 /**
- * The resident's food menu for the next seven days: skip a meal before it starts so the kitchen
- * cooks for fewer, and rate today's meals once they have been served. Mounted only while the modal
- * is open, so each opening fetches the latest menu.
+ * The resident's food menu for the next seven days: eat or skip each meal by 9 pm the day before
+ * (no answer means not eating), and rate today's meals once they have been served. Mounted only while
+ * the modal is open, so each opening fetches the latest menu.
  */
 function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
   const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
@@ -78,12 +94,13 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
   useEffect(() => { fetchMenu().then(showDays, () => setLoadError(true)) }, [])
   useRefreshSignal(refreshSignal, () => { void load() })
 
-  async function changeSkip(date: string, meal: ResidentMeal) {
+  async function choose(date: string, meal: ResidentMeal, eating: boolean) {
+    if (meal.answer === eating) return
     setSavingKey(`${date}-${meal.meal}`)
-    const notice = await toggleSkip(date, meal)
+    const error = await saveChoices(date, { [meal.meal]: eating })
     await load()
     setSavingKey(null)
-    onNotice(notice)
+    onNotice(error ?? (eating ? 'Saved: you are eating that meal.' : 'Saved: you are skipping that meal.'))
   }
 
   const today = days?.[0]?.date
@@ -100,14 +117,14 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
             const { label, icon: Icon } = mealDetails.find((detail) => detail.meal === meal.meal)!
             const key = `${day.date}-${meal.meal}`
             return (
-              <li key={key} className={meal.skipped ? 'is-skipped' : undefined}>
+              <li key={key} className={meal.eating ? undefined : 'is-skipped'}>
                 <span className="menu-meal-icon"><Icon size={16} /></span>
                 <div className="menu-meal-body">
-                  <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small>{meal.skipped && <span className="status-pill gold">Skipping</span>}</div>
+                  <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small>{choiceStatus(meal)}</div>
                   <p className={meal.items ? undefined : 'is-empty'}>{meal.items ?? 'Menu not set yet'}</p>
                   {meal.canRate && <MealFeedback key={key} meal={meal} onSaved={load} onNotice={onNotice} />}
                 </div>
-                {meal.canSkip && <button type="button" className="secondary-button" disabled={savingKey === key} onClick={() => changeSkip(day.date, meal)}>{meal.skipped ? 'Undo skip' : 'Skip'}</button>}
+                {meal.canChange && <MealChoiceToggle label={label} answer={meal.answer} disabled={savingKey === key} onChoose={(eating) => choose(day.date, meal, eating)} />}
               </li>
             )
           })}
@@ -126,7 +143,7 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
       {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
         <div className="profile-modal menu-modal" role="dialog" aria-modal="true" aria-labelledby="weekly-menu-title">
           <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="weekly-menu-title">Weekly menu</h2></div><button type="button" className="icon-button" aria-label="Close weekly menu" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
-          <p className="menu-modal-hint">Skip a meal before it starts if you will be away, and tell us how today's meals were.</p>
+          <p className="menu-modal-hint">Choose eat or skip for every meal by 9 pm the day before; a meal with no answer counts as not eating. Tell us how today's meals were.</p>
           <MenuBody refreshSignal={refreshSignal} onNotice={onNotice} />
         </div>
       </div></ModalLayer>}
@@ -146,56 +163,67 @@ export function useTodayMenu(refreshSignal: number, enabled: boolean) {
   return today ? Object.fromEntries(today.meals.map((meal) => [meal.meal, meal.items])) as Partial<Record<Meal, string | null>> : null
 }
 
-// Which meal alert the resident answered "I'll eat" to. Per-browser convenience only: eating is the
-// default, so nothing needs saving on the server, and a lost value just shows the alert again.
-const answeredKey = 'raj-pg-meal-alert-answered'
-function readAnswered() { try { return window.localStorage.getItem(answeredKey) } catch { return null } }
-function saveAnswered(value: string) { try { window.localStorage.setItem(answeredKey, value) } catch { /* storage blocked */ } }
-
 /**
- * Alert for the next meal the resident can still change: eat (the default) or skip it. It moves on
- * to the following meal once this one starts, and hides after "I'll eat" until then.
+ * Asks for tomorrow's breakfast, lunch and dinner while any is unanswered before the 9 pm cutoff, as a
+ * window that cannot be closed until every meal has an answer: the kitchen cooks only for residents
+ * who said they are eating, so an answer is required. "Eating all three" answers in one tap.
  */
-export function NextMealAlert({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
-  const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
-  const [answered, setAnswered] = useState(readAnswered)
+export function MealChoiceGate({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
+  const [food, setFood] = useState<ResidentFood | null>(null)
+  const [picked, setPicked] = useState<Partial<Record<Meal, boolean>>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => { fetchMenu().then(setDays, () => undefined) }, [])
-  useRefreshSignal(refreshSignal, () => { fetchMenu().then(setDays, () => undefined) })
+  useEffect(() => { fetchFood().then(setFood, () => undefined) }, [])
+  useRefreshSignal(refreshSignal, () => { fetchFood().then(setFood, () => undefined) })
 
-  const next = days?.flatMap((day) => day.meals.map((meal) => ({ date: day.date, meal }))).find((item) => item.meal.canSkip)
-  if (!days || !next) return null
-  const key = `${next.date}-${next.meal.meal}`
-  if (answered === key && !next.meal.skipped) return null
+  const day = food?.answerDue ? food.days.find((item) => item.date === food.answerDue) : undefined
+  if (!food || !day) return null
+  const open = day.meals.filter((meal) => meal.canChange)
+  // What the resident sees ticked: this window's picks, else what they already saved.
+  const answerOf = (meal: ResidentMeal) => picked[meal.meal] ?? meal.answer
+  const isComplete = open.every((meal) => answerOf(meal) !== null)
+  const dayLabel = relativeDayLabel(day.date, food.days[0].date).toLowerCase()
 
-  const { label } = mealDetails.find((detail) => detail.meal === next.meal.meal)!
-  const when = `${label} ${relativeDayLabel(next.date, days[0].date).toLowerCase()}, ${formatMealWindow(next.meal)}`
-
-  async function skip() {
+  async function save(choices: Partial<Record<Meal, boolean>>) {
     setIsSaving(true)
-    onNotice(await toggleSkip(next!.date, next!.meal))
-    setDays(await fetchMenu().catch(() => days))
+    const failure = await saveChoices(day!.date, choices)
     setIsSaving(false)
+    if (failure) { setError(failure); return }
+    setError('')
+    setPicked({})
+    onNotice(`Saved your meals for ${dayLabel}.`)
+    setFood(await fetchFood().catch(() => ({ ...food!, answerDue: null })))
   }
-  function eat() {
-    saveAnswered(key)
-    setAnswered(key)
-  }
+  const answers = () => Object.fromEntries(open.map((meal) => [meal.meal, answerOf(meal)])) as Partial<Record<Meal, boolean>>
 
   return (
-    <div className="rent-banner meal-alert" role="status">
-      <BellRing size={18} />
-      <div className="meal-alert-body">
-        <strong>{next.meal.skipped ? `You are skipping ${when}` : `${when}. Will you be eating?`}</strong>
-        <p>{next.meal.items ?? 'Menu not set yet'}</p>
+    <ModalLayer><div className="modal-backdrop" role="presentation">
+      <div className="profile-modal meal-choice-modal" role="dialog" aria-modal="true" aria-labelledby="meal-choice-title">
+        <div className="modal-heading"><div><p className="eyebrow">Food · required</p><h2 id="meal-choice-title">Your meals {dayLabel}</h2></div></div>
+        <p className="menu-modal-hint">Tell the kitchen by 9 pm today. A meal you do not answer counts as not eating.</p>
+        <ul className="menu-meals">
+          {open.map((meal) => {
+            const { label, icon: Icon } = mealDetails.find((detail) => detail.meal === meal.meal)!
+            return (
+              <li key={meal.meal} className={answerOf(meal) === false ? 'is-skipped' : undefined}>
+                <span className="menu-meal-icon"><Icon size={16} /></span>
+                <div className="menu-meal-body">
+                  <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small></div>
+                  <p className={meal.items ? undefined : 'is-empty'}>{meal.items ?? 'Menu not set yet'}</p>
+                </div>
+                <MealChoiceToggle label={label} answer={answerOf(meal)} disabled={isSaving} onChoose={(eating) => setPicked((current) => ({ ...current, [meal.meal]: eating }))} />
+              </li>
+            )
+          })}
+        </ul>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" disabled={isSaving} onClick={() => save(Object.fromEntries(open.map((meal) => [meal.meal, true])))}>Eating all {open.length === 3 ? 'three' : open.length}</button>
+          <button type="button" className="primary-button" disabled={isSaving || !isComplete} onClick={() => save(answers())}>{isSaving ? 'Saving…' : 'Save'}</button>
+        </div>
       </div>
-      <div className="meal-alert-actions">
-        {next.meal.skipped
-          ? <button type="button" className="secondary-button" disabled={isSaving} onClick={skip}>Undo skip</button>
-          : <><button type="button" className="primary-button" disabled={isSaving} onClick={eat}>Yes, I'll eat</button><button type="button" className="secondary-button" disabled={isSaving} onClick={skip}>Skip it</button></>}
-      </div>
-    </div>
+    </div></ModalLayer>
   )
 }
 
@@ -227,7 +255,7 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
 
   const today = days?.[0]
   // The latest of today's finished meals still waiting for a rating.
-  const due = today?.meals.filter((meal) => meal.canRate && !meal.skipped && !meal.feedback && toMinutes(meal.to) <= minutes && !prompted.includes(`${today.date}-${meal.meal}`)).at(-1)
+  const due = today?.meals.filter((meal) => meal.canRate && !meal.feedback && toMinutes(meal.to) <= minutes && !prompted.includes(`${today.date}-${meal.meal}`)).at(-1)
   const key = open ?? (today && due ? `${today.date}-${due.meal}` : null)
   // Once open it stays on that meal while the resident rates and comments, until they close it.
   useEffect(() => { if (!open && key) setOpen(key) }, [open, key])

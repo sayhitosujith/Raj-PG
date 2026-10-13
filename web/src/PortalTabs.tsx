@@ -6,7 +6,7 @@ export type PortalTab = 'home' | 'services' | 'rent' | 'profile' | 'info'
 const tabs: Array<{ key: PortalTab; label: string; icon: LucideIcon }> = [
   { key: 'home', label: 'Home', icon: House },
   { key: 'services', label: 'Services', icon: Wrench },
-  { key: 'rent', label: 'Rent', icon: IndianRupee },
+  { key: 'rent', label: 'Payments', icon: IndianRupee },
   { key: 'info', label: 'Info', icon: Info },
 ]
 

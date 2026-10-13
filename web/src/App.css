@@ -338,7 +338,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Profile photos: shared avatar image, the resident's picker in the greeting row. */
 .resident-avatar.has-photo, .profile-photo.has-photo { overflow: hidden; padding: 0; background: #e6ece8; }
 .resident-avatar img, .profile-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.portal-shell .welcome-row { align-items: center; }
+.portal-shell .welcome-row { align-items: center; margin-bottom: 14px; }
 .profile-photo-picker { display: grid; flex: 0 0 auto; justify-items: center; gap: 6px; }
 .profile-photo-button { position: relative; width: 88px; height: 88px; padding: 0; border: 3px solid white; border-radius: 50%; background: none; box-shadow: 0 8px 24px #18352f1f; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
 .profile-photo-button:hover { transform: translateY(-2px); box-shadow: 0 12px 28px #18352f29; }
@@ -721,6 +721,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .headcount-meals span { color: #55635f; font-size: 10px; font-weight: 700; }
 .headcount-meals strong { color: var(--ink); font-size: 20px; }
 .headcount-meals small { color: #ad7c2c; font-size: 10px; }
+.headcount-meals small.is-unanswered { color: #b42318; }
+.headcount-missing { margin: 6px 0 0; color: #b42318; font-size: 11px; }
 .food-feedback { display: grid; gap: 8px; max-height: 320px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .food-feedback li { display: flex; align-items: flex-start; gap: 10px; }
 .food-feedback strong { display: block; color: var(--ink); font-size: 11px; }
@@ -816,14 +818,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .menu-modal-hint { margin: 8px 0 14px; color: var(--muted); font-size: 11px; }
 @container (max-width: 640px) { .details-heading-actions { justify-content: flex-start; } }
 
-/* Next-meal alert: same banner shape as the rent reminder, in the brand green, with actions. */
-.meal-alert { align-items: center; color: var(--teal); background: var(--teal-soft); border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent); }
-.meal-alert-body { flex: 1; min-width: 0; }
-.meal-alert-body strong { color: var(--ink); }
-.meal-alert-body p { color: #55635f; }
-.meal-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.meal-alert-actions .primary-button, .meal-alert-actions .secondary-button { width: auto; padding: 8px 12px; font-size: 11px; }
-@media (max-width: 560px) { .meal-alert { flex-wrap: wrap; } .meal-alert-actions { width: 100%; } }
 
 /* Loaders: four bouncing coloured dots, large on the full-screen loader and small inline. Each dot
    starts a beat after the last, so they ripple left to right. */
@@ -988,9 +982,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .upi-direct-report input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 13px; letter-spacing: .5px; }
 .upi-direct-report input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
 .upi-direct-report .primary-button { width: auto; }
-.upi-direct.is-reported { align-items: center; gap: 12px; }
-.upi-direct.is-reported > svg { flex: none; color: var(--teal); }
-.upi-direct.is-reported p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
 /* A phone cannot scan its own screen, so there the tap-to-pay link leads and the QR shrinks. */
 @media (pointer: coarse) { .upi-direct-open { display: inline-flex; } }
 @container (max-width: 560px) {
@@ -1436,8 +1427,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .meal-tag { right: 50%; translate: 50% 0; }
   /* A short banner: a full-width 16:9 photo was the tallest block on the page. */
   .portal-shell .portal-property-photo { height: 140px; aspect-ratio: auto; }
-  /* The "payment reported" notice stays a row; only the QR pay form needs to stack. */
-  .portal-shell .upi-direct.is-reported { flex-direction: row; align-items: center; padding: 14px; }
 }
 @container (max-width: 520px) {
   .portal-shell .house-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1474,27 +1463,25 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 
 /* Resident "Edit my details": the Edit button beside the heading, and the ID row in the modal. */
 .my-details-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-/* Heading and contact lines on the left, the weather tile in the top-right corner level with the heading.
-   A fixed two-column grid, so the tile stays there instead of wrapping under the email; only the
-   narrowest cards stack it below. */
-.my-details-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin: 4px 0 0; }
+/* Heading and contact lines in one column (the weather moved to the top bar). */
+.my-details-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
-.my-details-card > .today-tile { max-width: 220px; }
-/* The weather value wraps rather than being cut off ("Bengaluru · 24°C") when the tile is narrow. */
-.my-details-card > .today-tile .today-tile-copy strong { white-space: normal; }
-@container (max-width: 380px) { .my-details-card { grid-template-columns: minmax(0, 1fr); } .my-details-card > .today-tile { max-width: none; } }
-/* Narrow cards: the phone and email lines sit beside the weather tile; the other lines run the full
-   card width below, so "Passport Number: KL…" stays on one line, and the Edit button closes the card
-   at the bottom right. The contact list steps aside (display: contents) so each line is placed. */
+/* Narrow cards: two columns (phone and email left, ID document and visa right, placed below), and the
+   Edit button closes the card at the bottom right. The contact list steps aside (display: contents) so
+   each line is placed in the card's grid. */
 @container (min-width: 381px) and (max-width: 620px) {
-  .my-details-card { row-gap: 6px; }
+  .my-details-card { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
   .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
-  .my-details-card > .today-tile { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
-  .my-details-main > :not(.my-details-title), .my-details-contact > span { grid-column: 1 / -1; }
-  .my-details-contact > span:first-child { grid-column: 1; grid-row: 1; align-self: center; }
-  .my-details-contact > span:nth-child(2) { grid-column: 1; grid-row: 2; align-self: center; }
+  .my-details-contact > span { align-self: center; }
   .my-details-title { order: 1; grid-column: 1 / -1; justify-self: end; }
 }
+/* From 381px wide the ID document and visa sit in the right column, level with the phone and email
+   (rows 1 and 2); any later line, such as the door key, continues on the left. */
+@container (min-width: 381px) {
+  .portal-details-heading .my-details-contact > span.is-document { grid-column: 2; grid-row: 1; }
+  .portal-details-heading .my-details-contact > span.is-document + span.is-document { grid-row: 2; }
+}
+@container (min-width: 621px) { .workspace-view-heading p.my-details-contact { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; } }
 /* Very narrow cards (one column): Edit still closes the card, at the bottom right. */
 @container (max-width: 380px) { .my-details-main { display: flex; flex-direction: column; } .my-details-title { order: 1; align-self: flex-end; } }
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
@@ -2111,7 +2098,7 @@ div.portal-panel { display: contents; }
    blue (the move-out notes and link) turns light. */
 :root:not([data-theme="dark"]) .portal-shell .portal-details-heading :is(.today-grid, .meals-row) { background: rgb(255 255 255); }
 /* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
-   out in white below it. Its Edit button and weather tile stay white. */
+   out in white below it. Its Edit button stays white. */
 .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
 .portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: var(--brand-tint); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
@@ -2349,3 +2336,16 @@ div.portal-panel { display: contents; }
 .website-banner-actions :is(label, button) { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .website-banner-choose input { display: none; }
 .website-banner-choose.is-busy { opacity: .6; pointer-events: none; }
+/* Eat / Skip for one meal (weekly menu and the required "your meals tomorrow" window). */
+.meal-choice { display: inline-flex; flex: none; align-self: center; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; background: white; }
+.meal-choice button { min-width: 54px; padding: 7px 12px; border: 0; color: #55635f; background: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.meal-choice button + button { border-left: 1px solid var(--line); }
+.meal-choice button.is-eat { color: white; background: var(--teal); }
+.meal-choice button.is-skip { color: white; background: #b42318; }
+.meal-choice button:disabled { cursor: default; opacity: .6; }
+.meal-choice-modal .modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+/* The weather in the portal's top bar, left of the bell: a frosted pill on the brand colour. Phones
+   show only the icon and temperature; the place is in the tooltip. */
+.weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid rgb(255 255 255 / .35); border-radius: 999px; color: rgb(255 255 255); background: rgb(255 255 255 / .16); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.weather-chip strong { font-weight: 800; }
+@media (max-width: 560px) { .weather-chip { padding: 0 10px; } .weather-chip-city { display: none; } }

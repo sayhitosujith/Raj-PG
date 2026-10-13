@@ -94,10 +94,11 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
 
       {!propertyId ? <div className="workspace-empty"><div className="workspace-empty-icon"><UtensilsCrossed size={20} /></div><h3>No properties yet</h3><p>Add a property first, then plan its menu here.</p></div> : <div className="food-grid">
         <div className="settings-section">
-          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'}, minus anyone skipping.` : 'Loading…'}</p></div></div>
+          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents answer by 9 pm the day before; no answer counts as not eating.` : 'Loading…'}</p></div></div>
           {data && <div className="headcount-days">{data.headcounts.map((day, index) => (
             <div key={day.date}><small>{index === 0 ? 'Today' : 'Tomorrow'} · {formatShortDate(day.date)}</small>
-              <ul className="headcount-meals">{day.meals.map((meal) => <li key={meal.meal}><span>{mealLabel(meal.meal)}</span><strong>{meal.eating}</strong>{meal.skipping > 0 && <small>{meal.skipping} skipping</small>}</li>)}</ul>
+              <ul className="headcount-meals">{day.meals.map((meal) => <li key={meal.meal}><span>{mealLabel(meal.meal)}</span><strong>{meal.eating}</strong>{meal.skipping > 0 && <small>{meal.skipping} skipping</small>}{meal.noAnswer > 0 && <small className="is-unanswered">{meal.noAnswer} no answer</small>}</li>)}</ul>
+              {day.notAnswered.length > 0 && <p className="headcount-missing">Not answered yet: {day.notAnswered.join(', ')}</p>}
             </div>
           ))}</div>}
         </div>

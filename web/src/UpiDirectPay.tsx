@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Copy, Smartphone } from 'lucide-react'
+import { Copy, Smartphone } from 'lucide-react'
 import { formatMonth, formatRupees, nextMonthToRecord, rentForMonth, type RentSummary } from './rent'
 import { readApiError } from './superAdmin'
 import type { UpiPayee } from './workspaceSettings'
@@ -82,14 +82,9 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
     await onReported()
   }
 
-  if (pendingClaim) {
-    return (
-      <div className="upi-direct is-reported" role="status">
-        <CheckCircle2 size={22} />
-        <div><strong>{formatRupees(pendingClaim.amount)} payment reported{pendingClaim.rentMonths?.length ? ` for ${pendingClaim.rentMonths.map((item) => formatMonth(item.month)).join(", ")}` : ''}</strong><p>{pendingClaim.reference ? `UPI reference ${pendingClaim.reference}. ` : ''}Waiting for your property owner to confirm it.</p></div>
-      </div>
-    )
-  }
+  // A reported payment shows as "Pending approval" in the payments list (ResidentRentPayments); the
+  // pay panel stays hidden meanwhile so the resident does not pay the same rent twice.
+  if (pendingClaim) return null
 
   return (
     <div className="upi-direct">
