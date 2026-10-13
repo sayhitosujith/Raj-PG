@@ -1466,22 +1466,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Heading and contact lines in one column (the weather moved to the top bar). */
 .my-details-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
-/* Narrow cards: two columns (phone and email left, ID document and visa right, placed below), and the
-   Edit button closes the card at the bottom right. The contact list steps aside (display: contents) so
-   each line is placed in the card's grid. */
+/* Narrow cards: the lines stack in one column and the Edit button closes the card at the bottom right.
+   The contact list steps aside (display: contents) so each line is placed in the card's grid. */
 @container (min-width: 381px) and (max-width: 620px) {
-  .my-details-card { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+  .my-details-card { row-gap: 6px; }
   .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
   .my-details-contact > span { align-self: center; }
   .my-details-title { order: 1; grid-column: 1 / -1; justify-self: end; }
 }
-/* From 381px wide the ID document and visa sit in the right column, level with the phone and email
-   (rows 1 and 2); any later line, such as the door key, continues on the left. */
-@container (min-width: 381px) {
-  .portal-details-heading .my-details-contact > span.is-document { grid-column: 2; grid-row: 1; }
-  .portal-details-heading .my-details-contact > span.is-document + span.is-document { grid-row: 2; }
-}
-@container (min-width: 621px) { .workspace-view-heading p.my-details-contact { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; } }
 /* Very narrow cards (one column): Edit still closes the card, at the bottom right. */
 @container (max-width: 380px) { .my-details-main { display: flex; flex-direction: column; } .my-details-title { order: 1; align-self: flex-end; } }
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
@@ -2344,8 +2336,8 @@ div.portal-panel { display: contents; }
 .meal-choice button.is-skip { color: white; background: #b42318; }
 .meal-choice button:disabled { cursor: default; opacity: .6; }
 .meal-choice-modal .modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-/* The weather in the portal's top bar, left of the bell: a frosted pill on the brand colour. Phones
-   show only the icon and temperature; the place is in the tooltip. */
-.weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid rgb(255 255 255 / .35); border-radius: 999px; color: rgb(255 255 255); background: rgb(255 255 255 / .16); font-size: 12px; font-weight: 600; white-space: nowrap; }
+/* The weather beside the greeting, at the right of the row: a soft pill in the portal's brand colour.
+   Phones show only the icon and temperature; the place is in the tooltip. */
+.weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--brand-strong, var(--teal)) 25%, transparent); border-radius: 999px; color: var(--brand-strong, var(--teal)); background: var(--brand-soft, var(--teal-soft)); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .weather-chip strong { font-weight: 800; }
 @media (max-width: 560px) { .weather-chip { padding: 0 10px; } .weather-chip-city { display: none; } }
