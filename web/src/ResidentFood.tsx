@@ -44,9 +44,11 @@ function choiceStatus(meal: ResidentMeal) {
 /**
  * Thumbs up/down plus an optional comment for one of today's served meals. The choice shows the moment
  * it is tapped and saves in the background (the menu reload is not waited for), going back to what was
- * saved before if the server refuses it.
+ * saved before if the server refuses it. `onSubmitted`, when given, runs after Save succeeds; the rating
+ * prompt uses it to close itself, and with it Save stays usable with an unchanged comment (nothing new
+ * to send, so it only closes).
  */
-function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved: () => Promise<void>; onNotice: (message: string) => void }) {
+function MealFeedback({ meal, onSaved, onNotice, onSubmitted }: { meal: ResidentMeal; onSaved: () => Promise<void>; onNotice: (message: string) => void; onSubmitted?: () => void }) {
   const [comment, setComment] = useState(meal.feedback?.comment ?? '')
   const [liked, setLiked] = useState(meal.feedback?.liked)
   const [savedComment, setSavedComment] = useState(meal.feedback?.comment ?? '')
@@ -58,10 +60,15 @@ function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved
     setIsSaving(true)
     const error = await send('/api/resident-portal/food/feedback', { meal: meal.meal, liked: choice, comment })
     setIsSaving(false)
-    if (error) { setLiked(previous); onNotice(error); return }
+    if (error) { setLiked(previous); onNotice(error); return false }
     setSavedComment(comment)
     onNotice(choice ? 'Thanks for the feedback.' : 'Thanks for the feedback. Food quality will be improved.')
     void onSaved()
+    return true
+  }
+
+  async function submit(choice: boolean) {
+    if (comment === savedComment || await save(choice)) onSubmitted?.()
   }
 
   return (
@@ -69,7 +76,7 @@ function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved
       <span>How was it?</span>
       <button type="button" className={`icon-button${liked === true ? ' is-active' : ''}`} aria-label="Thumbs up" aria-pressed={liked === true} disabled={isSaving} onClick={() => save(true)}><ThumbsUp size={14} /></button>
       <button type="button" className={`icon-button${liked === false ? ' is-active is-negative' : ''}`} aria-label="Thumbs down" aria-pressed={liked === false} disabled={isSaving} onClick={() => save(false)}><ThumbsDown size={14} /></button>
-      {liked !== undefined && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); void save(liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={isSaving || comment === savedComment}>Save</button></form>}
+      {liked !== undefined && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); void submit(liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={isSaving || (comment === savedComment && !onSubmitted)}>Save</button></form>}
     </div>
   )
 }
@@ -273,7 +280,7 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
       <div className="profile-modal meal-rating-modal" role="dialog" aria-modal="true" aria-labelledby="meal-rating-title">
         <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="meal-rating-title">How was {label.toLowerCase()}?</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
         <p className="menu-modal-hint">{meal.items ?? label} · {formatMealWindow(meal)}. Your rating goes to the kitchen.</p>
-        <MealFeedback key={open} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} />
+        <MealFeedback key={open} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} onSubmitted={close} />
       </div>
     </div></ModalLayer>
   )
