@@ -37,7 +37,7 @@ export function RentPanel({ rent, onRecord, onUndo, concessions = [], onCancelCo
     <div className={`rent-panel is-${rent.state.toLowerCase().replace('_', '-')}`}>
       <div className="rent-panel-head">
         <strong><IndianRupee size={14} /> {formatRupees(rent.monthlyRent)} / month</strong>
-        {rent.state !== 'NOT_TRACKED' && <button type="button" className={rent.state === 'LOCK_DUE' ? 'primary-button' : 'secondary-button'} disabled={isSaving} onClick={() => run(() => onRecord(month))}>Mark {formatMonth(month)} paid</button>}
+        {rent.state !== 'NOT_TRACKED' && <button type="button" className="primary-button" disabled={isSaving} onClick={() => run(() => onRecord(month))}>Mark {formatMonth(month)} paid</button>}
       </div>
       <p className="rent-panel-status">{rent.state === 'LOCK_DUE' && <AlertTriangle size={14} />}{status}</p>
       {concessions.length > 0 && <ul className="rent-concessions">{concessions.map((concession) => <li key={concession.id}><Gift size={13} /><span><strong>{concession.percent}% off {formatMonth(concession.month)}</strong> · {formatRupees(rentForMonth(rent, concession.month))} instead of {formatRupees(rent.monthlyRent ?? 0)}{concession.reason && <small>{concession.reason}</small>}</span>{onCancelConcession && <button type="button" className="text-link" disabled={isSaving} onClick={() => { if (window.confirm(`Cancel this ${concession.percent}% discount? ${formatMonth(concession.month)} rent goes back to ${formatRupees(rent.monthlyRent ?? 0)}.`)) void run(() => onCancelConcession(concession.id)) }}>Cancel</button>}</li>)}</ul>}
