@@ -1249,7 +1249,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-details-identity > div { min-width: 0; }
 /* The resident's name beside the photo; long names are cut with an ellipsis (full name on hover).
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
-.portal-shell .portal-details-heading p.portal-details-name { overflow: hidden; margin: 0 0 8px; color: rgb(255 255 255); font-size: 20px; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.portal-shell .portal-details-heading p.portal-details-name { overflow: hidden; margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .portal-details-identity .profile-photo-button { width: 76px; height: 76px; }
 @container (max-width: 480px) {
   .portal-details-identity { gap: 14px; }
