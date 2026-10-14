@@ -60,7 +60,7 @@ function MealFeedback({ meal, onSaved, onNotice }: { meal: ResidentMeal; onSaved
     setIsSaving(false)
     if (error) { setLiked(previous); onNotice(error); return }
     setSavedComment(comment)
-    onNotice('Thanks for the feedback.')
+    onNotice(choice ? 'Thanks for the feedback.' : 'Thanks for the feedback. Food quality will be improved.')
     void onSaved()
   }
 
@@ -274,7 +274,6 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
         <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="meal-rating-title">How was {label.toLowerCase()}?</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
         <p className="menu-modal-hint">{meal.items ?? label} · {formatMealWindow(meal)}. Your rating goes to the kitchen.</p>
         <MealFeedback key={open} meal={meal} onSaved={async () => { await load() }} onNotice={onNotice} />
-        <div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>{meal.feedback ? 'Done' : 'Not now'}</button></div>
       </div>
     </div></ModalLayer>
   )
