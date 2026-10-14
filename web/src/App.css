@@ -1470,16 +1470,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Heading and contact lines in one column (the weather moved to the top bar). */
 .my-details-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
-/* Narrow cards: the lines stack in one column and the Edit button closes the card at the bottom right.
-   The contact list steps aside (display: contents) so each line is placed in the card's grid. */
-@container (min-width: 381px) and (max-width: 620px) {
-  .my-details-card { row-gap: 6px; }
+/* Narrow cards: the lines stack in the left column and Edit sits top right, on the phone line's row.
+   Giving Edit a row of its own below the lines left a blank band at the foot of the card. The contact
+   list steps aside (display: contents) so each line is placed in the card's grid. */
+@container (max-width: 620px) {
+  .my-details-card { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
   .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
-  .my-details-contact > span { align-self: center; }
-  .my-details-title { order: 1; grid-column: 1 / -1; justify-self: end; }
+  .my-details-contact > span { grid-column: 1; align-self: center; }
+  .my-details-title { grid-column: 2; grid-row: 1; align-self: center; }
 }
-/* Very narrow cards (one column): Edit still closes the card, at the bottom right. */
-@container (max-width: 380px) { .my-details-main { display: flex; flex-direction: column; } .my-details-title { order: 1; align-self: flex-end; } }
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
 .workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
