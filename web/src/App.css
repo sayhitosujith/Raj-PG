@@ -530,6 +530,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-panel-head strong { display: inline-flex; align-items: center; gap: 5px; color: #344449; font-size: 12px; }
 .rent-panel-head strong svg { color: var(--teal); }
 .rent-panel-head .primary-button, .rent-panel-head .secondary-button { padding: 7px 12px; font-size: 11px; }
+/* "Payment received" with the advance link beside it. */
+.rent-panel-actions { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 12px; }
+.rent-panel-actions .primary-button { display: inline-flex; align-items: center; gap: 5px; }
 .rent-panel-status { display: flex; gap: 6px; margin: 0; line-height: 1.5; }
 .is-lock-due .rent-panel-status { color: #9a4231; font-weight: 600; }
 .is-lock-due .rent-panel-status svg { flex: 0 0 auto; margin-top: 2px; }

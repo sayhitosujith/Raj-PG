@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, Gift, IndianRupee, Undo2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Gift, IndianRupee, Undo2 } from 'lucide-react'
 import { formatDueDate, formatMonth, formatRupees, nextMonthToRecord, rentForMonth, type RentConcession, type RentSummary } from './rent'
 
 /** A concession as the owner sees it: with its id, so it can be cancelled. */
@@ -23,6 +23,9 @@ export function RentPanel({ rent, onRecord, onUndo, concessions = [], onCancelCo
   if (!rent.monthlyRent) return <div className="rent-panel is-muted"><IndianRupee size={14} /> No monthly rent set. Add it in Edit resident to start rent reminders.</div>
 
   const month = nextMonthToRecord(rent)
+  // With nothing due, the next month to record is an advance. It is offered as a separate, named link
+  // rather than the main button: as the button, each click quietly recorded yet another month ahead.
+  const isAllPaid = rent.outstandingMonths.length === 0
   const status = {
     LOCK_DUE: `Overdue for ${rent.overdueMonths.map(formatMonth).join(', ')} (${formatRupees(rent.amountDue)} outstanding${rent.lateFee ? ', including late fees' : ''}). All three reminders were shown before the due day. The resident is locked out of the app until you record the payment, unless you set an "Allow access until" date.`,
     REMINDER_3: `Reminder 3 of 3 (final) is showing: ${formatMonth(rent.currentMonth)} rent is due by ${formatDueDate(rent.currentMonth, rent.dueDay)}. The resident is locked out of the app from midnight after that if it is still unpaid.`,
@@ -37,7 +40,9 @@ export function RentPanel({ rent, onRecord, onUndo, concessions = [], onCancelCo
     <div className={`rent-panel is-${rent.state.toLowerCase().replace('_', '-')}`}>
       <div className="rent-panel-head">
         <strong><IndianRupee size={14} /> {formatRupees(rent.monthlyRent)} / month</strong>
-        {rent.state !== 'NOT_TRACKED' && <button type="button" className="primary-button" disabled={isSaving} onClick={() => run(() => onRecord(month))}>Mark {formatMonth(month)} paid</button>}
+        {rent.state !== 'NOT_TRACKED' && (isAllPaid
+          ? <span className="rent-panel-actions"><button type="button" className="text-link" disabled={isSaving} onClick={() => run(() => onRecord(month))}>Record {formatMonth(month)} in advance</button><button type="button" className="primary-button" disabled><CheckCircle2 size={13} /> Payment received</button></span>
+          : <button type="button" className="primary-button" disabled={isSaving} onClick={() => run(() => onRecord(month))}>Mark {formatMonth(month)} paid</button>)}
       </div>
       <p className="rent-panel-status">{rent.state === 'LOCK_DUE' && <AlertTriangle size={14} />}{status}</p>
       {concessions.length > 0 && <ul className="rent-concessions">{concessions.map((concession) => <li key={concession.id}><Gift size={13} /><span><strong>{concession.percent}% off {formatMonth(concession.month)}</strong> · {formatRupees(rentForMonth(rent, concession.month))} instead of {formatRupees(rent.monthlyRent ?? 0)}{concession.reason && <small>{concession.reason}</small>}</span>{onCancelConcession && <button type="button" className="text-link" disabled={isSaving} onClick={() => { if (window.confirm(`Cancel this ${concession.percent}% discount? ${formatMonth(concession.month)} rent goes back to ${formatRupees(rent.monthlyRent ?? 0)}.`)) void run(() => onCancelConcession(concession.id)) }}>Cancel</button>}</li>)}</ul>}
