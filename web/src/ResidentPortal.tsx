@@ -250,6 +250,11 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
           <HolidayList holidays={holidays} />
         </section>
         <div className="portal-panel" data-panel="services">
+        {/* Phones and tablets only (CSS): wide screens keep Exit PG in the Home card. */}
+        <section className="workspace-view portal-tab-services portal-services-exit">
+          <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Exit PG</h2><p>Moving out? Give at least {profile.exit.noticeDays} days' notice and follow your request here.</p></div></div>
+          {exitPg}
+        </section>
         <ResidentMaintenance refreshSignal={refreshSignal} onNotice={showNotice} />
         <ResidentHousekeeping holidays={holidays} refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
         </div>

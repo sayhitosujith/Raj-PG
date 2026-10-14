@@ -1866,9 +1866,13 @@ div.portal-panel { display: contents; }
 .portal-profile-head { flex-wrap: wrap; }
 .portal-profile-exit { align-self: flex-start; margin-left: auto; }
 /* The Home card right-aligns the move-out block; in the Profile list it reads left like everything else. */
-.portal-profile-exit .exit-status-row { justify-items: start; }
-.portal-profile-exit .exit-refund-note, .portal-profile-exit .exit-dues-note, .portal-profile-exit .exit-signin-note { max-width: none; text-align: left; }
-.portal-profile-exit .exit-status { border-radius: 10px; }
+/* The Services tab copy (phones and tablets) reads left the same way. */
+:is(.portal-profile-exit, .portal-services-exit) .exit-status-row { justify-items: start; }
+:is(.portal-profile-exit, .portal-services-exit) :is(.exit-refund-note, .exit-dues-note, .exit-signin-note) { max-width: none; text-align: left; }
+:is(.portal-profile-exit, .portal-services-exit) .exit-status { border-radius: 10px; }
+/* Exit PG on the Services tab, phones and tablets only: wide screens keep it in the Home card. */
+.portal-services-exit { display: none; }
+@media (max-width: 1024px) { .page-content[data-tab="services"] .portal-services-exit { display: block; } }
 /* "Delete account" under the notification settings: a quiet card with a red action, since it only
    sends a request the owner must approve. */
 /* The "Danger Zone" label above it, in red, marks it apart from the everyday settings. */
