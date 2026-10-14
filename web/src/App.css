@@ -1247,9 +1247,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident's photo beside "My details": the card is about them, so their photo leads it. */
 .portal-details-identity { display: flex; align-items: center; gap: 18px; }
 .portal-details-identity > div { min-width: 0; }
-/* The resident's name beside the photo; long names are cut with an ellipsis (full name on hover).
+/* The resident's name beside the photo. It wraps rather than being cut with an ellipsis: on a phone
+   the space beside the photo fits little more than a first name, and the full name must still show.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
-.portal-shell .portal-details-heading p.portal-details-name { overflow: hidden; margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+@container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 20px; } }
 .portal-details-identity .profile-photo-button { width: 76px; height: 76px; }
 @container (max-width: 480px) {
   .portal-details-identity { gap: 14px; }
