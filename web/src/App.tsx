@@ -18,6 +18,7 @@ import {
   Palette,
   Globe,
   History,
+  Gauge,
   ShieldCheck,
   Users,
   UtensilsCrossed,
@@ -79,6 +80,7 @@ import { listPageSize, usePagination } from './usePagination'
 import { PaymentsView } from './PaymentsView'
 import { IsSuperAdminProvider } from './staffContext'
 import { AuditLogsView } from './AuditLogsView'
+import { PerformanceTestsView } from './PerformanceTestsView'
 
 type IconType = typeof Home
 
@@ -472,8 +474,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {isOwner && <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />}
           {isOwner && <NavItem icon={Globe} label="Website" active={activeView === 'Website'} onClick={() => handleNavigation('Website')} />}
         </nav>
-        {/* Audit logs sits at the bottom of the menu, just above the database status. */}
-        {isOwner && <div className="sidebar-bottom-nav"><NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} /></div>}
+        {/* Performance tests and Audit logs sit at the bottom of the menu, just above the database status. */}
+        {isOwner && <div className="sidebar-bottom-nav"><NavItem icon={Gauge} label="Performance tests" active={activeView === 'Performance tests'} onClick={() => handleNavigation('Performance tests')} /><NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} /></div>}
         <div className="sidebar-footer"><div className="help-icon"><ShieldCheck size={18} /></div><div><strong>{dashboard.source === 'postgresql' ? 'Database connected' : 'Local API connected'}</strong><small>{dashboard.source === 'postgresql' ? 'Live PostgreSQL data' : 'Fallback data active'}</small></div></div>
       </aside>
 
@@ -492,6 +494,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Referral Requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Announcements' && <CrudView view={activeView} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Super admins' && isOwner && <SuperAdminsView currentAdminId={currentAdmin.id} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} onAdminChange={onAdminChange} />}
+          {activeView === 'Performance tests' && isOwner && <PerformanceTestsView onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Audit logs' && isOwner && <AuditLogsView refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Deleted records' && <DeletedRecordsView refreshSignal={refreshSignal} securityDeposit={settings?.securityDeposit ?? null} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
@@ -500,7 +503,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Food' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

@@ -2301,6 +2301,22 @@ div.portal-panel { display: contents; }
 .audit-log-main strong { color: var(--ink); font-size: 13px; overflow-wrap: anywhere; }
 .audit-log-main small { color: var(--muted); font-size: 11px; }
 .audit-log time { flex: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
+/* Performance tests: the run controls, the pass/fail line and the per-request timings. */
+.performance-tests-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 16px; }
+.performance-tests-controls label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+.performance-tests-controls .primary-button { display: inline-flex; align-items: center; gap: 6px; }
+.performance-tests-controls .settings-hint { flex-basis: 100%; margin: 0; }
+.performance-tests-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 12px; }
+.performance-tests-table td small { display: block; color: var(--muted); font-size: 10.5px; }
+.performance-tests-subheading { margin: 4px 0 10px; font-size: 14px; }
+/* The file picker styled as a button; the real input is hidden but still opened by the label. */
+.login-test-file { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.login-test-file input { display: none; }
+.login-test-count { color: var(--muted); font-size: 12px; }
+.performance-tests-controls .text-link { display: inline-flex; align-items: center; gap: 3px; }
+.login-test-accounts { margin-bottom: 14px; }
+.performance-tests-table tr.is-slow td { color: rgb(185 28 28); }
+.performance-tests-view { overflow-x: auto; }
 .audit-role { padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .audit-role.is-super_admin { color: rgb(15 118 110); background: rgb(204 251 241); }
 .audit-role.is-receptionist { color: rgb(146 64 14); background: rgb(254 243 199); }
