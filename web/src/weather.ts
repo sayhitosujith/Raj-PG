@@ -95,11 +95,14 @@ function useLocationAccess() {
 export function useWeather(refreshSignal: number) {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [isLocating, setIsLocating] = useState(false)
+  // Once the first lookup (by the property's city) has answered: from then on "no weather" means there
+  // is none for the city, not that it is still loading, so the page can offer the device's location.
+  const [hasChecked, setHasChecked] = useState(false)
   const access = useLocationAccess()
   useEffect(() => {
     let isCurrent = true
     let isLocated = false
-    fetchWeather(null).then((next) => { if (isCurrent && !isLocated) setWeather(next) }, () => undefined)
+    fetchWeather(null).then((next) => { if (isCurrent && !isLocated) setWeather(next) }, () => undefined).finally(() => { if (isCurrent) setHasChecked(true) })
     findPosition().then(async (position) => {
       const near = position ? await fetchWeather(position) : null
       if (near && isCurrent) { isLocated = true; setWeather(near) }
@@ -124,7 +127,7 @@ export function useWeather(refreshSignal: number) {
       setIsLocating(false)
     }
   }, [])
-  return { weather, access, locate, isLocating }
+  return { weather, access, locate, isLocating, hasChecked }
 }
 
 /**
