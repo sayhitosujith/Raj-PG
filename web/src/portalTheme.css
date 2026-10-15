@@ -141,6 +141,28 @@
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-ac { --amenity: rgb(103 232 249); }
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-food { --amenity: rgb(248 113 113); }
 :root[data-theme="dark"] .portal-shell .resident-amenity.is-cctv { --amenity: rgb(203 213 225); }
+/* Owner-added amenities (Laundry, Gym…) take one of these by a hash of their name, so each keeps its
+   colour; see amenityColourClass in PropertyFeatures.tsx. */
+.portal-shell .resident-amenity.is-custom-0 { --amenity: rgb(13 148 136); }
+.portal-shell .resident-amenity.is-custom-1 { --amenity: rgb(219 39 119); }
+.portal-shell .resident-amenity.is-custom-2 { --amenity: rgb(101 163 13); }
+.portal-shell .resident-amenity.is-custom-3 { --amenity: rgb(192 38 211); }
+.portal-shell .resident-amenity.is-custom-4 { --amenity: rgb(2 132 199); }
+.portal-shell .resident-amenity.is-custom-5 { --amenity: rgb(180 83 9); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-0 { --amenity: rgb(94 234 212); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-1 { --amenity: rgb(249 168 212); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-2 { --amenity: rgb(190 242 100); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-3 { --amenity: rgb(240 171 252); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-4 { --amenity: rgb(125 211 252); }
+:root[data-theme="dark"] .portal-shell .resident-amenity.is-custom-5 { --amenity: rgb(253 186 116); }
+/* The whole chip, not only its icon, carries the amenity's colour: a light wash and a border in it,
+   the label staying in the portal's text colour so it reads the same on every chip. */
+.portal-shell .resident-amenity[class*=" is-"] { border-color: color-mix(in srgb, var(--amenity) 38%, transparent); background: color-mix(in srgb, var(--amenity) 9%, white); }
+/* Stated again at this strength: the shared icon rule near the top of this file wraps its selectors
+   in :is(), which takes the specificity of its strongest one (.upi-qr-panel.is-paid) and so outranked
+   the plain ".resident-amenity svg" above, leaving every amenity icon the same colour. */
+.portal-shell .resident-amenity[class*=" is-"] svg { color: var(--amenity); }
+:root[data-theme="dark"] .portal-shell .resident-amenity[class*=" is-"] { border-color: color-mix(in srgb, var(--amenity) 45%, transparent); background: color-mix(in srgb, var(--amenity) 16%, transparent); }
 /* The profile detail icon tiles and the phone tab bar in the same sky-to-ocean blue as the Home card,
    with white icons and labels (the current tab on a frosted white pill). [data-theme] is always set,
    so these beat both the light and the generated dark colours. */

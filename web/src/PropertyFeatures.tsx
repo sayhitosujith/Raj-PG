@@ -1,6 +1,6 @@
 import { DoorOpen, IndianRupee, Users, Wifi } from 'lucide-react'
 import { AmenityPicker } from './AmenityPicker'
-import { amenityItems, tenantOptions, type TenantType } from './propertyFeatureOptions'
+import { amenityItems, isAmenityCode, tenantOptions, type TenantType } from './propertyFeatureOptions'
 import { checkPricePair, type SharingPrice } from './pricing'
 import { SharingPriceTable } from './SharingPriceTable'
 
@@ -62,6 +62,20 @@ export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amen
   )
 }
 
+/** How many colours owner-added amenities share (is-custom-0 to is-custom-5 in portalTheme.css). */
+const CUSTOM_AMENITY_COLOURS = 6
+
+/**
+ * The colour class for one amenity chip: the built-in ones by name (is-wifi, is-hot_water…), an
+ * owner-added one by a hash of its name, so "Laundry" keeps the same colour every time.
+ */
+function amenityColourClass(value: string) {
+  if (isAmenityCode(value)) return `is-${value.toLowerCase()}`
+  let hash = 0
+  for (const char of value.toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return `is-custom-${hash % CUSTOM_AMENITY_COLOURS}`
+}
+
 /** The amenities a resident's property offers, for their home screen; nothing when none are set. */
 export function ResidentAmenities({ amenities = [] }: { amenities?: string[] }) {
   const offered = amenityItems(amenities)
@@ -69,7 +83,7 @@ export function ResidentAmenities({ amenities = [] }: { amenities?: string[] }) 
   return (
     <div className="resident-amenities" aria-label="Amenities at your property">
       <p className="eyebrow">Amenities</p>
-      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className="resident-amenity"><Icon size={14} /> {label}</span>)}</div>
+      <div className="resident-amenity-list">{offered.map(({ value, label, icon: Icon }) => <span key={value} className={`resident-amenity ${amenityColourClass(value)}`}><Icon size={14} /> {label}</span>)}</div>
     </div>
   )
 }
