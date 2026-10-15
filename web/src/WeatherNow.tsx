@@ -1,5 +1,5 @@
 import { Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, Moon, Snowflake, Sun, type LucideIcon } from 'lucide-react'
-import type { LocationAccess, Weather, WeatherCondition } from './weather'
+import type { LocateResult, Weather, WeatherCondition } from './weather'
 
 const conditionIcons: Record<WeatherCondition, LucideIcon> = { clear: Sun, clouds: Cloud, rain: CloudRain, storm: CloudLightning, snow: Snowflake, mist: CloudFog }
 
@@ -26,13 +26,15 @@ export function WeatherChip({ weather }: { weather: Weather | null }) {
  * button once the first lookup has answered, a plain "Weather" chip. Rendering nothing there left the
  * resident with nothing to tap, so the weather could never appear.
  */
-export function GreetingWeather({ weather, access, isLocating, hasChecked, onLocate, onNotice }: { weather: Weather | null; access: LocationAccess; isLocating: boolean; hasChecked: boolean; onLocate: () => Promise<boolean>; onNotice: (message: string) => void }) {
+export function GreetingWeather({ weather, isLocating, hasChecked, onLocate, onNotice }: { weather: Weather | null; isLocating: boolean; hasChecked: boolean; onLocate: () => Promise<LocateResult>; onNotice: (message: string) => void }) {
   if (weather?.isCurrentLocation) return <div className="welcome-weather"><WeatherChip weather={weather} /><span className="welcome-weather-city" title={weather.city}>{weather.city}</span></div>
   if (!weather && (!hasChecked || !('geolocation' in navigator))) return null
   // Not an async function: onLocate has to start within the tap itself for the browser to show its prompt.
   const ask = () => {
-    if (access === 'denied') { onNotice('Location is blocked for this site. Allow it in your browser’s site settings, then tap the weather again.'); return }
-    void onLocate().then((isLocated) => { if (!isLocated) onNotice(weather ? 'Could not get your location, so this is the weather for your property.' : 'Could not get your location. Check that location is turned on, then tap again.') })
+    void onLocate().then((result) => {
+      if (result === 'denied') onNotice('Location is blocked for this site. Allow it in your browser’s site settings, then tap the weather again.')
+      else if (result === 'unavailable') onNotice(weather ? 'Could not get your location, so this is the weather for your property.' : 'Could not get your location. Check that location is turned on, then tap again.')
+    })
   }
   return (
     <button type="button" className="welcome-weather is-locatable" onClick={ask} disabled={isLocating} aria-label={weather ? `Weather in ${weather.city}: ${weather.temperature}°C. Tap to use your location instead.` : 'Show the weather for your location'}>

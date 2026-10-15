@@ -66,19 +66,28 @@ async function fetchWeather(position: Coordinates | null) {
   return response.status === 200 ? { ...await response.json() as Weather, isCurrentLocation: Boolean(position), accuracyM: position?.accuracy } : null
 }
 
-/** Whether this site may read the device's location, as the browser reports it; 'unknown' where it cannot say (older Safari). */
-export type LocationAccess = 'granted' | 'prompt' | 'denied' | 'unknown'
+/** What a tap on the weather got: the device's weather, a refusal of permission, or no position (off, timed out, no signal). */
+export type LocateResult = 'located' | 'denied' | 'unavailable'
 
-/** The browser's location permission for this site, kept current if the resident changes it in settings. */
-function useLocationAccess() {
-  const [access, setAccess] = useState<LocationAccess>('unknown')
-  useEffect(() => {
-    let status: PermissionStatus | null = null
-    const update = () => { if (status) setAccess(status.state) }
-    navigator.permissions?.query({ name: 'geolocation' }).then((result) => { status = result; update(); result.addEventListener('change', update) }, () => undefined)
-    return () => status?.removeEventListener('change', update)
-  }, [])
-  return access
+/**
+ * One position, asked for from a tap. Normal accuracy: a Wi-Fi or cell fix is quick and plenty for
+ * the weather, where waiting on GPS indoors can time out. Says whether the browser actually refused,
+ * since only an actual refusal is "blocked"; the permission state browsers report (an earlier version
+ * checked it first) can say denied on an iPhone with location switched on, so it is not consulted.
+ */
+function requestPosition(): Promise<{ position: Coordinates | null; denied: boolean }> {
+  if (!('geolocation' in navigator)) return Promise.resolve({ position: null, denied: false })
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const position = { latitude: Math.round(coords.latitude * 1e5) / 1e5, longitude: Math.round(coords.longitude * 1e5) / 1e5, accuracy: Math.round(coords.accuracy) }
+        lastFix = { position, at: Date.now() }
+        resolve({ position, denied: false })
+      },
+      (error) => resolve({ position: null, denied: error.code === error.PERMISSION_DENIED }),
+      { enableHighAccuracy: false, timeout: gpsWaitMs, maximumAge: 60_000 },
+    )
+  })
 }
 
 /**
@@ -90,7 +99,7 @@ function useLocationAccess() {
  * The request made on page load is often never shown: browsers quietly block location prompts that
  * no tap asked for, so the resident sees the property's city with no way to change it. `locate` is for
  * a tap, the request browsers do show; it asks afresh rather than reusing an earlier fix, and resolves
- * to whether the weather now follows the device. `access` says which of those the page can still do.
+ * to what happened (see LocateResult).
  */
 export function useWeather(refreshSignal: number) {
   const [weather, setWeather] = useState<Weather | null>(null)
@@ -98,7 +107,6 @@ export function useWeather(refreshSignal: number) {
   // Once the first lookup (by the property's city) has answered: from then on "no weather" means there
   // is none for the city, not that it is still loading, so the page can offer the device's location.
   const [hasChecked, setHasChecked] = useState(false)
-  const access = useLocationAccess()
   useEffect(() => {
     let isCurrent = true
     let isLocated = false
@@ -111,23 +119,23 @@ export function useWeather(refreshSignal: number) {
   }, [])
   // By refresh time the resident has answered, so one request with (or without) the position is enough.
   useRefreshSignal(refreshSignal, () => { findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
-  // Must be called straight from the tap: findPosition starts the browser's request before the first
-  // await, which is what lets the browser treat it as the resident's own request.
-  const locate = useCallback(async () => {
+  // Must be called straight from the tap: requestPosition starts the browser's request before the
+  // first await, which is what lets the browser treat it as the resident's own request.
+  const locate = useCallback(async (): Promise<LocateResult> => {
     setIsLocating(true)
-    lastFix = null
     try {
-      const position = await findPosition()
+      const { position, denied } = await requestPosition()
+      if (denied) return 'denied'
       const near = position ? await fetchWeather(position) : null
       if (near) setWeather(near)
-      return Boolean(near)
+      return near ? 'located' : 'unavailable'
     } catch {
-      return false
+      return 'unavailable'
     } finally {
       setIsLocating(false)
     }
   }, [])
-  return { weather, access, locate, isLocating, hasChecked }
+  return { weather, locate, isLocating, hasChecked }
 }
 
 /**
