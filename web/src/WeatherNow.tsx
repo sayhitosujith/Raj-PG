@@ -26,14 +26,15 @@ export function WeatherChip({ weather }: { weather: Weather | null }) {
  * button once the first lookup has answered, a plain "Weather" chip. Rendering nothing there left the
  * resident with nothing to tap, so the weather could never appear.
  */
-export function GreetingWeather({ weather, isLocating, hasChecked, onLocate, onNotice }: { weather: Weather | null; isLocating: boolean; hasChecked: boolean; onLocate: () => Promise<LocateResult>; onNotice: (message: string) => void }) {
+export function GreetingWeather({ weather, isLocating, hasChecked, onLocate, onNotice }: { weather: Weather | null; isLocating: boolean; hasChecked: boolean; onLocate: () => Promise<{ result: LocateResult; reason?: string }>; onNotice: (message: string) => void }) {
   if (weather?.isCurrentLocation) return <div className="welcome-weather"><WeatherChip weather={weather} /><span className="welcome-weather-city" title={weather.city}>{weather.city}</span></div>
   if (!weather && (!hasChecked || !('geolocation' in navigator))) return null
   // Not an async function: onLocate has to start within the tap itself for the browser to show its prompt.
   const ask = () => {
-    void onLocate().then((result) => {
+    void onLocate().then(({ result, reason }) => {
       if (result === 'denied') onNotice('Location is blocked for this site. Allow it in your browser’s site settings, then tap the weather again.')
-      else if (result === 'unavailable') onNotice(weather ? 'Could not get your location, so this is the weather for your property.' : 'Could not get your location. Check that location is turned on, then tap again.')
+      // The phone's own reason is included, so "timed out" indoors is not mistaken for a setting being off.
+      else if (result === 'unavailable') onNotice(`Could not get your location${reason ? ` (${reason})` : ''}. ${weather ? 'This is the weather for your property.' : 'Try again near a window or with Wi-Fi on.'}`)
       else if (result === 'no-weather') onNotice('Got your location, but the weather service did not answer. Try again in a minute.')
     })
   }

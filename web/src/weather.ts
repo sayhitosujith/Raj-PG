@@ -73,23 +73,34 @@ async function fetchWeather(position: Coordinates | null) {
  */
 export type LocateResult = 'located' | 'denied' | 'unavailable' | 'no-weather'
 
+/** The quick first attempt's limit; the GPS retry after it gets the full gpsWaitMs. */
+const quickFixWaitMs = 8_000
+
+/** What the device said when it gave no position, in words, for the resident's message. */
+function positionErrorReason(error: GeolocationPositionError) {
+  if (error.code === error.TIMEOUT) return 'it timed out'
+  if (error.code === error.POSITION_UNAVAILABLE) return 'the phone could not work out a position'
+  return error.message || 'no reason given'
+}
+
 /**
- * One position, asked for from a tap. Normal accuracy: a Wi-Fi or cell fix is quick and plenty for
- * the weather, where waiting on GPS indoors can time out. Says whether the browser actually refused,
- * since only an actual refusal is "blocked"; the permission state browsers report (an earlier version
- * checked it first) can say denied on an iPhone with location switched on, so it is not consulted.
+ * One position, asked for from a tap. Normal accuracy first: a Wi-Fi or cell fix is quick and plenty
+ * for the weather. Says whether the browser actually refused, since only an actual refusal is
+ * "blocked"; the permission state browsers report (an earlier version checked it first) can say
+ * denied on an iPhone with location switched on, so it is not consulted. Otherwise `reason` says
+ * what the device reported, so a failure can be told apart from a refusal.
  */
-function requestPosition(): Promise<{ position: Coordinates | null; denied: boolean }> {
-  if (!('geolocation' in navigator)) return Promise.resolve({ position: null, denied: false })
+function requestPosition(): Promise<{ position: Coordinates | null; denied: boolean; reason: string }> {
+  if (!('geolocation' in navigator)) return Promise.resolve({ position: null, denied: false, reason: 'this browser has no location' })
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const position = { latitude: Math.round(coords.latitude * 1e5) / 1e5, longitude: Math.round(coords.longitude * 1e5) / 1e5, accuracy: Math.round(coords.accuracy) }
         lastFix = { position, at: Date.now() }
-        resolve({ position, denied: false })
+        resolve({ position, denied: false, reason: '' })
       },
-      (error) => resolve({ position: null, denied: error.code === error.PERMISSION_DENIED }),
-      { enableHighAccuracy: false, timeout: gpsWaitMs, maximumAge: 60_000 },
+      (error) => resolve({ position: null, denied: error.code === error.PERMISSION_DENIED, reason: positionErrorReason(error) }),
+      { enableHighAccuracy: false, timeout: quickFixWaitMs, maximumAge: 60_000 },
     )
   })
 }
@@ -125,18 +136,21 @@ export function useWeather(refreshSignal: number) {
   useRefreshSignal(refreshSignal, () => { findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
   // Must be called straight from the tap: requestPosition starts the browser's request before the
   // first await, which is what lets the browser treat it as the resident's own request.
-  const locate = useCallback(async (): Promise<LocateResult> => {
+  const locate = useCallback(async (): Promise<{ result: LocateResult; reason?: string }> => {
     setIsLocating(true)
     try {
-      const { position, denied } = await requestPosition()
-      if (denied) return 'denied'
-      if (!position) return 'unavailable'
+      const quick = await requestPosition()
+      if (quick.denied) return { result: 'denied' }
+      // iPhones often fail the quick request indoors and then succeed on GPS, so a failure that is not
+      // a refusal gets one more try with GPS before giving up. Permission is already settled by the tap.
+      const position = quick.position ?? await findPosition()
+      if (!position) return { result: 'unavailable', reason: quick.reason }
       const near = await fetchWeather(position)
       if (near) setWeather(near)
-      return near ? 'located' : 'no-weather'
+      return { result: near ? 'located' : 'no-weather' }
     } catch {
       // The position was fine by now or requestPosition would have said; this is the weather request.
-      return 'no-weather'
+      return { result: 'no-weather' }
     } finally {
       setIsLocating(false)
     }
