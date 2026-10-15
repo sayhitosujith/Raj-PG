@@ -111,10 +111,18 @@ export async function exitDues(residentId: string) {
 }
 const dayMs = 24 * 60 * 60 * 1000
 
+/**
+ * The notice period rule on already-loaded rows: the property's own setting, otherwise the one in
+ * Settings. For callers that have the property in hand, so they need not read it again.
+ */
+export function noticeDaysOf(property: { noticePeriodDays: number | null } | null | undefined, settings: { noticePeriodDays: number }) {
+  return property?.noticePeriodDays ?? settings.noticePeriodDays
+}
+
 /** A resident's notice period in days: their property's own setting, otherwise the one in Settings. */
 export async function noticeDaysFor(residentId: string) {
   const [resident, settings] = await Promise.all([prisma.resident.findUnique({ where: { id: residentId }, select: { room: { select: { property: { select: { noticePeriodDays: true } } } } } }), getSettings()])
-  return resident?.room?.property.noticePeriodDays ?? settings.noticePeriodDays
+  return noticeDaysOf(resident?.room?.property, settings)
 }
 
 /** The earliest move-out date allowed today for a notice period: that many days from today (IST), never today itself. */

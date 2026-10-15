@@ -113,11 +113,18 @@ export function parseMonthlyRent(value: unknown, alreadyTrackedFrom: Date | null
 
 const recentPayments = { orderBy: { month: 'desc' }, take: 6, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } satisfies Prisma.Resident$rentPaymentsArgs
 
-/** Rent summary for API responses: status plus the latest recorded payments. */
+/**
+ * Rent summary for API responses: status plus the latest recorded payments. The two reads are
+ * independent, so they run together: each is a round-trip to the database, and the resident
+ * profile, which every open portal re-fetches each minute, waits on this.
+ */
 export async function rentSummary(residentId: string) {
-  const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } })
-  const payments = await prisma.rentPayment.findMany({ where: { residentId }, ...recentPayments })
-  return { ...rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(await getSettings())), payments }
+  const [resident, payments, settings] = await Promise.all([
+    prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } }),
+    prisma.rentPayment.findMany({ where: { residentId }, ...recentPayments }),
+    getSettings(),
+  ])
+  return { ...rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rentRulesOf(settings)), payments }
 }
 
 function respondToError(response: Response, error: unknown, fallback: string) {
