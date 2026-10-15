@@ -2385,22 +2385,8 @@ div.portal-panel { display: contents; }
 .weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--brand-strong, var(--teal)) 25%, transparent); border-radius: 999px; color: var(--brand-strong, var(--teal)); background: var(--brand-soft, var(--teal-soft)); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .weather-chip strong { font-weight: 800; }
 @media (max-width: 560px) { .weather-chip { padding: 0 10px; } .weather-chip-city { display: none; } }
-/* Phones: the weather moves from beside the greeting into the details card's empty top-right corner.
-   Wider cards keep it by the greeting, since their PG Manager and Emergency buttons sit in that
-   corner. The name sits beside it, kept clear on the right; on small phones that left too little
-   room and words broke mid-way, so there the name starts just below it at full width instead.
-   The current city sits under the chip (the chip itself drops it on phones). It is held to the
-   chip's width, with a long name cut short, so it never reaches across into the resident's name. */
-.portal-details-weather { display: none; }
-/* The chip's own city would repeat the line below it, and widen the chip into the name. */
-.portal-details-weather .weather-chip-city { display: none; }
-.portal-details-weather-city { overflow: hidden; width: 0; min-width: 100%; color: rgb(255 255 255 / .9); font-size: 11px; font-weight: 600; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 640px) {
-  .welcome-row > .weather-chip { display: none; }
-  .portal-shell .portal-details-heading { position: relative; }
-  .portal-details-weather { display: grid; gap: 3px; position: absolute; z-index: 1; top: 10px; right: 10px; }
-  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { padding-right: 76px; }
-}
-@media (max-width: 440px) {
-  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { padding-top: 52px; padding-right: 0; }
-}
+/* The weather beside the greeting. Phones drop the city from inside the chip (above), so there it
+   shows on its own line underneath instead; wider screens keep it in the chip and hide this line. */
+.welcome-weather { display: grid; flex: none; justify-items: center; gap: 3px; }
+.welcome-weather-city { display: none; max-width: 120px; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .welcome-weather-city { display: block; } }
