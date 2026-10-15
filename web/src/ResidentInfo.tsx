@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, Globe, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
 import { LocationLink } from './LocationLink'
@@ -40,15 +40,16 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
 /**
  * The property's useful details on Home: Wi-Fi, important contacts (tap to call), the property's city
  * and location (a map link), and check-in / check-out / gate times. Each card appears only when the
- * owner has filled it in. FAQs are separate, on the Info tab (ResidentFaqs).
+ * owner has filled it in. FAQs are separate, on the Info tab (ResidentFaqs). `action` sits beside the
+ * heading (the portal puts "Receptionist" there), and keeps the section showing even with no details.
  */
-export function ResidentInfo({ info, onNotice }: { info: ResidentInfoData; onNotice: (message: string) => void }) {
+export function ResidentInfo({ info, onNotice, action }: { info: ResidentInfoData; onNotice: (message: string) => void; action?: ReactNode }) {
   const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
   const hasDetails = Boolean(info.city || info.location || info.website) || times.length > 0
-  if (!info.wifi && !info.contacts.length && !hasDetails) return null
+  if (!info.wifi && !info.contacts.length && !hasDetails && !action) return null
   return (
     <section className="workspace-view resident-info">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Good to know</p><h2>Property info</h2><p>Wi-Fi, contacts and timings from your property owner.</p></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Good to know</p><h2>Property info</h2><p>Wi-Fi, contacts and timings from your property owner.</p></div>{action}</div>
       <div className="info-grid">
         {info.wifi && <WifiCard wifi={info.wifi} onNotice={onNotice} />}
         {info.contacts.length > 0 && <div className="info-card is-contacts">

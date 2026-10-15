@@ -122,6 +122,23 @@
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-id-card { color: rgb(221 214 254); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-plane { color: rgb(251 207 232); }
 .portal-shell .portal-details-heading .my-details-contact svg.lucide-globe { color: rgb(167 243 208); }
+/* Edit in the blue card: see-through with a white outline, like the header's bell and sign-out
+   buttons, not a white block sitting on the card. The Profile tab's Edit keeps the normal button.
+   The :is(:root…) prefix lifts this above the portal-wide ":root[data-theme] .portal-shell
+   .secondary-button:not(…)" rules further down, which would otherwise paint it white again. */
+:is(:root, :root[data-theme]) .portal-shell .portal-details-heading .secondary-button.my-details-edit { border: 1px solid rgb(255 255 255 / .55); color: rgb(255 255 255); background: transparent; box-shadow: none; }
+:is(:root, :root[data-theme]) .portal-shell .portal-details-heading .secondary-button.my-details-edit:is(:hover, :focus-visible) { border-color: rgb(255 255 255 / .8); background: rgb(255 255 255 / .16); }
+:is(:root, :root[data-theme]) .portal-shell .portal-details-heading .secondary-button.my-details-edit svg { color: inherit; }
+/* "Receptionist" beside the Property info heading: an outlined pill on the section's own background,
+   no white fill, keeping the brand colour for its border, text and phone icon. */
+/* Kept in a row on phones too, where section headings otherwise stack, so the button stays at the
+   top right beside "Property info" instead of dropping under the description. */
+.portal-shell .resident-info .workspace-view-heading { flex-direction: row; align-items: flex-start; }
+.portal-shell .resident-info .workspace-view-heading > div { flex: 1; min-width: 0; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner { flex: none; align-self: flex-start; border-color: var(--brand-pale, var(--line)); color: var(--brand-deep, var(--teal)); background: transparent; box-shadow: none; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner:is(:hover, :focus-visible) { border-color: var(--brand, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner svg { color: inherit; }
+:root[data-theme="dark"] .portal-shell .resident-info .emergency-button.call-owner { color: var(--brand-border, var(--teal)); }
 /* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
    Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */
 .portal-shell .resident-amenity svg { color: var(--amenity, var(--portal-icon)); }
