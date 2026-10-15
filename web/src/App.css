@@ -2395,3 +2395,9 @@ div.portal-panel { display: contents; }
 .welcome-weather { display: grid; flex: none; justify-items: center; gap: 3px; }
 .welcome-weather-city { display: none; max-width: 120px; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) { .welcome-weather-city { display: block; } }
+/* Until the weather follows the device, the whole block is a button asking for the location: no
+   button chrome, just the chip, the place and a small hint under them. */
+.welcome-weather.is-locatable { padding: 0; border: 0; color: inherit; background: none; font: inherit; cursor: pointer; }
+.welcome-weather.is-locatable:disabled { cursor: progress; }
+.welcome-weather.is-locatable:focus-visible { outline: 2px solid var(--brand, var(--teal)); outline-offset: 4px; border-radius: 12px; }
+.welcome-weather-hint { color: var(--muted); font-size: 10px; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 2px; white-space: nowrap; }

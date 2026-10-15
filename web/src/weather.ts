@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRefreshSignal } from './useAutoRefresh'
 
 /** Coarse sky condition from the server, enough to pick an icon and the portal sky's mood. */
@@ -66,14 +66,36 @@ async function fetchWeather(position: Coordinates | null) {
   return response.status === 200 ? { ...await response.json() as Weather, isCurrentLocation: Boolean(position), accuracyM: position?.accuracy } : null
 }
 
+/** Whether this site may read the device's location, as the browser reports it; 'unknown' where it cannot say (older Safari). */
+export type LocationAccess = 'granted' | 'prompt' | 'denied' | 'unknown'
+
+/** The browser's location permission for this site, kept current if the resident changes it in settings. */
+function useLocationAccess() {
+  const [access, setAccess] = useState<LocationAccess>('unknown')
+  useEffect(() => {
+    let status: PermissionStatus | null = null
+    const update = () => { if (status) setAccess(status.state) }
+    navigator.permissions?.query({ name: 'geolocation' }).then((result) => { status = result; update(); result.addEventListener('change', update) }, () => undefined)
+    return () => status?.removeEventListener('change', update)
+  }, [])
+  return access
+}
+
 /**
  * Current weather where the resident is, when their device shares its location, otherwise in their
  * property's city; null while loading or when there is none. One request feeds both the weather line
  * and the sky. On first load the city's weather shows straight away and is replaced once the
  * resident allows location, since they may take a while to answer the prompt, or never do.
+ *
+ * The request made on page load is often never shown: browsers quietly block location prompts that
+ * no tap asked for, so the resident sees the property's city with no way to change it. `locate` is for
+ * a tap, the request browsers do show; it asks afresh rather than reusing an earlier fix, and resolves
+ * to whether the weather now follows the device. `access` says which of those the page can still do.
  */
 export function useWeather(refreshSignal: number) {
   const [weather, setWeather] = useState<Weather | null>(null)
+  const [isLocating, setIsLocating] = useState(false)
+  const access = useLocationAccess()
   useEffect(() => {
     let isCurrent = true
     let isLocated = false
@@ -86,5 +108,40 @@ export function useWeather(refreshSignal: number) {
   }, [])
   // By refresh time the resident has answered, so one request with (or without) the position is enough.
   useRefreshSignal(refreshSignal, () => { findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
-  return weather
+  // Must be called straight from the tap: findPosition starts the browser's request before the first
+  // await, which is what lets the browser treat it as the resident's own request.
+  const locate = useCallback(async () => {
+    setIsLocating(true)
+    lastFix = null
+    try {
+      const position = await findPosition()
+      const near = position ? await fetchWeather(position) : null
+      if (near) setWeather(near)
+      return Boolean(near)
+    } catch {
+      return false
+    } finally {
+      setIsLocating(false)
+    }
+  }, [])
+  return { weather, access, locate, isLocating }
+}
+
+/**
+ * A sentence to add to the owner's "saved" notice when residents will not get weather for a
+ * property's City, else ''. A misspelt city ("Manglore") hides the weather whenever a resident's phone
+ * does not share its location, so it looks intermittent unless the owner is told when they save it.
+ * Says nothing when the city is blank or the check itself fails: neither is the owner's mistake.
+ */
+export async function weatherCityWarning(city: FormDataEntryValue | null): Promise<string> {
+  const name = typeof city === 'string' ? city.trim() : ''
+  if (!name) return ''
+  try {
+    const response = await fetch(`/api/weather/city-check?city=${encodeURIComponent(name)}`)
+    if (!response.ok) return ''
+    const { found } = await response.json() as { found: boolean | null }
+    return found === false ? ` Weather won't show for residents: "${name}" wasn't found. Try its official name, e.g. Mangaluru or Bengaluru.` : ''
+  } catch {
+    return ''
+  }
 }
