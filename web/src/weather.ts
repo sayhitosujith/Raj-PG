@@ -66,8 +66,12 @@ async function fetchWeather(position: Coordinates | null) {
   return response.status === 200 ? { ...await response.json() as Weather, isCurrentLocation: Boolean(position), accuracyM: position?.accuracy } : null
 }
 
-/** What a tap on the weather got: the device's weather, a refusal of permission, or no position (off, timed out, no signal). */
-export type LocateResult = 'located' | 'denied' | 'unavailable'
+/**
+ * What a tap on the weather got: the device's weather; a refusal of permission; no position (off,
+ * timed out, no signal); or a position the weather service then gave nothing for. The last two used to
+ * share one message blaming the location, which sent residents to their settings when the phone was fine.
+ */
+export type LocateResult = 'located' | 'denied' | 'unavailable' | 'no-weather'
 
 /**
  * One position, asked for from a tap. Normal accuracy: a Wi-Fi or cell fix is quick and plenty for
@@ -126,11 +130,13 @@ export function useWeather(refreshSignal: number) {
     try {
       const { position, denied } = await requestPosition()
       if (denied) return 'denied'
-      const near = position ? await fetchWeather(position) : null
+      if (!position) return 'unavailable'
+      const near = await fetchWeather(position)
       if (near) setWeather(near)
-      return near ? 'located' : 'unavailable'
+      return near ? 'located' : 'no-weather'
     } catch {
-      return 'unavailable'
+      // The position was fine by now or requestPosition would have said; this is the weather request.
+      return 'no-weather'
     } finally {
       setIsLocating(false)
     }

@@ -34,6 +34,7 @@ export function GreetingWeather({ weather, isLocating, hasChecked, onLocate, onN
     void onLocate().then((result) => {
       if (result === 'denied') onNotice('Location is blocked for this site. Allow it in your browser’s site settings, then tap the weather again.')
       else if (result === 'unavailable') onNotice(weather ? 'Could not get your location, so this is the weather for your property.' : 'Could not get your location. Check that location is turned on, then tap again.')
+      else if (result === 'no-weather') onNotice('Got your location, but the weather service did not answer. Try again in a minute.')
     })
   }
   return (
