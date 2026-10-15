@@ -42,6 +42,7 @@ import { staffGuard } from './staffGuard.js'
 import { recordStaffActivity, staffActivityRouter } from './staffActivity.js'
 import { propertyIdWhere, propertyWhere, residentWhere, staffAccess } from './staffAccess.js'
 import { announceWrites, liveUpdatesRouter } from './liveUpdates.js'
+import { isWeatherCity } from './weather.js'
 
 // The price-by-sharing fields the dashboard and Edit property need.
 const sharingPriceFields = { beds: true, rentWithFood: true, rentWithoutFood: true } as const
@@ -147,6 +148,15 @@ function parseNoticeDays(value: unknown): { noticePeriodDays?: number | null } |
   const days = Number(value)
   return Number.isInteger(days) && days >= 0 && days <= 180 ? { noticePeriodDays: days } : { error: 'Move-out notice must be 0 to 180 days, or blank to use Settings.' }
 }
+
+// Whether residents will see weather for a property's City, so the owner hears about a typo when they
+// save it rather than residents getting weather only on the days their phone shares its location.
+// `found` is null when the weather service could not be asked, which says nothing about the spelling.
+app.get('/api/weather/city-check', async (request, response) => {
+  const city = typeof request.query.city === 'string' ? request.query.city.trim() : ''
+  if (!city) { response.status(400).json({ error: 'City is required.' }); return }
+  response.json({ found: await isWeatherCity(city) })
+})
 
 app.post('/api/properties', async (request, response) => {
   const { name, location, imageUrl, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms, rentWithFood, rentWithoutFood } = request.body as { name?: string; location?: string; imageUrl?: string; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown; rentWithFood?: unknown; rentWithoutFood?: unknown }

@@ -114,6 +114,20 @@ async function readWeather(place: Place, name: string): Promise<Weather | null> 
 }
 
 /**
+ * Whether a property's City can be found for the weather: true or false, or null when the lookup
+ * itself failed (a timeout or an outage says nothing about the spelling). Uses the same lookup as
+ * currentWeather, so the answer matches what residents will see. A misspelt city ("Manglore") hides
+ * the weather whenever a resident's phone does not share its location, which looks intermittent.
+ */
+export async function isWeatherCity(city: string): Promise<boolean | null> {
+  try {
+    return Boolean(await findPlace(city.trim()))
+  } catch {
+    return null
+  }
+}
+
+/**
  * The current weather in `city` (a property's City, e.g. "Bengaluru" or "Mahadevapura"), or null
  * when it is unknown or a lookup fails; a weather outage must never break the portal.
  */

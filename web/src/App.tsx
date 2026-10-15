@@ -80,6 +80,7 @@ import { listPageSize, usePagination } from './usePagination'
 import { PaymentsView } from './PaymentsView'
 import { IsSuperAdminProvider } from './staffContext'
 import { AuditLogsView } from './AuditLogsView'
+import { weatherCityWarning } from './weather'
 import { PerformanceTestsView } from './PerformanceTestsView'
 
 type IconType = typeof Home
@@ -340,6 +341,13 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     window.setTimeout(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
+  // The saved notice shows at once; if residents will get no weather for the City, it is then
+  // extended to say so (see weatherCityWarning), rather than holding the confirmation for the check.
+  async function noticeIfNoWeather(saved: string, city: FormDataEntryValue | null) {
+    const warning = await weatherCityWarning(city)
+    if (warning) showNotice(`${saved}${warning}`)
+  }
+
   async function addProperty(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -350,6 +358,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setIsPropertyModalOpen(false)
     setSelectedImage('')
     showNotice('Property added successfully.')
+    void noticeIfNoWeather('Property added successfully.', form.get('city'))
   }
 
   async function deleteProperty(property: Property) {
@@ -375,6 +384,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setEditingProperty(null)
     setEditingImage('')
     showNotice('Property updated successfully.')
+    void noticeIfNoWeather('Property updated successfully.', form.get('city'))
   }
 
 
