@@ -2369,3 +2369,15 @@ div.portal-panel { display: contents; }
 .weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--brand-strong, var(--teal)) 25%, transparent); border-radius: 999px; color: var(--brand-strong, var(--teal)); background: var(--brand-soft, var(--teal-soft)); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .weather-chip strong { font-weight: 800; }
 @media (max-width: 560px) { .weather-chip { padding: 0 10px; } .weather-chip-city { display: none; } }
+/* Phones: the weather moves from beside the greeting into the details card's empty top-right corner.
+   Wider cards keep it by the greeting, since their PG Manager and Emergency buttons sit in that
+   corner. The name starts just below it, at full width: keeping clear of it sideways left too little
+   room on small phones, and words broke mid-way. The photo column is taller than the name and
+   buttons, so the drop costs the card little height. */
+.portal-details-weather { display: none; }
+@media (max-width: 640px) {
+  .welcome-row > .weather-chip { display: none; }
+  .portal-shell .portal-details-heading { position: relative; }
+  .portal-details-weather { display: block; position: absolute; z-index: 1; top: 10px; right: 10px; }
+  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { padding-top: 34px; }
+}
