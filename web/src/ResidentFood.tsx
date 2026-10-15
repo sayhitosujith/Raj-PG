@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ThumbsDown, ThumbsUp, UtensilsCrossed, X } from 'lucide-react'
 import { relativeDayLabel, type ResidentFood, type ResidentMeal, type ResidentMenuDay } from './food'
 import { formatMealWindow, mealDetails, type Meal } from './meals'
@@ -41,42 +41,62 @@ function choiceStatus(meal: ResidentMeal) {
   return meal.eating ? <span className="status-pill sage">Eating</span> : <span className="status-pill gold">Skipping</span>
 }
 
+const thanksFor = (liked: boolean) => liked ? 'Thanks for the feedback.' : 'Thanks for the feedback. Food quality will be improved.'
+
 /**
  * Thumbs up/down plus an optional comment for one of today's served meals. The choice shows the moment
  * it is tapped and saves in the background (the menu reload is not waited for), going back to what was
- * saved before if the server refuses it. `onSubmitted`, when given, runs after Save succeeds; the rating
- * prompt uses it to close itself, and with it Save stays usable with an unchanged comment (nothing new
- * to send, so it only closes).
+ * saved before if the server refuses it.
+ *
+ * Saves are sent one after another, never side by side, so a thumb tapped just before Save cannot land
+ * after it and wipe the comment. That ordering is what lets nothing be disabled while a save is in
+ * flight: Save used to stay greyed out until the thumb's save came back, a second or more on a slow link.
+ *
+ * `onSubmitted`, when given, makes Save close at once: the rating prompt uses it, thanking the resident
+ * straight away and saving in the background, with an error notice if the save then fails.
  */
 function MealFeedback({ meal, onSaved, onNotice, onSubmitted }: { meal: ResidentMeal; onSaved: () => Promise<void>; onNotice: (message: string) => void; onSubmitted?: () => void }) {
   const [comment, setComment] = useState(meal.feedback?.comment ?? '')
   const [liked, setLiked] = useState(meal.feedback?.liked)
   const [savedComment, setSavedComment] = useState(meal.feedback?.comment ?? '')
-  const [isSaving, setIsSaving] = useState(false)
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
+
+  /**
+   * Sends after any save already in flight; resolves to the error message, or null once saved. A
+   * dropped connection becomes a message too: the prompt has already closed, so a rejected promise
+   * would fail with nothing on screen.
+   */
+  function persist(choice: boolean, text: string) {
+    const result = queue.current.then(() => send('/api/resident-portal/food/feedback', { meal: meal.meal, liked: choice, comment: text })).catch(() => 'Could not reach the server.')
+    queue.current = result
+    return result
+  }
 
   async function save(choice: boolean) {
     const previous = liked
+    const text = comment
     setLiked(choice)
-    setIsSaving(true)
-    const error = await send('/api/resident-portal/food/feedback', { meal: meal.meal, liked: choice, comment })
-    setIsSaving(false)
-    if (error) { setLiked(previous); onNotice(error); return false }
-    setSavedComment(comment)
-    onNotice(choice ? 'Thanks for the feedback.' : 'Thanks for the feedback. Food quality will be improved.')
+    const error = await persist(choice, text)
+    if (error) { setLiked(previous); onNotice(error); return }
+    setSavedComment(text)
+    onNotice(thanksFor(choice))
     void onSaved()
-    return true
   }
 
-  async function submit(choice: boolean) {
-    if (comment === savedComment || await save(choice)) onSubmitted?.()
+  function submit(choice: boolean) {
+    if (!onSubmitted) { void save(choice); return }
+    onSubmitted()
+    if (comment === savedComment) return
+    onNotice(thanksFor(choice))
+    void persist(choice, comment).then((error) => error ? onNotice(`Your comment was not saved: ${error}`) : onSaved())
   }
 
   return (
     <div className="meal-feedback">
       <span>How was it?</span>
-      <button type="button" className={`icon-button${liked === true ? ' is-active' : ''}`} aria-label="Thumbs up" aria-pressed={liked === true} disabled={isSaving} onClick={() => save(true)}><ThumbsUp size={14} /></button>
-      <button type="button" className={`icon-button${liked === false ? ' is-active is-negative' : ''}`} aria-label="Thumbs down" aria-pressed={liked === false} disabled={isSaving} onClick={() => save(false)}><ThumbsDown size={14} /></button>
-      {liked !== undefined && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); void submit(liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={isSaving || (comment === savedComment && !onSubmitted)}>Save</button></form>}
+      <button type="button" className={`icon-button${liked === true ? ' is-active' : ''}`} aria-label="Thumbs up" aria-pressed={liked === true} onClick={() => void save(true)}><ThumbsUp size={14} /></button>
+      <button type="button" className={`icon-button${liked === false ? ' is-active is-negative' : ''}`} aria-label="Thumbs down" aria-pressed={liked === false} onClick={() => void save(false)}><ThumbsDown size={14} /></button>
+      {liked !== undefined && <form className="meal-comment" onSubmit={(event) => { event.preventDefault(); submit(liked) }}><input value={comment} maxLength={300} placeholder="Add a comment (optional)" aria-label="Comment" onChange={(event) => setComment(event.target.value)} /><button type="submit" className="secondary-button" disabled={comment === savedComment && !onSubmitted}>Save</button></form>}
     </div>
   )
 }
