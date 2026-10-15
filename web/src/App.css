@@ -1253,8 +1253,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The resident's name beside the photo. It wraps rather than being cut with an ellipsis: on a phone
    the space beside the photo fits little more than a first name, and the full name must still show.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
-.portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; text-transform: uppercase; overflow-wrap: anywhere; }
 @container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 20px; } }
+/* "Room 103 · 2 sharing" under the name, quieter than it. */
+.portal-shell .portal-details-heading p.portal-details-room { margin: -4px 0 10px; color: rgb(255 255 255 / .88); font-size: 13px; font-weight: 600; }
 .portal-details-identity .profile-photo-button { width: 76px; height: 76px; }
 @container (max-width: 480px) {
   .portal-details-identity { gap: 14px; }
@@ -1767,18 +1769,22 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    otherwise be empty there, with the heading and the move-out status/note full width below. The
    actions wrapper steps aside (display: contents) so its two parts can be placed separately. */
 @container (max-width: 620px) {
-  .portal-details-identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px 14px; }
+  /* Narrow column gap: the photo column is already as wide as the View Profile button under it,
+     so the photo has its own margin beside it; a wider gap left the name floating away from it. */
+  .portal-details-identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px 4px; }
   .portal-details-identity > *, .portal-emergency-actions > * { grid-column: 1 / -1; }
   .portal-details-identity > .profile-photo-picker { grid-column: 1; grid-row: 1; }
   .portal-emergency-actions { display: contents; }
   .portal-emergency-buttons { grid-column: 2; grid-row: 1; justify-content: flex-end; }
-  /* The name takes the top of the photo's row and the buttons drop under it, both beside the photo.
-     The body wrapper steps aside so the name and the details card are placed separately. */
+  /* Beside the photo, top to bottom: the name, the room and sharing line, then the buttons.
+     The body wrapper steps aside so the name, room and details card are placed separately. */
   .portal-details-body { display: contents; }
   .portal-details-body > * { grid-column: 1 / -1; }
-  .portal-details-identity > .profile-photo-picker { grid-row: 1 / span 2; }
+  .portal-details-identity > .profile-photo-picker { grid-row: 1 / span 3; }
   .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
-  .portal-details-identity .portal-emergency-buttons { grid-row: 2; align-self: start; }
+  /* Pulled up against the name: the grid's 12px row gap would set it apart as its own block. */
+  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-room { grid-column: 2; grid-row: 2; margin: -8px 0 0; }
+  .portal-details-identity .portal-emergency-buttons { grid-row: 3; align-self: start; }
   .portal-emergency-actions .exit-status-row { justify-items: start; }
   .portal-emergency-actions .exit-status { border-radius: 10px; }
   .portal-emergency-actions .exit-refund-note, .portal-emergency-actions .exit-dues-note { max-width: none; text-align: left; }
