@@ -77,9 +77,10 @@
 :root:not([data-theme="dark"]) .portal-shell::before,
 :root:not([data-theme="dark"]) .portal-shell::after { content: none; }
 :root:not([data-theme="dark"]) .portal-shell :is(.portal-sky, .portal-scenery, .portal-animals) { display: none; }
-/* Sign out in the resident header: an icon-only red power button. */
-.portal-shell .portal-power-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; color: #fff; background: rgb(220 38 38); box-shadow: 0 4px 12px rgb(220 38 38 / .25); cursor: pointer; transition: background .15s, transform .15s; }
-.portal-shell .portal-power-button:hover, .portal-shell .portal-power-button:focus-visible { background: rgb(185 28 28); transform: translateY(-1px); }
+/* Sign out in the resident header: an icon-only power button, see-through like the notification bell
+   beside it so the header's two buttons match. */
+.portal-shell .portal-power-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid rgb(255 255 255 / .35); border-radius: 10px; color: rgb(255 255 255); background: rgb(255 255 255 / .16); cursor: pointer; transition: background .15s, transform .15s; }
+.portal-shell .portal-power-button:hover, .portal-shell .portal-power-button:focus-visible { background: rgb(255 255 255 / .26); transform: translateY(-1px); }
 /* Contact icons in the details card each in their own colour: phone blue, email orange, ID violet
    (lighter shades in dark view). */
 .portal-shell .my-details-contact svg.lucide-phone { color: rgb(37 99 235); }
