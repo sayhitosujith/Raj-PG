@@ -1,0 +1,4163 @@
+{
+  "info": {
+    "name": "Raj-PG API",
+    "description": "Generated from backend/src by backend/scripts/generate-postman.mjs; regenerate with `npm run postman` in backend/. Start with Auth: sign in, then run any request. See api/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "One form for both user types: the account type is discovered from the credentials rather than chosen up front. Super admins are checked first; they only have emails, so a phone number goes straight to the resident check. The response matches GET /auth/session.\n\nSource: backend/src/auth.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Source: backend/src/auth.ts"
+          }
+        },
+        {
+          "name": "GET /auth/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Source: backend/src/auth.ts"
+          }
+        },
+        {
+          "name": "PUT /auth/me",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "The signed-in super admin edits their own account. A name change needs nothing more; changing the sign-in email or password needs the current password, so an unattended session cannot be used to take the account over. Other sessions are signed out when the password changes. Identity details are all-or-nothing: the Settings form always sends them (and must fill them all), while a body that omits them leaves the stored ones untouched.\n\nSource: backend/src/auth.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"currentPassword\": \"\",\n  \"newPassword\": \"\",\n  \"phone\": \"\",\n  \"aadharNumber\": \"\",\n  \"passportNumber\": \"\",\n  \"sex\": \"\",\n  \"nationality\": \"\",\n  \"permanentAddress\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /auth/session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "session"
+              ]
+            },
+            "description": "Lets the web app decide which experience to render without knowing the user type up front.\n\nSource: backend/src/auth.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Announcements",
+      "item": [
+        {
+          "name": "GET /announcements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "announcements"
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
+        },
+        {
+          "name": "POST /announcements",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "announcements"
+              ]
+            },
+            "description": "Source: backend/src/server.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"message\": \"\",\n  \"propertyId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /announcements/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/announcements/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "announcements",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
+        },
+        {
+          "name": "PUT /announcements/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/announcements/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "announcements",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/server.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"message\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit logs",
+      "item": [
+        {
+          "name": "GET /audit-logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit-logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The audit log, newest first: up to 1,000 entries, optionally since a date (?from=YYYY-MM-DD). The page searches and pages through them itself.\n\nSource: backend/src/staffActivity.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "GET /bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings"
+              ]
+            },
+            "description": "Source: backend/src/bookings.ts"
+          }
+        },
+        {
+          "name": "POST /bookings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings"
+              ]
+            },
+            "description": "The owner adds phone and walk-in enquiries themselves.\n\nSource: backend/src/bookings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"propertyId\": \"\",\n  \"moveInDate\": \"\",\n  \"foodOpted\": \"\",\n  \"message\": \"\",\n  \"source\": \"\",\n  \"referralCode\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /bookings/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/bookings.ts"
+          }
+        },
+        {
+          "name": "PUT /bookings/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Triage: change the status, and link the resident the request became.\n\nSource: backend/src/bookings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"residentId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branding",
+      "item": [
+        {
+          "name": "GET /branding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/branding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "branding"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts"
+          }
+        },
+        {
+          "name": "GET /branding/logo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/branding/logo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "branding",
+                "logo"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "GET /dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "GET /email/status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/email/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "status"
+              ]
+            },
+            "description": "Whether email is configured, who it is sent from, who gets booking alerts, and the latest emails.\n\nSource: backend/src/emailAdmin.ts"
+          }
+        },
+        {
+          "name": "POST /email/test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/email/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "test"
+              ]
+            },
+            "description": "A one-off test email, to check the key and sender before any real email goes out.\n\nSource: backend/src/emailAdmin.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "GET /events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ]
+            },
+            "description": "Source: backend/src/liveUpdates.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "GET /expenses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Source: backend/src/finance.ts"
+          }
+        },
+        {
+          "name": "POST /expenses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ]
+            },
+            "description": "Source: backend/src/finance.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"\",\n  \"amount\": \"\",\n  \"date\": \"\",\n  \"note\": \"\",\n  \"propertyId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /expenses/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/finance.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finance",
+      "item": [
+        {
+          "name": "GET /finance/summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/finance/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "finance",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The month's figures, with all-time totals for \"income till now\". ?month=YYYY-MM, default this month (IST).\n\nSource: backend/src/finance.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fire alerts",
+      "item": [
+        {
+          "name": "GET /fire-alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/fire-alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fire-alerts"
+              ]
+            },
+            "description": "Source: backend/src/fireAlerts.ts"
+          }
+        },
+        {
+          "name": "POST /fire-alerts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fire-alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fire-alerts"
+              ]
+            },
+            "description": "Source: backend/src/fireAlerts.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /fire-alerts/:id/clear",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/fire-alerts/:id/clear",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fire-alerts",
+                ":id",
+                "clear"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/fireAlerts.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Holidays",
+      "item": [
+        {
+          "name": "GET /holidays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/holidays",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "holidays"
+              ]
+            },
+            "description": "Source: backend/src/holidays.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Housekeeping",
+      "item": [
+        {
+          "name": "GET /housekeeping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/housekeeping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "housekeeping"
+              ]
+            },
+            "description": "Source: backend/src/housekeeping.ts"
+          }
+        },
+        {
+          "name": "PATCH /housekeeping/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/housekeeping/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "housekeeping",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Either a status change (with optional note) or, with no status, a reply that only updates the note. Both count as the owner answering any outstanding reminder.\n\nSource: backend/src/housekeeping.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"ownerNote\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance",
+      "item": [
+        {
+          "name": "GET /maintenance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance"
+              ]
+            },
+            "description": "Source: backend/src/maintenance.ts"
+          }
+        },
+        {
+          "name": "PATCH /maintenance/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Move a request along (open → in progress → resolved) and/or reply; the resident is emailed.\n\nSource: backend/src/maintenance.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"\",\n  \"ownerNote\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /maintenance/:id/photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance/:id/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance",
+                ":id",
+                "photo"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/maintenance.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "GET /payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "description": "Source: backend/src/payments.ts"
+          }
+        },
+        {
+          "name": "POST /payments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "description": "Source: backend/src/payments.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"\",\n  \"status\": \"\",\n  \"method\": \"\",\n  \"payerName\": \"\",\n  \"phone\": \"\",\n  \"bankName\": \"\",\n  \"propertyId\": \"\",\n  \"residentId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /payments/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/payments.ts"
+          }
+        },
+        {
+          "name": "PUT /payments/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/payments.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"\",\n  \"status\": \"\",\n  \"method\": \"\",\n  \"payerName\": \"\",\n  \"phone\": \"\",\n  \"bankName\": \"\",\n  \"propertyId\": \"\",\n  \"residentId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /payments/:id/upi-qr",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/:id/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                ":id",
+                "upi-qr"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Polled by the QR screen until the code is paid or expires.\n\nSource: backend/src/payments.ts"
+          }
+        },
+        {
+          "name": "POST /payments/:id/upi-qr",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/:id/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                ":id",
+                "upi-qr"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Shows a UPI QR for an unpaid payment (reusing its open code); Razorpay then marks it paid.\n\nSource: backend/src/payments.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "item": [
+        {
+          "name": "POST /properties",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties"
+              ]
+            },
+            "description": "Source: backend/src/server.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"location\": \"\",\n  \"imageUrl\": \"\",\n  \"tenantType\": \"\",\n  \"amenities\": \"\",\n  \"totalRooms\": \"\",\n  \"rentWithFood\": \"\",\n  \"rentWithoutFood\": \"\",\n  \"city\": \"\",\n  \"ownerPhone\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"sharingPrices\": \"\",\n  \"wifiName\": \"\",\n  \"wifiPassword\": \"\",\n  \"contacts\": \"\",\n  \"websiteUrl\": \"\",\n  \"checkInTime\": \"\",\n  \"checkOutTime\": \"\",\n  \"gateClosingTime\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
+        },
+        {
+          "name": "PUT /properties/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/server.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"location\": \"\",\n  \"imageUrl\": \"\",\n  \"status\": \"\",\n  \"mealTimes\": \"\",\n  \"tenantType\": \"\",\n  \"amenities\": \"\",\n  \"totalRooms\": \"\",\n  \"rentWithFood\": \"\",\n  \"rentWithoutFood\": \"\",\n  \"city\": \"\",\n  \"ownerPhone\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"sharingPrices\": \"\",\n  \"wifiName\": \"\",\n  \"wifiPassword\": \"\",\n  \"contacts\": \"\",\n  \"websiteUrl\": \"\",\n  \"checkInTime\": \"\",\n  \"checkOutTime\": \"\",\n  \"gateClosingTime\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /properties/:id/food-summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/food-summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "food-summary"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Headcounts for today and tomorrow from active residents on a food plan: who answered eating, who skips, and who has not answered (counted as not eating; their names, so the owner can chase them), plus the last week's feedback.\n\nSource: backend/src/food.ts"
+          }
+        },
+        {
+          "name": "PUT /properties/:id/housekeeping-staff",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/housekeeping-staff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "housekeeping-staff"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The property's housekeeping staff, shown to its residents (the count is the number of names).\n\nSource: backend/src/housekeeping.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"names\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /properties/:id/menu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/menu",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "menu"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The week as seven rows, e.g. { weekday: 1, breakfast: 'Poha, tea', lunch: null, dinner: '…' }.\n\nSource: backend/src/food.ts"
+          }
+        },
+        {
+          "name": "PUT /properties/:id/menu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/menu",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "menu"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/food.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"days\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /properties/:id/photos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/photos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "photos"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts"
+          }
+        },
+        {
+          "name": "POST /properties/:id/photos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/photos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "photos"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"\",\n  \"caption\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id/photos/:photoId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/photos/:photoId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "photos",
+                ":photoId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "photoId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts"
+          }
+        },
+        {
+          "name": "PATCH /properties/:id/photos/:photoId",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/photos/:photoId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "photos",
+                ":photoId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "photoId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caption\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /properties/:id/photos/:photoId/image",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/photos/:photoId/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "photos",
+                ":photoId",
+                "image"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "photoId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts"
+          }
+        },
+        {
+          "name": "GET /properties/:id/rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "rooms"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/rooms.ts"
+          }
+        },
+        {
+          "name": "POST /properties/:id/rooms",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "rooms"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Adds room numbers (a single room, or a generated range sent as a list), all with the same number of beds (1 when not given). Existing numbers are skipped, so re-running a range only fills the gaps.\n\nSource: backend/src/rooms.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numbers\": \"\",\n  \"beds\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id/rooms/:roomId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/rooms/:roomId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "rooms",
+                ":roomId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "roomId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Only empty rooms can be removed; move or remove the residents first.\n\nSource: backend/src/rooms.ts"
+          }
+        },
+        {
+          "name": "PATCH /properties/:id/rooms/:roomId",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/rooms/:roomId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "rooms",
+                ":roomId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "roomId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Changes how many residents a room holds. It cannot go below the residents already in it. The residents' rent follows, since a different sharing type can have a different price.\n\nSource: backend/src/rooms.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"beds\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "GET /public/booking-options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/booking-options",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "booking-options"
+              ]
+            },
+            "description": "Source: backend/src/bookings.ts"
+          }
+        },
+        {
+          "name": "POST /public/booking-requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/booking-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "booking-requests"
+              ]
+            },
+            "description": "Source: backend/src/bookings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"propertyId\": \"\",\n  \"moveInDate\": \"\",\n  \"foodOpted\": \"\",\n  \"message\": \"\",\n  \"source\": \"\",\n  \"referralCode\": \"\",\n  \"website\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /public/properties/:id/cover",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/properties/:id/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "properties",
+                ":id",
+                "cover"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/publicSite.ts"
+          }
+        },
+        {
+          "name": "GET /public/properties/:id/photos/:photoId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/properties/:id/photos/:photoId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "properties",
+                ":id",
+                "photos",
+                ":photoId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "photoId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/publicSite.ts"
+          }
+        },
+        {
+          "name": "GET /public/site",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/site",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "site"
+              ]
+            },
+            "description": "Source: backend/src/publicSite.ts"
+          }
+        },
+        {
+          "name": "GET /public/site-banner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/site-banner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "site-banner"
+              ]
+            },
+            "description": "Source: backend/src/publicSite.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Razorpay",
+      "item": [
+        {
+          "name": "POST /razorpay/webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/razorpay/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "razorpay",
+                "webhook"
+              ]
+            },
+            "description": "Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.\n\nSource: backend/src/server.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resident portal",
+      "item": [
+        {
+          "name": "GET /resident-portal/announcements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "announcements"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/cricket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/cricket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "cricket"
+              ]
+            },
+            "description": "The featured cricket match (India first) for the portal's score card; 204 when there is none or no key.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "DELETE /resident-portal/deletion-request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/deletion-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "deletion-request"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/deletion-request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/deletion-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "deletion-request"
+              ]
+            },
+            "description": "\"Delete my account\": ask the owner to erase the account, or withdraw the request before they decide.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "PUT /resident-portal/details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/details",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "details"
+              ]
+            },
+            "description": "Residents manage their own photo once they have full portal access. The resident's own contact details from \"My details\". Saves straight away with the same checks as the owner's form; a changed address loses its \"Verified\" badge until the owner checks it.\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /resident-portal/exit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/exit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "exit"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/exit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/exit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "exit"
+              ]
+            },
+            "description": "Current weather where the resident is (?lat=&lon=, from their device when they allow it) or else in their property's city; 204 when there is none to show (no city set, or the lookup failed), so the portal just leaves it out. \"Exit PG\": give notice to move out (checked against the notice period), or withdraw it before approval.\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moveOutDate\": \"\",\n  \"reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /resident-portal/fire-alert",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/fire-alert",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "fire-alert"
+              ]
+            },
+            "description": "The resident's property's active fire alarm (or null), polled every few seconds. Only a session is required, not full portal access, so residents still awaiting ID approval hear the alarm too.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/fire-alert",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/fire-alert",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "fire-alert"
+              ]
+            },
+            "description": "\"Report fire\": raises the alarm for the resident's own property (or returns the active one).\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/food",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/food",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "food"
+              ]
+            },
+            "description": "The next seven days starting today, each meal with its menu, timing, the resident's answer and what they may do; plus `answerDue`, tomorrow's date while any of its meals still needs an answer before the 9 pm cutoff (the portal asks for it and will not let the resident carry on until they answer).\n\nSource: backend/src/food.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/food-request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/food-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "food-request"
+              ]
+            },
+            "description": "A resident without food asks to join the food plan. The owner decides (plan and rent only change on approval), so this just records the request; asking again keeps the original date.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "PUT /resident-portal/food/choices",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/food/choices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "food",
+                "choices"
+              ]
+            },
+            "description": "Eat or skip for one or more meals of one day, e.g. { date: '2026-10-15', choices: { breakfast: true, lunch: false, dinner: true } }.\n\nSource: backend/src/food.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"\",\n  \"choices\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT /resident-portal/food/feedback",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/food/feedback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "food",
+                "feedback"
+              ]
+            },
+            "description": "Source: backend/src/food.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal\": \"\",\n  \"liked\": \"\",\n  \"comment\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /resident-portal/holidays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/holidays",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "holidays"
+              ]
+            },
+            "description": "Upcoming public holidays for the portal's holiday card, today pill and housekeeping date picker.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/housekeeping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/housekeeping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "housekeeping"
+              ]
+            },
+            "description": "Source: backend/src/housekeeping.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/housekeeping",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/housekeeping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "housekeeping"
+              ]
+            },
+            "description": "Source: backend/src/housekeeping.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"\",\n  \"slot\": \"\",\n  \"note\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /resident-portal/housekeeping/:id/cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/housekeeping/:id/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "housekeeping",
+                ":id",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/housekeeping.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/housekeeping/:id/remind",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/housekeeping/:id/remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "housekeeping",
+                ":id",
+                "remind"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "\"The cleaner did not turn up\": allowed once the slot has started, then at most once an hour.\n\nSource: backend/src/housekeeping.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/identity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/identity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "identity"
+              ]
+            },
+            "description": "The resident's own submission: their nationality and the matching document set (Aadhaar, or passport and visa), all required. Replaces whatever is on file, clears the other set, and joins the owner's review queue. Allowed while not yet verified (including resubmitting a pending or rejected one).\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /resident-portal/identity/change",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/identity/change",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "identity",
+                "change"
+              ]
+            },
+            "description": "\"Change ID document\": puts a verified resident back to unsubmitted, so the portal shows the ID form (number plus scan) and the owner reviews the new document. Portal access pauses until then.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "login"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"\",\n  \"password\": \"\",\n  \"accessKey\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set(\"token\", body.token); console.log(\"Saved the session token.\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /resident-portal/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "me"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "password"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"\",\n  \"newPassword\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /resident-portal/photo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "photo"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "photo"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "PUT /resident-portal/photo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "photo"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photo\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /resident-portal/photos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/photos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "photos"
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/photos/:photoId/image",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/photos/:photoId/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "photos",
+                ":photoId",
+                "image"
+              ],
+              "variable": [
+                {
+                  "key": "photoId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/propertyPhotos.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/policies/accept",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/policies/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "policies",
+                "accept"
+              ]
+            },
+            "description": "Accepts the policy version the resident was shown. If the owner changed a policy again since, the versions differ and the resident is sent back to read the newer text.\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT /resident-portal/preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "preferences"
+              ]
+            },
+            "description": "The resident turns WhatsApp and/or email updates on or off; send only the channels that change.\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /resident-portal/property-image",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/property-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "property-image"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/rent/order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/order",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "order"
+              ]
+            },
+            "description": "Starts a payment for everything currently owed (all outstanding months, late fees included).\n\nSource: backend/src/razorpay.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/rent/receipts/:rentPaymentId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/receipts/:rentPaymentId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "receipts",
+                ":rentPaymentId"
+              ],
+              "variable": [
+                {
+                  "key": "rentPaymentId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "A PDF receipt for one of the resident's own recorded rent months.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/rent/upi-claim",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/upi-claim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "upi-claim"
+              ]
+            },
+            "description": "\"I've paid\" after sending rent to the owner's UPI ID. The server, not the browser, decides the amount and months (rentItemsToPay: what is owed, else next month in advance); with no rent set up it takes the amount the resident typed, with no months. The owner confirms it against their bank app. One open report at a time, so a double tap cannot file two.\n\nSource: backend/src/residentPortal.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"\",\n  \"amount\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /resident-portal/rent/upi-qr",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "upi-qr"
+              ]
+            },
+            "description": "Shows a UPI QR for everything owed. The amount is snapshotted into a RentOrder keyed by the QR id, plus a pending Payment so the owner's Payments list shows it; an open code for the same amount is reused, so refreshing the page does not pile up pending rows.\n\nSource: backend/src/razorpay.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/rent/upi-qr/:paymentId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/upi-qr/:paymentId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "upi-qr",
+                ":paymentId"
+              ],
+              "variable": [
+                {
+                  "key": "paymentId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Polled by the QR screen until the code is paid or expires.\n\nSource: backend/src/razorpay.ts"
+          }
+        },
+        {
+          "name": "POST /resident-portal/rent/verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/rent/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "rent",
+                "verify"
+              ]
+            },
+            "description": "Checkout's success callback: verify the signature, then record the payment.\n\nSource: backend/src/razorpay.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"\",\n  \"razorpay_payment_id\": \"\",\n  \"razorpay_signature\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /resident-portal/upi-qr",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "upi-qr"
+              ]
+            },
+            "description": "The owner's uploaded UPI QR image, shown in the resident's pay panel.\n\nSource: backend/src/residentPortal.ts"
+          }
+        },
+        {
+          "name": "GET /resident-portal/weather",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/weather",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "weather"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Residents",
+      "item": [
+        {
+          "name": "GET /residents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents"
+              ]
+            },
+            "description": "Everyone except accounts closed at the resident's request, which live on the Deleted records page.\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents"
+              ]
+            },
+            "description": "Source: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /residents/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Removing a resident closes the account rather than erasing it, so the record (with who removed it) moves to Deleted records. Super admins only (see staffGuard.ts).\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "PUT /residents/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /residents/:id/aadhar-card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/aadhar-card",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "aadhar-card"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/aadhar-verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/aadhar-verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "aadhar-verification"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The owner's decision on a resident's identity documents (Aadhaar, or passport and visa). Approval needs every detail and the upload on file, because that is what the owner attests to having checked.\n\nSource: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"\",\n  \"reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /residents/:id/access-key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/access-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "access-key"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The key is only stored hashed, so \"editing\" it means issuing a new one. This is also the forgotten-password path: the resident's password is cleared so the new key works for sign-in. With { send: true } the new key is also sent to the resident by email and WhatsApp.\n\nSource: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"send\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /residents/:id/approval",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/approval",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "approval"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "A super admin's decision on a resident a receptionist added: approve lets them sign in; reject removes them and frees the room, since they never became a resident. Super admins only (see staffGuard.ts).\n\nSource: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approve\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /residents/:id/concessions/:concessionId/cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/concessions/:concessionId/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "concessions",
+                ":concessionId",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "concessionId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Cancels a concession before its month is paid (once paid, the discount is already in the record).\n\nSource: backend/src/referrals.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/deletion/decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/deletion/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "deletion",
+                "decision"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Approve (close the account now) or decline with a reason (the request is cleared, the account carries on, and the resident sees the reason). Dues do not block approval: the owner sees them and decides.\n\nSource: backend/src/accountDeletion.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"\",\n  \"reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /residents/:id/door-key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/door-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "door-key"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/door-key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/door-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "door-key"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lets the owner choose a resident's password so they can tell the resident what it is; the password itself is stored only as a hash. Retires the access key and signs the resident out. Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE removes it. Super admins only (see staffGuard). Anyone who has left gets no key.\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/exit/complete",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/exit/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "exit",
+                "complete"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Completes an approved move-out on or after its date: the resident becomes inactive and is signed out, gives up the room (free for the next resident at once), and keeps their record and rent history, with movedOutFrom noting where they lived.\n\nSource: backend/src/exits.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/exit/date",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/exit/date",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "exit",
+                "date"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The owner moves a pending or approved request to another date (from today on; the notice period is the resident's minimum, not the owner's). Dues and refund follow the new date; the resident is emailed.\n\nSource: backend/src/exits.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moveOutDate\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /residents/:id/exit/decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/exit/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "exit",
+                "decision"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Approve or decline a pending request; the resident is emailed either way.\n\nSource: backend/src/exits.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /residents/:id/food-request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/food-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "food-request"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Declines a resident's request to join the food plan; approving is a normal update with foodOpted: true.\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "GET /residents/:id/passport-scan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/passport-scan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "passport-scan"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "password"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /residents/:id/photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "photo"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "DELETE /residents/:id/record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/record",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "record"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Deletes a record on the Deleted records page for good. Only closed accounts: a live resident is removed (and kept) first, so one click can never erase someone. Super admins only (see staffGuard.ts).\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/:id/rent-payments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/rent-payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "rent-payments"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Records a month as paid: the oldest unpaid month by default, or a specific \"YYYY-MM\" (e.g. an advance payment for next month). Amount defaults to that month's rent (less any concession), plus the late fee when overdue.\n\nSource: backend/src/rent.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": \"\",\n  \"amount\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /residents/:id/rent-payments/:paymentId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/rent-payments/:paymentId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "rent-payments",
+                ":paymentId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "paymentId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Undo for a mis-click; scoped to the resident so an id from another resident cannot be removed.\n\nSource: backend/src/rent.ts"
+          }
+        },
+        {
+          "name": "GET /residents/access-key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/access-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                "access-key"
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "GET /residents/deleted",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/deleted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                "deleted"
+              ]
+            },
+            "description": "Accounts closed at the resident's request, with every detail kept, most recently closed first.\n\nSource: backend/src/residents.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "GET /settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts"
+          }
+        },
+        {
+          "name": "PUT /settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"image\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /settings/logo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/logo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "logo"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts"
+          }
+        },
+        {
+          "name": "PUT /settings/logo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/logo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "logo"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"data:image/png;base64,…\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /settings/upi-qr",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "upi-qr"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts"
+          }
+        },
+        {
+          "name": "GET /settings/upi-qr",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "upi-qr"
+              ]
+            },
+            "description": "The owner's preview of their QR image in Settings.\n\nSource: backend/src/settings.ts"
+          }
+        },
+        {
+          "name": "PUT /settings/upi-qr",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/upi-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "upi-qr"
+              ]
+            },
+            "description": "Source: backend/src/settings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"data:image/png;base64,…\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Site content",
+      "item": [
+        {
+          "name": "GET /site-content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/site-content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "site-content"
+              ]
+            },
+            "description": "Source: backend/src/siteContent.ts"
+          }
+        },
+        {
+          "name": "PUT /site-content",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/site-content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "site-content"
+              ]
+            },
+            "description": "Source: backend/src/siteContent.ts"
+          }
+        },
+        {
+          "name": "DELETE /site-content/banner",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/site-content/banner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "site-content",
+                "banner"
+              ]
+            },
+            "description": "Source: backend/src/siteContent.ts"
+          }
+        },
+        {
+          "name": "PUT /site-content/banner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/site-content/banner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "site-content",
+                "banner"
+              ]
+            },
+            "description": "The banner image is uploaded (resized in the browser) or removed on its own, like the logo; the public site serves it from GET /api/public/site-banner (publicSite.ts).\n\nSource: backend/src/siteContent.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff activity",
+      "item": [
+        {
+          "name": "GET /staff-activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-activity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "staff-activity"
+              ]
+            },
+            "description": "Source: backend/src/staffActivity.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Super admins",
+      "item": [
+        {
+          "name": "GET /super-admins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/super-admins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "super-admins"
+              ]
+            },
+            "description": "Source: backend/src/superAdmins.ts"
+          }
+        },
+        {
+          "name": "POST /super-admins",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/super-admins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "super-admins"
+              ]
+            },
+            "description": "Source: backend/src/superAdmins.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"password\": \"\",\n  \"staffRole\": \"\",\n  \"propertyIds\": \"\",\n  \"phone\": \"\",\n  \"aadharNumber\": \"\",\n  \"passportNumber\": \"\",\n  \"sex\": \"\",\n  \"nationality\": \"\",\n  \"permanentAddress\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /super-admins/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/super-admins/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "super-admins",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Removes another admin; their sessions go with them (cascade), so they are signed out at once. Deleting yourself is refused, which also guarantees at least one admin always remains.\n\nSource: backend/src/superAdmins.ts"
+          }
+        },
+        {
+          "name": "PATCH /super-admins/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/super-admins/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "super-admins",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Edits another admin's name, email and identity details. An admin's own email is refused here: it is a sign-in credential, and Settings → My account asks for the current password before changing it.\n\nSource: backend/src/superAdmins.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"staffRole\": \"\",\n  \"propertyIds\": \"\",\n  \"phone\": \"\",\n  \"aadharNumber\": \"\",\n  \"passportNumber\": \"\",\n  \"sex\": \"\",\n  \"nationality\": \"\",\n  \"permanentAddress\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /super-admins/:id/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/super-admins/:id/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "super-admins",
+                ":id",
+                "reset-password"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/superAdmins.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weather",
+      "item": [
+        {
+          "name": "GET /weather/city-check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/weather/city-check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "weather",
+                "city-check"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Whether residents will see weather for a property's City, so the owner hears about a typo when they save it rather than residents getting weather only on the days their phone shares its location. `found` is null when the weather service could not be asked, which says nothing about the spelling.\n\nSource: backend/src/server.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Whatsapp",
+      "item": [
+        {
+          "name": "POST /whatsapp/run-rent-reminders",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/run-rent-reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "run-rent-reminders"
+              ]
+            },
+            "description": "The same run the daily cron makes, for trying reminders out without waiting for the schedule.\n\nSource: backend/src/whatsappAdmin.ts"
+          }
+        },
+        {
+          "name": "GET /whatsapp/status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "status"
+              ]
+            },
+            "description": "Whether WhatsApp is configured, the template names to create, and the latest messages sent.\n\nSource: backend/src/whatsappAdmin.ts"
+          }
+        },
+        {
+          "name": "POST /whatsapp/test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "test"
+              ]
+            },
+            "description": "Sends Meta's pre-approved \"hello_world\" sample, to check the keys work before any template is approved.\n\nSource: backend/src/whatsappAdmin.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
