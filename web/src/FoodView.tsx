@@ -83,7 +83,7 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
   return (
     <section className="workspace-view food-view">
       <div className="workspace-view-heading">
-        <div><p className="eyebrow">Kitchen</p><h2>Food</h2><p>Plan the weekly menu, see how many are eating, and read residents' feedback.</p></div>
+        <div><p className="eyebrow">Food</p><h2>Kitchen</h2><p>Plan the weekly menu, see how many are eating, and read residents' feedback.</p></div>
         <div className="view-actions">
           {/* One property (e.g. a receptionist with a single PG): its name as a label, so it is clear whose menu this is. */}
           {properties.length === 1 && <span className="food-property-select is-single" title="Property">{properties[0].name}</span>}
