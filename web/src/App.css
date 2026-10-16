@@ -1970,6 +1970,14 @@ div.portal-panel { display: contents; }
 .help-emergency strong { color: rgb(170 30 30); font-size: 14px; }
 :root[data-theme="dark"] .help-emergency { border-color: rgb(220 50 50 / .4); background: rgb(80 15 15 / .45); }
 :root[data-theme="dark"] .help-emergency strong { color: rgb(252 165 165); }
+/* Police, Ambulance, Fire: beside the heading on wide screens, a row of their own under it on phones.
+   Prefixed to outrank the row's "> div" sizing. */
+.help-emergency > .emergency-numbers { display: grid; flex: 1 1 340px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.emergency-number { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border: 1px solid rgb(248 180 180); border-radius: 10px; color: rgb(170 30 30); background: rgb(255 255 255); text-align: center; text-decoration: none; transition: background .15s ease; }
+.emergency-number:hover { background: rgb(254 226 226); }
+.help-emergency .emergency-number strong { color: inherit; font-size: 12px; }
+.emergency-number span { color: var(--muted); font-size: 12px; font-weight: 700; }
+:root[data-theme="dark"] .emergency-number { border-color: rgb(220 50 50 / .4); color: rgb(252 165 165); background: rgb(255 255 255 / .06); }
 .profile-fire strong { color: rgb(154 52 18); font-size: 13px; }
 :root[data-theme="dark"] .profile-fire { border-color: rgb(234 88 12 / .4); background: rgb(67 20 7 / .45); }
 :root[data-theme="dark"] .profile-fire strong { color: rgb(253 186 116); }

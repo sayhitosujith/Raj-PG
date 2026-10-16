@@ -30,7 +30,7 @@ import { PortalFooter } from './PortalFooter'
 import { PhoneText } from './PhoneField'
 import { EmergencyContactText } from './EmergencyContact'
 import { vehicleIcon, vehicleText } from './VehicleFields'
-import { CallOwnerButton, EmergencyButton } from './EmergencyCall'
+import { CallOwnerButton, EmergencyNumbers } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { DoorKeyLine } from './DoorAccessKey'
 import { CricketScore } from './CricketScore'
@@ -247,7 +247,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><section className="help-emergency"><div><strong>Emergency</strong><small>Calls 112, India's number for police, fire and ambulance.</small></div><EmergencyButton /></section><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /><ResidentFaqs faqs={profile.info.faqs} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
+        <div className="portal-panel" data-panel="info"><section className="help-emergency"><div><strong>Emergency</strong><small>Get immediate help 24/7</small></div><EmergencyNumbers /></section><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /><ResidentFaqs faqs={profile.info.faqs} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} action={managerPhone ? <CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={managerPhone} /> : undefined} /></div>
         <PropertyGallery refreshSignal={refreshSignal} />
         <section className="workspace-view portal-panel" data-panel="home">
