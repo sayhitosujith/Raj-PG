@@ -180,6 +180,9 @@ model Resident {
   rentTrackedFrom          DateTime?
   // Food plan chosen by the owner; residents without it get no menu, skips, or headcount entry.
   foodOpted                Boolean                  @default(true)
+  // Veg or non-veg, for the kitchen's headcount split; null until someone chooses ("Not set"), so
+  // nobody is counted as either by default.
+  diet                     Diet?
   // Set when a resident without food asks to join the food plan; cleared when the owner decides.
   foodRequestedAt          DateTime?
   // The owner's last decision on a food request, so the resident is told: when, and approved or not.
@@ -324,6 +327,12 @@ model FireAlert {
   clearedAt          DateTime?
 
   @@index([propertyId, clearedAt])
+}
+
+/// A resident's diet, as the kitchen plans for it.
+enum Diet {
+  VEG
+  NON_VEG
 }
 
 enum ExitStatus {

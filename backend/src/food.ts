@@ -4,7 +4,9 @@ import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
 import { mealColumnsSelect, meals, toMealTimes } from './meals.js'
+import { renderFeedbackPdf, renderHeadcountPdf } from './foodReports.js'
 import { requirePortalAccess } from './residentPortal.js'
+import { getSettings } from './settings.js'
 
 /**
  * Food menu: a repeating weekly menu per property, residents answering eat or skip for every meal by
@@ -244,40 +246,78 @@ foodAdminRouter.put('/properties/:id/menu', async (request, response) => {
 /**
  * Headcounts for today and tomorrow from active residents on a food plan: who answered eating, who
  * skips, and who has not answered (counted as not eating; their names, so the owner can chase them),
- * plus the last week's feedback.
+ * plus the last week's feedback. Shared by the Kitchen page and its PDF exports, so they always agree.
  */
+/** Active residents of a property who are on its food plan: the people every headcount counts. */
+const onFoodPlanAt = (propertyId: string) => ({ active: true, foodOpted: true, room: { propertyId } })
+
+async function loadFoodSummary(id: string) {
+  const today = parseDateOnly(propertyNow().date) as Date
+  const tomorrow = addDays(today, 1)
+  const onFoodPlan = onFoodPlanAt(id)
+  const [residents, choices, feedback] = await Promise.all([
+    prisma.resident.findMany({ where: onFoodPlan, select: { id: true, name: true, phone: true, diet: true, room: { select: { number: true } } }, orderBy: { name: 'asc' } }),
+    prisma.mealChoice.findMany({ where: { date: { in: [today, tomorrow] }, resident: onFoodPlan }, select: { residentId: true, date: true, meal: true, eating: true } }),
+    prisma.mealFeedback.findMany({ where: { propertyId: id, date: { gt: addDays(today, -feedbackDays) } }, orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }], take: 100, select: { id: true, date: true, meal: true, liked: true, comment: true, resident: { select: { name: true } } } }),
+  ])
+  const headcounts = [today, tomorrow].map((date) => {
+    const key = isoDate(date)
+    const answerOf = (residentId: string, meal: Meal) => choices.find((choice) => choice.residentId === residentId && isoDate(choice.date) === key && choice.meal === mealTypes[meal])?.eating
+    return {
+      date: key,
+      meals: meals.map((meal) => {
+        const answers = residents.map((resident) => answerOf(resident.id, meal))
+        const eaters = residents.filter((_, i) => isEating(key, answers[i]))
+        const eating = eaters.length
+        const skipping = answers.filter((answer) => answer === false).length
+        // How the eaters split, so the kitchen knows how much of each to cook; the rest are Not set.
+        const veg = eaters.filter((resident) => resident.diet === 'VEG').length
+        const nonVeg = eaters.filter((resident) => resident.diet === 'NON_VEG').length
+        return { meal, eating, veg, nonVeg, skipping, noAnswer: residents.length - eating - skipping }
+      }),
+      // Only once a missing answer means "not eating"; before that it simply meant eating.
+      notAnswered: key >= choicesRequiredFrom ? residents.filter((resident) => meals.some((meal) => answerOf(resident.id, meal) === undefined)).map((resident) => resident.name) : [],
+    }
+  })
+  return {
+    residents: residents.length,
+    // Who the headcount is, with what the kitchen needs to reach or plan for them, in room order:
+    // the Kitchen page's "Residents on food" and the headcount PDF's list.
+    residentList: residents
+      .map((resident) => ({ id: resident.id, name: resident.name, phone: resident.phone, diet: resident.diet, room: resident.room?.number ?? '' }))
+      .sort((a, b) => a.room.localeCompare(b.room, undefined, { numeric: true }) || a.name.localeCompare(b.name)),
+    headcounts,
+    feedback: feedback.map((item) => ({ id: item.id, date: isoDate(item.date), meal: mealOf(item.meal), liked: item.liked, comment: item.comment, residentName: item.resident.name })),
+  }
+}
+
+/** The Kitchen page's summary, as shaped by loadFoodSummary; also what the PDF exports print. */
+export type FoodSummaryData = Awaited<ReturnType<typeof loadFoodSummary>>
+
 foodAdminRouter.get('/properties/:id/food-summary', async (request, response) => {
   const { id } = request.params as { id: string }
   try {
-    const today = parseDateOnly(propertyNow().date) as Date
-    const tomorrow = addDays(today, 1)
-    const onFoodPlan = { active: true, foodOpted: true, room: { propertyId: id } }
-    const [residents, choices, feedback] = await Promise.all([
-      prisma.resident.findMany({ where: onFoodPlan, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
-      prisma.mealChoice.findMany({ where: { date: { in: [today, tomorrow] }, resident: onFoodPlan }, select: { residentId: true, date: true, meal: true, eating: true } }),
-      prisma.mealFeedback.findMany({ where: { propertyId: id, date: { gt: addDays(today, -feedbackDays) } }, orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }], take: 100, select: { id: true, date: true, meal: true, liked: true, comment: true, resident: { select: { name: true } } } }),
-    ])
-    const headcounts = [today, tomorrow].map((date) => {
-      const key = isoDate(date)
-      const answerOf = (residentId: string, meal: Meal) => choices.find((choice) => choice.residentId === residentId && isoDate(choice.date) === key && choice.meal === mealTypes[meal])?.eating
-      return {
-        date: key,
-        meals: meals.map((meal) => {
-          const answers = residents.map((resident) => answerOf(resident.id, meal))
-          const eating = answers.filter((answer) => isEating(key, answer)).length
-          const skipping = answers.filter((answer) => answer === false).length
-          return { meal, eating, skipping, noAnswer: residents.length - eating - skipping }
-        }),
-        // Only once a missing answer means "not eating"; before that it simply meant eating.
-        notAnswered: key >= choicesRequiredFrom ? residents.filter((resident) => meals.some((meal) => answerOf(resident.id, meal) === undefined)).map((resident) => resident.name) : [],
-      }
-    })
-    response.json({
-      residents: residents.length,
-      headcounts,
-      feedback: feedback.map((item) => ({ id: item.id, date: isoDate(item.date), meal: mealOf(item.meal), liked: item.liked, comment: item.comment, residentName: item.resident.name })),
-    })
+    response.json(await loadFoodSummary(id))
   } catch (error) {
     respondToError(response, error, 'The food summary could not be loaded.')
   }
 })
+
+// The Kitchen page's Headcount and Feedback panels as PDFs, for the kitchen wall or the cook's phone.
+// Same data as the page (loadFoodSummary), drawn the way the rent receipts are (foodReports.ts).
+for (const report of ['headcount', 'feedback'] as const) {
+  foodAdminRouter.get(`/properties/:id/food-summary/${report}.pdf`, async (request, response) => {
+    const { id } = request.params as { id: string }
+    try {
+      const property = await prisma.property.findUnique({ where: { id }, select: { name: true } })
+      if (!property) { response.status(404).json({ error: 'Property was not found.' }); return }
+      const [summary, settings] = await Promise.all([loadFoodSummary(id), getSettings()])
+      const header = { business: settings.businessName, property: property.name, generatedAt: new Date() }
+      const pdf = report === 'headcount' ? await renderHeadcountPdf(summary, header) : await renderFeedbackPdf(summary, header, feedbackDays)
+      const fileName = `${report}-${property.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'property'}-${propertyNow().date}.pdf`
+      response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${fileName}"`, 'Cache-Control': 'private, no-store' }).send(pdf)
+    } catch (error) {
+      respondToError(response, error, `The ${report} PDF could not be created.`)
+    }
+  })
+}

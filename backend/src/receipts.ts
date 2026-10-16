@@ -12,6 +12,8 @@ import { getSettings } from './settings.js'
  */
 const timeZone = 'Asia/Kolkata'
 const colors = { ink: '#1f2d2b', muted: '#6b7a76', teal: '#167c70', tealSoft: '#e8f3f0', line: '#dbe5e1', band: '#f4f8f6' }
+/** The receipts' palette, shared with the Kitchen PDF exports (foodReports.ts) so all printed documents match. */
+export { colors as documentColors }
 
 const formatInr = (amount: number) => `INR ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const formatDate = (date: Date) => date.toLocaleDateString('en-IN', { timeZone, day: 'numeric', month: 'long', year: 'numeric' })

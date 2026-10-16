@@ -1,3 +1,4 @@
+import type { Diet } from './diet'
 import type { Meal } from './meals'
 
 /**
@@ -16,8 +17,10 @@ export type MenuDay = { weekday: number } & Record<Meal, string | null>
 export type FoodSummary = {
   residents: number
   /** Per day and meal; noAnswer counts as not eating. notAnswered names residents missing any answer for that day. */
-  headcounts: Array<{ date: string; meals: Array<{ meal: Meal; eating: number; skipping: number; noAnswer: number }>; notAnswered: string[] }>
+  headcounts: Array<{ date: string; meals: Array<{ meal: Meal; eating: number; /** Of those eating, how many are veg / non-veg; the rest have no diet set. */ veg: number; nonVeg: number; skipping: number; noAnswer: number }>; notAnswered: string[] }>
   feedback: Array<{ id: string; date: string; meal: Meal; liked: boolean; comment: string | null; residentName: string }>
+  /** Everyone on the food plan, in room order; diet null is Not set. */
+  residentList: Array<{ id: string; name: string; phone: string | null; room: string; diet: Diet | null }>
 }
 
 export const weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

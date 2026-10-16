@@ -14,6 +14,8 @@ import { RoomSelect } from './RoomSelect'
 import { priceFor } from './pricing'
 import { sharingLabel } from './rooms'
 import { ModalLayer } from './ModalLayer'
+import type { Diet } from './diet'
+import { DietToggle } from './DietToggle'
 
 const minimumPasswordLength = 10
 
@@ -57,6 +59,8 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   // Property and food plan decide the rent when the property sets prices, so both are tracked live.
   const [propertyId, setPropertyId] = useState(resident?.propertyId ?? prefill?.propertyId ?? '')
   const [foodOpted, setFoodOpted] = useState(resident?.foodOpted ?? prefill?.foodOpted ?? true)
+  // Veg / non-veg for the kitchen's headcount; Not set (null) until chosen.
+  const [diet, setDiet] = useState<Diet | null>(resident?.diet ?? null)
   // The chosen room's bed count: a sharing type can have its own price.
   const [roomBeds, setRoomBeds] = useState<number | null>(null)
   const selectedProperty = properties.find((property) => property.id === propertyId)
@@ -113,7 +117,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     const form = new FormData(event.currentTarget)
     const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
-    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
+    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, diet, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
     setError('')
     try {
@@ -156,6 +160,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
               </label>
             ))}
           </div>
+          {foodOpted && <div className="food-plan-diet"><span>Diet</span><DietToggle value={diet} onChange={setDiet} /></div>}
         </fieldset>
         <label className="whatsapp-optin"><input type="checkbox" name="whatsappOptIn" defaultChecked={resident?.whatsappOptIn ?? prefill?.whatsappOptIn ?? true} /><span>WhatsApp updates <small>Rent reminders, receipts and notices on WhatsApp. The resident can turn this off in their portal.</small></span></label>
         <label className="whatsapp-optin"><input type="checkbox" name="emailOptIn" defaultChecked={resident?.emailOptIn ?? prefill?.emailOptIn ?? true} /><span>Email updates <small>Rent reminders and notices by email. Payment receipts are always emailed when there is an email address.</small></span></label>
