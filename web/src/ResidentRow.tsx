@@ -187,7 +187,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             <div><dt>Door access key</dt><dd className="sign-in-cell">{isRecord ? (resident.doorAccessKey ?? 'Not issued') : <DoorKeyManager residentId={resident.id} residentName={resident.name} doorAccessKey={resident.doorAccessKey} revokedAt={resident.doorAccessKeyRevokedAt} onChanged={onChanged} onNotice={onNotice} />}</dd></div>
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
             <div><dt>Days stayed</dt><dd>{daysStayedLabel(resident.joinedAt)}</dd></div>
-            <div><dt>Food plan</dt><dd className="sign-in-cell">{resident.foodOpted ? 'With food' : 'Without food'}{resident.diet ? <span className="diet-inline"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="diet-inline is-unset"> · diet not set</span>}{resident.rentFromProperty ? ' · rent from property prices' : ''}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>
+            <div><dt>Food plan</dt><dd className="sign-in-cell">{!resident.foodOpted ? 'Without food' : resident.diet ? <span className="diet-inline"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="diet-inline is-unset">Diet not set</span>}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>
           </dl>
         </div>
       </div>

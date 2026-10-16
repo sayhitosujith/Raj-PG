@@ -32,7 +32,7 @@ function LockCountdown({ rent }: { rent: RentSummary }) {
  * Prominent monthly rent card for the resident's "My details": amount, due day, this month's state,
  * and on reminder days the reminder itself (with the lock countdown on the last one) under its chip.
  */
-export function RentHighlight({ rent }: { rent: RentSummary }) {
+export function RentHighlight({ rent, room }: { rent: RentSummary; /** "Room 104 · 4 sharing": what the rent is for, at the top right. */ room?: string }) {
   if (!rent.monthlyRent) return null
   const status = rent.state === 'LOCK_DUE' ? { label: `Overdue · ${formatRupees(rent.amountDue)}`, tone: 'coral' }
     : rent.state === 'PAID' ? { label: `${formatMonth(rent.currentMonth)} paid`, tone: 'sage' }
@@ -41,7 +41,8 @@ export function RentHighlight({ rent }: { rent: RentSummary }) {
   const reminder = reminderNumber(rent)
   return (
     // The amount itself turns red while any month is unpaid and green when nothing is owed.
-    <div className={`rent-highlight is-${status.tone} ${rent.outstandingMonths.length ? 'is-due' : 'is-clear'}`}>
+    <div className={`rent-highlight is-${status.tone} ${rent.outstandingMonths.length ? 'is-due' : 'is-clear'}${room ? ' has-room' : ''}`}>
+      {room && <span className="rent-highlight-room">{room}</span>}
       <span className="rent-highlight-icon"><IndianRupee size={20} /></span>
       <div className="rent-highlight-copy">
         <p className="eyebrow">Monthly rent</p>

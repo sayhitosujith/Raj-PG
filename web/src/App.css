@@ -255,6 +255,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .is-expanded .resident-details-collapse { grid-template-rows: 1fr; opacity: 1; }
 .resident-details-inner { min-height: 0; overflow: hidden; }
 .resident-details-inner .resident-details { margin-top: 8px; margin-bottom: 14px; }
+/* Separators between the fields of an expanded resident: each field draws its right and bottom
+   edge, and the box clips the outermost ones (the -1px margins push them outside it), so lines fall
+   only between fields whatever the number of columns, with no grey block after a short last row. */
+.resident-details-inner .resident-details { gap: 0; padding: 0; overflow: hidden; }
+.resident-details-inner .resident-details > div { margin: 0 -1px -1px 0; padding: 10px 14px; border-right: 1px solid #dfe7e3; border-bottom: 1px solid #dfe7e3; }
 
 .resident-skeleton { display: grid; grid-template-columns: 38px minmax(0, 1fr) 56px; gap: 13px; align-items: center; padding: 14px 0; border-bottom: 1px solid #edf0ed; }
 .resident-skeleton span, .skeleton-lines span { display: block; border-radius: 6px; background: linear-gradient(90deg, #eef3ef 25%, #f8fbf8 50%, #eef3ef 75%); background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite; }
@@ -562,6 +567,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .is-coral .rent-highlight-icon { background: #c86a5a; }
 .is-gold .rent-highlight-icon { background: #c28a35; }
 .rent-highlight-copy { display: grid; gap: 2px; min-width: 0; }
+/* "Room 104 · 4 sharing" at the rent card's top right: what the rent is for. The card gains room at
+   the top while it is there, so it never sits on the status chips. */
+.rent-highlight.has-room { position: relative; padding-top: 30px; }
+/* The phone layout sets the card's padding with ".portal-shell .rent-highlight"; keep the room's space there too. */
+.portal-shell .rent-highlight.has-room { padding-top: 30px; }
+/* Left edge matches the card padding, so the label lines up with the rupee tile below it. */
+.rent-highlight-room { position: absolute; top: 10px; left: 18px; max-width: calc(100% - 36px); overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .rent-highlight-copy .eyebrow { margin: 0; }
 .rent-highlight-copy strong { color: #1f3036; font: 800 26px/1.1 Manrope, sans-serif; letter-spacing: -.5px; }
 .rent-highlight-copy strong small { color: var(--muted); font: 600 12px 'DM Sans', sans-serif; letter-spacing: 0; }
@@ -766,9 +778,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .diet-toggle-option.is-non-veg.is-selected { color: #fff; background: #a3341c; }
 .diet-toggle-option.is-selected .diet-mark { color: #fff; }
 .diet-toggle-option:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
-/* On a resident's row, after "With food". */
-.diet-inline { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-weight: 700; }
-.diet-inline.is-unset { margin-left: 0; color: var(--muted); font-weight: 400; }
+/* On a resident's row, as the Food plan value for residents on food. */
+.diet-inline { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.diet-inline.is-unset { color: var(--muted); font-weight: 400; }
 .headcount-meals small.is-unanswered { color: #b42318; }
 .headcount-missing { margin: 6px 0 0; color: #b42318; font-size: 11px; }
 .food-feedback { display: grid; gap: 8px; max-height: 320px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
@@ -1298,6 +1310,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 20px; } }
 /* "Room 103 · 2 sharing" under the name, quieter than it. */
 .portal-shell .portal-details-heading p.portal-details-room { margin: -4px 0 10px; color: rgb(255 255 255 / .88); font-size: 13px; font-weight: 600; }
+/* Icons mark the name and occupation lines; the text sits in its own span so a long name wraps beside the icon, not under it. */
+.portal-shell .portal-details-heading p.has-icon { display: flex; align-items: center; gap: 6px; }
+.portal-shell .portal-details-heading p.has-icon > svg { flex: none; opacity: .85; }
+/* A wrapped name keeps its icon on the first line: the 0.1em offset is half the gap that line-height 1.2 adds. */
+.portal-shell .portal-details-heading p.portal-details-name.has-icon { align-items: flex-start; }
+.portal-shell .portal-details-heading p.portal-details-name.has-icon > svg { width: 1em; height: 1em; margin-top: .1em; }
+.portal-shell .portal-details-heading p.has-icon > span { min-width: 0; }
 .portal-details-identity .profile-photo-button { width: 76px; height: 76px; }
 @container (max-width: 480px) {
   .portal-details-identity { gap: 14px; }
@@ -1496,6 +1515,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .workspace-view-heading h2 { font-size: 20px; }
   .portal-shell .welcome-row h1 { font-size: 24px; }
   .portal-shell .rent-highlight { padding: 12px 14px; }
+  .portal-shell .rent-highlight-room { left: 14px; max-width: calc(100% - 28px); }
   .portal-shell .rent-highlight-copy strong { font-size: 22px; }
   .portal-shell .pagination-summary { text-align: left; }
 }
