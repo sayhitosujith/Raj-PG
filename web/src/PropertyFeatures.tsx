@@ -29,7 +29,7 @@ export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amen
       <label className="rooms-field"><span className="rooms-field-label"><DoorOpen size={14} /> Move-out notice (days)</span><input name="noticePeriodDays" type="number" inputMode="numeric" min={0} max={180} step={1} defaultValue={noticePeriodDays ?? undefined} placeholder="Settings" /></label>
       <small className="feature-hint">How far ahead residents of this property must give notice to move out. Leave blank to use the notice period in Settings.</small>
       <fieldset className="feature-group">
-        <legend><Wifi size={13} /> For residents (Info tab)</legend>
+        <legend><Wifi size={13} /> For residents (Help tab)</legend>
         <div className="rent-prices">
           <label>Wi-Fi name<input name="wifiName" maxLength={64} defaultValue={info?.wifiName ?? ''} placeholder="e.g. PremiumStay_5G" /></label>
           <label>Wi-Fi password<input name="wifiPassword" maxLength={64} defaultValue={info?.wifiPassword ?? ''} placeholder="Shown only to residents" /></label>

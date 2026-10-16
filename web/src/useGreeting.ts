@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { propertyMinutesIntoDay } from './propertyTime'
 
-/** Maps an hour (0–23, local time) to a greeting: morning 5–11, afternoon 12–16, evening otherwise. */
+/** Maps an hour (0–23, local time) to a greeting: morning 5–11, afternoon 12–16, evening 17–18, night from 7 PM until 5 AM. */
 export function greetingFor(hour: number) {
   if (hour >= 5 && hour < 12) return 'Good morning'
   if (hour >= 12 && hour < 17) return 'Good afternoon'
-  return 'Good evening'
+  if (hour >= 17 && hour < 19) return 'Good evening'
+  return 'Good night'
 }
 
 /**

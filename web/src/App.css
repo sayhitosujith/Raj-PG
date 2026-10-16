@@ -1311,8 +1311,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 24px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; overflow-wrap: anywhere; }
 @container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 21px; } }
 /* "Room 103 · 2 sharing" under the name, quieter than it. */
-/* Occupation as a quiet tag under the name, the way profile cards show a role. */
-.portal-shell .portal-details-heading p.portal-details-room { width: fit-content; max-width: 100%; margin: -2px 0 10px; padding: 3px 10px; border: 1px solid rgb(255 255 255 / .28); border-radius: 999px; color: rgb(255 255 255 / .94); background: rgb(255 255 255 / .14); font-size: 12px; font-weight: 600; letter-spacing: .01em; line-height: 18px; }
+/* Occupation and diet as tags under the name, the way profile cards show a role. */
+.portal-shell .portal-details-heading .portal-details-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -2px 0 10px; }
+.portal-shell .portal-details-heading .portal-details-room { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; padding: 3px 10px; border: 1px solid rgb(255 255 255 / .28); border-radius: 999px; color: rgb(255 255 255 / .94); background: rgb(255 255 255 / .14); font-size: 12px; font-weight: 600; letter-spacing: .01em; line-height: 18px; }
+.portal-shell .portal-details-heading .portal-details-room > svg { flex: none; opacity: .85; }
+/* On the blue card the diet keeps its veg / non-veg colours on a white pill, where they still read. */
+.portal-shell .portal-details-heading .welcome-diet { margin: 0; padding: 3px 10px; border-color: transparent; background: rgb(255 255 255 / .94); line-height: 18px; }
+.portal-shell .portal-details-heading .welcome-diet.is-unset { color: rgb(80 90 100); }
 /* Icons mark the name and occupation lines; the text sits in its own span so a long name wraps beside the icon, not under it. */
 .portal-shell .portal-details-heading p.has-icon { display: flex; align-items: center; gap: 6px; }
 .portal-shell .portal-details-heading p.has-icon > svg { flex: none; opacity: .85; }
@@ -1846,7 +1851,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-details-identity > .profile-photo-picker { grid-row: 1 / span 3; }
   .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
   /* Pulled up against the name: the grid's 12px row gap would set it apart as its own block. */
-  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-room { grid-column: 2; grid-row: 2; margin: -2px 0 0; }
+  .portal-shell .portal-details-heading .portal-details-body > .portal-details-tags { grid-column: 2; grid-row: 2; margin: -2px 0 0; }
   .portal-details-identity .portal-emergency-buttons { grid-row: 3; align-self: start; }
   .portal-emergency-actions .exit-status-row { justify-items: start; }
   .portal-emergency-actions .exit-status { border-radius: 10px; }
@@ -1956,10 +1961,18 @@ div.portal-panel { display: contents; }
 .delete-account-copy small { color: var(--muted); font-size: 12px; }
 .delete-account-copy small.delete-account-declined { color: #b5523f; font-weight: 600; }
 /* Fire emergency card in the Profile tab (phones and tablets): what the button does, then the button. */
-.profile-fire { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 12px; padding: 14px 16px; border: 1px solid rgb(253 186 116); border-radius: 12px; background: rgb(255 247 237); }
-.profile-fire > div { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
+/* Fire alarm (profile) and Emergency (Help tab) rows: text on the left, the action on the right. */
+:is(.profile-fire, .help-emergency) { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; border-radius: 12px; }
+:is(.profile-fire, .help-emergency) > div { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
+:is(.profile-fire, .help-emergency) small { color: var(--muted); font-size: 12px; }
+.profile-fire { margin-top: 12px; border: 1px solid rgb(253 186 116); background: rgb(255 247 237); }
+.help-emergency { margin: 0 0 14px; border: 1px solid rgb(248 180 180); background: rgb(254 242 242); }
+.help-emergency strong { color: rgb(170 30 30); font-size: 14px; }
+:root[data-theme="dark"] .help-emergency { border-color: rgb(220 50 50 / .4); background: rgb(80 15 15 / .45); }
+:root[data-theme="dark"] .help-emergency strong { color: rgb(252 165 165); }
+/* Top-bar SOS: the same 36px square as the bell and sign-out buttons beside it. */
+.emergency-button.is-sos.is-icon { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; }
 .profile-fire strong { color: rgb(154 52 18); font-size: 13px; }
-.profile-fire small { color: var(--muted); font-size: 12px; }
 :root[data-theme="dark"] .profile-fire { border-color: rgb(234 88 12 / .4); background: rgb(67 20 7 / .45); }
 :root[data-theme="dark"] .profile-fire strong { color: rgb(253 186 116); }
 /* Face ID / fingerprint sign-in in the profile: the switch-on button and the phones where it is on. */

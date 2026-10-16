@@ -7,7 +7,7 @@ const tabs: Array<{ key: PortalTab; label: string; icon: LucideIcon }> = [
   { key: 'home', label: 'Home', icon: House },
   { key: 'services', label: 'Services', icon: Wrench },
   { key: 'rent', label: 'Payments', icon: IndianRupee },
-  { key: 'info', label: 'Info', icon: Info },
+  { key: 'info', label: 'Help', icon: Info },
 ]
 
 /**
