@@ -14,7 +14,9 @@ export function WeatherChip({ weather }: { weather: Weather | null }) {
   const Icon = weather.condition === 'clear' && !weather.isDay ? Moon : conditionIcons[weather.condition]
   const place = weather.isCurrentLocation ? `${weather.city} (your location)` : weather.city
   const details = [place, weather.description, weather.accuracyM !== undefined ? `Location accurate to about ${weather.accuracyM} m` : ''].filter(Boolean).join(' · ')
-  return <span className="weather-chip" title={details} aria-label={`Weather in ${place}: ${weather.temperature}°C`}><Icon size={15} aria-hidden="true" /><span className="weather-chip-city">{weather.city}</span><strong>{weather.temperature}°C</strong></span>
+  // The condition class drives the icon's animation (falling rain, a turning sun…; see App.css).
+  const isNight = weather.condition === 'clear' && !weather.isDay
+  return <span className={`weather-chip is-${weather.condition}${isNight ? ' is-night' : ''}`} title={details} aria-label={`Weather in ${place}: ${weather.temperature}°C`}><Icon size={15} aria-hidden="true" /><span className="weather-chip-city">{weather.city}</span><strong>{weather.temperature}°C</strong></span>
 }
 
 /**

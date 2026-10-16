@@ -2390,6 +2390,41 @@ div.portal-panel { display: contents; }
 .weather-chip { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--brand-strong, var(--teal)) 25%, transparent); border-radius: 999px; color: var(--brand-strong, var(--teal)); background: var(--brand-soft, var(--teal-soft)); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .weather-chip strong { font-weight: 800; }
 @media (max-width: 560px) { .weather-chip { padding: 0 10px; } .weather-chip-city { display: none; } }
+/* The weather chip comes alive: it pops in, and its icon acts out the weather. Rain drops fall in
+   turn, a storm's bolt flickers, fog lines drift, the sun turns, the moon rocks, a cloud drifts and a
+   snowflake spins. Movements stay a few pixels and slow so the greeting does not jiggle. Lucide
+   icons draw the cloud first and the drops, bolt or fog lines after it, which the selectors use. */
+.weather-chip { animation: wx-pop .55s cubic-bezier(.3, 1.5, .5, 1) both; }
+.weather-chip svg { overflow: visible; transform-origin: 50% 50%; }
+.weather-chip.is-rain svg > path:nth-child(n + 2) { animation: wx-drop 1.2s ease-in infinite; }
+.weather-chip.is-rain svg > path:nth-child(3) { animation-delay: .4s; }
+.weather-chip.is-rain svg > path:nth-child(4) { animation-delay: .8s; }
+/* Thunderstorm: lightning lights the sky above the cloud, a soft warm glow that strikes twice in
+   quick succession, and the bolt turns bright yellow on the same beats (2.6 s cycle, steps so each
+   strike is instant like real lightning). The glow sits behind the icon, so the cloud stays crisp. */
+.weather-chip.is-storm { position: relative; }
+.weather-chip.is-storm::before { content: ''; position: absolute; z-index: 0; top: -8px; left: 3px; width: 30px; height: 20px; border-radius: 50%; background: radial-gradient(ellipse at center, rgb(255 251 225 / .95) 0%, rgb(253 224 71 / .5) 45%, transparent 72%); filter: blur(1px); opacity: 0; pointer-events: none; animation: wx-sky-flash 2.6s steps(1, end) infinite; }
+.weather-chip.is-storm svg, .weather-chip.is-storm strong { position: relative; z-index: 1; }
+.weather-chip.is-storm svg > path:nth-child(2) { animation: wx-bolt 2.6s steps(1, end) infinite; }
+.weather-chip.is-storm svg { animation: wx-drift 3.2s ease-in-out infinite alternate; }
+.weather-chip.is-mist svg > path:nth-child(n + 2) { animation: wx-fog 2.8s ease-in-out infinite alternate; }
+.weather-chip.is-mist svg > path:nth-child(3) { animation-delay: -1.4s; }
+.weather-chip.is-clear:not(.is-night) svg { animation: wx-spin 14s linear infinite; }
+.weather-chip.is-clear.is-night svg { animation: wx-rock 4s ease-in-out infinite alternate; }
+.weather-chip.is-clouds svg { animation: wx-drift 3.2s ease-in-out infinite alternate; }
+.weather-chip.is-snow svg { animation: wx-spin 7s linear infinite; }
+.weather-chip strong { animation: wx-rise .5s .15s ease-out both; }
+@keyframes wx-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes wx-rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes wx-drop { 0% { opacity: 0; transform: translateY(-3px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(4px); } }
+@keyframes wx-sky-flash { 0%, 66%, 72%, 78%, 100% { opacity: 0; } 62%, 74% { opacity: 1; } }
+@keyframes wx-bolt { 0%, 66%, 72%, 78%, 100% { opacity: .55; stroke: currentColor; } 62%, 74% { opacity: 1; stroke: rgb(234 179 8); } }
+@keyframes wx-fog { from { opacity: .45; transform: translateX(-2px); } to { opacity: 1; transform: translateX(2px); } }
+@keyframes wx-spin { to { transform: rotate(360deg); } }
+@keyframes wx-rock { from { transform: rotate(-12deg); } to { transform: rotate(10deg); } }
+@keyframes wx-drift { from { transform: translateX(-1.5px); } to { transform: translateX(1.5px); } }
+/* !important so "Reduce motion" beats the per-condition rules above whatever their specificity. */
+@media (prefers-reduced-motion: reduce) { .weather-chip, .weather-chip *, .weather-chip::before { animation: none !important; } }
 /* The weather beside the greeting. Phones drop the city from inside the chip (above), so there it
    shows on its own line underneath instead; wider screens keep it in the chip and hide this line. */
 .welcome-weather { display: grid; flex: none; justify-items: center; gap: 3px; }
