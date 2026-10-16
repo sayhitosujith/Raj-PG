@@ -1970,8 +1970,6 @@ div.portal-panel { display: contents; }
 .help-emergency strong { color: rgb(170 30 30); font-size: 14px; }
 :root[data-theme="dark"] .help-emergency { border-color: rgb(220 50 50 / .4); background: rgb(80 15 15 / .45); }
 :root[data-theme="dark"] .help-emergency strong { color: rgb(252 165 165); }
-/* Top-bar SOS: the same 36px square as the bell and sign-out buttons beside it. */
-.emergency-button.is-sos.is-icon { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; }
 .profile-fire strong { color: rgb(154 52 18); font-size: 13px; }
 :root[data-theme="dark"] .profile-fire { border-color: rgb(234 88 12 / .4); background: rgb(67 20 7 / .45); }
 :root[data-theme="dark"] .profile-fire strong { color: rgb(253 186 116); }

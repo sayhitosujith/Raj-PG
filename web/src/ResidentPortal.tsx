@@ -232,7 +232,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* The resident's own PG by name in place of the app logo, so the portal feels like their home. */}
         <div className="brand-row"><span className="portal-property-name" title={profile.property}><span className="portal-property-icon" aria-hidden="true"><House size={17} /></span><span className="portal-property-text">{profile.property}</span></span><span className="home-title portal-title">Resident Home</span></div>
-        <div className="view-actions"><EmergencyButton iconOnly /><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />
