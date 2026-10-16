@@ -1307,10 +1307,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The resident's name beside the photo. It wraps rather than being cut with an ellipsis: on a phone
    the space beside the photo fits little more than a first name, and the full name must still show.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
-.portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 26px; font-style: italic; font-weight: 800; line-height: 1.2; text-transform: uppercase; overflow-wrap: anywhere; }
-@container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 20px; } }
+/* Name in the case displayName gives it ("Vidhya Referral"), upright and tightly tracked: reads as a profile, not a banner. */
+.portal-shell .portal-details-heading p.portal-details-name { margin: 0 0 8px; color: rgb(255 255 255); font-size: 24px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; overflow-wrap: anywhere; }
+@container (max-width: 420px) { .portal-shell .portal-details-heading p.portal-details-name { font-size: 21px; } }
 /* "Room 103 · 2 sharing" under the name, quieter than it. */
-.portal-shell .portal-details-heading p.portal-details-room { margin: -4px 0 10px; color: rgb(255 255 255 / .88); font-size: 13px; font-weight: 600; }
+/* Occupation as a quiet tag under the name, the way profile cards show a role. */
+.portal-shell .portal-details-heading p.portal-details-room { width: fit-content; max-width: 100%; margin: -2px 0 10px; padding: 3px 10px; border: 1px solid rgb(255 255 255 / .28); border-radius: 999px; color: rgb(255 255 255 / .94); background: rgb(255 255 255 / .14); font-size: 12px; font-weight: 600; letter-spacing: .01em; line-height: 18px; }
 /* Icons mark the name and occupation lines; the text sits in its own span so a long name wraps beside the icon, not under it. */
 .portal-shell .portal-details-heading p.has-icon { display: flex; align-items: center; gap: 6px; }
 .portal-shell .portal-details-heading p.has-icon > svg { flex: none; opacity: .85; }
@@ -1844,7 +1846,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-details-identity > .profile-photo-picker { grid-row: 1 / span 3; }
   .portal-shell .portal-details-heading .portal-details-body > p.portal-details-name { grid-column: 2; grid-row: 1; align-self: end; margin: 0; }
   /* Pulled up against the name: the grid's 12px row gap would set it apart as its own block. */
-  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-room { grid-column: 2; grid-row: 2; margin: -8px 0 0; }
+  .portal-shell .portal-details-heading .portal-details-body > p.portal-details-room { grid-column: 2; grid-row: 2; margin: -2px 0 0; }
   .portal-details-identity .portal-emergency-buttons { grid-row: 3; align-self: start; }
   .portal-emergency-actions .exit-status-row { justify-items: start; }
   .portal-emergency-actions .exit-status { border-radius: 10px; }
@@ -2181,6 +2183,10 @@ div.portal-panel { display: contents; }
 /* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
    out in white below it. Its Edit button stays white. */
 .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
+/* Hairlines between the contact lines. Lines below the first run the full card width: only the phone line shares its row with Edit. */
+.portal-shell .portal-details-heading .my-details-contact > span { justify-self: stretch; }
+.portal-shell .portal-details-heading .my-details-contact > span + span { padding-top: 6px; border-top: 1px solid rgb(255 255 255 / .22); }
+@container (max-width: 620px) { .portal-shell .portal-details-heading .my-details-contact > span + span { grid-column: 1 / -1; } }
 .portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: var(--brand-tint); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
 :root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%); }
