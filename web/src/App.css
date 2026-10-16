@@ -569,11 +569,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-highlight-copy { display: grid; gap: 2px; min-width: 0; }
 /* "Room 104 · 4 sharing" at the rent card's top right: what the rent is for. The card gains room at
    the top while it is there, so it never sits on the status chips. */
-.rent-highlight.has-room { position: relative; padding-top: 30px; }
-/* The phone layout sets the card's padding with ".portal-shell .rent-highlight"; keep the room's space there too. */
-.portal-shell .rent-highlight.has-room { padding-top: 30px; }
-/* Left edge matches the card padding, so the label lines up with the rupee tile below it. */
-.rent-highlight-room { position: absolute; top: 10px; left: 18px; max-width: calc(100% - 36px); overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+/* The room pill takes a full row of its own, so it can never sit on top of the heading whatever padding a layout gives the card. */
+.rent-highlight.has-room { flex-wrap: wrap; row-gap: 10px; }
+.rent-highlight-room { flex: 0 0 100%; min-width: 0; }
+.rent-highlight-room > span { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--brand, #0ea5e9) 30%, transparent); border-radius: 999px; color: var(--brand-deep, #0a73a3); background: color-mix(in srgb, var(--brand, #0ea5e9) 12%, #fff); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rent-highlight-room svg { flex: none; }
+:root[data-theme="dark"] .rent-highlight-room > span { color: var(--brand-light, #7dd3fc); background: color-mix(in srgb, var(--brand, #0ea5e9) 22%, transparent); }
 .rent-highlight-copy .eyebrow { margin: 0; }
 .rent-highlight-copy strong { color: #1f3036; font: 800 26px/1.1 Manrope, sans-serif; letter-spacing: -.5px; }
 .rent-highlight-copy strong small { color: var(--muted); font: 600 12px 'DM Sans', sans-serif; letter-spacing: 0; }
@@ -1515,7 +1516,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .workspace-view-heading h2 { font-size: 20px; }
   .portal-shell .welcome-row h1 { font-size: 24px; }
   .portal-shell .rent-highlight { padding: 12px 14px; }
-  .portal-shell .rent-highlight-room { left: 14px; max-width: calc(100% - 28px); }
   .portal-shell .rent-highlight-copy strong { font-size: 22px; }
   .portal-shell .pagination-summary { text-align: left; }
 }

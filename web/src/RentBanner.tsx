@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Clock, Gift, IndianRupee } from 'lucide-react'
+import { AlertTriangle, Clock, DoorOpen, Gift, IndianRupee } from 'lucide-react'
 import { formatDueDate, formatMonth, formatRupees, ordinal, rentForMonth, type RentSummary } from './rent'
 
 /** Which of the three reminders the resident is on, or null outside the reminder days. */
@@ -32,7 +32,7 @@ function LockCountdown({ rent }: { rent: RentSummary }) {
  * Prominent monthly rent card for the resident's "My details": amount, due day, this month's state,
  * and on reminder days the reminder itself (with the lock countdown on the last one) under its chip.
  */
-export function RentHighlight({ rent, room }: { rent: RentSummary; /** "Room 104 · 4 sharing": what the rent is for, at the top right. */ room?: string }) {
+export function RentHighlight({ rent, room }: { rent: RentSummary; /** "Room 104 · 4 sharing": what the rent is for, as a pill above the amount. */ room?: string }) {
   if (!rent.monthlyRent) return null
   const status = rent.state === 'LOCK_DUE' ? { label: `Overdue · ${formatRupees(rent.amountDue)}`, tone: 'coral' }
     : rent.state === 'PAID' ? { label: `${formatMonth(rent.currentMonth)} paid`, tone: 'sage' }
@@ -42,7 +42,7 @@ export function RentHighlight({ rent, room }: { rent: RentSummary; /** "Room 104
   return (
     // The amount itself turns red while any month is unpaid and green when nothing is owed.
     <div className={`rent-highlight is-${status.tone} ${rent.outstandingMonths.length ? 'is-due' : 'is-clear'}${room ? ' has-room' : ''}`}>
-      {room && <span className="rent-highlight-room">{room}</span>}
+      {room && <span className="rent-highlight-room"><span><DoorOpen size={13} aria-hidden="true" />{room}</span></span>}
       <span className="rent-highlight-icon"><IndianRupee size={20} /></span>
       <div className="rent-highlight-copy">
         <p className="eyebrow">Monthly rent</p>
