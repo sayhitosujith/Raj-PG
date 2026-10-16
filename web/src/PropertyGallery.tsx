@@ -34,7 +34,7 @@ export function PropertyGallery({ refreshSignal }: { refreshSignal: number }) {
   const shown = open === null ? null : photos[open]
   return (
     <section className={`workspace-view portal-panel property-gallery${ribbon ? ' has-ribbon' : ''}`} data-panel="home" onClickCapture={markSeen}>{ribbon && <FeatureRibbon badge={ribbon} />}
-      <div className="workspace-view-heading"><div><p className="eyebrow">Gallery</p><h2>Photos{tag && <FeatureTag badge={tag} />}</h2><p>Your PG, from your property owner. Tap a photo to see it full size.</p></div></div>
+      <div className="workspace-view-heading"><div><h2>Photos{tag && <FeatureTag badge={tag} />}</h2><p>Your PG, from your property owner. Tap a photo to see it full size.</p></div></div>
       <ul className="property-gallery-strip">
         {photos.map((photo, index) => (
           <li key={photo.id}><button type="button" onClick={() => setOpen(index)} aria-label={`Open photo${photo.caption ? `: ${photo.caption}` : ` ${index + 1}`}`}>

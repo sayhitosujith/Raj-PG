@@ -2300,13 +2300,18 @@ div.portal-panel { display: contents; }
 /* "New" ribbon across a card's top-left corner (NewRibbon). */
 .faq-card, .has-ribbon { position: relative; }
 .has-ribbon { overflow: hidden; }
-.new-ribbon { position: absolute; top: 9px; left: -24px; width: 84px; padding: 2px 0; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--badge-new, #dc2626) 80%, #fff), var(--badge-new, #dc2626)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-new, #dc2626) 35%, transparent); font-size: 9px; font-weight: 800; letter-spacing: .8px; text-align: center; text-transform: uppercase; transform: rotate(-45deg); animation: new-ribbon-pulse 2.4s ease-in-out infinite; }
+/* The ribbon crosses the corner the eyebrow starts in, so the eyebrow starts past it. */
+.has-ribbon > .workspace-view-heading .eyebrow { padding-left: 30px; }
+.new-ribbon { position: absolute; top: 9px; left: -24px; width: 84px; padding: 2px 0; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--badge-new, #dc2626) 80%, #fff), var(--badge-new, #dc2626)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-new, #dc2626) 35%, transparent); font-size: 9px; font-weight: 800; letter-spacing: .8px; text-align: center; text-transform: uppercase; rotate: -45deg; animation: new-ribbon-pulse 2.4s ease-in-out infinite; }
+/* Panels animate every child in with rise-in, which ends on transform: none and replaces the pulse. The
+   ribbon turns with "rotate" so the entrance cannot flatten it, and gets its pulse back here. */
+.portal-shell .portal-panel > .new-ribbon { animation: new-ribbon-pulse 2.4s ease-in-out infinite; }
 .new-ribbon.is-soon { background: linear-gradient(135deg, color-mix(in srgb, var(--badge-soon, #d97706) 80%, #fff), var(--badge-soon, #d97706)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-soon, #d97706) 35%, transparent); }
 .new-ribbon.is-beta { background: linear-gradient(135deg, color-mix(in srgb, var(--badge-beta, #ce2c2c) 80%, #fff), var(--badge-beta, #ce2c2c)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-beta, #ce2c2c) 35%, transparent); }
 /* Settings > Feature banners: one select per feature, two to a row where there is room. */
 .feature-badge-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; }
 @keyframes new-ribbon-pulse { 50% { filter: brightness(1.15); } }
-@media (prefers-reduced-motion: reduce) { .new-ribbon { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .new-ribbon, .portal-shell .portal-panel > .new-ribbon { animation: none; } }
 .faq-card { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 18px; border: 0; color: var(--ink); background: transparent; font: inherit; text-align: left; cursor: pointer; }
 .faq-card:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .faq-card-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 11px; color: var(--teal); background: var(--teal-soft); }

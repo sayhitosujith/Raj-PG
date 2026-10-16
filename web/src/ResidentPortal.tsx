@@ -251,7 +251,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} action={managerPhone ? <CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={managerPhone} /> : undefined} /></div>
         <PropertyGallery refreshSignal={refreshSignal} />
         <section className="workspace-view portal-panel" data-panel="home">
-          <div className="workspace-view-heading"><div><p className="eyebrow">Calendar</p><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
+          <div className="workspace-view-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India. Ask your property owner about any changes to meals or housekeeping.</p></div></div>
           <HolidayList holidays={holidays} />
         </section>
         <div className="portal-panel" data-panel="services">
@@ -274,7 +274,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         {/* Phones and tablets only (CSS), on Home under the main card, and only for residents on the food plan;
             wide screens keep the meals row in the Home card. */}
         {profile.foodOpted && <section className="workspace-view portal-panel portal-info-meals" data-panel="home">
-          <div className="workspace-view-heading"><div><p className="eyebrow">Food</p><h2>Meals</h2><p>Today's meals at {profile.property}.</p></div><WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} /></div>
+          <div className="workspace-view-heading"><div><h2>Meals</h2><p>Today's meals at {profile.property}.</p></div><WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} /></div>
           <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu ?? undefined} />
         </section>}
         <section className="workspace-view portal-profile" data-panel="profile">
