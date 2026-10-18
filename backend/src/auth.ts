@@ -10,6 +10,7 @@ import { newAccessKeyMessage } from './rentLock.js'
 import { findAccessBlock } from './accessBlocks.js'
 import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
 import type { StaffAccess } from './staffAccess.js'
+import { latestSubscriptionSelect, subscriptionBlock, subscriptionEndedCode } from './subscriptions.js'
 
 const sessionCookieName = 'raj_pg_session'
 const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000
@@ -73,6 +74,16 @@ async function rejectBlocked(residentId: string, response: Response) {
   return true
 }
 
+/**
+ * Signs a receptionist out everywhere and says why once their subscription has ended (see
+ * subscriptions.ts). Used per request and by the session check, so it applies to sessions already open.
+ */
+async function rejectEndedSubscription(superAdminId: string, message: string, response: Response) {
+  await prisma.session.deleteMany({ where: { superAdminId } })
+  response.clearCookie(sessionCookieName, { path: '/' })
+  response.status(401).json({ error: message, code: subscriptionEndedCode })
+}
+
 /** Rejects the request unless it carries a live session of the given user type. */
 export function requireRole(role: UserRole) {
   return async (request: Request, response: Response, next: NextFunction) => {
@@ -84,8 +95,10 @@ export function requireRole(role: UserRole) {
       const auth: AuthContext = { role, userId: session.superAdminId ?? session.residentId ?? '', sessionId: session.id }
       if (session.superAdminId) {
         // Read fresh on every request, so a changed role or property list applies at once.
-        const staff = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId }, select: { staffRole: true, propertyIds: true } })
+        const staff = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId }, select: { staffRole: true, propertyIds: true, ...latestSubscriptionSelect } })
         if (!staff) { response.status(401).json({ error: 'Sign in required.' }); return }
+        const ended = subscriptionBlock(staff)
+        if (ended) { await rejectEndedSubscription(session.superAdminId, ended, response); return }
         auth.staff = staff.staffRole === StaffRole.SUPER_ADMIN ? { isOwner: true } : { isOwner: false, propertyIds: staff.propertyIds }
       }
       if (session.residentId && await rejectBlocked(session.residentId, response)) return
@@ -111,8 +124,11 @@ authRouter.post('/auth/login', async (request, response) => {
   if (!identifier || !password) { response.status(400).json({ error: 'Email or phone and password are required.' }); return }
   if (!process.env.DATABASE_URL) { response.status(503).json({ error: 'Sign-in requires a database connection.' }); return }
   try {
-    const admin = identifier.includes('@') ? await prisma.superAdmin.findUnique({ where: { email: normalizeEmail(identifier) } }) : null
+    const admin = identifier.includes('@') ? await prisma.superAdmin.findUnique({ where: { email: normalizeEmail(identifier) }, include: latestSubscriptionSelect }) : null
     if (admin && verifyPassword(password, admin.passwordHash)) {
+      // Checked only after the password matches, so the message never reveals an account to a guesser.
+      const ended = subscriptionBlock(admin)
+      if (ended) { response.status(403).json({ error: ended, code: subscriptionEndedCode }); return }
       await startSession(response, UserRole.SUPER_ADMIN, { superAdminId: admin.id })
       response.json({ role: UserRole.SUPER_ADMIN, admin: toPublicSuperAdmin(admin) })
       return
@@ -146,7 +162,9 @@ authRouter.get('/auth/session', async (request, response) => {
   try {
     const session = await findLiveSession(request)
     if (session?.superAdminId) {
-      const admin = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId } })
+      const admin = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId }, include: latestSubscriptionSelect })
+      const ended = admin && subscriptionBlock(admin)
+      if (ended) { await rejectEndedSubscription(session.superAdminId, ended, response); return }
       if (admin) { response.json({ role: UserRole.SUPER_ADMIN, admin: toPublicSuperAdmin(admin) }); return }
     }
     if (session?.residentId) { response.json({ role: UserRole.RESIDENT }); return }

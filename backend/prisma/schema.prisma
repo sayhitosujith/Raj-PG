@@ -366,7 +366,32 @@ model SuperAdmin {
   staffRole        StaffRole @default(SUPER_ADMIN)
   propertyIds      String[]  @default([])
   sessions         Session[]
+  subscriptions    StaffSubscription[]
   createdAt        DateTime  @default(now())
+}
+
+// A receptionist's paid period, recorded by a super admin. Each renewal is a new row, so the rows are
+// the history; the one ending last is the current subscription. Once its endsOn has passed (India
+// time) the receptionist cannot sign in. Receptionists with no rows are not restricted, so accounts
+// that predate subscriptions keep working until one is added.
+model StaffSubscription {
+  id        String     @id @default(cuid())
+  staffId   String
+  staff     SuperAdmin @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  // Free text from the form's choices (Monthly, Quarterly, Half-yearly, Yearly) or the owner's own.
+  plan      String
+  // Inclusive calendar days: the subscription covers the whole of endsOn.
+  startsOn  DateTime   @db.Date
+  endsOn    DateTime   @db.Date
+  // Whole rupees paid for this period.
+  amount    Int
+  note      String?
+  // The day a super admin used End now. Access stopped that day, so the period's last day is the day
+  // before (or endsOn, if earlier). The dates and amount stay as recorded.
+  endedEarlyOn DateTime? @db.Date
+  createdAt DateTime   @default(now())
+
+  @@index([staffId, endsOn])
 }
 
 enum StaffRole {

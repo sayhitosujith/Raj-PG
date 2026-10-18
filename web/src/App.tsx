@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   Archive,
+  BadgeIndianRupee,
   Bell,
   Sparkles,
   Wrench,
@@ -37,6 +38,10 @@ import type { BookableProperty, BookingRequest } from './booking'
 import type { Resident } from './resident'
 import { ResidentsView, type ResidentsLoadState } from './ResidentsView'
 import { SuperAdminsView } from './SuperAdminsView'
+import { SubscriptionsView } from './SubscriptionsView'
+import { MySubscriptionView, SubscriptionBanner } from './MySubscription'
+import { useMySubscription, useReceptionistSubscriptions } from './useSubscriptions'
+import { mySubscriptionNotices, receptionistSubscriptionNotices } from './subscriptions'
 import { DeletedRecordsView } from './DeletedRecordsView'
 import { NotificationBell } from './NotificationBell'
 import { buildOwnerNotices, staffActivityNotices, useOwnerRepairs, useStaffActivity } from './ownerNotices'
@@ -162,7 +167,7 @@ async function fetchResidents() {
 }
 
 /** Owner dashboard, rendered only for a signed-in super admin (see AuthGate). */
-function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAdmin; onSignOut: () => Promise<void>; onAdminChange: (admin: SuperAdmin) => void }) {
+function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAdmin; onSignOut: (reason?: string) => Promise<void>; onAdminChange: (admin: SuperAdmin) => void }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [propertyFilter, setPropertyFilter] = useState('All properties')
   const [activeView, setActiveView] = useState('Overview')
@@ -176,6 +181,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null)
   // Receptionists (not super admins) get day-to-day pages for their properties only; the server enforces it too.
   const isOwner = isSuperAdmin(currentAdmin)
+  // A receptionist whose subscription ends mid-session goes back to sign-in, told why.
+  const endSession = useCallback((reason: string) => { void onSignOut(reason) }, [onSignOut])
   useAdminBrand(settings)
   const businessName = settings?.businessName ?? defaultBusinessName
   const holidays = useHolidays('/api/holidays')
@@ -195,6 +202,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const [residents, setResidents] = useState<Resident[]>([])
   const [residentsLoadState, setResidentsLoadState] = useState<ResidentsLoadState>('loading')
   const [refreshSignal, setRefreshSignal] = useState(0)
+  const mySubscription = useMySubscription(!isOwner, refreshSignal, endSession)
+  const receptionistSubscriptions = useReceptionistSubscriptions(isOwner, refreshSignal)
   const [housekeeping, setHousekeeping] = useState<OwnerHousekeepingRequest[]>([])
   const [housekeepingLoadState, setHousekeepingLoadState] = useState<ResidentsLoadState>('loading')
   // New requests plus unanswered "cleaner did not turn up" reminders: everything waiting on the owner.
@@ -204,7 +213,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   // The top bar's notifications: every resident request still waiting on the owner, with who asked.
   const ownerRepairs = useOwnerRepairs(refreshSignal)
   const staffActivity = useStaffActivity(refreshSignal, isOwner)
-  const ownerNotices = [...buildOwnerNotices(residents, housekeeping, ownerRepairs, isOwner), ...staffActivityNotices(staffActivity)]
+  const ownerNotices = [...buildOwnerNotices(residents, housekeeping, ownerRepairs, isOwner), ...staffActivityNotices(staffActivity), ...(isOwner ? receptionistSubscriptionNotices(receptionistSubscriptions) : mySubscriptionNotices(mySubscription))]
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
   // null = closed; undefined resident = add mode.
   // prefill/onCreated are set when a booking request is being converted into a resident.
@@ -480,7 +489,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <NavItem icon={UtensilsCrossed} label="Kitchen" active={activeView === 'Kitchen'} onClick={() => handleNavigation('Kitchen')} />
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
           {isOwner && <NavItem icon={ShieldCheck} label="Team" active={activeView === 'Super admins'} onClick={() => handleNavigation('Super admins')} />}
+          {isOwner && <NavItem icon={BadgeIndianRupee} label="Subscriptions" active={activeView === 'Subscriptions'} onClick={() => handleNavigation('Subscriptions')} />}
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
+          {!isOwner && <NavItem icon={BadgeIndianRupee} label="Subscription" active={activeView === 'My subscription'} onClick={() => handleNavigation('My subscription')} />}
           {isOwner && <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />}
           {isOwner && <NavItem icon={Globe} label="Website" active={activeView === 'Website'} onClick={() => handleNavigation('Website')} />}
         </nav>
@@ -498,6 +509,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         <div className="page-content">
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Overview' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
 
+          {!isOwner && <SubscriptionBanner subscription={mySubscription} onOpen={() => handleNavigation('My subscription')} />}
+          {activeView === 'Subscriptions' && isOwner && <SubscriptionsView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
+          {activeView === 'My subscription' && !isOwner && <MySubscriptionView subscription={mySubscription} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Residents' && <ResidentsView residents={residents} securityDeposit={settings?.securityDeposit ?? null} loadState={residentsLoadState} onRetry={retryResidents} onAdd={() => setResidentForm({})} onEdit={(resident) => setResidentForm({ resident })} onClone={(resident) => setResidentForm({ prefill: clonePrefill(resident) })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined) }} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Properties' && isOwner && <PropertiesView canManage={isOwner} properties={properties} stats={stats} onAdd={() => setIsPropertyModalOpen(true)} onEdit={(property) => setEditingProperty(property)} onRooms={(property) => setRoomsProperty(property)} onPhotos={(property) => setPhotosProperty(property)} onDelete={deleteProperty} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Payments' && <PaymentsView showFinance={isOwner} properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} residents={residents} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
@@ -513,7 +527,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Super admins' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Housekeeping' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

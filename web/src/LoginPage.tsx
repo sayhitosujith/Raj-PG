@@ -16,7 +16,7 @@ import { SiteLink } from './SiteLink'
  * the credentials, so nobody has to pick a role first. Residents who turned on Face ID /
  * fingerprint sign-in in their profile get a one-tap button on the phone where they turned it on.
  */
-export function LoginPage({ onSignedIn, notice }: { onSignedIn: (session: SessionResponse) => void; /** A confirmation to show, e.g. after signing out. */ notice?: string }) {
+export function LoginPage({ onSignedIn, notice, noticeIsError = false }: { onSignedIn: (session: SessionResponse) => void; /** A confirmation to show, e.g. after signing out. */ notice?: string; /** Shows the notice as an error, e.g. why a session was ended. */ noticeIsError?: boolean }) {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [canUsePasskey, setCanUsePasskey] = useState(false)
@@ -78,7 +78,7 @@ export function LoginPage({ onSignedIn, notice }: { onSignedIn: (session: Sessio
           <label>Email<input name="identifier" type="text" inputMode="email" autoComplete="username" required autoFocus placeholder="Enter your email ID" /></label>
           <label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Enter your password" /></label>
           <p className="login-hint">Resident signing in for the first time? Enter the access key from your property owner as your password.</p>
-          {notice && !error && <p className="login-success" role="status">{notice}</p>}
+          {notice && !error && <p className={noticeIsError ? 'login-error' : 'login-success'} role={noticeIsError ? 'alert' : 'status'}>{notice}</p>}
           {error && <p className="login-error" role="alert">{error}</p>}
           <button type="submit" className="primary-button" disabled={isSubmitting}><LogIn size={16} /> {isSubmitting ? 'Signing in…' : 'Sign in'}</button>
           {canUsePasskey && <>

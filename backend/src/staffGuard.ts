@@ -19,6 +19,7 @@ type Rule = { method?: string; path: RegExp }
 // Paths are relative to the /api mount.
 const ownerOnly: Rule[] = [
   { path: /^\/super-admins(\/|$)/ },
+  { path: /^\/subscriptions(\/|$)/ },
   { path: /^\/staff-activity$/ },
   { path: /^\/audit-logs$/ },
   { method: 'PUT', path: /^\/settings$/ },

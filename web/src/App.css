@@ -2546,3 +2546,31 @@ div.portal-panel { display: contents; }
 .welcome-weather.is-locatable:disabled { cursor: progress; }
 .welcome-weather.is-locatable:focus-visible { outline: 2px solid var(--brand, var(--teal)); outline-offset: 4px; border-radius: 12px; }
 .welcome-weather-hint { color: var(--muted); font-size: 10px; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 2px; white-space: nowrap; }
+
+/* Subscriptions (owner) and Subscription (receptionist). */
+.subscription-row > .subscription-history, .subscription-row > .subscription-empty { flex: 1 0 100%; }
+.subscription-history { display: grid; gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; }
+.subscription-history li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.subscription-history li > div { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.subscription-history small { color: var(--muted); font-size: 11px; }
+.subscription-amount { color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.subscription-history-title { margin: 8px 0 8px; font-size: 13px; }
+.subscription-empty { margin: 4px 0 0; }
+.subscription-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.secondary-button.subscription-end { border-color: #f0c9c0; color: #b5523f; }
+.secondary-button.subscription-end:hover { background: #fbe6e1; }
+.workspace-summary.subscription-summary { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.workspace-summary.subscription-summary strong { font-size: 17px; }
+/* Last 7 days before a receptionist's subscription ends, above every page. */
+.subscription-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 18px; padding: 12px 16px; border: 1px solid #ecd59a; border-radius: 12px; color: #6b5214; background: #fdf6e3; }
+.subscription-banner > svg { flex: none; color: #b8860b; }
+.subscription-banner p { flex: 1 1 260px; margin: 0; font-size: 13px; }
+:root[data-theme="dark"] .subscription-banner { border-color: rgb(234 179 8 / .35); color: rgb(253 230 138); background: rgb(66 50 10 / .55); }
+:root[data-theme="dark"] .subscription-history li { border-color: rgb(255 255 255 / .1); background: rgb(255 255 255 / .03); }
+:root[data-theme="dark"] .secondary-button.subscription-end { border-color: rgb(248 113 113 / .4); color: rgb(252 165 165); }
+@media (max-width: 560px) { .subscription-dates { grid-template-columns: 1fr; } }
+/* Bell: a receptionist's subscription in its last 7 days (both the receptionist and the super admin see it). */
+.notice-kind.is-subscription { color: rgb(146 64 14); background: rgb(254 243 199); }
+.notification-panel li.is-kind-subscription { border-color: rgb(253 230 138); border-left-color: rgb(217 119 6); background: rgb(255 251 235); }
+:root[data-theme="dark"] .notice-kind.is-subscription { color: rgb(252 211 77); background: rgb(120 53 15 / .45); }
+:root[data-theme="dark"] .notification-panel li.is-kind-subscription { border-color: rgb(217 119 6 / .35); border-left-color: rgb(251 191 36); background: rgb(120 53 15 / .25); }

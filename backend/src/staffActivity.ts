@@ -16,6 +16,7 @@ type Describe = (body: Record<string, unknown>, ids: string[]) => Promise<string
 
 const residentName = async (id: string) => (await prisma.resident.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a resident'
 const propertyName = async (id: string) => (await prisma.property.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a property'
+const staffName = async (id: string) => (id && (await prisma.superAdmin.findUnique({ where: { id }, select: { name: true } }))?.name) || 'a receptionist'
 const text = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : null
 
 // [method, path pattern (relative to /api, capturing ids), description]. First match wins.
@@ -51,6 +52,9 @@ const actions: Array<[string, RegExp, Describe]> = [
   ['PATCH', /^\/super-admins\/([^/]+)$/, (body) => `Updated team member ${text(body.name) ?? ''}`.trim()],
   ['DELETE', /^\/super-admins\/([^/]+)$/, async (_body, [id]) => `Removed team member ${(await prisma.superAdmin.findUnique({ where: { id }, select: { name: true } }))?.name ?? ''}`.trim()],
   ['POST', /^\/super-admins\/([^/]+)\/reset-password$/, async (_body, [id]) => `Reset the password of ${(await prisma.superAdmin.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a team member'}`],
+  ['POST', /^\/subscriptions$/, async (body) => `Added a ${text(body.plan) ?? ''} subscription for ${await staffName(text(body.staffId) ?? '')}`],
+  ['DELETE', /^\/subscriptions\/[^/]+$/, () => 'Deleted a subscription record'],
+  ['POST', /^\/subscriptions\/staff\/([^/]+)\/end$/, async (_body, [id]) => `Ended the subscription of ${await staffName(id)}`],
   ['POST', /^\/expenses$/, (body) => `Added an expense${text(body.description) ? `: ${text(body.description)}` : ''}`],
   ['DELETE', /^\/expenses\/[^/]+$/, () => 'Deleted an expense'],
   ['POST', /^\/whatsapp\/test$/, () => 'Sent a test WhatsApp message'],

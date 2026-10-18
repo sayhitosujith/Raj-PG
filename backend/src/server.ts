@@ -34,6 +34,7 @@ import { accountDeletionAdminRouter } from './accountDeletion.js'
 import { concessionAdminRouter } from './referrals.js'
 import { maintenanceAdminRouter } from './maintenance.js'
 import { superAdminRouter } from './superAdmins.js'
+import { subscriptionRouter } from './subscriptions.js'
 import { logIntegrations } from './startupReport.js'
 import { dashboardInsights } from './dashboardInsights.js'
 import { parsePropertyInfo } from './residentInfo.js'
@@ -95,6 +96,7 @@ app.use('/api', staffGuard)
 app.use('/api', recordStaffActivity)
 app.use('/api', staffActivityRouter)
 app.use('/api', superAdminRouter)
+app.use('/api', subscriptionRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', rentAdminRouter)
