@@ -1538,20 +1538,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .details-heading-actions .weekly-menu-button { margin-right: auto; }
 }
 
-/* Resident "Edit my details": the Edit button beside the heading, and the ID row in the modal. */
-.my-details-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-/* Heading and contact lines in one column (the weather moved to the top bar). */
+/* Resident contact lines on the name card, in one column. */
 .my-details-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; margin: 4px 0 0; }
 .my-details-main { min-width: 0; }
-/* Narrow cards: the lines stack in the left column and Edit sits top right, on the phone line's row.
-   Giving Edit a row of its own below the lines left a blank band at the foot of the card. The contact
-   list steps aside (display: contents) so each line is placed in the card's grid. */
-@container (max-width: 620px) {
-  .my-details-card { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
-  .my-details-main, .portal-details-heading .my-details-card p.my-details-contact { display: contents; }
-  .my-details-contact > span { grid-column: 1; align-self: center; }
-  .my-details-title { grid-column: 2; grid-row: 1; align-self: center; }
-}
 /* The resident's own phone and email under "My Details", one per line, so they can check what the owner has on file.
    Prefixed to outrank the muted ".workspace-view-heading p" style meant for hint sentences. */
 .workspace-view-heading p.my-details-contact { display: grid; justify-items: start; gap: 4px; margin: 6px 0 2px; color: inherit; font-size: 14px; font-weight: 600; }
@@ -2223,10 +2212,9 @@ div.portal-panel { display: contents; }
 /* The details card is part of the blue: a frosted panel with white text, so only the date tiles stand
    out in white below it. Its Edit button stays white. */
 .portal-shell .portal-details-heading .my-details-card { border-color: rgb(255 255 255 / .3); color: rgb(255 255 255); background: rgb(255 255 255 / .14); backdrop-filter: blur(6px); }
-/* Hairlines between the contact lines. Lines below the first run the full card width: only the phone line shares its row with Edit. */
+/* Hairlines between the contact lines, each line the full card width. */
 .portal-shell .portal-details-heading .my-details-contact > span { justify-self: stretch; }
 .portal-shell .portal-details-heading .my-details-contact > span + span { padding-top: 6px; border-top: 1px solid rgb(255 255 255 / .22); }
-@container (max-width: 620px) { .portal-shell .portal-details-heading .my-details-contact > span + span { grid-column: 1 / -1; } }
 .portal-shell .portal-details-heading .portal-emergency-actions :is(.exit-refund-note, .exit-dues-note) { color: var(--brand-tint); }
 .portal-shell .portal-details-heading .portal-emergency-actions .text-link { color: rgb(255 255 255); }
 :root[data-theme="dark"] .portal-shell .portal-details-heading { background: radial-gradient(circle at 96% 4%, rgb(255 255 255 / .12) 0 70px, transparent 71px), radial-gradient(circle at 62% 88%, rgb(255 255 255 / .08) 0 34px, transparent 35px), radial-gradient(circle at 0% 100%, rgb(255 255 255 / .1) 0 40px, transparent 41px), linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%); }
