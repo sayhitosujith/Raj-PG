@@ -55,13 +55,13 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
     <>
       <button type="button" className="secondary-button my-details-edit" onClick={() => setIsOpen(true)}><Pencil size={14} /> Edit</button>
       {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
-        <form className="profile-modal" role="dialog" aria-modal="true" aria-labelledby="my-details-title" onSubmit={save}>
+        <form className="profile-modal my-details-modal" role="dialog" aria-modal="true" aria-labelledby="my-details-title" onSubmit={save}>
           <div className="modal-heading"><div><p className="eyebrow">Resident</p><h2 id="my-details-title">Edit my details</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
           <label>Name<input name="name" required maxLength={80} defaultValue={details.name} autoComplete="name" /></label>
           <PhoneField name="phone" label="Phone" defaultValue={details.phone ?? ''} />
           <label>Email <span>(optional)</span><input name="email" type="email" maxLength={120} defaultValue={details.email ?? ''} autoComplete="email" /></label>
           <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={details.occupation ?? ''} placeholder="e.g. Software engineer, Student" autoComplete="organization-title" /></label>
-          <label>Permanent address<textarea name="permanentAddress" rows={3} maxLength={300} defaultValue={details.permanentAddress ?? ''} /></label>
+          <label>Permanent address<textarea name="permanentAddress" rows={2} maxLength={300} defaultValue={details.permanentAddress ?? ''} /></label>
           <EmergencyContactFields contact={details} />
           <VehicleFields vehicle={details} />
           <p className="my-details-note">Your phone or email is how you sign in. A new address shows as unverified until your property owner checks it.</p>

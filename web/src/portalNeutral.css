@@ -985,13 +985,6 @@
 :root[data-theme="dark"] .portal-shell .danger-zone-title {
     color: rgb(252 120 120)
 }
-:root[data-theme="dark"] .portal-shell .profile-fire {
-    border-color: rgb(234 88 12 / .4);
-    background: rgb(67 20 7 / .45)
-}
-:root[data-theme="dark"] .portal-shell .profile-fire strong {
-    color: rgb(253 186 116)
-}
 :root[data-theme="dark"] .portal-shell .delete-account {
     border-color: rgb(220 38 38 / .35);
     background: rgb(69 10 10 / .35)

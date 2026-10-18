@@ -254,7 +254,6 @@
    and the "Resident Home" title turn to the button text colour so they read on it. The name keeps its
    slow shine, now a lighter sweep of that colour. */
 :root[data-theme] .portal-shell .portal-topbar { border-bottom-color: transparent; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
-:root[data-theme] .portal-shell .portal-topbar .portal-property-icon { color: var(--brand-on); background: color-mix(in srgb, var(--brand-on) 20%, transparent); box-shadow: none; }
 :root[data-theme] .portal-shell .portal-topbar .portal-property-text { color: var(--brand-on); background-image: linear-gradient(100deg, var(--brand-on) 0%, var(--brand-on) 40%, color-mix(in srgb, var(--brand-on) 55%, transparent) 50%, var(--brand-on) 60%, var(--brand-on) 100%); }
 :root[data-theme] .portal-shell .portal-topbar .home-title.portal-title { color: var(--brand-on); }
 :root[data-theme] .portal-shell .portal-topbar .secondary-button { border-color: rgb(255 255 255 / .5); color: var(--brand-deep); background: rgb(255 255 255 / .92); }

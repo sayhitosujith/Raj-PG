@@ -343,7 +343,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Profile photos: shared avatar image, the resident's picker in the greeting row. */
 .resident-avatar.has-photo, .profile-photo.has-photo { overflow: hidden; padding: 0; background: #e6ece8; }
 .resident-avatar img, .profile-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.portal-shell .welcome-row { align-items: center; margin-bottom: 14px; }
+/* The page's 16px gap alone spaces the greeting from the card below, as it does between every card. */
+.portal-shell .welcome-row { align-items: center; margin-bottom: 0; }
+.portal-shell .welcome-row h1 { margin-bottom: 0; }
 .profile-photo-picker { display: grid; flex: 0 0 auto; justify-items: center; gap: 6px; }
 .profile-photo-button { position: relative; width: 88px; height: 88px; padding: 0; border: 3px solid white; border-radius: 50%; background: none; box-shadow: 0 8px 24px #18352f1f; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
 .profile-photo-button:hover { transform: translateY(-2px); box-shadow: 0 12px 28px #18352f29; }
@@ -649,14 +651,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    across it. It slides in once on load; long names are cut with an ellipsis. Motion stops for
    people who ask for reduced motion. */
 .portal-property-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: min(64vw, 460px); animation: property-name-in .6s cubic-bezier(.2, .7, .3, 1) both; }
-.portal-property-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--brand-on); background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 6px 14px color-mix(in srgb, var(--brand-deep) 30%, transparent); animation: property-icon-bob 3.2s ease-in-out .6s infinite; }
 .portal-property-text { overflow: hidden; padding-bottom: 2px; color: var(--brand-deep); background: linear-gradient(100deg, var(--brand-deep) 0%, var(--brand) 40%, var(--brand-pale) 50%, var(--brand) 60%, var(--brand-deep) 100%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font: 800 22px/1.2 Manrope, sans-serif; letter-spacing: -.5px; text-overflow: ellipsis; white-space: nowrap; animation: property-name-shine 6s linear infinite; }
 :root[data-theme="dark"] .portal-property-text { background-image: linear-gradient(100deg, var(--brand-pale) 0%, var(--brand-border) 40%, rgb(255 255 255) 50%, var(--brand-border) 60%, var(--brand-pale) 100%); }
 @keyframes property-name-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
-@keyframes property-icon-bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-4deg); } }
 @keyframes property-name-shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
-@media (max-width: 560px) { .portal-property-text { font-size: 18px; } .portal-property-icon { width: 30px; height: 30px; border-radius: 9px; } }
-@media (prefers-reduced-motion: reduce) { .portal-property-name, .portal-property-icon, .portal-property-text { animation: none; } }
+@media (max-width: 560px) { .portal-property-text { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) { .portal-property-name, .portal-property-text { animation: none; } }
 /* Most uploaded logos are designed for light backgrounds (dark text, transparent PNG), which
    vanish on the dark theme. A thin light outline traced around the logo's own shapes keeps dark
    text readable while the background stays transparent (a solid panel showed as a white box).
@@ -1318,13 +1318,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* On the blue card the diet keeps its veg / non-veg colours on a white pill, where they still read. */
 .portal-shell .portal-details-heading .welcome-diet { margin: 0; padding: 3px 10px; border-color: transparent; background: rgb(255 255 255 / .94); line-height: 18px; }
 .portal-shell .portal-details-heading .welcome-diet.is-unset { color: rgb(80 90 100); }
-/* Icons mark the name and occupation lines; the text sits in its own span so a long name wraps beside the icon, not under it. */
-.portal-shell .portal-details-heading p.has-icon { display: flex; align-items: center; gap: 6px; }
-.portal-shell .portal-details-heading p.has-icon > svg { flex: none; opacity: .85; }
-/* A wrapped name keeps its icon on the first line: the 0.1em offset is half the gap that line-height 1.2 adds. */
-.portal-shell .portal-details-heading p.portal-details-name.has-icon { align-items: flex-start; }
-.portal-shell .portal-details-heading p.portal-details-name.has-icon > svg { width: 1em; height: 1em; margin-top: .1em; }
-.portal-shell .portal-details-heading p.has-icon > span { min-width: 0; }
 .portal-details-identity .profile-photo-button { width: 76px; height: 76px; }
 @container (max-width: 480px) {
   .portal-details-identity { gap: 14px; }
@@ -1521,7 +1514,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .workspace-view { padding: 18px 14px; }
   .portal-shell .workspace-view-heading { padding-bottom: 14px; }
   .portal-shell .workspace-view-heading h2 { font-size: 20px; }
-  .portal-shell .welcome-row h1 { font-size: 24px; }
+  /* Shrinks with the screen below 390px (24px there, about 18px at 320px) so "Hello, good afternoon" stays on
+     one row with the weather. */
+  .portal-shell .welcome-row h1 { font-size: clamp(17px, calc(8.57vw - 9.4px), 24px); }
   .portal-shell .rent-highlight { padding: 12px 14px; }
   .portal-shell .rent-highlight-copy strong { font-size: 22px; }
   .portal-shell .pagination-summary { text-align: left; }
@@ -1902,6 +1897,8 @@ div.portal-panel { display: contents; }
   .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
   /* Messages sit above the tab bar; at the default bottom and z-index the bar covered them on phones. */
   .portal-shell .toast { z-index: 50; bottom: calc(16px + 64px + env(safe-area-inset-bottom)); }
+  /* Pop-ups cover the tab bar (z-index 40); at the default 15 the bar was drawn over their lower part. */
+  .portal-shell .modal-backdrop { z-index: 45; }
   .page-content[data-tab="home"] [data-panel]:not([data-panel="home"]),
   .page-content[data-tab="services"] [data-panel]:not([data-panel="services"]),
   .page-content[data-tab="rent"] [data-panel]:not([data-panel="rent"]),
@@ -1961,12 +1958,11 @@ div.portal-panel { display: contents; }
 .delete-account-copy small { color: var(--muted); font-size: 12px; }
 .delete-account-copy small.delete-account-declined { color: #b5523f; font-weight: 600; }
 /* Fire emergency card in the Profile tab (phones and tablets): what the button does, then the button. */
-/* Fire alarm (profile) and Emergency (Help tab) rows: text on the left, the action on the right. */
-:is(.profile-fire, .help-emergency) { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; border-radius: 12px; }
-:is(.profile-fire, .help-emergency) > div { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
-:is(.profile-fire, .help-emergency) small { color: var(--muted); font-size: 12px; }
-.profile-fire { margin-top: 12px; border: 1px solid rgb(253 186 116); background: rgb(255 247 237); }
-.help-emergency { margin: 0 0 14px; border: 1px solid rgb(248 180 180); background: rgb(254 242 242); }
+/* Emergency support (Help tab): heading on the left, the call buttons beside or below it. */
+.help-emergency { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; border-radius: 12px; }
+.help-emergency > div { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
+.help-emergency small { color: var(--muted); font-size: 12px; }
+.help-emergency { margin: 0; border: 1px solid rgb(248 180 180); background: rgb(254 242 242); }
 .help-emergency strong { color: rgb(170 30 30); font-size: 14px; }
 :root[data-theme="dark"] .help-emergency { border-color: rgb(220 50 50 / .4); background: rgb(80 15 15 / .45); }
 :root[data-theme="dark"] .help-emergency strong { color: rgb(252 165 165); }
@@ -1978,9 +1974,6 @@ div.portal-panel { display: contents; }
 .help-emergency .emergency-number strong { color: inherit; font-size: 12px; }
 .emergency-number span { color: var(--muted); font-size: 12px; font-weight: 700; }
 :root[data-theme="dark"] .emergency-number { border-color: rgb(220 50 50 / .4); color: rgb(252 165 165); background: rgb(255 255 255 / .06); }
-.profile-fire strong { color: rgb(154 52 18); font-size: 13px; }
-:root[data-theme="dark"] .profile-fire { border-color: rgb(234 88 12 / .4); background: rgb(67 20 7 / .45); }
-:root[data-theme="dark"] .profile-fire strong { color: rgb(253 186 116); }
 /* Face ID / fingerprint sign-in in the profile: the switch-on button and the phones where it is on. */
 .passkey-settings { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .passkey-settings-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
@@ -2032,7 +2025,22 @@ div.portal-panel { display: contents; }
 .portal-info-meals { display: none; }
 /* Notification, Face ID and account settings on the Info tab (phones and tablets), under House rules. */
 .portal-info-settings { display: none; }
-@media (max-width: 1024px) { .page-content[data-tab="info"] .portal-info-settings { display: grid; gap: 10px; margin-top: 14px; } }
+/* Help tab: every card sits the page's 16px gap from the next. The settings cards carry their own margins
+   for the Home card, so here those are cleared and one gap spaces them; the Danger zone title stays
+   close to the card it labels. */
+@media (max-width: 1024px) {
+  .page-content[data-tab="info"] .portal-info-settings { display: grid; gap: 16px; margin-top: 0; }
+  .page-content[data-tab="info"] .portal-info-settings > *, .page-content[data-tab="info"] .portal-info-settings .notification-preferences > * { margin: 0; }
+  .page-content[data-tab="info"] .portal-info-settings .notification-preferences { gap: 16px; }
+  .page-content[data-tab="info"] .portal-info-settings > .danger-zone-title { margin-bottom: -8px; }
+  /* Compact cards: tighter padding only; type sizes stay so nothing gets harder to read or tap. */
+  .portal-shell .page-content[data-tab="info"] .help-emergency { gap: 8px 12px; padding: 10px 12px; }
+  .portal-shell .page-content[data-tab="info"] .emergency-number { gap: 1px; padding: 6px; }
+  .portal-shell .page-content[data-tab="info"] .house-rules-card { padding: 12px 14px; }
+  .portal-shell .page-content[data-tab="info"] .faq-card { padding: 10px 14px; }
+  .portal-shell .page-content[data-tab="info"] .whatsapp-preference { padding: 8px 12px; }
+  .portal-shell .page-content[data-tab="info"] :is(.passkey-settings, .delete-account) { gap: 8px; padding: 10px 12px; }
+}
 @media (max-width: 1024px) {
   .page-content[data-tab="home"] .portal-info-meals { display: block; }
   .page-content .meals-row .weekly-menu-button, .page-content .meals-row .meal-timings { display: none; }
@@ -2040,6 +2048,19 @@ div.portal-panel { display: contents; }
 }
 
 /* Owner's extra house rules (a checklist under the tiles) and the property form's Info fields. */
+/* Folding card (House rules): the panel animates its height through grid rows, so no height is measured. */
+.house-rules-card .workspace-view-heading { flex-direction: row; align-items: flex-start; cursor: pointer; transition: padding-bottom .3s ease, border-color .3s ease; }
+.house-rules-card:not(.is-open) .workspace-view-heading { padding-bottom: 0; border-bottom-color: transparent; }
+.collapse-toggle { display: grid; flex: none; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; transition: background .2s, color .2s; }
+.collapse-toggle:hover { color: var(--teal); background: color-mix(in srgb, var(--teal) 10%, transparent); }
+.collapse-toggle svg { transition: transform .3s ease; }
+.is-open > .workspace-view-heading .collapse-toggle svg { transform: rotate(180deg); }
+.collapse-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
+.is-open > .collapse-panel { grid-template-rows: 1fr; opacity: 1; }
+.collapse-panel-inner { min-height: 0; overflow: hidden; }
+/* A margin inside the clipped box, not padding on it: padding would keep 16px showing when folded. */
+.collapse-panel-inner > :first-child { margin-top: 16px; }
+@media (prefers-reduced-motion: reduce) { .collapse-panel, .collapse-toggle svg, .house-rules-card .workspace-view-heading { transition: none; } }
 .house-rules-extra { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
 .house-rules-extra li { display: flex; align-items: flex-start; gap: 8px; color: #45544f; font-size: 13px; }
 .house-rules-extra svg { flex: none; margin-top: 2px; color: var(--teal); }
@@ -2372,6 +2393,21 @@ div.portal-panel { display: contents; }
 .staff-properties legend { padding: 0 4px; color: var(--ink); font-size: 12px; font-weight: 700; }
 .profile-modal label.staff-property { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .profile-modal label.staff-property input { width: auto; }
+/* Edit my details: a long form on a phone, so tighter padding and field spacing fit more of it on screen. */
+.profile-modal.my-details-modal { padding: 14px; }
+.profile-modal.my-details-modal .modal-heading { margin-bottom: 2px; }
+.profile-modal.my-details-modal label { gap: 4px; margin-top: 10px; }
+.profile-modal.my-details-modal :is(input, select, textarea) { padding: 8px 10px; }
+.profile-modal.my-details-modal textarea { min-height: 0; }
+.profile-modal.my-details-modal .emergency-contact-fields { gap: 6px; margin-top: 10px; padding: 8px 10px 10px; }
+/* Inside the Emergency contact and Vehicle boxes the row gap alone spaces the fields. */
+.profile-modal.my-details-modal .emergency-contact-fields :is(label, .phone-field) { margin-top: 0; }
+.profile-modal.my-details-modal .emergency-contact-row { gap: 8px; }
+/* "(optional)" stays on the label's line instead of wrapping under it. */
+.profile-modal.my-details-modal label:has(> span) { grid-template-columns: auto 1fr; column-gap: 4px; align-items: baseline; }
+.profile-modal.my-details-modal label:has(> span) > :is(input, select, textarea) { grid-column: 1 / -1; }
+.profile-modal.my-details-modal .my-details-document { margin-top: 10px; padding: 10px; }
+.profile-modal.my-details-modal .modal-actions { margin-top: 14px; }
 /* A resident waiting for a super admin's approval (added by a receptionist). */
 .resident-approval { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid rgb(253 230 138); border-radius: 10px; background: rgb(255 251 235); }
 .resident-approval > div:first-child { display: grid; gap: 2px; }
