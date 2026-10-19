@@ -49,8 +49,8 @@ model Property {
   gateClosingTime     String?
   rooms               Room[]
   payments            Payment[]
-  // Housekeeping staff names, shown to the property's residents; the count is the list's length.
-  housekeepingStaff   String[]             @default([])
+  // The people who work at the property (cooks, security, housekeeping…); see workers.ts.
+  workers             Worker[]
   expenses            Expense[]
   activities          Activity[]
   maintenanceRequests MaintenanceRequest[]
@@ -397,6 +397,30 @@ model StaffSubscription {
 enum StaffRole {
   SUPER_ADMIN
   RECEPTIONIST
+}
+
+// What a property worker does. Only housekeeping names are shown to the property's residents.
+enum WorkerRole {
+  COOK
+  SECURITY
+  HOUSEKEEPING
+  ELECTRICIAN
+  PLUMBER
+}
+
+// Someone who works at a property but never signs in. Named "worker" rather than "staff" because staff
+// in this codebase means the people who use the dashboard (super admins and receptionists).
+model Worker {
+  id         String     @id @default(cuid())
+  propertyId String
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name       String
+  role       WorkerRole
+  // E.164, like every other stored phone number (see validation.ts).
+  phone      String?
+  createdAt  DateTime   @default(now())
+
+  @@index([propertyId, role])
 }
 
 enum Sex {
