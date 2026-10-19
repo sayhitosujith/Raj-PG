@@ -88,7 +88,7 @@ export function HousekeepingView({ requests, loadState, staff, onRetry, onUpdate
 
   return (
     <section className="workspace-view housekeeping-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Housekeeping</h2><p>Cleaning requests from residents, soonest first.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Staff management</h2><p>Cleaning requests from residents, soonest first.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
       {staff}
       <div className="workspace-summary residents-summary">{tiles.map((tile, index) => <button key={tile.label} type="button" className={`summary-tile${filter === tile.filter && tile.label !== 'Due today' ? ' is-selected' : ''}`} style={{ '--stagger': index } as React.CSSProperties} onClick={() => setFilter(tile.filter)}><span>{tile.label}</span><strong>{loadState === 'ready' ? tile.value : '–'}</strong></button>)}</div>
       <div className="filter-tabs" role="tablist" aria-label="Filter requests">{filters.map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={filter === value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div>
