@@ -18,7 +18,6 @@ import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeat
 import { parsePropertyRents, parseSharingPrices, syncPropertyRents } from './propertyRent.js'
 import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
-import { workerOrder, workersAdminRouter, workerSelect } from './workers.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
 import { rentAdminRouter } from './rent.js'
@@ -100,7 +99,6 @@ app.use('/api', superAdminRouter)
 app.use('/api', subscriptionRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
-app.use('/api', workersAdminRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
@@ -296,7 +294,7 @@ app.get('/api/dashboard', async (_request, response) => {
 
   try {
     const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields }, workers: { select: workerSelect, orderBy: workerOrder } } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),
@@ -336,7 +334,7 @@ app.get('/api/dashboard', async (_request, response) => {
           status: property.status,
           tone: property.status === 'Healthy' ? 'sage' : 'gold',
           image: property.imageUrl,
-          workers: property.workers,
+          housekeepingStaff: property.housekeepingStaff,
           mealTimes: toMealTimes(property),
           tenantType: property.tenantType,
           amenities: property.amenities,

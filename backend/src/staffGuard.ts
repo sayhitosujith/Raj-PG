@@ -7,7 +7,7 @@ import { canReachProperty, staffAccess } from './staffAccess.js'
  * staff sign-in check), so no individual route can forget them:
  *  1. owner-only routes refuse receptionists (team, settings changes, website text, WhatsApp/email setup, finance,
  *     approving new residents and verifying ID documents,
- *     adding/editing/deleting properties, rooms and property staff, deleted records, deleting residents, door access keys);
+ *     adding/editing/deleting properties and rooms, deleted records, deleting residents, door access keys);
  *  2. routes about one record (a resident, payment, booking, request…) or one property check that it
  *     belongs to one of the receptionist's properties; unknown or unreachable records answer 404;
  *  3. a property named in a request body must be one of theirs.
@@ -42,7 +42,6 @@ const ownerOnly: Rule[] = [
   { path: /^\/residents\/[^/]+\/approval$/ },
   { path: /^\/residents\/[^/]+\/aadhar-verification$/ },
   { path: /^\/residents\/[^/]+\/door-key$/ },
-  { path: /^\/properties\/[^/]+\/workers(\/|$)/ },
 ]
 
 // Where the property of a record reached by id comes from. Residents belong to one through their room.

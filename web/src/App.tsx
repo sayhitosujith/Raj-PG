@@ -57,8 +57,7 @@ import { customAmenitiesOf, readPropertyFeatures, tenantHint, type TenantType } 
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
 import { MaintenanceView } from './MaintenanceView'
-import { StaffPanel } from './StaffPanel'
-import type { Worker } from './workers'
+import { HousekeepingStaffPanel } from './HousekeepingStaffPanel'
 import { FoodView } from './FoodView'
 import { formatMonth, type RentSummary } from './rent'
 import type { AadharDecision } from './ResidentRow'
@@ -126,8 +125,7 @@ type Property = {
   rentWithoutFood?: number | null
   /** Prices for particular sharing types; others use the two rents above. */
   sharingPrices?: SharingPrice[]
-  /** The people who work there, by role; only super admins may change them. */
-  workers?: Worker[]
+  housekeepingStaff?: string[]
 }
 
 const propertyCardsPerPage = 12
@@ -417,8 +415,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setResidentForm(null)
   }
 
-  function saveWorkers(propertyId: string, workers: Worker[]) {
-    setDashboard((current) => ({ ...current, properties: current.properties.map((property) => property.id === propertyId ? { ...property, workers } : property) }))
+  function saveStaff(propertyId: string, names: string[]) {
+    setDashboard((current) => ({ ...current, properties: current.properties.map((property) => property.id === propertyId ? { ...property, housekeepingStaff: names } : property) }))
   }
 
   // Opens "Add resident" filled in from a booking request; saving it marks the request accepted.
@@ -536,7 +534,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Audit logs' && isOwner && <AuditLogsView refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Deleted records' && <DeletedRecordsView refreshSignal={refreshSignal} securityDeposit={settings?.securityDeposit ?? null} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Overview')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
-          {activeView === 'Staff management' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<StaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, workers: property.workers ?? [] }] : [])} canManage={isOwner} onChanged={saveWorkers} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Staff management' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<HousekeepingStaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, housekeepingStaff: property.housekeepingStaff ?? [] }] : [])} onSaved={saveStaff} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Kitchen' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
