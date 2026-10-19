@@ -581,6 +581,16 @@ model WorkspaceSettings {
   // Payments to it are not visible to the app, so residents report them for the owner to confirm.
   upiId                   String?
   upiPayeeName            String?
+  // Smart lock. Off hides door access keys everywhere; it can only be switched off once no resident
+  // holds a key and no Door locks task is pending, so no PIN is left on the lock unseen.
+  doorKeysEnabled         Boolean       @default(true)
+  // Which lock and where (e.g. "Qubo Select SDL-P3", "Main gate"), shown on the Door locks page.
+  lockModel               String?
+  lockLocation            String?
+  // Digits in each new PIN, to match what the lock accepts; existing PINs keep their length.
+  doorPinLength           Int           @default(6)
+  // How to open the door, shown to residents next to their PIN.
+  doorUnlockInstructions  String?
   // The owner's own QR image (e.g. a PhonePe/GPay/merchant QR) as a data URL; when set, residents
   // see it instead of the QR generated from upiId. The timestamp versions its URL for caching.
   upiQrUrl                String?

@@ -7,9 +7,9 @@ function equalHex(expectedHex: string, actual: Buffer) {
   return expected.length === actual.length && timingSafeEqual(expected, actual)
 }
 
-/** Generates a 6-digit door lock PIN; leading zeros kept, since keypads accept them. */
-export function createDoorAccessKey() {
-  return randomInt(0, 1_000_000).toString().padStart(6, '0')
+/** Generates a door lock PIN of the given length (Settings → Smart lock); leading zeros kept, since keypads accept them. */
+export function createDoorAccessKey(digits: number) {
+  return randomInt(0, 10 ** digits).toString().padStart(digits, '0')
 }
 
 /** Generates a resident access key in the only format the API accepts. */

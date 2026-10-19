@@ -11,6 +11,15 @@ export type WorkspaceSettings = {
   upiId: string | null
   /** The name shown in the resident's UPI app; falls back to the business name. */
   upiPayeeName: string | null
+  /** Smart lock: off hides door access keys everywhere (only allowed once no resident holds one). */
+  doorKeysEnabled: boolean
+  /** Which lock and where, e.g. "Qubo Select SDL-P3" at "Main gate". */
+  lockModel: string | null
+  lockLocation: string | null
+  /** Digits in each new PIN, 4 to 8. */
+  doorPinLength: number
+  /** How to open the door, shown to residents next to their PIN. */
+  doorUnlockInstructions: string | null
   /** null when no QR image is uploaded; otherwise a version for its URL. */
   upiQrVersion: number | null
   rentDueDay: number
@@ -79,4 +88,4 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
 /** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { /** Settings → Smart lock, for the Door access card; the details are null when unset or door keys are off. */ doorKeysEnabled?: boolean; doorUnlockInstructions?: string | null; lockLocation?: string | null; businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

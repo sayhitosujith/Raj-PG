@@ -80,7 +80,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown; doorKeysEnabled?: unknown; lockModel?: unknown; lockLocation?: unknown; doorPinLength?: unknown; doorUnlockInstructions?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -94,6 +94,7 @@ const numberFields = [
   ['dailyRateWithFood', 1, 1_00_000, false, 'Per-day rate with food must be a whole number of rupees.'],
   ['dailyRateWithoutFood', 1, 1_00_000, false, 'Per-day rate without food must be a whole number of rupees.'],
   ['housekeepingWeeklyLimit', 1, 21, true, 'Weekly cleanings must be 1 to 21, or blank for no limit.'],
+  ['doorPinLength', 4, 8, false, 'PIN length must be 4 to 8 digits.'],
 ] as const
 
 /**
@@ -127,6 +128,18 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     const payeeName = input.upiPayeeName?.trim() || null
     if (payeeName && payeeName.length > 50) return { error: 'Payee name can be up to 50 characters.' }
     data.upiPayeeName = payeeName
+  }
+  // Smart lock details; blank clears them.
+  for (const [field, label, max] of [['lockModel', 'Lock model', 60], ['lockLocation', 'Lock location', 60], ['doorUnlockInstructions', 'Unlock instructions', 500]] as const) {
+    const text = input[field]
+    if (text === undefined) continue
+    if (text !== null && typeof text !== 'string') return { error: `${label} must be text.` }
+    if (text && text.trim().length > max) return { error: `${label} can be up to ${max} characters.` }
+    data[field] = text?.trim() || null
+  }
+  if (input.doorKeysEnabled !== undefined) {
+    if (typeof input.doorKeysEnabled !== 'boolean') return { error: 'Door access keys must be on or off.' }
+    data.doorKeysEnabled = input.doorKeysEnabled
   }
   // Free-text lists for the resident Info tab; blank clears them.
   for (const [field, label, max] of [['extraHouseRules', 'House rules', 3000], ['faqs', 'FAQs', 6000]] as const) {
@@ -206,6 +219,20 @@ export function toClientSettings(settings: WorkspaceSettings) {
   return { ...fields, ...policiesOf(settings), logoVersion: photoVersion(logoUpdatedAt), upiQrVersion: photoVersion(upiQrUpdatedAt) }
 }
 
+/**
+ * Why door access keys cannot be switched off yet, or null. Hiding them while a resident still holds a
+ * PIN, or a lock change is pending, would leave a working PIN on the lock that nobody can see.
+ */
+async function doorKeysOffBlocker() {
+  const [holders, pending] = await Promise.all([
+    prisma.resident.count({ where: { doorAccessKey: { not: null } } }),
+    prisma.doorLockTask.count({ where: { doneAt: null } }),
+  ])
+  if (holders) return `${holders} ${holders === 1 ? 'resident still has' : 'residents still have'} a door access key. Remove ${holders === 1 ? 'it' : 'them'} first, then delete the PINs from the lock.`
+  if (pending) return `Finish the ${pending} pending ${pending === 1 ? 'task' : 'tasks'} under Door locks first.`
+  return null
+}
+
 /** Owner routes for the Settings page; must be mounted behind the super admin guard. */
 export const settingsRouter = Router()
 
@@ -223,6 +250,10 @@ settingsRouter.put('/settings', async (request, response) => {
     const parsed = parseSettings(request.body as SettingsInput, await getSettings())
     if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }
     const { id: _id, updatedAt: _updatedAt, ...changes } = parsed.data
+    if (changes.doorKeysEnabled === false) {
+      const blocker = await doorKeysOffBlocker()
+      if (blocker) { response.status(409).json({ error: blocker }); return }
+    }
     // featureBadges is only ever set to an object here, never null, so it fits the update input.
     cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: changes as Prisma.WorkspaceSettingsUpdateInput })
     response.json(toClientSettings(cached))

@@ -1246,6 +1246,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .housekeeping-staff-line { display: flex; align-items: center; gap: 6px; margin-top: 6px !important; color: var(--teal) !important; font-weight: 600; }
 
 /* Door locks: PIN changes the owner makes by hand on the lock. Tints are translucent so both themes work. */
+/* The resident's Door access card on Home. */
+.resident-door-access-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 10px; color: var(--teal); background: var(--teal-soft); }
+.resident-door-access-key { margin-top: 16px; }
+.resident-door-access-key .door-key-line code { font-size: 16px; }
+.resident-door-access-steps { display: grid; gap: 4px; margin-top: 14px; padding-left: 12px; border-left: 3px solid var(--teal); }
+.resident-door-access-steps strong { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.resident-door-access-steps p { margin: 0; color: var(--ink); font-size: 12px; line-height: 1.5; white-space: pre-line; }
 .door-lock-list { display: grid; gap: 8px; margin-top: 18px; }
 .door-lock-task { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; }
 .door-lock-task.is-done { opacity: .7; }

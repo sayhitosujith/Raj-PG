@@ -46,7 +46,7 @@ export function DoorKeyManager({ residentId, residentName, doorAccessKey, revoke
   )
 }
 
-/** The resident's own door PIN on their Home card: hidden until tapped, since phones are read over shoulders. */
+/** The resident's own door PIN on their Door access card: hidden until tapped, since phones are read over shoulders. */
 export function DoorKeyLine({ doorAccessKey, onNotice }: { doorAccessKey: string; onNotice: (message: string) => void }) {
   const [isShown, setIsShown] = useState(false)
   return (

@@ -386,7 +386,9 @@ residentRouter.post('/residents/:id/door-key', async (request, response) => {
     if (resident.deletedAt || resident.movedOutAt) { response.status(409).json({ error: 'This resident no longer lives here, so they cannot get a door access key.' }); return }
     // The daily run would take it away again; the owner records the rent or allows access until a date first.
     if (await isLockedOut(request.params.id)) { response.status(409).json({ error: 'Rent is overdue, so door access is paused. Record the payment or allow access until a date first.' }); return }
-    const doorAccessKey = createDoorAccessKey()
+    const settings = await getSettings()
+    if (!settings.doorKeysEnabled) { response.status(409).json({ error: 'Door access keys are switched off in Settings → Smart lock.' }); return }
+    const doorAccessKey = createDoorAccessKey(settings.doorPinLength)
     await prisma.$transaction(async (transaction) => {
       await queueKeyIssued(transaction, request.params.id, doorAccessKey)
       await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey, doorAccessKeyRevokedAt: null } })

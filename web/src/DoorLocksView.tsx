@@ -24,10 +24,10 @@ function TaskRow({ task, onDone }: { task: DoorLockTask; onDone?: () => Promise<
  * The Door locks page: PIN changes the owner must make by hand on the lock (it has no API the app can
  * reach), oldest first, each confirmed with "Done on lock"; recently done ones are listed below.
  */
-export function DoorLocksView({ tasks, hasError, onRetry, onDone, onBack }: { tasks: { pending: DoorLockTask[]; done: DoorLockTask[] } | null; hasError: boolean; onRetry: () => void; onDone: (task: DoorLockTask) => Promise<void>; onBack: () => void }) {
+export function DoorLocksView({ lock, tasks, hasError, onRetry, onDone, onBack }: { /** From Settings → Smart lock, so whoever makes the changes knows which lock. */ lock: { model: string | null; location: string | null } | null; tasks: { pending: DoorLockTask[]; done: DoorLockTask[] } | null; hasError: boolean; onRetry: () => void; onDone: (task: DoorLockTask) => Promise<void>; onBack: () => void }) {
   return (
     <section className="workspace-view door-locks-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Door locks</h2><p>PIN changes to make on the lock in the Qubo app, oldest first. Mark each one done once it is on the lock.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Door locks</h2><p>PIN changes to make on {lock?.model || 'the lock'}{lock?.location ? ` at ${lock.location}` : ''} in its own app, oldest first. Mark each one done once it is on the lock.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
       {hasError && !tasks && <div className="workspace-empty"><div className="workspace-empty-icon"><RotateCw size={22} /></div><h3>Door lock tasks could not be loaded</h3><p>Check your connection and try again.</p><button className="primary-button" onClick={onRetry}>Try again</button></div>}
       {tasks && (tasks.pending.length
         ? <div className="door-lock-list">{tasks.pending.map((task) => <TaskRow key={task.id} task={task} onDone={() => onDone(task)} />)}</div>

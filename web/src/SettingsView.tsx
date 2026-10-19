@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, House, ImageUp, QrCode, Palette, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, House, ImageUp, LockKeyhole, QrCode, Palette, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -165,6 +165,15 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
               <label>UPI ID <span>(blank to hide)</span><input name="upiId" defaultValue={settings.upiId ?? ''} placeholder="e.g. rajpg@okhdfcbank" autoCapitalize="none" spellCheck={false} /></label>
               <label>Payee name <span>(shown in UPI apps)</span><input name="upiPayeeName" maxLength={50} defaultValue={settings.upiPayeeName ?? ''} placeholder={settings.businessName} /></label>
             </div>
+          </SettingsSection>
+          <SettingsSection icon={<LockKeyhole size={18} />} title="Smart lock" description="Your door lock and its PINs. The app cannot control the lock itself: each PIN to add or delete is listed under Door locks, for you to do in the lock's own app." onSubmit={(form) => onSaveSettings({ doorKeysEnabled: form.get('doorKeysEnabled') === 'on', lockModel: value(form, 'lockModel'), lockLocation: value(form, 'lockLocation'), doorPinLength: Number(value(form, 'doorPinLength')), doorUnlockInstructions: value(form, 'doorUnlockInstructions') })}>
+            <label className="whatsapp-optin"><input type="checkbox" name="doorKeysEnabled" defaultChecked={settings.doorKeysEnabled} /><span>Door access keys <small className="settings-hint">Off hides them on the Residents page, in the resident portal and under Door locks. Remove every resident's key first.</small></span></label>
+            <div className="settings-pair">
+              <label>Lock model <span>(optional)</span><input name="lockModel" maxLength={60} defaultValue={settings.lockModel ?? ''} placeholder="e.g. Qubo Select SDL-P3" /></label>
+              <label>Fitted at <span>(optional)</span><input name="lockLocation" maxLength={60} defaultValue={settings.lockLocation ?? ''} placeholder="e.g. Main gate" /></label>
+            </div>
+            <label>PIN length <span>(digits in new PINs; existing PINs keep theirs)</span><input name="doorPinLength" type="number" min={4} max={8} required defaultValue={settings.doorPinLength} /></label>
+            <label>How to open the door <span>(shown to residents with their PIN)</span><textarea name="doorUnlockInstructions" rows={3} maxLength={500} defaultValue={settings.doorUnlockInstructions ?? ''} placeholder="e.g. Touch the keypad to wake it, enter your PIN, then press ✓." /></label>
           </SettingsSection>
           </>}
 
