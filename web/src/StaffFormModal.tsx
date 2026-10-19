@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { ModalLayer } from './ModalLayer'
+import { todayDateInputValue } from './joinDate'
 import { PhoneField } from './PhoneField'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
 import { readApiError } from './superAdmin'
 import { workerPhotoUrl, workerRoles, type Worker, type WorkerRole } from './workers'
 
 /**
- * Add or edit one property staff member: name, role and phone (all required) and an optional photo.
+ * Add or edit one property staff member: name, role, phone and date of joining (all required) and an
+ * optional photo. New staff default to joining today; existing staff without a date start blank, so
+ * "today" is never saved for them by accident.
  * Saves straight to the API and hands the saved worker back; errors stay in the form.
  */
 export function StaffFormModal({ propertyId, propertyName, worker, onSaved, onClose }: { propertyId: string; propertyName: string; worker: Worker | null; onSaved: (worker: Worker) => void; onClose: () => void }) {
@@ -19,7 +22,7 @@ export function StaffFormModal({ propertyId, propertyName, worker, onSaved, onCl
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const body = { name, role: form.get('role') as WorkerRole, phone: String(form.get('phone') ?? ''), ...(photoChange !== undefined ? { photo: photoChange } : {}) }
+    const body = { name, role: form.get('role') as WorkerRole, phone: String(form.get('phone') ?? ''), joinedOn: String(form.get('joinedOn') ?? ''), ...(photoChange !== undefined ? { photo: photoChange } : {}) }
     setIsSaving(true)
     setError('')
     const url = worker ? `/api/properties/${propertyId}/workers/${worker.id}` : `/api/properties/${propertyId}/workers`
@@ -38,6 +41,7 @@ export function StaffFormModal({ propertyId, propertyName, worker, onSaved, onCl
           <label>Full name<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={40} autoComplete="off" /></label>
           <label>Role<select name="role" defaultValue={worker?.role ?? 'HOUSEKEEPING'}>{workerRoles.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <PhoneField name="phone" label="Phone number" required defaultValue={worker?.phone} />
+          <label>Date of joining<input name="joinedOn" type="date" required defaultValue={worker ? worker.joinedOn?.slice(0, 10) ?? '' : todayDateInputValue()} /></label>
           {error && <p className="login-error" role="alert">{error}</p>}
           <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={isSaving}>{isSaving ? 'Saving…' : worker ? 'Save changes' : 'Add staff member'}</button></div>
         </form>

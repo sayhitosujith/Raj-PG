@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Pencil, Phone, Plus, Trash2, Users } from 'lucide-react'
+import { CalendarDays, Pencil, Phone, Plus, Trash2, Users } from 'lucide-react'
 import { Avatar } from './Avatar'
+import { formatJoinDate } from './joinDate'
 import { ModalLayer } from './ModalLayer'
 import { StaffFormModal } from './StaffFormModal'
 import { readApiError } from './superAdmin'
@@ -9,7 +10,7 @@ import { workerPhotoUrl, workerRoles, type Worker } from './workers'
 type StaffProperty = { id: string; name: string; workers: Worker[] }
 
 /**
- * The people who work at each property, grouped by role, with photo and phone. Super admins add,
+ * The people who work at each property, grouped by role, with photo, phone and date of joining. Super admins add,
  * edit and remove them; receptionists see the same cards read-only, since the API refuses their
  * changes. Residents see only the housekeeping names, in their Housekeeping card.
  */
@@ -59,6 +60,7 @@ export function StaffPanel({ properties, canManage, onChanged, onNotice }: { pro
                 <div className="staff-card-text">
                   <strong>{worker.name}</strong>
                   {worker.phone ? <a href={`tel:${worker.phone}`}><Phone size={11} /> {worker.phone}</a> : <small>{canManage ? 'No phone yet; edit to add it' : 'No phone'}</small>}
+                  {worker.joinedOn ? <small><CalendarDays size={11} /> Joined {formatJoinDate(worker.joinedOn)}</small> : canManage && <small>No joining date yet</small>}
                 </div>
                 {canManage && <div className="staff-card-actions">
                   <button type="button" className="icon-button" aria-label={`Edit ${worker.name}`} title="Edit" onClick={() => setEditing(worker)}><Pencil size={14} /></button>

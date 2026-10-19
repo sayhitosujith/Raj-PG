@@ -1693,7 +1693,7 @@
             "description": "Adds one worker to the property and answers with the saved worker.\n\nSource: backend/src/workers.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"photo\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"joinedOn\": \"\",\n  \"photo\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1766,10 +1766,10 @@
                 }
               ]
             },
-            "description": "Replaces a worker's name, role and phone, and their photo when one is sent.\n\nSource: backend/src/workers.ts",
+            "description": "Replaces a worker's name, role, phone and date of joining, and their photo when one is sent.\n\nSource: backend/src/workers.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"photo\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"joinedOn\": \"\",\n  \"photo\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

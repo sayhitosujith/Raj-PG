@@ -426,6 +426,8 @@ model Worker {
   // 256×256 JPEG data URL, resized in the browser; served by its own route so lists stay small.
   photoUrl       String?
   photoUpdatedAt DateTime?
+  // Date of joining (calendar day only). Required by the API; null only for staff added before it existed.
+  joinedOn       DateTime?  @db.Date
   createdAt      DateTime   @default(now())
 
   @@index([propertyId, role])

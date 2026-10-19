@@ -1,13 +1,14 @@
 import { Prisma, WorkerRole } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
+import { parseDateOnly } from './dates.js'
 import { findProfilePhotoProblem, photoVersion, sendWorkerPhoto } from './photo.js'
 import { normalizePhone, phoneRequirement } from './validation.js'
 
 const maxWorkersPerProperty = 100
 const maxNameLength = 40
 
-const rowSelect = { id: true, name: true, role: true, phone: true, photoUpdatedAt: true } as const
+const rowSelect = { id: true, name: true, role: true, phone: true, joinedOn: true, photoUpdatedAt: true } as const
 type WorkerRow = Prisma.WorkerGetPayload<{ select: typeof rowSelect }>
 
 /** What clients see of a worker: the photo as a version for its URL, never the image itself. */
@@ -18,11 +19,12 @@ export const workersQuery = { select: rowSelect, orderBy: [{ role: 'asc' }, { cr
 
 const isRole = (value: unknown): value is WorkerRole => typeof value === 'string' && (Object.values(WorkerRole) as string[]).includes(value)
 
-type WorkerBody = { name?: unknown; role?: unknown; phone?: unknown; photo?: unknown }
-type WorkerData = { name: string; role: WorkerRole; phone: string; photoUrl?: string | null; photoUpdatedAt?: Date | null }
+type WorkerBody = { name?: unknown; role?: unknown; phone?: unknown; joinedOn?: unknown; photo?: unknown }
+type WorkerData = { name: string; role: WorkerRole; phone: string; joinedOn: Date; photoUrl?: string | null; photoUpdatedAt?: Date | null }
 
 /**
- * A worker from the request body, or the message to show. Name, role and phone are required on
+ * A worker from the request body, or the message to show. Name, role, phone and date of joining
+ * (YYYY-MM-DD; a future date is allowed for someone about to start) are required on
  * both add and edit; `photo` is a data URL to set, null to remove, or absent to keep the current one.
  */
 function parseWorker(body: WorkerBody): WorkerData | { error: string } {
@@ -32,10 +34,13 @@ function parseWorker(body: WorkerBody): WorkerData | { error: string } {
   if (!isRole(body.role)) return { error: 'Choose what they do.' }
   const phone = typeof body.phone === 'string' ? normalizePhone(body.phone) : null
   if (!phone) return { error: phoneRequirement }
-  if (body.photo === undefined) return { name, role: body.role, phone }
-  if (body.photo === null) return { name, role: body.role, phone, photoUrl: null, photoUpdatedAt: null }
+  const joinedOn = typeof body.joinedOn === 'string' ? parseDateOnly(body.joinedOn) : null
+  if (!joinedOn) return { error: 'Enter a valid date of joining.' }
+  const fields = { name, role: body.role, phone, joinedOn }
+  if (body.photo === undefined) return fields
+  if (body.photo === null) return { ...fields, photoUrl: null, photoUpdatedAt: null }
   const problem = findProfilePhotoProblem(body.photo)
-  return problem ? { error: problem } : { name, role: body.role, phone, photoUrl: body.photo as string, photoUpdatedAt: new Date() }
+  return problem ? { error: problem } : { ...fields, photoUrl: body.photo as string, photoUpdatedAt: new Date() }
 }
 
 /** Whether another worker at the property already has this name in this role (case-insensitive). */
@@ -72,7 +77,7 @@ workersAdminRouter.post('/properties/:id/workers', async (request, response) => 
   }
 })
 
-// Replaces a worker's name, role and phone, and their photo when one is sent.
+// Replaces a worker's name, role, phone and date of joining, and their photo when one is sent.
 workersAdminRouter.put('/properties/:id/workers/:workerId', async (request, response) => {
   const parsed = parseWorker(request.body as WorkerBody)
   if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }

@@ -2,10 +2,10 @@
 export type WorkerRole = 'HEAD_COOK' | 'HELPING_COOK' | 'HOUSEKEEPING' | 'SECURITY' | 'ELECTRICIAN' | 'PLUMBER'
 
 /**
- * Someone who works at a property (they never sign in). The phone is E.164; it is null only for
- * housekeeping names carried over from the old name list. The photo is fetched by version.
+ * Someone who works at a property (they never sign in). The phone is E.164 and the date of joining an
+ * ISO date; either is null only for staff added before it was asked for. The photo is fetched by version.
  */
-export type Worker = { id: string; name: string; role: WorkerRole; phone: string | null; photoVersion: number | null }
+export type Worker = { id: string; name: string; role: WorkerRole; phone: string | null; joinedOn: string | null; photoVersion: number | null }
 
 /** Roles in the order the Staff panel lists them. */
 export const workerRoles: Array<{ value: WorkerRole; label: string }> = [
