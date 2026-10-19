@@ -16,6 +16,7 @@ import { sharingLabel } from './rooms'
 import { ModalLayer } from './ModalLayer'
 import type { Diet } from './diet'
 import { DietToggle } from './DietToggle'
+import type { NewResidentResult } from './residentWelcome'
 
 const minimumPasswordLength = 10
 
@@ -49,7 +50,7 @@ export function clonePrefill(resident: Resident): ResidentPrefill {
   return { name: '', phone: '', email: null, propertyId: resident.propertyId, foodOpted: resident.foodOpted, joinedAt: null, permanentAddress: resident.permanentAddress, nationality: resident.nationality, monthlyRent: resident.rentFromProperty ? null : resident.rent.monthlyRent, whatsappOptIn: resident.whatsappOptIn, emailOptIn: resident.emailOptIn }
 }
 
-export function ResidentFormModal({ resident, prefill, properties, onClose, onSaved, onNotice }: { resident?: Resident; prefill?: ResidentPrefill; properties: Array<{ id?: string; name: string; rentWithFood?: number | null; rentWithoutFood?: number | null }>; onClose: () => void; onSaved: (resident: Resident) => void; onNotice: (message: string) => void }) {
+export function ResidentFormModal({ resident, prefill, properties, onClose, onSaved, onNotice }: { resident?: Resident; prefill?: ResidentPrefill; properties: Array<{ id?: string; name: string; rentWithFood?: number | null; rentWithoutFood?: number | null }>; onClose: () => void; /** New residents also get the access key and the channels that delivered it. */ onSaved: (resident: Resident, created?: NewResidentResult) => void; onNotice: (message: string) => void }) {
   const isEdit = resident !== undefined
   const [accessKey, setAccessKey] = useState('')
   const [uploads, setUploads] = useState<DocumentUploads>({})
@@ -124,7 +125,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
       const response = await fetch(isEdit ? `/api/residents/${resident.id}` : '/api/residents', { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!response.ok) { setError(await readApiError(response, 'Could not save the resident.')); return }
       const { accessKey: savedKey, credentialsSent, ...saved } = await response.json() as Resident & { accessKey?: string; credentialsSent?: string[] }
-      onSaved(saved)
+      onSaved(saved, savedKey ? { accessKey: savedKey, credentialsSent } : undefined)
       onNotice(isEdit ? `${saved.name} updated.` : `Resident added with access key ${savedKey}.${credentialsSent ? ` ${credentialsNotice(credentialsSent)}` : ''}`)
     } catch {
       setError('Could not reach the server.')

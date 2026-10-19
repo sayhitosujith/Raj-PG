@@ -2574,3 +2574,7 @@ div.portal-panel { display: contents; }
 .notification-panel li.is-kind-subscription { border-color: rgb(253 230 138); border-left-color: rgb(217 119 6); background: rgb(255 251 235); }
 :root[data-theme="dark"] .notice-kind.is-subscription { color: rgb(252 211 77); background: rgb(120 53 15 / .45); }
 :root[data-theme="dark"] .notification-panel li.is-kind-subscription { border-color: rgb(217 119 6 / .35); border-left-color: rgb(251 191 36); background: rgb(120 53 15 / .25); }
+/* WhatsApp welcome prompt after a referral becomes a resident: the message as it will be sent. */
+.welcome-whatsapp-text { margin: 4px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #f6f9f7; font: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.welcome-whatsapp .modal-actions a.primary-button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+:root[data-theme="dark"] .welcome-whatsapp-text { border-color: rgb(255 255 255 / .12); background: rgb(255 255 255 / .04); }

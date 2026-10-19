@@ -8,6 +8,7 @@ import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { listPageSize, usePagination } from './usePagination'
 import { ModalLayer } from './ModalLayer'
+import { whatsappLink } from './siteData'
 
 async function fetchBookings() {
   const response = await fetch('/api/bookings')
@@ -16,10 +17,7 @@ async function fetchBookings() {
 }
 
 const formatDay = (value: string) => new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-// WhatsApp's click-to-chat wants the number with its country code and no "+". Numbers are stored
-// in E.164 form; a bare 10-digit one predates that and is Indian.
-const whatsappDigits = (phone: string) => { const digits = phone.replace(/\D/g, ''); return digits.length === 10 ? `91${digits}` : digits }
-const whatsappLink = (booking: BookingRequest) => `https://wa.me/${whatsappDigits(booking.phone)}?text=${encodeURIComponent(`Hi ${booking.name}, thanks for your booking request for ${booking.property}.`)}`
+const thanksLink = (booking: BookingRequest) => whatsappLink(booking.phone, `Hi ${booking.name}, thanks for your booking request for ${booking.property}.`)
 
 /**
  * Booking requests from the public /book form (shared on social media) plus the owner's own
@@ -92,7 +90,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
             <div className="crud-actions">
               <select className={`booking-status is-${bookingStatusTones[booking.status]}`} aria-label={`Status of ${booking.name}'s request`} value={booking.status} onChange={(event) => void changeStatus(booking, event.target.value as BookingStatus)}>{Object.entries(bookingStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
               <a className="icon-button" href={`tel:${booking.phone}`} aria-label={`Call ${booking.name}`} title="Call"><Phone size={15} /></a>
-              <a className="icon-button whatsapp-green" href={whatsappLink(booking)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${booking.name}`} title="WhatsApp"><WhatsAppIcon size={15} /></a>
+              <a className="icon-button whatsapp-green" href={thanksLink(booking)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${booking.name}`} title="WhatsApp"><WhatsAppIcon size={15} /></a>
               {booking.residentId ? <span className="status-pill sage">Resident added</span> : <button type="button" className="secondary-button" onClick={() => onConvert(booking, (residentId) => void changeStatus(booking, 'accepted', residentId))}><UserPlus size={13} /> Convert to resident</button>}
               <button className="row-delete" aria-label={`Delete request from ${booking.name}`} onClick={() => remove(booking)}><Trash2 size={14} /></button>
             </div>

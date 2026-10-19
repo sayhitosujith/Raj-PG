@@ -102,5 +102,5 @@ export function photosOf(properties: SiteProperty[]) {
 /** ISO weekdays in order, for the weekly menu. */
 export const weekdays = [[1, 'Monday'], [2, 'Tuesday'], [3, 'Wednesday'], [4, 'Thursday'], [5, 'Friday'], [6, 'Saturday'], [7, 'Sunday']] as const
 
-/** A wa.me chat link for a stored phone number (E.164 or bare Indian digits). */
-export const whatsappLink = (phone: string) => `https://wa.me/${phone.replace(/\D/g, '').replace(/^(\d{10})$/, '91$1')}`
+/** A wa.me chat link for a stored phone number (E.164 or bare Indian digits), with a message typed in when given. */
+export const whatsappLink = (phone: string, text?: string) => `https://wa.me/${phone.replace(/\D/g, '').replace(/^(\d{10})$/, '91$1')}${text ? `?text=${encodeURIComponent(text)}` : ''}`
