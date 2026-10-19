@@ -73,12 +73,28 @@
    header stays white and fixed above it. */
 .site.is-home .site-header { position: fixed; right: 0; left: 0; }
 .site-hero { position: relative; isolation: isolate; display: grid; place-items: start center; min-height: 100vh; min-height: 100svh; margin: 0 calc(50% - 50vw); padding: calc(84px + 12vh) calc(50vw - 50%) 88px; overflow: hidden; background: linear-gradient(135deg, var(--site-brand) 0%, color-mix(in srgb, var(--site-brand) 45%, var(--site-navy)) 55%, var(--site-navy) 100%); }
-/* Soft circles of light drifting behind the glass panel, for depth without a photo */
-.site-hero-glow { position: absolute; z-index: -1; border-radius: 50%; filter: blur(60px); animation: site-drift 18s ease-in-out infinite alternate; }
-.site-hero-glow.is-one { top: 8%; left: 6%; width: 38vw; height: 38vw; background: color-mix(in srgb, var(--site-brand) 70%, rgb(255 255 255)); opacity: .45; }
-.site-hero-glow.is-two { right: 4%; bottom: 6%; width: 32vw; height: 32vw; background: rgb(250 204 21); opacity: .22; animation-delay: -6s; }
-.site-hero-glow.is-three { top: 40%; left: 55%; width: 22vw; height: 22vw; background: rgb(255 255 255); opacity: .18; animation-delay: -12s; }
-@keyframes site-drift { to { transform: translate(4vw, -3vh) scale(1.1); } }
+/* Without a banner: an illustrated skyline along the bottom (SiteHeroScene.tsx), every colour mixed from
+   the brand colour so it follows Views. Its height is capped so the headline keeps the open sky. */
+/* Grows with width as well as height, so wide screens trim less of the top of the drawing. */
+.site-hero-scene { position: absolute; right: 0; bottom: 0; left: 0; z-index: -1; width: 100%; height: clamp(220px, max(44vh, 30vw), 600px); }
+.scene-sun { fill: rgb(251 113 133); opacity: .92; }
+.scene-cloud { fill: rgb(255 255 255 / .72); animation: scene-drift 40s ease-in-out infinite alternate; }
+.scene-cloud.is-fast { animation-duration: 26s; }
+@keyframes scene-drift { to { translate: 60px 0; } }
+.scene-far { fill: rgb(255 255 255 / .1); }
+.scene-tower { fill: rgb(244 248 251); }
+.scene-tower-side { fill: color-mix(in srgb, var(--site-navy) 16%, rgb(244 248 251)); }
+.scene-roof { fill: color-mix(in srgb, var(--site-brand) 35%, var(--site-navy)); }
+.scene-window { fill: color-mix(in srgb, var(--site-brand) 50%, var(--site-navy)); }
+.scene-window.is-lit { fill: rgb(253 224 71); }
+.scene-house { fill: color-mix(in srgb, var(--site-brand) 28%, rgb(255 255 255)); }
+.scene-door { fill: var(--site-navy); }
+.scene-tree { fill: color-mix(in srgb, var(--site-brand) 42%, var(--site-navy)); }
+.scene-trunk { fill: var(--site-navy); }
+.scene-ground { fill: var(--site-surface); }
+/* The scroll cue sits on the light ground under the skyline, so it takes the page's muted ink. */
+.site-hero:not(.has-image) .site-scroll-cue { color: var(--site-muted); }
+@media (prefers-reduced-motion: reduce) { .scene-cloud { animation: none; } }
 /* The owner's banner image, when one is set, under a dark wash so the glass panel's white text reads */
 .site-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
 .site-hero.has-image::after { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .18) 0%, rgb(0 0 0 / .12) 55%, rgb(0 0 0 / 0) 72%, var(--site-surface) 100%); content: ''; }
@@ -320,7 +336,7 @@
 .site-whatsapp:hover { transform: scale(1.06); }
 @keyframes site-pulse { 0%, 100% { box-shadow: 0 10px 24px rgb(37 211 102 / .45), 0 0 0 0 rgb(37 211 102 / .4); } 50% { box-shadow: 0 10px 24px rgb(37 211 102 / .45), 0 0 0 12px rgb(37 211 102 / 0); } }
 
-@media (prefers-reduced-motion: reduce) { .site-hero-glow, .site-hero-copy, .site-scroll-cue svg, .site-plan, .site-photo-grid img, .site-whatsapp { animation: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .site-hero-copy, .site-scroll-cue svg, .site-plan, .site-photo-grid img, .site-whatsapp { animation: none; transition: none; } }
 
 /* Phones: the hero's buttons stacked full width under the centred headline. */
 @media (max-width: 719px) {
