@@ -216,28 +216,3 @@ housekeepingAdminRouter.patch('/housekeeping/:id', async (request, response) => 
     respondToError(response, error, 'The request could not be updated.')
   }
 })
-
-const maxStaff = 30
-const maxStaffNameLength = 40
-
-/** Trimmed, de-duplicated staff names, or the message to show when the list is not acceptable. */
-function parseStaffNames(value: unknown): { names: string[] } | { error: string } {
-  if (!Array.isArray(value) || value.some((name) => typeof name !== 'string')) return { error: 'Staff must be a list of names.' }
-  const names = [...new Set(value.map((name: string) => name.trim().replace(/\s+/g, ' ')).filter(Boolean))]
-  if (names.length > maxStaff) return { error: `Add up to ${maxStaff} staff per property.` }
-  if (names.some((name) => name.length > maxStaffNameLength)) return { error: `Keep each name under ${maxStaffNameLength} characters.` }
-  return { names }
-}
-
-// The property's housekeeping staff, shown to its residents (the count is the number of names).
-housekeepingAdminRouter.put('/properties/:id/housekeeping-staff', async (request, response) => {
-  const parsed = parseStaffNames((request.body as { names?: unknown }).names)
-  if ('error' in parsed) { response.status(400).json({ error: parsed.error }); return }
-  try {
-    const { housekeepingStaff } = await prisma.property.update({ where: { id: request.params.id }, data: { housekeepingStaff: parsed.names }, select: { housekeepingStaff: true } })
-    response.json({ names: housekeepingStaff })
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Property was not found.' }); return }
-    respondToError(response, error, 'Housekeeping staff could not be saved.')
-  }
-})

@@ -7,10 +7,10 @@ import { resizeToSquareJpeg } from './imageResize'
 export type PhotoChange = string | null | undefined
 
 /**
- * Photo picker for the owner's add/edit resident form. Nothing is uploaded until the form is
+ * Photo picker for the owner's add/edit forms (residents and property staff). Nothing is uploaded until the form is
  * saved; the chosen image is resized in the browser and previewed here in the meantime.
  */
-export function ResidentPhotoField({ name, currentUrl, change, onChange, onError }: { name: string; currentUrl: string | null; change: PhotoChange; onChange: (change: PhotoChange) => void; onError: (message: string) => void }) {
+export function ResidentPhotoField({ name, currentUrl, change, onChange, onError, subject = 'resident' }: { name: string; currentUrl: string | null; change: PhotoChange; onChange: (change: PhotoChange) => void; onError: (message: string) => void; /** Who the photo belongs to, for the hint text; the staff form reuses this picker. */ subject?: string }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isReading, setIsReading] = useState(false)
   const previewUrl = change === undefined ? currentUrl : change
@@ -32,7 +32,7 @@ export function ResidentPhotoField({ name, currentUrl, change, onChange, onError
       <Avatar name={name || '?'} photoUrl={previewUrl ?? null} className="resident-photo-preview" />
       <div className="resident-photo-copy">
         <strong>Profile photo <span>(optional)</span></strong>
-        <small>{isReading ? 'Preparing photo…' : change === null ? 'Photo will be removed when you save.' : change ? 'New photo will be saved with the resident.' : 'Square photos work best; it will be cropped to a circle.'}</small>
+        <small>{isReading ? 'Preparing photo…' : change === null ? 'Photo will be removed when you save.' : change ? `New photo will be saved with the ${subject}.` : 'Square photos work best; it will be cropped to a circle.'}</small>
         <div className="resident-photo-actions">
           <button type="button" className="secondary-button" onClick={() => inputRef.current?.click()} disabled={isReading}><Camera size={14} /> {hasPhoto ? 'Replace' : 'Choose photo'}</button>
           {hasPhoto && <button type="button" className="icon-button" aria-label="Remove photo" title="Remove photo" onClick={() => onChange(currentUrl ? null : undefined)}><Trash2 size={14} /></button>}

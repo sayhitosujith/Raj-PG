@@ -1222,21 +1222,27 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 720px) { .sky-moon, .sky-sun { left: 84%; top: 11%; } }
 @media (prefers-reduced-motion: reduce) { .portal-sky, .sky-star, .sky-moon, .sky-sun { animation: none; } }
 
-/* Housekeeping staff: the owner's panel on the Housekeeping page and the line residents see. */
-.housekeeping-staff { display: grid; gap: 12px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
-.housekeeping-staff-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.housekeeping-staff-head > div { display: grid; flex: 1 1 200px; gap: 2px; min-width: 0; }
-.housekeeping-staff-head strong { color: var(--ink); font-size: 13px; }
-.housekeeping-staff-head small { color: var(--muted); font-size: 11px; }
-.housekeeping-staff-head select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
-.housekeeping-staff-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: var(--teal); background: var(--teal-soft); }
-.housekeeping-staff-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.staff-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: white; font-size: 12px; font-weight: 600; }
-.staff-chip button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; color: var(--muted); background: #eef3f0; cursor: pointer; }
-.staff-chip button:hover:not(:disabled) { color: #b5523f; background: #fbe6e1; }
-.housekeeping-staff-list form { display: flex; align-items: center; gap: 4px; }
-.housekeeping-staff-list input { width: 150px; padding: 6px 10px; border: 1px dashed #cddbd4; border-radius: 999px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 12px; }
-.housekeeping-staff-list input:focus { border-style: solid; border-color: var(--teal); }
+/* Staff: the owner's panel on the Staff management page, and the housekeeping line residents see. */
+.staff-panel { display: grid; gap: 14px; margin: 18px 0 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.staff-panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.staff-panel-head > div { display: grid; flex: 1 1 200px; gap: 2px; min-width: 0; }
+.staff-panel-head strong { color: var(--ink); font-size: 13px; }
+.staff-panel-head small { color: var(--muted); font-size: 11px; }
+.staff-panel-head select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.staff-panel-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: var(--teal); background: var(--teal-soft); }
+.staff-panel-group { display: grid; gap: 8px; }
+.staff-panel-role { margin: 0; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.staff-panel-role span { margin-left: 4px; color: var(--teal); }
+.staff-panel-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+.staff-card { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.staff-card-photo { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 13px Manrope, sans-serif; }
+.staff-card-photo.has-photo { overflow: hidden; background: #e6ece8; }
+.staff-card-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.staff-card-text { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.staff-card-text strong { overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.staff-card-text a, .staff-card-text small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; text-decoration: none; }
+.staff-card-text a:hover { color: var(--teal); }
+.staff-card-actions { display: flex; flex: none; gap: 2px; }
 .housekeeping-staff-line { display: flex; align-items: center; gap: 6px; margin-top: 6px !important; color: var(--teal) !important; font-weight: 600; }
 
 /* "Verified" beside details the owner has checked (Aadhaar number and address). */

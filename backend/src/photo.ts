@@ -37,6 +37,9 @@ export const findProfilePhotoProblem = (dataUrl: unknown) => findImageProblem(da
 /** Sends a stored profile photo (private: only signed-in owners and the resident see it). */
 export const sendProfilePhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No profile photo.')
 
+/** Sends a property worker's photo (private: only signed-in staff see it). Same 256×256 size as profile photos. */
+export const sendWorkerPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No photo.')
+
 /** Why an uploaded workspace logo is unacceptable, or null when it is fine. */
 export const findLogoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxLogoBytes, 'a logo')
 

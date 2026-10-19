@@ -962,6 +962,29 @@
       ]
     },
     {
+      "name": "My subscription",
+      "item": [
+        {
+          "name": "GET /my-subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/my-subscription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "my-subscription"
+              ]
+            },
+            "description": "The signed-in receptionist's own subscription (read-only), for their Subscription page and banner.\n\nSource: backend/src/subscriptions.ts"
+          }
+        }
+      ]
+    },
+    {
       "name": "Payments",
       "item": [
         {
@@ -1254,47 +1277,7 @@
                 }
               ]
             },
-            "description": "Headcounts for today and tomorrow from active residents on a food plan: who answered eating, who skips, and who has not answered (counted as not eating; their names, so the owner can chase them), plus the last week's feedback.\n\nSource: backend/src/food.ts"
-          }
-        },
-        {
-          "name": "PUT /properties/:id/housekeeping-staff",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/properties/:id/housekeeping-staff",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "properties",
-                ":id",
-                "housekeeping-staff"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            },
-            "description": "The property's housekeeping staff, shown to its residents (the count is the number of names).\n\nSource: backend/src/housekeeping.ts",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"names\": \"\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Source: backend/src/food.ts"
           }
         },
         {
@@ -1677,6 +1660,154 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "POST /properties/:id/workers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Adds one worker to the property and answers with the saved worker.\n\nSource: backend/src/workers.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"photo\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id/workers/:workerId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers/:workerId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers",
+                ":workerId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "workerId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Removes one worker from the property.\n\nSource: backend/src/workers.ts"
+          }
+        },
+        {
+          "name": "PUT /properties/:id/workers/:workerId",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers/:workerId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers",
+                ":workerId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "workerId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Replaces a worker's name, role and phone, and their photo when one is sent.\n\nSource: backend/src/workers.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"role\": \"\",\n  \"phone\": \"\",\n  \"photo\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /properties/:id/workers/:workerId/photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers/:workerId/photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers",
+                ":workerId",
+                "photo"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "workerId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The worker's photo; its URL carries ?v=<photoVersion>, so it is cached until the photo changes.\n\nSource: backend/src/workers.ts"
           }
         }
       ]
@@ -2891,7 +3022,7 @@
             "description": "Source: backend/src/residents.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2955,7 +3086,7 @@
             "description": "Source: backend/src/residents.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3889,6 +4020,113 @@
               ]
             },
             "description": "Source: backend/src/staffActivity.ts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "GET /subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscriptions"
+              ]
+            },
+            "description": "Every receptionist with their status and full history, newest period first.\n\nSource: backend/src/subscriptions.ts"
+          }
+        },
+        {
+          "name": "POST /subscriptions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscriptions"
+              ]
+            },
+            "description": "Source: backend/src/subscriptions.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staffId\": \"\",\n  \"plan\": \"\",\n  \"startsOn\": \"\",\n  \"endsOn\": \"\",\n  \"amount\": \"\",\n  \"note\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /subscriptions/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscriptions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscriptions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Removes a period entered by mistake. If it was the current one, the status falls back to the one before.\n\nSource: backend/src/subscriptions.ts"
+          }
+        },
+        {
+          "name": "POST /subscriptions/staff/:staffId/end",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscriptions/staff/:staffId/end",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscriptions",
+                "staff",
+                ":staffId",
+                "end"
+              ],
+              "variable": [
+                {
+                  "key": "staffId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Ends the receptionist's access now: every period still running (or starting later) is marked ended early today, keeping its recorded dates and amount. Their sessions are left for the per-request check (auth.ts) to end on their next request: it says why before deleting them, which a deleted session could not.\n\nSource: backend/src/subscriptions.ts"
           }
         }
       ]
