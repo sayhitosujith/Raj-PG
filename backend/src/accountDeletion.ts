@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from './db.js'
+import { queueCurrentKeyRemoval } from './doorLockTasks.js'
 
 /** Records the resident's "Delete my account" request; false when they already asked or the account is closed. */
 export async function requestAccountDeletion(residentId: string) {
@@ -26,15 +27,16 @@ export async function closeAccount(id: string, removedBy?: string) {
   if (!resident) return false
   const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : undefined
   const now = new Date()
-  await prisma.$transaction([
-    prisma.resident.update({
+  await prisma.$transaction(async (transaction) => {
+    await queueCurrentKeyRemoval(transaction, id, removedBy ? 'Removed from residents' : 'Account deleted')
+    await transaction.resident.update({
       where: { id },
       data: {
         passwordHash: null, accessKeyHash: null, passkeys: { deleteMany: {} }, doorAccessKey: null, doorAccessKeyRevokedAt: null, whatsappOptIn: false, emailOptIn: false, active: false, roomId: null, movedOutAt: now,
         deletionRequestedAt: null, deletionDeclinedAt: null, deletionDeclineReason: null, deletedAt: now, deletedByName: removedBy ?? null, ...(movedOutFrom ? { movedOutFrom } : {}),
       },
-    }),
-  ])
+    })
+  })
   return true
 }
 

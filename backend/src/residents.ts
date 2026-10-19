@@ -14,6 +14,7 @@ import { findInvalidField, pickTextFields, toResidentWrite, type TextField } fro
 import { isLockedOut, isRentLocked } from './rentLock.js'
 import { closeAccount } from './accountDeletion.js'
 import type { AuthContext } from './auth.js'
+import { queueCurrentKeyRemoval, queueKeyIssued } from './doorLockTasks.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyResidentCredentials } from './notifications.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
@@ -377,7 +378,8 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
 // Lets the owner choose a resident's password so they can tell the resident what it is; the
 // password itself is stored only as a hash. Retires the access key and signs the resident out.
 // Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE
-// removes it. Super admins only (see staffGuard). Anyone who has left gets no key.
+// removes it. Super admins only (see staffGuard). Anyone who has left gets no key. Each change also queues
+// the matching PIN change for the owner to make on the lock (see doorLockTasks.ts).
 residentRouter.post('/residents/:id/door-key', async (request, response) => {
   try {
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: request.params.id }, select: { deletedAt: true, movedOutAt: true } })
@@ -385,7 +387,10 @@ residentRouter.post('/residents/:id/door-key', async (request, response) => {
     // The daily run would take it away again; the owner records the rent or allows access until a date first.
     if (await isLockedOut(request.params.id)) { response.status(409).json({ error: 'Rent is overdue, so door access is paused. Record the payment or allow access until a date first.' }); return }
     const doorAccessKey = createDoorAccessKey()
-    await prisma.resident.update({ where: { id: request.params.id }, data: { doorAccessKey, doorAccessKeyRevokedAt: null } })
+    await prisma.$transaction(async (transaction) => {
+      await queueKeyIssued(transaction, request.params.id, doorAccessKey)
+      await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey, doorAccessKeyRevokedAt: null } })
+    })
     response.json({ doorAccessKey })
   } catch (error) {
     respondToWriteError(response, error, 'Door access key could not be saved.')
@@ -394,7 +399,10 @@ residentRouter.post('/residents/:id/door-key', async (request, response) => {
 
 residentRouter.delete('/residents/:id/door-key', async (request, response) => {
   try {
-    await prisma.resident.update({ where: { id: request.params.id }, data: { doorAccessKey: null, doorAccessKeyRevokedAt: null } })
+    await prisma.$transaction(async (transaction) => {
+      await queueCurrentKeyRemoval(transaction, request.params.id, 'Key removed by a super admin')
+      await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey: null, doorAccessKeyRevokedAt: null } })
+    })
     response.status(204).end()
   } catch (error) {
     respondToWriteError(response, error, 'Door access key could not be removed.')

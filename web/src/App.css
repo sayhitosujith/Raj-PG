@@ -1245,6 +1245,21 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .staff-card-actions { display: flex; flex: none; gap: 2px; }
 .housekeeping-staff-line { display: flex; align-items: center; gap: 6px; margin-top: 6px !important; color: var(--teal) !important; font-weight: 600; }
 
+/* Door locks: PIN changes the owner makes by hand on the lock. Tints are translucent so both themes work. */
+.door-lock-list { display: grid; gap: 8px; margin-top: 18px; }
+.door-lock-task { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; }
+.door-lock-task.is-done { opacity: .7; }
+.door-lock-action { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+.door-lock-action.is-add { color: rgb(21 128 61); background: rgb(34 197 94 / .14); }
+.door-lock-action.is-delete { color: rgb(185 28 28); background: rgb(239 68 68 / .14); }
+:root[data-theme="dark"] .door-lock-action.is-add { color: rgb(134 239 172); }
+:root[data-theme="dark"] .door-lock-action.is-delete { color: rgb(252 165 165); }
+.door-lock-pin { flex: none; color: var(--ink); font: 700 18px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 3px; }
+.door-lock-text { display: grid; flex: 1 1 200px; gap: 3px; min-width: 0; }
+.door-lock-text strong { color: var(--ink); font-size: 12px; }
+.door-lock-text small { color: var(--muted); font-size: 11px; }
+.door-lock-done-title { display: flex; align-items: center; gap: 6px; margin: 26px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+
 /* "Verified" beside details the owner has checked (Aadhaar number and address). */
 .verified-badge { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 1px 7px 1px 5px; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-size: 9.5px; font-weight: 700; letter-spacing: .2px; vertical-align: 1px; white-space: nowrap; }
 /*

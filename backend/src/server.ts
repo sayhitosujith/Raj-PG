@@ -19,6 +19,7 @@ import { parsePropertyRents, parseSharingPrices, syncPropertyRents } from './pro
 import { foodAdminRouter, foodResidentRouter } from './food.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { toWorkerView, workersAdminRouter, workersQuery } from './workers.js'
+import { doorLockTasksRouter } from './doorLockTasks.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
 import { rentAdminRouter } from './rent.js'
@@ -101,6 +102,7 @@ app.use('/api', subscriptionRouter)
 app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', workersAdminRouter)
+app.use('/api', doorLockTasksRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)

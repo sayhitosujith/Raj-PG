@@ -2,6 +2,7 @@ import { ExitStatus } from '@prisma/client'
 import { Router } from 'express'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
+import { queueCurrentKeyRemoval } from './doorLockTasks.js'
 import { notifyExitCancelled, notifyExitDateChanged, notifyExitDecision, notifyExitRequested, notifyInBackground } from './notifications.js'
 import { rentForMonth, rentStatus, type MonthConcession, activeConcessions } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
@@ -218,11 +219,12 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     const dues = await exitDues(id)
     if (dues.total > 0) { response.status(409).json({ error: `Clear ₹${dues.total.toLocaleString('en-IN')} in dues before completing the move-out.` }); return }
     const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : null
-    await prisma.$transaction([
+    await prisma.$transaction(async (transaction) => {
       // Their password, access key and door access key are cleared too, so moving back in needs a new access key.
-      prisma.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } }),
-      prisma.session.deleteMany({ where: { residentId: id } }),
-    ])
+      await queueCurrentKeyRemoval(transaction, id, 'Moved out')
+      await transaction.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } })
+      await transaction.session.deleteMany({ where: { residentId: id } })
+    })
     response.status(204).send()
   } catch (error) {
     console.error('Completing the move-out failed:', error)

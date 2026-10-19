@@ -54,6 +54,7 @@ model Property {
   housekeepingStaff   String[]             @default([])
   // The people who work at the property (cooks, housekeeping, security…); see workers.ts.
   workers             Worker[]
+  doorLockTasks       DoorLockTask[]
   expenses            Expense[]
   activities          Activity[]
   maintenanceRequests MaintenanceRequest[]
@@ -193,6 +194,7 @@ model Resident {
   foodApproved             Boolean?
   sessions                 Session[]
   housekeepingRequests     HousekeepingRequest[]
+  doorLockTasks            DoorLockTask[]
   rentPayments             RentPayment[]
   payments                 Payment[]
   bookings                 Booking[]                @relation("bookingResident")
@@ -400,6 +402,35 @@ model StaffSubscription {
 enum StaffRole {
   SUPER_ADMIN
   RECEPTIONIST
+}
+
+enum DoorLockAction {
+  ADD
+  DELETE
+}
+
+// A PIN change the owner must make on the physical lock by hand: the lock (Qubo) has no API the app
+// can reach, so every door access key issued or cleared queues one of these (see doorLockTasks.ts).
+// Names are copied in so the task still reads correctly after the resident or property is gone.
+model DoorLockTask {
+  id           String         @id @default(cuid())
+  action       DoorLockAction
+  pin          String
+  residentId   String?
+  resident     Resident?      @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  residentName String
+  propertyId   String?
+  property     Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyName String?
+  // Why it is needed, in plain words: "New key issued", "Rent overdue", "Moved out"…
+  reason       String
+  createdAt    DateTime       @default(now())
+  // Set when the owner confirms the change was made on the lock.
+  doneAt       DateTime?
+  doneByName   String?
+
+  @@index([doneAt, createdAt])
+  @@index([residentId, action, pin])
 }
 
 // What a property worker does. Only housekeeping names are shown to the property's residents.

@@ -16,13 +16,13 @@ export function DoorKeyManager({ residentId, residentName, doorAccessKey, revoke
   async function change(method: 'POST' | 'DELETE') {
     const question = method === 'DELETE'
       ? `Remove ${residentName}'s door access key? Also remove it from the lock so it stops opening the door.`
-      : doorAccessKey ? `Issue a new door access key for ${residentName}? Reprogram the lock with it; the old key keeps working until you do.` : null
+      : doorAccessKey ? `Issue a new door access key for ${residentName}? The old PIN keeps working until you delete it from the lock; both changes are added to Door locks.` : null
     if (question && !window.confirm(question)) return
     setIsBusy(true)
     try {
       const response = await fetch(`/api/residents/${residentId}/door-key`, { method })
       if (!response.ok) { onNotice(await readApiError(response, method === 'DELETE' ? 'Could not remove the door access key.' : 'Could not issue a door access key.')); return }
-      onNotice(method === 'DELETE' ? 'Door access key removed.' : 'Door access key issued. Program it into the lock.')
+      onNotice(method === 'DELETE' ? 'Door access key removed. Delete the PIN from the lock: it is on the Door locks list.' : 'Door access key issued. Add it to the lock: it is on the Door locks list.')
       onChanged()
     } catch {
       onNotice('Could not reach the server.')
@@ -36,7 +36,7 @@ export function DoorKeyManager({ residentId, residentName, doorAccessKey, revoke
       {doorAccessKey
         ? <span className="access-key-reveal"><code>{doorAccessKey}</code><CopyButton value={doorAccessKey} label="Door access key" onNotice={onNotice} /></span>
         : revokedAt
-          ? <span className="door-key-revoked" role="note">Removed automatically on {new Date(revokedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: rent overdue. Delete the PIN from the lock too.</span>
+          ? <span className="door-key-revoked" role="note">Removed automatically on {new Date(revokedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: rent overdue. Delete the PIN from the lock too (listed under Door locks).</span>
           : 'Not issued'}
       {canManage && <span className="door-key-actions">
         <button type="button" className="text-link access-key-issue" disabled={isBusy} onClick={() => void change('POST')}><KeyRound size={12} /> {doorAccessKey ? 'New door access key' : 'Generate door access key'}</button>

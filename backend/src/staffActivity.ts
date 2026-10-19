@@ -70,6 +70,10 @@ const actions: Array<[string, RegExp, Describe]> = [
   ['PUT', /^\/announcements\/[^/]+$/, (body) => `Edited an announcement${text(body.title) ? `: ${text(body.title)}` : ''}`],
   ['DELETE', /^\/announcements\/[^/]+$/, () => 'Deleted an announcement'],
   ['PATCH', /^\/housekeeping\/[^/]+$/, (body) => `Updated a housekeeping request${text(body.status) ? ` (${text(body.status)!.toLowerCase()})` : ''}`],
+  ['POST', /^\/door-lock-tasks\/([^/]+)\/done$/, async (_body, [id]) => {
+    const task = await prisma.doorLockTask.findUnique({ where: { id }, select: { action: true, residentName: true } })
+    return task ? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.residentName}'s PIN on the door lock` : 'Completed a door lock task'
+  }],
   ['POST', /^\/properties\/([^/]+)\/workers$/, async (body, [id]) => `Added ${text(body.name) ?? 'a staff member'} to ${await propertyName(id)}'s staff`],
   ['PUT', /^\/properties\/([^/]+)\/workers\/[^/]+$/, async (body, [id]) => `Updated ${text(body.name) ?? 'a staff member'} in ${await propertyName(id)}'s staff`],
   ['DELETE', /^\/properties\/([^/]+)\/workers\/([^/]+)$/, async (_body, [id, workerId]) => `Removed ${(await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true } }))?.name ?? 'a staff member'} from ${await propertyName(id)}'s staff`],

@@ -487,6 +487,55 @@
       ]
     },
     {
+      "name": "Door lock tasks",
+      "item": [
+        {
+          "name": "GET /door-lock-tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-lock-tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-lock-tasks"
+              ]
+            },
+            "description": "Pending lock changes, oldest first (the order they must be made in), and the most recent done ones.\n\nSource: backend/src/doorLockTasks.ts"
+          }
+        },
+        {
+          "name": "POST /door-lock-tasks/:id/done",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-lock-tasks/:id/done",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-lock-tasks",
+                ":id",
+                "done"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Confirms the change was made on the lock.\n\nSource: backend/src/doorLockTasks.ts"
+          }
+        }
+      ]
+    },
+    {
       "name": "Email",
       "item": [
         {
@@ -3363,7 +3412,7 @@
                 }
               ]
             },
-            "description": "Lets the owner choose a resident's password so they can tell the resident what it is; the password itself is stored only as a hash. Retires the access key and signs the resident out. Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE removes it. Super admins only (see staffGuard). Anyone who has left gets no key.\n\nSource: backend/src/residents.ts"
+            "description": "Lets the owner choose a resident's password so they can tell the resident what it is; the password itself is stored only as a hash. Retires the access key and signs the resident out. Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE removes it. Super admins only (see staffGuard). Anyone who has left gets no key. Each change also queues the matching PIN change for the owner to make on the lock (see doorLockTasks.ts).\n\nSource: backend/src/residents.ts"
           }
         },
         {
