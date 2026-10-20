@@ -6,7 +6,7 @@ import type { Meal } from './meals'
  * eating (no answer counts as not eating), and what the server allows: changing it until 9 pm the day
  * before, rating it once served.
  */
-export type ResidentMeal = { meal: Meal; from: string; to: string; items: string | null; answer: boolean | null; eating: boolean; canChange: boolean; canRate: boolean; feedback: { liked: boolean; comment: string | null } | null; /** Past the cutoff, not eating and not started: may ask staff for it. */ canRequestLate: boolean; lateRequest: { status: LateMealStatus; staffNote: string | null } | null }
+export type ResidentMeal = { meal: Meal; from: string; to: string; items: string | null; answer: boolean | null; eating: boolean; canChange: boolean; canRate: boolean; feedback: { liked: boolean; comment: string | null } | null; /** Past the cutoff, not eating and not started: may ask staff for it. */ canRequestLate: boolean; lateRequest: { status: LateMealStatus; staffNote: string | null; decidedByName: string | null } | null }
 
 export type LateMealStatus = 'PENDING' | 'APPROVED' | 'DECLINED'
 

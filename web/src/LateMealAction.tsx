@@ -5,8 +5,8 @@ import { readApiError } from './superAdmin'
 
 /**
  * For a meal the resident is not down for after its 9 pm cutoff: a "Request Meal" button, or the
- * request's state once sent (waiting, or declined with the staff's note). An approved request needs
- * nothing here: the meal then shows as eating. Shared by the Home meal cards and the weekly menu.
+ * request's state once sent: waiting, declined with the staff's note, or approved with who approved it
+ * (the meal then shows as eating). Shared by the Home meal cards and the weekly menu.
  */
 export function LateMealAction({ date, meal, onChanged, onNotice }: { date: string; meal: Pick<ResidentMeal, 'meal' | 'canRequestLate' | 'lateRequest'>; onChanged: () => void; onNotice: (message: string) => void }) {
   const [isSending, setIsSending] = useState(false)
@@ -22,6 +22,7 @@ export function LateMealAction({ date, meal, onChanged, onNotice }: { date: stri
   }
 
   if (request?.status === 'PENDING') return <span className="late-meal-status is-pending">Requested · waiting for approval</span>
+  if (request?.status === 'APPROVED') return <span className="late-meal-status is-approved">Approved{request.decidedByName ? ` by ${request.decidedByName}` : ''}</span>
   if (request?.status === 'DECLINED') return <span className="late-meal-status is-declined">Request declined{request.staffNote ? `: ${request.staffNote}` : ''}</span>
   if (!meal.canRequestLate) return null
   return <button type="button" className="secondary-button late-meal-button" disabled={isSending} onClick={() => void send()}><Hand size={13} /> {isSending ? 'Sending…' : 'Request Meal'}</button>

@@ -1389,7 +1389,7 @@
                 }
               ]
             },
-            "description": "Approves or declines one request: { approve: true | false, note?: string }. Approving counts them in the headcount.\n\nSource: backend/src/lateMeals.ts",
+            "description": "Approves or declines one request: { approve: true | false, note?: string }. Approving counts them in the headcount; declining an approved one takes them out again. A decision can be changed either way until the meal starts, after which it no longer affects anything and stays as it was.\n\nSource: backend/src/lateMeals.ts",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"approve\": \"\",\n  \"note\": \"\"\n}",
@@ -3929,7 +3929,7 @@
             "description": "Source: backend/src/settings.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"image\": \"\"\n}",
+              "raw": "{\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"lateMealLimit\": \"\",\n  \"image\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

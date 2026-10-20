@@ -7,10 +7,10 @@ export type TodayMeal = { items: string | null; eating: boolean }
 /**
  * The resident's meal timings, highlighting the meal being served now or the next one. `menu`, when
  * given, adds what each meal serves today under its time (a meal the owner has not set shows none), and
- * says plainly when food will not be served to them because they opted out or did not answer. `skippedAction`
- * adds something under that notice, such as the resident's late meal request.
+ * says plainly when food will not be served to them because they opted out or did not answer. `mealAction`
+ * adds something under each meal, such as the resident's late meal request or who approved it.
  */
-export function MealTimings({ times, minutesIntoDay, menu, skippedAction }: { times: MealTimes; minutesIntoDay: number; menu?: Partial<Record<Meal, TodayMeal>>; skippedAction?: (meal: Meal) => ReactNode }) {
+export function MealTimings({ times, minutesIntoDay, menu, mealAction }: { times: MealTimes; minutesIntoDay: number; menu?: Partial<Record<Meal, TodayMeal>>; mealAction?: (meal: Meal) => ReactNode }) {
   const { serving, next } = mealStatus(times, minutesIntoDay)
   return (
     <div className="meal-timings" aria-label="Meal timings">
@@ -21,7 +21,7 @@ export function MealTimings({ times, minutesIntoDay, menu, skippedAction }: { ti
         return (
           <div key={meal} className={`meal-tile${meal === serving ? ' is-serving' : meal === next ? ' is-next' : ''}${isSkipped ? ' is-skipped' : ''}`}>
             <span className="meal-icon"><Icon size={16} /></span>
-            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small>{today?.items && <span className="meal-items">{today.items}</span>}{isSkipped && <span className="meal-not-served">Food will not be served</span>}{isSkipped && skippedAction?.(meal)}</span>
+            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small>{today?.items && <span className="meal-items">{today.items}</span>}{isSkipped && <span className="meal-not-served">Food will not be served</span>}{mealAction?.(meal)}</span>
             {tag && <em className="meal-tag">{tag}</em>}
           </div>
         )

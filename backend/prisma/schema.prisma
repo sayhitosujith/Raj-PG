@@ -639,6 +639,9 @@ model WorkspaceSettings {
   quietTo                 String        @default("07:00")
   // Cleanings a resident may book per Monday–Sunday week; null = no limit.
   housekeepingWeeklyLimit Int?
+  // Most late meal requests staff may approve for one meal (e.g. Tuesday dinner) at one property, so the
+  // kitchen never gets more unplanned extras than it can cook for (see lateMeals.ts).
+  lateMealLimit           Int           @default(10)
   // The resident portal's light/dark view, set by the owner: AUTO = light 7am–7pm, dark otherwise.
   residentTheme           ResidentTheme @default(AUTO)
   // The resident portal's theme colour, the text colour on things filled with it, error messages and

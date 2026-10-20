@@ -462,6 +462,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .late-meal-actions { display: flex; gap: 6px; }
 .late-meal-decided li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
 .late-meal-decided .late-meal-status { margin-top: 0; }
+.late-meal-reapprove { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 9px; font-size: 11px; }
 :root[data-theme="dark"] .meal-not-served { color: rgb(252 165 165); }
 .meal-tile.is-serving .meal-icon { color: white; background: var(--teal); }
 .meal-tile.is-next { border-color: #9fd0c2; }

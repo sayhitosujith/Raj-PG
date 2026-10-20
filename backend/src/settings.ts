@@ -80,7 +80,7 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown; doorKeysEnabled?: unknown; lockModel?: unknown; lockLocation?: unknown; doorPinLength?: unknown; doorUnlockInstructions?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown; doorKeysEnabled?: unknown; lockModel?: unknown; lockLocation?: unknown; doorPinLength?: unknown; doorUnlockInstructions?: unknown; lateMealLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -94,6 +94,7 @@ const numberFields = [
   ['dailyRateWithFood', 1, 1_00_000, false, 'Per-day rate with food must be a whole number of rupees.'],
   ['dailyRateWithoutFood', 1, 1_00_000, false, 'Per-day rate without food must be a whole number of rupees.'],
   ['housekeepingWeeklyLimit', 1, 21, true, 'Weekly cleanings must be 1 to 21, or blank for no limit.'],
+  ['lateMealLimit', 1, 100, false, 'Late meal approvals per meal must be 1 to 100.'],
   ['doorPinLength', 4, 8, false, 'PIN length must be 4 to 8 digits.'],
 ] as const
 

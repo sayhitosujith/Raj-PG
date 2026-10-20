@@ -151,7 +151,7 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
                   <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small>{choiceStatus(meal)}</div>
                   <p className={meal.items ? undefined : 'is-empty'}>{meal.items ?? 'Menu not set yet'}</p>
                   {meal.canRate && <MealFeedback key={key} meal={meal} onSaved={load} onNotice={onNotice} />}
-                  {!meal.eating && <LateMealAction date={day.date} meal={meal} onChanged={() => void load()} onNotice={onNotice} />}
+                  {(!meal.eating || meal.lateRequest) && <LateMealAction date={day.date} meal={meal} onChanged={() => void load()} onNotice={onNotice} />}
                 </div>
                 {meal.canChange && <MealChoiceToggle label={label} answer={meal.answer} disabled={savingKey === key} onChoose={(eating) => choose(day.date, meal, eating)} />}
               </li>

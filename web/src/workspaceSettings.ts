@@ -43,6 +43,8 @@ export type WorkspaceSettings = {
   quietTo: string
   /** Cleanings a resident may book per Monday–Sunday week; null = no limit. */
   housekeepingWeeklyLimit: number | null
+  /** Most late meal requests that may be approved for one meal at a property. */
+  lateMealLimit: number
   morningFrom: string
   morningTo: string
   afternoonFrom: string

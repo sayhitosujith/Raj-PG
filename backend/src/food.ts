@@ -2,7 +2,7 @@ import { MealType, Prisma, UserRole } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyNow } from './dates.js'
-import { prisma } from './db.js'
+import { prisma, withDatabaseRetry } from './db.js'
 import { mealColumnsSelect, meals, toMealTimes } from './meals.js'
 import { renderFeedbackPdf, renderHeadcountPdf, renderResidentsPdf, type ReportHeader } from './foodReports.js'
 import { requirePortalAccess } from './residentPortal.js'
@@ -93,7 +93,7 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
       prisma.menuItem.findMany({ where: { propertyId } }),
       prisma.mealChoice.findMany({ where: { residentId: userId, date: { gte: today, lt: until } } }),
       prisma.mealFeedback.findMany({ where: { residentId: userId, date: today } }),
-      prisma.lateMealRequest.findMany({ where: { residentId: userId, date: { gte: today, lt: until } }, select: { date: true, meal: true, status: true, staffNote: true } }),
+      prisma.lateMealRequest.findMany({ where: { residentId: userId, date: { gte: today, lt: until } }, select: { date: true, meal: true, status: true, staffNote: true, decidedByName: true } }),
     ])
     const days = Array.from({ length: daysShown }, (_, index) => {
       const date = addDays(today, index)
@@ -119,7 +119,8 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
             feedback: own ? { liked: own.liked, comment: own.comment } : null,
             // Past the cutoff, not eating and not yet started: the resident may ask staff for it (lateMeals.ts).
             canRequestLate: !rules.canChange && !rules.hasStarted && !eating && !lateRequest,
-            lateRequest: lateRequest ? { status: lateRequest.status, staffNote: lateRequest.staffNote } : null,
+            // Who decided is shown to the resident ("Approved by Priya"), so they know whom to ask.
+            lateRequest: lateRequest ? { status: lateRequest.status, staffNote: lateRequest.staffNote, decidedByName: lateRequest.decidedByName } : null,
           }
         }),
       }
@@ -190,7 +191,7 @@ type MenuDayInput = { weekday?: unknown } & Partial<Record<Meal, unknown>>
 foodAdminRouter.get('/properties/:id/menu', async (request, response) => {
   const { id } = request.params as { id: string }
   try {
-    const menu = await prisma.menuItem.findMany({ where: { propertyId: id } })
+    const menu = await withDatabaseRetry(() => prisma.menuItem.findMany({ where: { propertyId: id } }))
     response.json(Array.from({ length: 7 }, (_, index) => ({ weekday: index + 1, ...Object.fromEntries(meals.map((meal) => [meal, menu.find((item) => item.weekday === index + 1 && item.meal === mealTypes[meal])?.items ?? null])) })))
   } catch (error) {
     respondToError(response, error, 'The menu could not be loaded.')
@@ -260,11 +261,13 @@ async function loadFoodSummary(id: string) {
   const today = parseDateOnly(propertyNow().date) as Date
   const tomorrow = addDays(today, 1)
   const onFoodPlan = onFoodPlanAt(id)
-  const [residents, choices, feedback] = await Promise.all([
+  // Retried, like the residents list: the Kitchen page fires several reads at once and a single pooled
+  // connection Neon drops would otherwise fail the whole page.
+  const [residents, choices, feedback] = await withDatabaseRetry(() => Promise.all([
     prisma.resident.findMany({ where: onFoodPlan, select: { id: true, name: true, phone: true, diet: true, room: { select: { number: true } } }, orderBy: { name: 'asc' } }),
     prisma.mealChoice.findMany({ where: { date: { in: [today, tomorrow] }, resident: onFoodPlan }, select: { residentId: true, date: true, meal: true, eating: true } }),
     prisma.mealFeedback.findMany({ where: { propertyId: id, date: { gt: addDays(today, -feedbackDays) } }, orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }], take: 100, select: { id: true, date: true, meal: true, liked: true, comment: true, resident: { select: { name: true } } } }),
-  ])
+  ]))
   const answerOn = (key: string, residentId: string, meal: Meal) => choices.find((choice) => choice.residentId === residentId && isoDate(choice.date) === key && choice.meal === mealTypes[meal])?.eating
   const headcounts = [today, tomorrow].map((date) => {
     const key = isoDate(date)
