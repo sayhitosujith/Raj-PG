@@ -19,13 +19,13 @@ export type ResidentFood = { days: ResidentMenuDay[]; answerDue: string | null }
 /** A week of the owner's menu; weekday is ISO (1 = Monday … 7 = Sunday), null = not set. */
 export type MenuDay = { weekday: number } & Record<Meal, string | null>
 
-/** A resident's answer for one meal on the Kitchen page (today or tomorrow); NO_ANSWER counts as not eating. */
-export type TodayMealStatus = 'EATING' | 'SKIPPING' | 'NO_ANSWER'
+/** A resident's answer for one meal on the Kitchen page (today or tomorrow); not opting in is NOT_EATING. */
+export type TodayMealStatus = 'EATING' | 'NOT_EATING'
 
 export type FoodSummary = {
   residents: number
-  /** Per day and meal; noAnswer counts as not eating. notAnswered names residents missing any answer for that day. */
-  headcounts: Array<{ date: string; meals: Array<{ meal: Meal; eating: number; /** Of those eating, how many are veg / non-veg; the rest have no diet set. */ veg: number; nonVeg: number; skipping: number; noAnswer: number }>; notAnswered: string[] }>
+  /** Per day and meal; notEating covers both a skip and no answer, since not opting in is a no. */
+  headcounts: Array<{ date: string; meals: Array<{ meal: Meal; eating: number; /** Of those eating, how many are veg / non-veg; the rest have no diet set. */ veg: number; nonVeg: number; notEating: number }> }>
   feedback: Array<{ id: string; date: string; meal: Meal; liked: boolean; comment: string | null; residentName: string }>
   /**
    * Everyone on the food plan, in room order; diet null is Not set. `today` and `tomorrow` are their answers

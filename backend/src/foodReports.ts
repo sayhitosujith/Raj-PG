@@ -87,25 +87,23 @@ function drawRow(doc: Doc, columns: Column[], cells: Array<{ text: string; bold?
 }
 
 /**
- * Headcount: today's meals only (eating, skipping, no answer) and who has not answered. The kitchen
+ * Headcount: today's meals only, eating and not eating (not opting in counts as not eating). The kitchen
  * prints it for the day it cooks; tomorrow's numbers still change until 9 pm, so they stay on screen.
  */
 export function renderHeadcountPdf(summary: FoodSummaryData, header: ReportHeader): Promise<Buffer> {
   const residents = summary.residentList
   return renderPdf('Headcount', header, (doc) => {
-    let y = drawHeading(doc, header, 'Headcount', `${summary.residents} active ${summary.residents === 1 ? 'resident' : 'residents'} on food. Residents answer by 9 pm the day before; no answer counts as not eating.`)
+    let y = drawHeading(doc, header, 'Headcount', `${summary.residents} active ${summary.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 9 pm the day before; anyone who has not opted in is not eating.`)
     const today = summary.headcounts[0]
     if (!today) return
     // Veg and non-veg split the eaters; anyone eating with no diet set is in Eating but in neither.
-    const columns: Column[] = [{ title: 'Meal', width: 125 }, { title: 'Eating', width: 70, align: 'right' }, { title: 'Veg', width: 70, align: 'right' }, { title: 'Non-veg', width: 80, align: 'right' }, { title: 'Skipping', width: 75, align: 'right' }, { title: 'No answer', width: 79, align: 'right' }]
+    const columns: Column[] = [{ title: 'Meal', width: 145 }, { title: 'Eating', width: 90, align: 'right' }, { title: 'Veg', width: 85, align: 'right' }, { title: 'Non-veg', width: 90, align: 'right' }, { title: 'Not eating', width: 89, align: 'right' }]
     doc.font('Helvetica-Bold').fontSize(12).fillColor(colors.teal).text(`Today · ${dayLabel(today.date)}`, left, y, { lineBreak: false })
     y = drawColumnTitles(doc, columns, y + 24)
     for (const meal of today.meals) {
-      y = drawRow(doc, columns, [{ text: mealLabels[meal.meal] ?? meal.meal, bold: true }, { text: String(meal.eating), bold: true }, { text: String(meal.veg), color: dietColors.VEG }, { text: String(meal.nonVeg), color: dietColors.NON_VEG }, { text: String(meal.skipping) }, { text: String(meal.noAnswer), color: meal.noAnswer ? '#b4231a' : undefined }], y)
+      y = drawRow(doc, columns, [{ text: mealLabels[meal.meal] ?? meal.meal, bold: true }, { text: String(meal.eating), bold: true }, { text: String(meal.veg), color: dietColors.VEG }, { text: String(meal.nonVeg), color: dietColors.NON_VEG }, { text: String(meal.notEating), color: colors.muted }], y)
     }
-    const names = today.notAnswered.map(displayName)
-    doc.font('Helvetica').fontSize(9.5).fillColor(names.length ? '#b4231a' : colors.muted)
-      .text(names.length ? `Not answered yet: ${names.join(', ')}` : 'Everyone has answered.', left, y + 10, { width: doc.page.width - left * 2 })
+    doc.y = y
 
     // Who the numbers are: everyone on the food plan, so the kitchen can check or call a resident.
     if (!residents.length) return
@@ -142,10 +140,9 @@ export function renderFeedbackPdf(summary: FoodSummaryData, header: ReportHeader
 }
 
 // How each answer reads and is coloured on the residents sheet: words, since the PDF fonts have no ticks.
-const answerCells: Record<'EATING' | 'SKIPPING' | 'NO_ANSWER', { text: string; bold?: boolean; color: string }> = {
-  EATING: { text: 'Eating', bold: true, color: dietColors.VEG },
-  SKIPPING: { text: 'Skipping', color: colors.muted },
-  NO_ANSWER: { text: 'No answer', color: '#b4231a' },
+const answerCells: Record<'EATING' | 'NOT_EATING', { text: string; bold?: boolean; color: string }> = {
+  EATING: { text: 'Yes', bold: true, color: dietColors.VEG },
+  NOT_EATING: { text: 'No', color: colors.muted },
 }
 
 /**
@@ -157,7 +154,7 @@ export function renderResidentsPdf(summary: FoodSummaryData, header: ReportHeade
   const residents = summary.residentList
   const meals = ['breakfast', 'lunch', 'dinner'] as const
   return renderPdf('Residents on food', header, (doc) => {
-    let y = drawHeading(doc, header, 'Residents on food', residents.length ? `${residents.length} on the food plan. Who opted for each meal; no answer counts as not eating.` : 'Nobody is on the food plan yet.')
+    let y = drawHeading(doc, header, 'Residents on food', residents.length ? `${residents.length} on the food plan. Yes = opted in for the meal; No = not opted in (no food served).` : 'Nobody is on the food plan yet.')
     if (!residents.length) return
     const columns: Column[] = [{ title: 'Name', width: 150 }, { title: 'Room', width: 50 }, { title: 'Diet', width: 64 }, { title: 'Breakfast', width: 77 }, { title: 'Lunch', width: 77 }, { title: 'Dinner', width: 81 }]
     const days = [{ key: 'today', label: 'Today', date: summary.headcounts[0]?.date }, { key: 'tomorrow', label: 'Tomorrow', date: summary.headcounts[1]?.date }] as const

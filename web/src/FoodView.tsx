@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Check, CircleHelp, FileDown, MessageSquareText, ThumbsDown, ThumbsUp, Users, UtensilsCrossed, X } from 'lucide-react'
+import { Check, FileDown, MessageSquareText, ThumbsDown, ThumbsUp, Users, UtensilsCrossed, X } from 'lucide-react'
 import { dietLabels, type Diet } from './diet'
 import { DietMark } from './DietToggle'
 import { displayName } from './displayName'
@@ -31,9 +31,8 @@ function PdfExportLink({ propertyId, report }: { propertyId: string; report: 'he
 }
 
 const mealStatusDetails: Record<TodayMealStatus, { word: string; icon: ReactNode }> = {
-  EATING: { word: 'eating', icon: <Check size={11} /> },
-  SKIPPING: { word: 'skipping', icon: <X size={11} /> },
-  NO_ANSWER: { word: 'no answer (not eating)', icon: <CircleHelp size={11} /> },
+  EATING: { word: 'opted in', icon: <Check size={11} /> },
+  NOT_EATING: { word: 'not opted in', icon: <X size={11} /> },
 }
 
 /** One resident's answers for a day's three meals as chips: colour, an icon, and the word in the tooltip. */
@@ -164,11 +163,10 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
         <LateMealRequestsPanel key={propertyId} propertyId={propertyId} refreshSignal={refreshSignal} onDecided={() => void loadSummary(propertyId)} onNotice={onNotice} />
 
         <div className="settings-section">
-          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{status(data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents answer by 9 pm the day before; no answer counts as not eating.` : '')}</p></div>{data && <PdfExportLink propertyId={propertyId} report="headcount" />}</div>
+          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{status(data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 9 pm the day before; anyone who has not opted in is not eating.` : '')}</p></div>{data && <PdfExportLink propertyId={propertyId} report="headcount" />}</div>
           {data && <div className="headcount-days">{data.headcounts.map((day, index) => (
             <div key={day.date}><small>{index === 0 ? 'Today' : 'Tomorrow'} · {formatShortDate(day.date)}</small>
-              <ul className="headcount-meals">{day.meals.map((meal) => <li key={meal.meal}><span>{mealLabel(meal.meal)}</span><strong>{meal.eating}</strong>{meal.eating > 0 && (meal.veg > 0 || meal.nonVeg > 0) && <small className="headcount-diet"><span className="is-veg">{meal.veg} veg</span> · <span className="is-non-veg">{meal.nonVeg} non-veg</span></small>}{meal.skipping > 0 && <small>{meal.skipping} skipping</small>}{meal.noAnswer > 0 && <small className="is-unanswered">{meal.noAnswer} no answer</small>}</li>)}</ul>
-              {day.notAnswered.length > 0 && <p className="headcount-missing">Not answered yet: {day.notAnswered.join(', ')}</p>}
+              <ul className="headcount-meals">{day.meals.map((meal) => <li key={meal.meal}><span>{mealLabel(meal.meal)}</span><strong>{meal.eating}</strong>{meal.eating > 0 && (meal.veg > 0 || meal.nonVeg > 0) && <small className="headcount-diet"><span className="is-veg">{meal.veg} veg</span> · <span className="is-non-veg">{meal.nonVeg} non-veg</span></small>}{meal.notEating > 0 && <small>{meal.notEating} not eating</small>}</li>)}</ul>
             </div>
           ))}</div>}
         </div>

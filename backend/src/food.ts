@@ -250,9 +250,10 @@ foodAdminRouter.put('/properties/:id/menu', async (request, response) => {
 })
 
 /**
- * Headcounts for today and tomorrow from active residents on a food plan: who answered eating, who
- * skips, and who has not answered (counted as not eating; their names, so the owner can chase them),
- * plus the last week's feedback. Shared by the Kitchen page and its PDF exports, so they always agree.
+ * Headcounts for today and tomorrow from active residents on a food plan: who is eating and who is not.
+ * Not opting in is a plain no, so "not eating" covers both a skip and no answer and the kitchen sees
+ * no separate unanswered count. Plus the last week's feedback. Shared by the Kitchen page and its PDF
+ * exports, so they always agree.
  */
 /** Active residents of a property who are on its food plan: the people every headcount counts. */
 const onFoodPlanAt = (propertyId: string) => ({ active: true, foodOpted: true, room: { propertyId } })
@@ -278,24 +279,18 @@ async function loadFoodSummary(id: string) {
         const answers = residents.map((resident) => answerOf(resident.id, meal))
         const eaters = residents.filter((_, i) => isEating(key, answers[i]))
         const eating = eaters.length
-        const skipping = answers.filter((answer) => answer === false).length
         // How the eaters split, so the kitchen knows how much of each to cook; the rest are Not set.
         const veg = eaters.filter((resident) => resident.diet === 'VEG').length
         const nonVeg = eaters.filter((resident) => resident.diet === 'NON_VEG').length
-        return { meal, eating, veg, nonVeg, skipping, noAnswer: residents.length - eating - skipping }
+        return { meal, eating, veg, nonVeg, notEating: residents.length - eating }
       }),
-      // Only once a missing answer means "not eating"; before that it simply meant eating.
-      notAnswered: key >= choicesRequiredFrom ? residents.filter((resident) => meals.some((meal) => answerOf(resident.id, meal) === undefined)).map((resident) => resident.name) : [],
     }
   })
-  // Each resident's answer per meal on a day, by the same rule as the headcount: EATING includes a missing
-  // answer while that still meant eating (before choicesRequiredFrom), so the row and the totals agree.
+  // Each resident's answer per meal on a day, by the same rule as the headcount (isEating), so the row
+  // and the totals agree: EATING or NOT_EATING, with no answer counted as not eating.
   const statusOn = (date: Date, residentId: string) => {
     const key = isoDate(date)
-    return Object.fromEntries(meals.map((meal) => {
-      const answer = answerOn(key, residentId, meal)
-      return [meal, isEating(key, answer) ? 'EATING' : answer === false ? 'SKIPPING' : 'NO_ANSWER']
-    })) as Record<Meal, 'EATING' | 'SKIPPING' | 'NO_ANSWER'>
+    return Object.fromEntries(meals.map((meal) => [meal, isEating(key, answerOn(key, residentId, meal)) ? 'EATING' : 'NOT_EATING'])) as Record<Meal, 'EATING' | 'NOT_EATING'>
   }
   return {
     residents: residents.length,

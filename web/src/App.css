@@ -802,10 +802,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .food-today-hint { color: var(--muted); font-weight: 400; text-transform: none; }
 .food-today-meal { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .food-today-meal.is-eating { color: rgb(21 128 61); background: rgb(34 197 94 / .14); }
-.food-today-meal.is-skipping { color: var(--muted); background: rgb(120 120 120 / .12); text-decoration: line-through; }
-.food-today-meal.is-no-answer { color: rgb(185 28 28); background: rgb(239 68 68 / .12); }
+.food-today-meal.is-not-eating { color: var(--muted); background: rgb(120 120 120 / .12); text-decoration: line-through; }
 :root[data-theme="dark"] .food-today-meal.is-eating { color: rgb(134 239 172); }
-:root[data-theme="dark"] .food-today-meal.is-no-answer { color: rgb(252 165 165); }
 /* Resident home, under the greeting: their diet as a small chip (veg green, non-veg brown-red, the
    food marks' colours; veg as hsl() for the reason given at .diet-mark), or "Diet not set". */
 .welcome-diet { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; padding: 4px 10px; border: 1px solid currentColor; border-radius: 999px; font-size: 12px; font-weight: 700; }
@@ -823,8 +821,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* On a resident's row, as the Food plan value for residents on food. */
 .diet-inline { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
 .diet-inline.is-unset { color: var(--muted); font-weight: 400; }
-.headcount-meals small.is-unanswered { color: #b42318; }
-.headcount-missing { margin: 6px 0 0; color: #b42318; font-size: 11px; }
 .food-feedback { display: grid; gap: 8px; max-height: 320px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .food-feedback li { display: flex; align-items: flex-start; gap: 10px; }
 .food-feedback strong { display: block; color: var(--ink); font-size: 11px; }
