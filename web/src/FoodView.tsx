@@ -53,13 +53,16 @@ function MealChips({ statuses }: { statuses: Record<Meal, TodayMealStatus> }) {
  */
 function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string; residents: FoodSummary['residentList'] | null; status: (text: string) => ReactNode }) {
   const count = (diet: Diet | null) => residents?.filter((resident) => resident.diet === diet).length ?? 0
+  // Each property has its own residents, so switching property starts at page 1. The counts above and
+  // the PDF still cover everyone, not just the page shown.
+  const pager = usePagination(residents ?? [], listPageSize, propertyId)
   return (
     <div className="settings-section wide">
       <div className="settings-section-head"><span className="settings-section-icon"><Users size={18} /></span><div><h3>Residents on food</h3><p>{status(residents?.length ? `${residents.length} on the food plan: ${count('VEG')} veg · ${count('NON_VEG')} non-veg · ${count(null)} not set.` : 'Nobody is on the food plan yet.')}</p></div>{residents && residents.length > 0 && <PdfExportLink propertyId={propertyId} report="residents" />}</div>
-      {residents && residents.length > 0 && (
+      {residents && residents.length > 0 && <>
         <table className="finance-table food-residents">
           <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th><th>Today</th><th>Tomorrow <span className="food-today-hint">(until 9 pm)</span></th></tr></thead>
-          <tbody>{residents.map((resident) => (
+          <tbody>{pager.pageItems.map((resident) => (
             <tr key={resident.id}>
               <td><strong>{displayName(resident.name)}</strong></td>
               <td>{resident.phone ? <a href={`tel:${resident.phone}`}>{resident.phone}</a> : '—'}</td>
@@ -70,7 +73,8 @@ function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string
             </tr>
           ))}</tbody>
         </table>
-      )}
+        <Pagination state={pager} label="Residents on food" />
+      </>}
     </div>
   )
 }

@@ -440,11 +440,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
 .meal-tile.is-serving { border-color: var(--teal); background: var(--teal-soft); }
 /* A meal the resident is not eating today (opted out, or no answer): dimmed, with the notice kept at full strength. */
-.meal-tile.is-skipped .meal-icon, .meal-tile.is-skipped .meal-copy > :not(.meal-not-served) { opacity: .55; }
+.meal-tile.is-skipped .meal-icon, .meal-tile.is-skipped .meal-copy > :not(.meal-not-served, .late-meal-button, .late-meal-status) { opacity: .55; }
 .meal-not-served { display: block; margin-top: 4px; color: rgb(185 28 28); font-size: 11px; font-weight: 700; }
 /* Late meal requests: the resident's button and status, and the Kitchen page's list. */
-.late-meal-button { margin-top: 6px; padding: 5px 10px; font-size: 11px; }
-.late-meal-status { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+/* Buttons never wrap elsewhere; this one sits in a narrow meal card on phones, so it wraps within the card. */
+.late-meal-button { display: inline-flex; justify-self: start; align-items: center; justify-content: center; gap: 4px; max-width: 100%; margin-top: 6px; padding: 5px 10px; font-size: 11px; line-height: 1.25; text-align: center; white-space: normal; }
+.late-meal-button svg { flex: none; }
+.late-meal-status { display: inline-block; justify-self: start; max-width: 100%; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 1.35; }
 .late-meal-status.is-pending { color: rgb(161 98 7); background: rgb(234 179 8 / .16); }
 .late-meal-status.is-approved { color: rgb(21 128 61); background: rgb(34 197 94 / .14); }
 .late-meal-status.is-declined { color: rgb(185 28 28); background: rgb(239 68 68 / .12); }
@@ -1566,6 +1568,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .meal-icon { width: 28px; height: 28px; }
   .portal-shell .meal-copy small { font-size: 10px; white-space: normal; }
   .portal-shell .meal-tag { right: 50%; translate: 50% 0; }
+  /* Centred under the stacked tile, and tighter, since each tile is a third of the phone's width. */
+  .portal-shell .meal-copy :is(.late-meal-button, .late-meal-status) { justify-self: center; }
+  .portal-shell .late-meal-button { padding: 5px 7px; font-size: 10px; }
+  .portal-shell .late-meal-status { border-radius: 8px; }
   /* A short banner: a full-width 16:9 photo was the tallest block on the page. */
   .portal-shell .portal-property-photo { height: 140px; aspect-ratio: auto; }
 }
