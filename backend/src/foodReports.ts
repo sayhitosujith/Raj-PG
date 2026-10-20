@@ -140,3 +140,51 @@ export function renderFeedbackPdf(summary: FoodSummaryData, header: ReportHeader
     }
   })
 }
+
+// How each answer reads and is coloured on the residents sheet: words, since the PDF fonts have no ticks.
+const answerCells: Record<'EATING' | 'SKIPPING' | 'NO_ANSWER', { text: string; bold?: boolean; color: string }> = {
+  EATING: { text: 'Eating', bold: true, color: dietColors.VEG },
+  SKIPPING: { text: 'Skipping', color: colors.muted },
+  NO_ANSWER: { text: 'No answer', color: '#b4231a' },
+}
+
+/**
+ * Residents on food: who opted for each meal, today and tomorrow. Per day, a table of every resident on
+ * the food plan with their answer for breakfast, lunch and dinner, then the names eating each meal, so
+ * the kitchen can tick people off. Tomorrow's answers can still change until 9 pm, which the sheet says.
+ */
+export function renderResidentsPdf(summary: FoodSummaryData, header: ReportHeader): Promise<Buffer> {
+  const residents = summary.residentList
+  const meals = ['breakfast', 'lunch', 'dinner'] as const
+  return renderPdf('Residents on food', header, (doc) => {
+    let y = drawHeading(doc, header, 'Residents on food', residents.length ? `${residents.length} on the food plan. Who opted for each meal; no answer counts as not eating.` : 'Nobody is on the food plan yet.')
+    if (!residents.length) return
+    const columns: Column[] = [{ title: 'Name', width: 150 }, { title: 'Room', width: 50 }, { title: 'Diet', width: 64 }, { title: 'Breakfast', width: 77 }, { title: 'Lunch', width: 77 }, { title: 'Dinner', width: 81 }]
+    const days = [{ key: 'today', label: 'Today', date: summary.headcounts[0]?.date }, { key: 'tomorrow', label: 'Tomorrow', date: summary.headcounts[1]?.date }] as const
+    days.forEach(({ key, label, date }, index) => {
+      if (index > 0) {
+        y += 26
+        if (y > doc.page.height - bottomMargin - 120) { doc.addPage(); doc.rect(0, 0, doc.page.width, 6).fill(colors.teal); y = 40 }
+      }
+      doc.font('Helvetica-Bold').fontSize(12).fillColor(colors.teal).text(`${label}${date ? ` · ${dayLabel(date)}` : ''}${key === 'tomorrow' ? '  (can still change until 9 pm today)' : ''}`, left, y, { lineBreak: false })
+      y = drawColumnTitles(doc, columns, y + 24)
+      for (const resident of residents) {
+        const answers = resident[key]
+        y = drawRow(doc, columns, [
+          { text: displayName(resident.name), bold: true },
+          { text: resident.room || '—' },
+          { text: resident.diet ? dietLabels[resident.diet] : 'Not set', color: resident.diet ? dietColors[resident.diet] : colors.muted },
+          ...meals.map((meal) => answerCells[answers[meal]]),
+        ], y)
+      }
+      // The names per meal, so whoever serves can check people off without reading across the table.
+      doc.font('Helvetica').fontSize(9.5).fillColor(colors.ink)
+      doc.y = y + 8
+      for (const meal of meals) {
+        const eating = residents.filter((resident) => resident[key][meal] === 'EATING').map((resident) => displayName(resident.name))
+        doc.font('Helvetica-Bold').text(`${mealLabels[meal]} (${eating.length}): `, left, doc.y + 2, { continued: true }).font('Helvetica').fillColor(eating.length ? colors.ink : colors.muted).text(eating.length ? eating.join(', ') : 'nobody', { width: doc.page.width - left * 2 }).fillColor(colors.ink)
+      }
+      y = doc.y
+    })
+  })
+}

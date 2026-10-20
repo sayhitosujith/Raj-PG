@@ -17,6 +17,7 @@ import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
 import { parsePropertyRents, parseSharingPrices, syncPropertyRents } from './propertyRent.js'
 import { foodAdminRouter, foodResidentRouter } from './food.js'
+import { lateMealAdminRouter, lateMealResidentRouter } from './lateMeals.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { toWorkerView, workersAdminRouter, workersQuery } from './workers.js'
 import { doorLockTasksRouter } from './doorLockTasks.js'
@@ -73,6 +74,7 @@ app.use('/api', publicSiteRouter)
 app.use('/api', cronRouter)
 app.use('/api', housekeepingResidentRouter)
 app.use('/api', foodResidentRouter)
+app.use('/api', lateMealResidentRouter)
 app.use('/api', razorpayResidentRouter)
 app.use('/api', propertyPhotoResidentRouter)
 
@@ -112,6 +114,7 @@ app.use('/api', emailAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', siteContentRouter)
 app.use('/api', foodAdminRouter)
+app.use('/api', lateMealAdminRouter)
 app.use('/api', roomsAdminRouter)
 app.use('/api', holidaysAdminRouter)
 app.use('/api', fireAlertAdminRouter)

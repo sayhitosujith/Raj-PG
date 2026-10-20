@@ -55,6 +55,7 @@ model Property {
   // The people who work at the property (cooks, housekeeping, security…); see workers.ts.
   workers             Worker[]
   doorLockTasks       DoorLockTask[]
+  lateMealRequests    LateMealRequest[]
   expenses            Expense[]
   activities          Activity[]
   maintenanceRequests MaintenanceRequest[]
@@ -195,6 +196,7 @@ model Resident {
   sessions                 Session[]
   housekeepingRequests     HousekeepingRequest[]
   doorLockTasks            DoorLockTask[]
+  lateMealRequests         LateMealRequest[]
   rentPayments             RentPayment[]
   payments                 Payment[]
   bookings                 Booking[]                @relation("bookingResident")
@@ -699,6 +701,34 @@ model MenuItem {
 
 // A resident's answer for one meal on one date, given by 9 pm the day before. A meal with no answer
 // counts as not eating (from the date in food.ts), so the kitchen cooks only for confirmed residents.
+enum LateMealStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+// A resident asking to eat a meal after its 9 pm-the-day-before cutoff (and before it starts). Staff
+// approve or decline it; approving sets the resident's MealChoice to eating, so the headcount counts
+// them. One per resident, day and meal, so a declined request is final (see lateMeals.ts).
+model LateMealRequest {
+  id            String         @id @default(cuid())
+  residentId    String
+  resident      Resident       @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId    String
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date          DateTime       @db.Date
+  meal          MealType
+  status        LateMealStatus @default(PENDING)
+  // Shown to the resident with the decision, e.g. "Sorry, nothing left".
+  staffNote     String?
+  decidedAt     DateTime?
+  decidedByName String?
+  createdAt     DateTime       @default(now())
+
+  @@unique([residentId, date, meal])
+  @@index([propertyId, date])
+}
+
 model MealChoice {
   id         String   @id @default(cuid())
   residentId String

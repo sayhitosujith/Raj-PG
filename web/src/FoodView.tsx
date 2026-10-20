@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { FileDown, MessageSquareText, ThumbsDown, ThumbsUp, Users, UtensilsCrossed } from 'lucide-react'
+import { Check, CircleHelp, FileDown, MessageSquareText, ThumbsDown, ThumbsUp, Users, UtensilsCrossed, X } from 'lucide-react'
 import { dietLabels, type Diet } from './diet'
 import { DietMark } from './DietToggle'
 import { displayName } from './displayName'
-import { formatShortDate, weekdayNames, type FoodSummary, type MenuDay } from './food'
+import { formatShortDate, weekdayNames, type FoodSummary, type MenuDay, type TodayMealStatus } from './food'
 import { mealDetails, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { Pagination } from './Pagination'
 import { listPageSize, usePagination } from './usePagination'
 import { InlineLoader } from './Loader'
+import { LateMealRequestsPanel } from './LateMealRequestsPanel'
 
 type PropertyOption = { id: string; name: string }
 
@@ -25,29 +26,47 @@ const mealLabel = (meal: Meal) => mealDetails.find((detail) => detail.meal === m
  * plain download link, as the rent receipts use: the browser sends the session cookie with it, and the
  * server names the file (e.g. headcount-premium-stay-2026-10-16.pdf).
  */
-function PdfExportLink({ propertyId, report }: { propertyId: string; report: 'headcount' | 'feedback' }) {
+function PdfExportLink({ propertyId, report }: { propertyId: string; report: 'headcount' | 'feedback' | 'residents' }) {
   return <a className="secondary-button food-export" href={`/api/properties/${propertyId}/food-summary/${report}.pdf`} download aria-label={`Export ${report} as PDF`}><FileDown size={14} /> Export PDF</a>
 }
 
+const mealStatusDetails: Record<TodayMealStatus, { word: string; icon: ReactNode }> = {
+  EATING: { word: 'eating', icon: <Check size={11} /> },
+  SKIPPING: { word: 'skipping', icon: <X size={11} /> },
+  NO_ANSWER: { word: 'no answer (not eating)', icon: <CircleHelp size={11} /> },
+}
+
+/** One resident's answers for a day's three meals as chips: colour, an icon, and the word in the tooltip. */
+function MealChips({ statuses }: { statuses: Record<Meal, TodayMealStatus> }) {
+  return (
+    <span className="food-today">{mealDetails.map(({ meal, label }) => {
+      const { word, icon } = mealStatusDetails[statuses[meal]]
+      return <span key={meal} className={`food-today-meal is-${statuses[meal].toLowerCase().replace('_', '-')}`} title={`${label}: ${word}`}>{icon}{label}</span>
+    })}</span>
+  )
+}
+
 /**
- * Everyone on the food plan with their phone, room and veg / non-veg, so the kitchen can see who
- * it is cooking for and reach anyone; the counts say how much of each to plan. Same list as the
- * headcount PDF.
+ * Everyone on the food plan with their phone, room, veg / non-veg and what they opted for today and
+ * tomorrow (tomorrow's can still change until 9 pm), so the kitchen can see who it is cooking for and
+ * chase anyone who has not answered; the counts say how much of each to plan. Same list as the headcount PDF.
  */
-function ResidentsOnFood({ residents, status }: { residents: FoodSummary['residentList'] | null; status: (text: string) => ReactNode }) {
+function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string; residents: FoodSummary['residentList'] | null; status: (text: string) => ReactNode }) {
   const count = (diet: Diet | null) => residents?.filter((resident) => resident.diet === diet).length ?? 0
   return (
     <div className="settings-section wide">
-      <div className="settings-section-head"><span className="settings-section-icon"><Users size={18} /></span><div><h3>Residents on food</h3><p>{status(residents?.length ? `${residents.length} on the food plan: ${count('VEG')} veg · ${count('NON_VEG')} non-veg · ${count(null)} not set.` : 'Nobody is on the food plan yet.')}</p></div></div>
+      <div className="settings-section-head"><span className="settings-section-icon"><Users size={18} /></span><div><h3>Residents on food</h3><p>{status(residents?.length ? `${residents.length} on the food plan: ${count('VEG')} veg · ${count('NON_VEG')} non-veg · ${count(null)} not set.` : 'Nobody is on the food plan yet.')}</p></div>{residents && residents.length > 0 && <PdfExportLink propertyId={propertyId} report="residents" />}</div>
       {residents && residents.length > 0 && (
         <table className="finance-table food-residents">
-          <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th><th>Today</th><th>Tomorrow <span className="food-today-hint">(until 9 pm)</span></th></tr></thead>
           <tbody>{residents.map((resident) => (
             <tr key={resident.id}>
               <td><strong>{displayName(resident.name)}</strong></td>
               <td>{resident.phone ? <a href={`tel:${resident.phone}`}>{resident.phone}</a> : '—'}</td>
               <td>{resident.room || '—'}</td>
               <td>{resident.diet ? <span className="food-residents-diet"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="food-residents-diet is-unset">Not set</span>}</td>
+              <td><MealChips statuses={resident.today} /></td>
+              <td><MealChips statuses={resident.tomorrow} /></td>
             </tr>
           ))}</tbody>
         </table>
@@ -138,6 +157,8 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
       </div>
 
       {!propertyId ? <div className="workspace-empty"><div className="workspace-empty-icon"><UtensilsCrossed size={20} /></div><h3>No properties yet</h3><p>Add a property first, then plan its menu here.</p></div> : <div className="food-grid">
+        <LateMealRequestsPanel key={propertyId} propertyId={propertyId} refreshSignal={refreshSignal} onDecided={() => void loadSummary(propertyId)} onNotice={onNotice} />
+
         <div className="settings-section">
           <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{status(data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents answer by 9 pm the day before; no answer counts as not eating.` : '')}</p></div>{data && <PdfExportLink propertyId={propertyId} report="headcount" />}</div>
           {data && <div className="headcount-days">{data.headcounts.map((day, index) => (
@@ -160,7 +181,7 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
           <MenuEditor key={propertyId} propertyId={propertyId} onNotice={onNotice} />
         </div>
 
-        <ResidentsOnFood residents={data?.residentList ?? null} status={status} />
+        <ResidentsOnFood propertyId={propertyId} residents={data?.residentList ?? null} status={status} />
       </div>}
     </section>
   )

@@ -439,6 +439,28 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-items { display: -webkit-box; overflow: hidden; margin-top: 2px; color: #45544f; font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
 .meal-tile.is-serving { border-color: var(--teal); background: var(--teal-soft); }
+/* A meal the resident is not eating today (opted out, or no answer): dimmed, with the notice kept at full strength. */
+.meal-tile.is-skipped .meal-icon, .meal-tile.is-skipped .meal-copy > :not(.meal-not-served) { opacity: .55; }
+.meal-not-served { display: block; margin-top: 4px; color: rgb(185 28 28); font-size: 11px; font-weight: 700; }
+/* Late meal requests: the resident's button and status, and the Kitchen page's list. */
+.late-meal-button { margin-top: 6px; padding: 5px 10px; font-size: 11px; }
+.late-meal-status { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.late-meal-status.is-pending { color: rgb(161 98 7); background: rgb(234 179 8 / .16); }
+.late-meal-status.is-approved { color: rgb(21 128 61); background: rgb(34 197 94 / .14); }
+.late-meal-status.is-declined { color: rgb(185 28 28); background: rgb(239 68 68 / .12); }
+:root[data-theme="dark"] .late-meal-status.is-pending { color: rgb(253 224 71); }
+:root[data-theme="dark"] .late-meal-status.is-approved { color: rgb(134 239 172); }
+:root[data-theme="dark"] .late-meal-status.is-declined { color: rgb(252 165 165); }
+.late-meal-list, .late-meal-decided { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.late-meal-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.late-meal-who { display: grid; flex: 1 1 180px; gap: 2px; min-width: 0; }
+.late-meal-who strong { color: var(--ink); font-size: 12px; }
+.late-meal-who small { color: var(--muted); font-size: 11px; }
+.late-meal-row input { flex: 1 1 200px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: transparent; font: inherit; font-size: 12px; }
+.late-meal-actions { display: flex; gap: 6px; }
+.late-meal-decided li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.late-meal-decided .late-meal-status { margin-top: 0; }
+:root[data-theme="dark"] .meal-not-served { color: rgb(252 165 165); }
 .meal-tile.is-serving .meal-icon { color: white; background: var(--teal); }
 .meal-tile.is-next { border-color: #9fd0c2; }
 .meal-tile.is-next .meal-tag { color: var(--teal); background: #dcefe9; }
@@ -599,6 +621,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .settings-section-head { display: flex; gap: 12px; }
 /* "Export PDF" at the right of a Kitchen panel's heading, level with its title. */
 .settings-section-head .food-export { display: inline-flex; flex: none; align-self: flex-start; align-items: center; gap: 6px; margin-left: auto; padding: 6px 11px; font-size: 12px; text-decoration: none; white-space: nowrap; }
+/*
+ * Red text (the usual colour for PDF) on the normal button, so the downloads stand out without shouting.
+ * The :is() raises specificity above the owner's-colour copies of .secondary-button that
+ * theme/brandThemePlugin.ts generates under :root[data-brand], which would otherwise repaint the text.
+ */
+:is(:root, :root[data-brand][data-theme]) .settings-section-head .secondary-button.food-export { color: rgb(220 38 38); }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .settings-section-head .secondary-button.food-export { color: rgb(248 113 113); }
 .settings-section-head h3 { margin: 0 0 3px; color: #27373b; font: 700 15px Manrope, sans-serif; }
 .settings-section-head p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .settings-section-icon { display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--teal); background: var(--teal-soft); }
@@ -765,6 +794,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .food-residents a:hover { text-decoration: underline; }
 .food-residents-diet { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
 .food-residents-diet.is-unset { color: var(--muted); font-weight: 400; }
+/* What each resident opted for today. Colour plus an icon and the word in the tooltip, never colour alone. */
+.food-today { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.food-today-hint { color: var(--muted); font-weight: 400; text-transform: none; }
+.food-today-meal { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.food-today-meal.is-eating { color: rgb(21 128 61); background: rgb(34 197 94 / .14); }
+.food-today-meal.is-skipping { color: var(--muted); background: rgb(120 120 120 / .12); text-decoration: line-through; }
+.food-today-meal.is-no-answer { color: rgb(185 28 28); background: rgb(239 68 68 / .12); }
+:root[data-theme="dark"] .food-today-meal.is-eating { color: rgb(134 239 172); }
+:root[data-theme="dark"] .food-today-meal.is-no-answer { color: rgb(252 165 165); }
 /* Resident home, under the greeting: their diet as a small chip (veg green, non-veg brown-red, the
    food marks' colours; veg as hsl() for the reason given at .diet-mark), or "Diet not set". */
 .welcome-diet { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; padding: 4px 10px; border: 1px solid currentColor; border-radius: 999px; font-size: 12px; font-weight: 700; }

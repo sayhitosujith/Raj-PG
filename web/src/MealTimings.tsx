@@ -1,19 +1,27 @@
+import type { ReactNode } from 'react'
 import { formatMealWindow, mealDetails, mealStatus, type Meal, type MealTimes } from './meals'
+
+/** One of today's meals for a resident on the food plan: what it serves and whether they are eating it. */
+export type TodayMeal = { items: string | null; eating: boolean }
 
 /**
  * The resident's meal timings, highlighting the meal being served now or the next one. `menu`, when
- * given, adds what each meal serves today under its time; a meal the owner has not set shows none.
+ * given, adds what each meal serves today under its time (a meal the owner has not set shows none), and
+ * says plainly when food will not be served to them because they opted out or did not answer. `skippedAction`
+ * adds something under that notice, such as the resident's late meal request.
  */
-export function MealTimings({ times, minutesIntoDay, menu }: { times: MealTimes; minutesIntoDay: number; menu?: Partial<Record<Meal, string | null>> }) {
+export function MealTimings({ times, minutesIntoDay, menu, skippedAction }: { times: MealTimes; minutesIntoDay: number; menu?: Partial<Record<Meal, TodayMeal>>; skippedAction?: (meal: Meal) => ReactNode }) {
   const { serving, next } = mealStatus(times, minutesIntoDay)
   return (
     <div className="meal-timings" aria-label="Meal timings">
       {mealDetails.map(({ meal, label, icon: Icon }) => {
         const tag = meal === serving ? 'Now serving' : meal === next ? 'Next' : null
+        const today = menu?.[meal]
+        const isSkipped = today?.eating === false
         return (
-          <div key={meal} className={`meal-tile${meal === serving ? ' is-serving' : meal === next ? ' is-next' : ''}`}>
+          <div key={meal} className={`meal-tile${meal === serving ? ' is-serving' : meal === next ? ' is-next' : ''}${isSkipped ? ' is-skipped' : ''}`}>
             <span className="meal-icon"><Icon size={16} /></span>
-            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small>{menu?.[meal] && <span className="meal-items">{menu[meal]}</span>}</span>
+            <span className="meal-copy"><strong>{label}</strong><small>{formatMealWindow(times[meal])}</small>{today?.items && <span className="meal-items">{today.items}</span>}{isSkipped && <span className="meal-not-served">Food will not be served</span>}{isSkipped && skippedAction?.(meal)}</span>
             {tag && <em className="meal-tag">{tag}</em>}
           </div>
         )

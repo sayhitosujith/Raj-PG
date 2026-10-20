@@ -70,6 +70,11 @@ const actions: Array<[string, RegExp, Describe]> = [
   ['PUT', /^\/announcements\/[^/]+$/, (body) => `Edited an announcement${text(body.title) ? `: ${text(body.title)}` : ''}`],
   ['DELETE', /^\/announcements\/[^/]+$/, () => 'Deleted an announcement'],
   ['PATCH', /^\/housekeeping\/[^/]+$/, (body) => `Updated a housekeeping request${text(body.status) ? ` (${text(body.status)!.toLowerCase()})` : ''}`],
+  ['POST', /^\/properties\/[^/]+\/late-meal-requests\/([^/]+)\/decision$/, async (body, [id]) => {
+    const request = await prisma.lateMealRequest.findUnique({ where: { id }, select: { meal: true, date: true, resident: { select: { name: true } } } })
+    const what = request ? `${request.resident.name}'s late ${request.meal.toLowerCase()} request for ${request.date.toISOString().slice(0, 10)}` : 'a late meal request'
+    return `${body.approve === true ? 'Approved' : 'Declined'} ${what}`
+  }],
   ['POST', /^\/door-lock-tasks\/([^/]+)\/done$/, async (_body, [id]) => {
     const task = await prisma.doorLockTask.findUnique({ where: { id }, select: { action: true, residentName: true } })
     return task ? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.residentName}'s PIN on the door lock` : 'Completed a door lock task'

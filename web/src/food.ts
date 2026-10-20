@@ -6,7 +6,12 @@ import type { Meal } from './meals'
  * eating (no answer counts as not eating), and what the server allows: changing it until 9 pm the day
  * before, rating it once served.
  */
-export type ResidentMeal = { meal: Meal; from: string; to: string; items: string | null; answer: boolean | null; eating: boolean; canChange: boolean; canRate: boolean; feedback: { liked: boolean; comment: string | null } | null }
+export type ResidentMeal = { meal: Meal; from: string; to: string; items: string | null; answer: boolean | null; eating: boolean; canChange: boolean; canRate: boolean; feedback: { liked: boolean; comment: string | null } | null; /** Past the cutoff, not eating and not started: may ask staff for it. */ canRequestLate: boolean; lateRequest: { status: LateMealStatus; staffNote: string | null } | null }
+
+export type LateMealStatus = 'PENDING' | 'APPROVED' | 'DECLINED'
+
+/** A late meal request as the Kitchen page lists it. */
+export type LateMealRequest = { id: string; date: string; meal: Meal; status: LateMealStatus; staffNote: string | null; decidedAt: string | null; decidedByName: string | null; createdAt: string; residentName: string; room: string }
 export type ResidentMenuDay = { date: string; weekday: number; meals: ResidentMeal[] }
 /** The resident's next seven days, and tomorrow's date while its meals still need an answer before the cutoff. */
 export type ResidentFood = { days: ResidentMenuDay[]; answerDue: string | null }
@@ -14,13 +19,19 @@ export type ResidentFood = { days: ResidentMenuDay[]; answerDue: string | null }
 /** A week of the owner's menu; weekday is ISO (1 = Monday … 7 = Sunday), null = not set. */
 export type MenuDay = { weekday: number } & Record<Meal, string | null>
 
+/** A resident's answer for one meal on the Kitchen page (today or tomorrow); NO_ANSWER counts as not eating. */
+export type TodayMealStatus = 'EATING' | 'SKIPPING' | 'NO_ANSWER'
+
 export type FoodSummary = {
   residents: number
   /** Per day and meal; noAnswer counts as not eating. notAnswered names residents missing any answer for that day. */
   headcounts: Array<{ date: string; meals: Array<{ meal: Meal; eating: number; /** Of those eating, how many are veg / non-veg; the rest have no diet set. */ veg: number; nonVeg: number; skipping: number; noAnswer: number }>; notAnswered: string[] }>
   feedback: Array<{ id: string; date: string; meal: Meal; liked: boolean; comment: string | null; residentName: string }>
-  /** Everyone on the food plan, in room order; diet null is Not set. */
-  residentList: Array<{ id: string; name: string; phone: string | null; room: string; diet: Diet | null }>
+  /**
+   * Everyone on the food plan, in room order; diet null is Not set. `today` and `tomorrow` are their answers
+   * per meal, counted as the headcount counts them; tomorrow's can still change until 9 pm tonight.
+   */
+  residentList: Array<{ id: string; name: string; phone: string | null; room: string; diet: Diet | null; today: Record<Meal, TodayMealStatus>; tomorrow: Record<Meal, TodayMealStatus> }>
 }
 
 export const weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

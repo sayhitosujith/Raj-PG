@@ -4,7 +4,7 @@ import { requireRole, type AuthContext } from './auth.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
 import { mealColumnsSelect, meals, toMealTimes } from './meals.js'
-import { renderFeedbackPdf, renderHeadcountPdf } from './foodReports.js'
+import { renderFeedbackPdf, renderHeadcountPdf, renderResidentsPdf, type ReportHeader } from './foodReports.js'
 import { requirePortalAccess } from './residentPortal.js'
 import { getSettings } from './settings.js'
 
@@ -14,11 +14,11 @@ import { getSettings } from './settings.js'
  * have been served. All time rules are decided here in property-local time; the UIs only show what is allowed.
  */
 type Meal = (typeof meals)[number]
-const mealTypes: Record<Meal, MealType> = { breakfast: MealType.BREAKFAST, lunch: MealType.LUNCH, dinner: MealType.DINNER }
-const mealOf = (type: MealType) => meals.find((meal) => mealTypes[meal] === type) as Meal
-const isMeal = (value: unknown): value is Meal => typeof value === 'string' && (meals as readonly string[]).includes(value)
+export const mealTypes: Record<Meal, MealType> = { breakfast: MealType.BREAKFAST, lunch: MealType.LUNCH, dinner: MealType.DINNER }
+export const mealOf = (type: MealType) => meals.find((meal) => mealTypes[meal] === type) as Meal
+export const isMeal = (value: unknown): value is Meal => typeof value === 'string' && (meals as readonly string[]).includes(value)
 
-const daysShown = 7
+export const daysShown = 7
 const maxItemsLength = 200
 const maxCommentLength = 300
 const feedbackDays = 7
@@ -26,8 +26,8 @@ const msPerDay = 24 * 60 * 60 * 1000
 
 /** ISO weekday (1 = Monday … 7 = Sunday) of a date-only value stored at UTC midnight. */
 const weekdayOf = (date: Date) => ((date.getUTCDay() + 6) % 7) + 1
-const addDays = (date: Date, days: number) => new Date(date.getTime() + days * msPerDay)
-const isoDate = (date: Date) => date.toISOString().slice(0, 10)
+export const addDays = (date: Date, days: number) => new Date(date.getTime() + days * msPerDay)
+export const isoDate = (date: Date) => date.toISOString().slice(0, 10)
 const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
 
 type MealWindow = { from: string; to: string }
@@ -43,7 +43,7 @@ const choiceCutoffMinutes = 21 * 60
 const choicesRequiredFrom = '2026-10-15'
 
 // A day's choices can change until 9 pm the day before; a meal can be rated once it has started (today only).
-function mealRules(date: string, window: MealWindow, now: Now) {
+export function mealRules(date: string, window: MealWindow, now: Now) {
   const dayBefore = isoDate(addDays(parseDateOnly(date) as Date, -1))
   const canChange = now.date < dayBefore || (now.date === dayBefore && now.minutes < choiceCutoffMinutes)
   const started = date < now.date || (date === now.date && now.minutes >= toMinutes(window.from))
@@ -51,7 +51,7 @@ function mealRules(date: string, window: MealWindow, now: Now) {
 }
 
 /** Whether a resident eats a meal: their answer, or with none, not eating (eating before the rule began). */
-const isEating = (date: string, answer: boolean | undefined) => answer ?? date < choicesRequiredFrom
+export const isEating = (date: string, answer: boolean | undefined) => answer ?? date < choicesRequiredFrom
 
 function respondToError(response: Response, error: unknown, fallback: string) {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Property was not found.' }); return }
@@ -61,15 +61,15 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 
 /** Resident routes; mounted before the super admin guard, so each checks the resident role itself. */
 export const foodResidentRouter = Router()
-const requireResident = requireRole(UserRole.RESIDENT)
+export const requireResident = requireRole(UserRole.RESIDENT)
 
 /** A property's meal times, reading only those columns (not the whole row with its photo). */
-async function mealTimesOf(propertyId: string) {
+export async function mealTimesOf(propertyId: string) {
   return toMealTimes(await prisma.property.findUniqueOrThrow({ where: { id: propertyId }, select: mealColumnsSelect }))
 }
 
 // Residents without a food plan have no menu to skip or rate.
-async function requireFoodPlan(_request: Request, response: Response, next: NextFunction) {
+export async function requireFoodPlan(_request: Request, response: Response, next: NextFunction) {
   const { userId } = response.locals.auth as AuthContext
   const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { foodOpted: true } })
   if (!resident?.foodOpted) { response.status(403).json({ error: 'Your plan does not include food.', code: 'NO_FOOD_PLAN' }); return }
@@ -88,11 +88,12 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
     const now = propertyNow()
     const today = parseDateOnly(now.date) as Date
     const until = addDays(today, daysShown)
-    const [times, menu, choices, feedback] = await Promise.all([
+    const [times, menu, choices, feedback, lateRequests] = await Promise.all([
       mealTimesOf(propertyId),
       prisma.menuItem.findMany({ where: { propertyId } }),
       prisma.mealChoice.findMany({ where: { residentId: userId, date: { gte: today, lt: until } } }),
       prisma.mealFeedback.findMany({ where: { residentId: userId, date: today } }),
+      prisma.lateMealRequest.findMany({ where: { residentId: userId, date: { gte: today, lt: until } }, select: { date: true, meal: true, status: true, staffNote: true } }),
     ])
     const days = Array.from({ length: daysShown }, (_, index) => {
       const date = addDays(today, index)
@@ -106,6 +107,7 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
           const eating = isEating(key, answer)
           const rules = mealRules(key, times[meal], now)
           const own = feedback.find((item) => isoDate(item.date) === key && item.meal === mealTypes[meal])
+          const lateRequest = lateRequests.find((item) => isoDate(item.date) === key && item.meal === mealTypes[meal])
           return {
             meal,
             ...times[meal],
@@ -115,6 +117,9 @@ foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAc
             canChange: rules.canChange,
             canRate: rules.isToday && rules.hasStarted && eating,
             feedback: own ? { liked: own.liked, comment: own.comment } : null,
+            // Past the cutoff, not eating and not yet started: the resident may ask staff for it (lateMeals.ts).
+            canRequestLate: !rules.canChange && !rules.hasStarted && !eating && !lateRequest,
+            lateRequest: lateRequest ? { status: lateRequest.status, staffNote: lateRequest.staffNote } : null,
           }
         }),
       }
@@ -260,9 +265,10 @@ async function loadFoodSummary(id: string) {
     prisma.mealChoice.findMany({ where: { date: { in: [today, tomorrow] }, resident: onFoodPlan }, select: { residentId: true, date: true, meal: true, eating: true } }),
     prisma.mealFeedback.findMany({ where: { propertyId: id, date: { gt: addDays(today, -feedbackDays) } }, orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }], take: 100, select: { id: true, date: true, meal: true, liked: true, comment: true, resident: { select: { name: true } } } }),
   ])
+  const answerOn = (key: string, residentId: string, meal: Meal) => choices.find((choice) => choice.residentId === residentId && isoDate(choice.date) === key && choice.meal === mealTypes[meal])?.eating
   const headcounts = [today, tomorrow].map((date) => {
     const key = isoDate(date)
-    const answerOf = (residentId: string, meal: Meal) => choices.find((choice) => choice.residentId === residentId && isoDate(choice.date) === key && choice.meal === mealTypes[meal])?.eating
+    const answerOf = (residentId: string, meal: Meal) => answerOn(key, residentId, meal)
     return {
       date: key,
       meals: meals.map((meal) => {
@@ -279,12 +285,21 @@ async function loadFoodSummary(id: string) {
       notAnswered: key >= choicesRequiredFrom ? residents.filter((resident) => meals.some((meal) => answerOf(resident.id, meal) === undefined)).map((resident) => resident.name) : [],
     }
   })
+  // Each resident's answer per meal on a day, by the same rule as the headcount: EATING includes a missing
+  // answer while that still meant eating (before choicesRequiredFrom), so the row and the totals agree.
+  const statusOn = (date: Date, residentId: string) => {
+    const key = isoDate(date)
+    return Object.fromEntries(meals.map((meal) => {
+      const answer = answerOn(key, residentId, meal)
+      return [meal, isEating(key, answer) ? 'EATING' : answer === false ? 'SKIPPING' : 'NO_ANSWER']
+    })) as Record<Meal, 'EATING' | 'SKIPPING' | 'NO_ANSWER'>
+  }
   return {
     residents: residents.length,
     // Who the headcount is, with what the kitchen needs to reach or plan for them, in room order:
     // the Kitchen page's "Residents on food" and the headcount PDF's list.
     residentList: residents
-      .map((resident) => ({ id: resident.id, name: resident.name, phone: resident.phone, diet: resident.diet, room: resident.room?.number ?? '' }))
+      .map((resident) => ({ id: resident.id, name: resident.name, phone: resident.phone, diet: resident.diet, room: resident.room?.number ?? '', today: statusOn(today, resident.id), tomorrow: statusOn(tomorrow, resident.id) }))
       .sort((a, b) => a.room.localeCompare(b.room, undefined, { numeric: true }) || a.name.localeCompare(b.name)),
     headcounts,
     feedback: feedback.map((item) => ({ id: item.id, date: isoDate(item.date), meal: mealOf(item.meal), liked: item.liked, comment: item.comment, residentName: item.resident.name })),
@@ -303,9 +318,14 @@ foodAdminRouter.get('/properties/:id/food-summary', async (request, response) =>
   }
 })
 
-// The Kitchen page's Headcount and Feedback panels as PDFs, for the kitchen wall or the cook's phone.
+// The Kitchen page's Headcount, Feedback and Residents on food panels as PDFs, for the kitchen wall or the cook's phone.
 // Same data as the page (loadFoodSummary), drawn the way the rent receipts are (foodReports.ts).
-for (const report of ['headcount', 'feedback'] as const) {
+const pdfReports = {
+  headcount: renderHeadcountPdf,
+  feedback: (summary: FoodSummaryData, header: ReportHeader) => renderFeedbackPdf(summary, header, feedbackDays),
+  residents: renderResidentsPdf,
+}
+for (const report of Object.keys(pdfReports) as Array<keyof typeof pdfReports>) {
   foodAdminRouter.get(`/properties/:id/food-summary/${report}.pdf`, async (request, response) => {
     const { id } = request.params as { id: string }
     try {
@@ -313,7 +333,7 @@ for (const report of ['headcount', 'feedback'] as const) {
       if (!property) { response.status(404).json({ error: 'Property was not found.' }); return }
       const [summary, settings] = await Promise.all([loadFoodSummary(id), getSettings()])
       const header = { business: settings.businessName, property: property.name, generatedAt: new Date() }
-      const pdf = report === 'headcount' ? await renderHeadcountPdf(summary, header) : await renderFeedbackPdf(summary, header, feedbackDays)
+      const pdf = await pdfReports[report](summary, header)
       const fileName = `${report}-${property.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'property'}-${propertyNow().date}.pdf`
       response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${fileName}"`, 'Cache-Control': 'private, no-store' }).send(pdf)
     } catch (error) {

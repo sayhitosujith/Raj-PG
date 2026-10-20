@@ -7,6 +7,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
 import { propertyMinutesIntoDay } from './propertyTime'
 import { ModalLayer } from './ModalLayer'
+import { LateMealAction } from './LateMealAction'
 
 async function fetchFood() {
   const response = await fetch('/api/resident-portal/food')
@@ -150,6 +151,7 @@ function MenuBody({ refreshSignal, onNotice }: { refreshSignal: number; onNotice
                   <div className="menu-meal-head"><strong>{label}</strong><small>{formatMealWindow(meal)}</small>{choiceStatus(meal)}</div>
                   <p className={meal.items ? undefined : 'is-empty'}>{meal.items ?? 'Menu not set yet'}</p>
                   {meal.canRate && <MealFeedback key={key} meal={meal} onSaved={load} onNotice={onNotice} />}
+                  {!meal.eating && <LateMealAction date={day.date} meal={meal} onChanged={() => void load()} onNotice={onNotice} />}
                 </div>
                 {meal.canChange && <MealChoiceToggle label={label} answer={meal.answer} disabled={savingKey === key} onChoose={(eating) => choose(day.date, meal, eating)} />}
               </li>
@@ -179,15 +181,18 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
 }
 
 /**
- * What each meal serves today, from the resident's menu; null while loading, on failure, or when
- * `enabled` is false. Residents without the food plan pass false, since the menu API refuses them.
+ * Today's meals from the resident's menu: what each serves, whether they are eating it (no answer counts
+ * as not eating) and whether they may still request it late; `meals` is null while loading, on failure, or
+ * when `enabled` is false. Residents without the food plan pass false, since the menu API refuses them.
+ * `reload` refetches at once, e.g. after a late request, rather than waiting for the next refresh.
  */
 export function useTodayMenu(refreshSignal: number, enabled: boolean) {
   const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
-  useEffect(() => { if (enabled) fetchMenu().then(setDays, () => undefined) }, [enabled])
-  useRefreshSignal(refreshSignal, () => { if (enabled) fetchMenu().then(setDays, () => undefined) })
+  const reload = () => { if (enabled) fetchMenu().then(setDays, () => undefined) }
+  useEffect(reload, [enabled]) // eslint-disable-line react-hooks/exhaustive-deps -- refetch only when the plan changes
+  useRefreshSignal(refreshSignal, reload)
   const today = enabled ? days?.[0] : undefined
-  return today ? Object.fromEntries(today.meals.map((meal) => [meal.meal, meal.items])) as Partial<Record<Meal, string | null>> : null
+  return { date: today?.date ?? null, meals: today ? Object.fromEntries(today.meals.map((meal) => [meal.meal, meal])) as Partial<Record<Meal, ResidentMeal>> : null, reload }
 }
 
 /**

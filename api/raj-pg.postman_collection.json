@@ -1330,6 +1330,78 @@
           }
         },
         {
+          "name": "GET /properties/:id/late-meal-requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/late-meal-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "late-meal-requests"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Requests for today onwards: pending first (soonest meal first), then the decided ones.\n\nSource: backend/src/lateMeals.ts"
+          }
+        },
+        {
+          "name": "POST /properties/:id/late-meal-requests/:requestId/decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/late-meal-requests/:requestId/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "late-meal-requests",
+                ":requestId",
+                "decision"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "requestId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Approves or declines one request: { approve: true | false, note?: string }. Approving counts them in the headcount.\n\nSource: backend/src/lateMeals.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approve\": \"\",\n  \"note\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "GET /properties/:id/menu",
           "request": {
             "method": "GET",
@@ -2339,6 +2411,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"meal\": \"\",\n  \"liked\": \"\",\n  \"comment\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /resident-portal/food/late-requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/food/late-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "food",
+                "late-requests"
+              ]
+            },
+            "description": "Asks for one meal, e.g. { date: '2026-10-21', meal: 'lunch' }. The rules are the server's, in property time.\n\nSource: backend/src/lateMeals.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"\",\n  \"meal\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

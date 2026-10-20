@@ -33,6 +33,7 @@ import { vehicleIcon, vehicleText } from './VehicleFields'
 import { CallOwnerButton, EmergencyNumbers } from './EmergencyCall'
 import { MyDetailsEditor } from './MyDetailsEditor'
 import { ResidentDoorAccess } from './ResidentDoorAccess'
+import { LateMealAction } from './LateMealAction'
 import { CricketScore } from './CricketScore'
 import { PortalTabs, type PortalTab } from './PortalTabs'
 import { ResidentMaintenance } from './ResidentMaintenance'
@@ -276,7 +277,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
             wide screens keep the meals row in the Home card. */}
         {profile.foodOpted && <section className="workspace-view portal-panel portal-info-meals" data-panel="home">
           <div className="workspace-view-heading"><div><h2>Meals</h2><p>Today's meals at {profile.property}.</p></div><WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} /></div>
-          <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu ?? undefined} />
+          <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} menu={todayMenu.meals ?? undefined} skippedAction={(meal) => todayMenu.date && todayMenu.meals?.[meal] && <LateMealAction date={todayMenu.date} meal={todayMenu.meals[meal]} onChanged={todayMenu.reload} onNotice={showNotice} />} />
         </section>}
         <section className="workspace-view portal-profile" data-panel="profile">
           <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div></div>
