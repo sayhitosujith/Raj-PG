@@ -1231,6 +1231,42 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   animation: moon-rise 4s cubic-bezier(.2, .7, .2, 1) both, moon-glow 7s ease-in-out 4s infinite alternate;
 }
 @keyframes sky-fade { from { opacity: .3; } to { opacity: 1; } }
+/*
+ * Festival mode (FestivalCelebration.tsx), over the sky on a public holiday: fireworks bursting in a
+ * staggered loop and confetti drifting down, in the same band and fade as the sky. The colours are fixed
+ * festive ones that read on the day and the night sky alike.
+ */
+.festival-sky {
+  position: absolute; z-index: -1; top: 0; right: 0; left: 0; height: min(420px, 60vh); overflow: hidden; pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, black 60%, transparent 100%); mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+}
+.festival-burst { position: absolute; width: 0; height: 0; }
+.festival-burst i {
+  position: absolute; top: -2px; left: -2px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--spark-colour); box-shadow: 0 0 6px 1px var(--spark-colour); opacity: 0;
+  animation: festival-spark 4s cubic-bezier(.15, .7, .3, 1) infinite;
+}
+@keyframes festival-spark {
+  0% { transform: rotate(var(--spark-angle)) translateX(0) scale(1.2); opacity: 0; }
+  4% { opacity: 1; }
+  38% { transform: rotate(var(--spark-angle)) translateX(calc(var(--burst-size, 1) * 58px)) scale(.9); opacity: 1; }
+  58%, 100% { transform: rotate(var(--spark-angle)) translateX(calc(var(--burst-size, 1) * 70px)) translateY(10px) scale(.4); opacity: 0; }
+}
+.festival-confetti { position: absolute; top: -14px; width: 6px; height: 10px; border-radius: 1px; opacity: .9; animation: festival-fall linear infinite; }
+.festival-confetti.is-wide { width: 9px; height: 5px; }
+@keyframes festival-fall {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to { transform: translate(var(--confetti-drift), min(440px, 62vh)) rotate(var(--confetti-spin)); }
+}
+.festival-greeting { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; color: rgb(234 88 12); font-size: 14px; font-weight: 700; animation: festival-pop .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+:root[data-theme="dark"] .festival-greeting { color: rgb(253 186 116); }
+@keyframes festival-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* Reduced motion: the bursts hold still as open stars and the confetti is left out. */
+@media (prefers-reduced-motion: reduce) {
+  .festival-burst i { animation: none; opacity: .85; transform: rotate(var(--spark-angle)) translateX(calc(var(--burst-size, 1) * 40px)); }
+  .festival-confetti { display: none; }
+  .festival-greeting { animation: none; }
+}
 @keyframes star-twinkle { from { opacity: .25; transform: scale(.8); } to { opacity: 1; transform: scale(1.15); } }
 @keyframes moon-rise { from { transform: translate(-50%, 60%); opacity: .3; } to { transform: translate(-50%, -50%); opacity: 1; } }
 @keyframes moon-glow { from { box-shadow: 0 0 40px 12px rgb(240 238 220 / .45), 0 0 120px 60px rgb(200 210 255 / .22); } to { box-shadow: 0 0 55px 18px rgb(240 238 220 / .55), 0 0 150px 75px rgb(200 210 255 / .28); } }

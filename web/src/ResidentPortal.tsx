@@ -3,7 +3,7 @@ import { LazyCountryLabel } from './CountryField'
 import { Briefcase, Building2, CalendarDays, DoorOpen, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
-import { daysStayedLabel, formatJoinDate } from './joinDate'
+import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentIdVerification } from './ResidentIdVerification'
 import { isIndian, visaText, visaTypeLabels } from './identity'
@@ -46,7 +46,8 @@ import { useTabLayout } from './useTabLayout'
 import { NotificationBell } from './NotificationBell'
 import { buildResidentNotices, useRepairRequests } from './residentNotices'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
-import { HolidayList, useHolidays } from './holidays'
+import { HolidayList, holidayOn, useHolidays } from './holidays'
+import { FestivalCelebration, FestivalGreeting } from './FestivalCelebration'
 import { HouseRules } from './HouseRules'
 import { MealChoiceGate, MealRatingPrompt, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
@@ -165,6 +166,8 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const repairs = useRepairRequests(refreshSignal)
   const notices = buildResidentNotices({ announcements, rent: profile.rent, exit: profile.exit, deletionDeclinedAt: profile.deletionDeclinedAt, deletionDeclineReason: profile.deletionDeclineReason, foodDecidedAt: profile.foodDecidedAt, foodApproved: profile.foodApproved, menuUpdatedAt: profile.menuUpdatedAt, menuChanges: profile.menuChanges, repairs })
   const holidays = useHolidays('/api/resident-portal/holidays')
+  // Today's public holiday, if any: the portal celebrates it over the sky and under the greeting.
+  const festival = holidayOn(holidays, todayDateInputValue())
   const todayMenu = useTodayMenu(refreshSignal, profile.foodOpted)
 
   useEffect(() => {
@@ -228,6 +231,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
     <div className="portal-shell" style={portalColourStyle({ theme: profile.workspace.portalThemeColor, text: profile.workspace.portalButtonTextColor, error: profile.workspace.portalErrorColor, ink: profile.workspace.portalTextColor, placeholder: profile.workspace.portalPlaceholderColor, newBadge: profile.workspace.portalNewBadgeColor, soonBadge: profile.workspace.portalSoonBadgeColor, betaBadge: profile.workspace.portalBetaBadgeColor, background: profile.workspace.portalBackgroundColor, card: profile.workspace.portalCardColor, childCard: profile.workspace.portalChildCardColor })} data-card-bg={profile.workspace.portalCardColor ? "" : undefined} data-child-card-bg={profile.workspace.portalChildCardColor ? "" : undefined}>
       {/* Sky (with the city) first, so the trees and animals in front stand before the buildings. */}
       <SkyBackdrop condition={previewSkyCondition() ?? weather?.condition} />
+      {festival && <FestivalCelebration />}
       <PortalScenery />
       <PortalAnimals />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
@@ -241,7 +245,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
         {profile.foodOpted && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div><h1>Hello, {greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())} <span className="wave">✦</span></h1></div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
+        <section className="welcome-row"><div><h1>Hello, {greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())} <span className="wave">✦</span></h1>{festival && <FestivalGreeting festival={festival} />}</div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
         <section className="workspace-view">
           <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div className="portal-details-body"><p className="portal-details-name" title={displayName(profile.name)}>{displayName(profile.name)}</p>{(profile.occupation?.trim() || profile.foodOpted) && <div className="portal-details-tags">{profile.occupation?.trim() && <span className="portal-details-room"><Briefcase size={13} aria-hidden="true" /><span>{profile.occupation.trim()}</span></span>}{profile.foodOpted && (profile.diet ? <span className={`welcome-diet is-${profile.diet === 'VEG' ? 'veg' : 'non-veg'}`}><DietMark diet={profile.diet} /> {dietLabels[profile.diet]}</span> : <span className="welcome-diet is-unset">Diet not set</span>)}</div>}<div className="my-details-card"><div className="my-details-main">{(profile.phone || profile.email || nationalityLine || idDocumentLine || profile.doorAccessKey) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{nationalityLine && <span><Globe size={14} />{nationalityLine}</span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}{visaLine && <span><Plane size={14} />{visaLine}</span>}</p>}</div></div></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <ResidentAmenities amenities={profile.amenities} /><RentHighlight rent={profile.rent} room={`Room ${profile.room}${profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}`} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>

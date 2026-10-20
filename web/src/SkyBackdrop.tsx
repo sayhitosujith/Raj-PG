@@ -19,8 +19,8 @@ function useDaytime() {
 type Star = { x: number; y: number; size: number; delay: number; duration: number }
 type RainDrop = { x: number; rest: number; length: number; delay: number; duration: number; opacity: number }
 
-// A seeded pseudo-random sequence, so stars and raindrops sit in the same places on every visit and render.
-function seededRandom(seed: number) {
+// A seeded pseudo-random sequence, so stars, raindrops (and the festival confetti) sit in the same places on every visit and render.
+export function seededRandom(seed: number) {
   let state = seed
   return () => { state = (state * 16807) % 2147483647; return (state - 1) / 2147483646 }
 }
