@@ -487,7 +487,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .free-legend i.is-taken { border-radius: 1px; }
 .room-tile-beds i.is-taken { border-radius: 3px; }
 /* The room grid: one tile per room, one 8px dot per bed with a 2px gap; rooms with space are outlined in the accent, full ones recede. */
-.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 204px; margin: 0; padding: 0 4px 0 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
 .room-tile { position: relative; display: grid; gap: 5px; padding: 6px 7px; border: 1px solid color-mix(in srgb, var(--taken-fill) 70%, transparent); border-radius: 8px; }
 .room-tile.has-space { border-color: var(--free-fill); background: color-mix(in srgb, var(--free-fill) 7%, transparent); }
 .room-tile.is-full { border-color: color-mix(in srgb, var(--taken-fill) 55%, transparent); }
@@ -496,9 +496,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Numbered beds: each fill has its own number colour, measured at 4.5:1 or more (white everywhere but on the dark red). */
 .room-tile-beds i { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: var(--free-ink); font: 700 9px/1 Manrope, sans-serif; font-style: normal; }
 .room-tile-beds i.is-taken { color: var(--taken-ink); }
-/* Hover readout: value first, then context; the whole tile is the hit target, larger than its dots. */
-.free-tip { position: absolute; z-index: 2; bottom: calc(100% + 4px); left: 0; padding: 4px 8px; border-radius: 6px; color: var(--chart-ink); background: var(--chart-surface); box-shadow: 0 4px 14px rgb(0 0 0 / .14); font-size: 10px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
-.room-tile:hover .free-tip { opacity: 1; }
 .free-chart-note { margin: 8px 0 0 !important; color: var(--chart-muted) !important; font-size: 10px; }
 .late-meal-reapprove { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 9px; font-size: 11px; }
 :root[data-theme="dark"] .meal-not-served { color: rgb(252 165 165); }

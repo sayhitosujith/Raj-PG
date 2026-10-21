@@ -4,8 +4,8 @@
  */
 export type RoomOccupancy = { number: string; beds: number; bookedBeds: number[]; unassigned: number }
 
-// Enough tiles for a large PG in the card; past this the grid ends with "+N more rooms".
-const shownRooms = 60
+// The grid scrolls inside the card, so it can hold every room of a large PG; past this it ends with "+N more rooms".
+const shownRooms = 300
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 const bedList = (beds: number[]) => beds.length ? `${beds.length === 1 ? 'bed' : 'beds'} ${beds.join(', ')}` : 'none'
@@ -21,7 +21,9 @@ function freeBedsOf(room: RoomOccupancy) {
  * The Overview tip's room grid: a hero number and a meter for the property's free beds against its total,
  * then every room as a small tile with its number and its beds numbered 1 to N: free beds green and round,
  * booked beds red and square (shape as well as colour), so the owner sees exactly which beds are free.
- * Rooms with a free bed are outlined green, fully booked ones red. Hover a tile for its free bed numbers.
+ * Rooms with a free bed are outlined green, fully booked ones red. Hover a tile for its free bed numbers
+ * (the browser's own tooltip, which the scrolling grid cannot clip). The grid scrolls inside the card past
+ * about three rows, so a large PG does not stretch the Overview.
  * Every value is also in the screen-reader table, so nothing depends on colour or hover. Colours were
  * checked with the dataviz palette validator against the card's light and dark surfaces.
  */
@@ -44,13 +46,12 @@ export function FreeRooms({ beds, rooms, notSetUp }: { beds: { taken: number; to
       <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked bed</li></ul>
       {shown.length > 0 && <ul className="room-grid" aria-hidden="true">
         {withFree.slice(0, shownRooms).map(({ room, free: freeBeds }) => (
-          <li key={room.number} className={`room-tile${freeBeds.length ? ' has-space' : ' is-full'}`}>
+          <li key={room.number} className={`room-tile${freeBeds.length ? ' has-space' : ' is-full'}`} title={`Room ${room.number} · ${freeBeds.length ? `Free: ${bedList(freeBeds)}` : 'Fully booked'}`}>
             <span className="room-tile-number">{room.number}</span>
             <span className="room-tile-beds">{Array.from({ length: room.beds }, (_, index) => {
               const bed = index + 1
               return <i key={bed} className={freeBeds.includes(bed) ? 'is-free' : 'is-taken'}>{bed}</i>
             })}</span>
-            <span className="free-tip" role="presentation"><strong>{freeBeds.length ? `Free: ${bedList(freeBeds)}` : 'Fully booked'}</strong> · Room {room.number}</span>
           </li>
         ))}
       </ul>}
