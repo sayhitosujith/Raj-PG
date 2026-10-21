@@ -38,7 +38,7 @@ async function fetchAccessKeyPreview() {
  * `resident` switches it to edit mode.
  */
 /** Starting values for a new resident, e.g. from a booking request being converted. */
-export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null; permanentAddress?: string | null; nationality?: string; monthlyRent?: number | null; whatsappOptIn?: boolean; emailOptIn?: boolean }
+export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null; permanentAddress?: string | null; nationality?: string; monthlyRent?: number | null; whatsappOptIn?: boolean; emailOptIn?: boolean; /** A room and bed to preselect, e.g. a free bed clicked on the Overview's room grid. */ roomNumber?: string; bedNumber?: number }
 
 /**
  * "Clone": a new resident's form started from an existing one. Copies what roommates and siblings
@@ -145,7 +145,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={resident?.occupation ?? ''} placeholder="e.g. Software engineer, Student" /></label>
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} currentBed={resident && propertyId === resident.propertyId ? resident.bedNumber ?? undefined : undefined} onBedsChange={setRoomBeds} />
+        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} currentBed={resident && propertyId === resident.propertyId ? resident.bedNumber ?? undefined : undefined} preferredRoom={!resident && prefill && propertyId === prefill.propertyId ? prefill.roomNumber : undefined} preferredBed={!resident && prefill && propertyId === prefill.propertyId ? prefill.bedNumber : undefined} onBedsChange={setRoomBeds} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
         <EmergencyContactFields contact={resident} />
         <VehicleFields vehicle={resident} />

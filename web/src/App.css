@@ -485,7 +485,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .free-legend i { width: 8px; height: 8px; border-radius: 50%; }
 /* Booked is red and also square, free green and round: red and green alone are hard to tell apart for many colour-blind viewers. */
 .free-legend i.is-taken { border-radius: 1px; }
-.room-tile-beds i.is-taken { border-radius: 3px; }
+.room-tile-beds .is-taken { border-radius: 3px; }
 /* The room grid: one tile per room, one 8px dot per bed with a 2px gap; rooms with space are outlined in the accent, full ones recede. */
 .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 204px; margin: 0; padding: 0 4px 0 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
 .room-tile { position: relative; display: grid; gap: 5px; padding: 6px 7px; border: 1px solid color-mix(in srgb, var(--taken-fill) 70%, transparent); border-radius: 8px; }
@@ -494,8 +494,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .room-tile-number { color: var(--chart-ink); font-size: 11px; font-weight: 700; line-height: 1; }
 .room-tile-beds { display: flex; flex-wrap: wrap; gap: 2px; }
 /* Numbered beds: each fill has its own number colour, measured at 4.5:1 or more (white everywhere but on the dark red). */
-.room-tile-beds i { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: var(--free-ink); font: 700 9px/1 Manrope, sans-serif; font-style: normal; }
-.room-tile-beds i.is-taken { color: var(--taken-ink); }
+.room-tile-beds :is(i, button) { display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; color: var(--free-ink); font: 700 9px/1 Manrope, sans-serif; font-style: normal; }
+.room-tile-beds .is-taken { color: var(--taken-ink); }
+/* Free beds are buttons (add a resident to that bed): a ring on hover and keyboard focus. */
+.room-tile-beds button { cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.room-tile-beds button:is(:hover, :focus-visible) { outline: none; box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--free-fill); transform: scale(1.15); }
 .free-chart-note { margin: 8px 0 0 !important; color: var(--chart-muted) !important; font-size: 10px; }
 .late-meal-reapprove { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 9px; font-size: 11px; }
 :root[data-theme="dark"] .meal-not-served { color: rgb(252 165 165); }

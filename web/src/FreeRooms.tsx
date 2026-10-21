@@ -23,11 +23,12 @@ function freeBedsOf(room: RoomOccupancy) {
  * booked beds red and square (shape as well as colour), so the owner sees exactly which beds are free.
  * Rooms with a free bed are outlined green, fully booked ones red. Hover a tile for its free bed numbers
  * (the browser's own tooltip, which the scrolling grid cannot clip). The grid scrolls inside the card past
- * about three rows, so a large PG does not stretch the Overview.
- * Every value is also in the screen-reader table, so nothing depends on colour or hover. Colours were
- * checked with the dataviz palette validator against the card's light and dark surfaces.
+ * about three rows, so a large PG does not stretch the Overview. Each free bed is a button that starts
+ * "Add resident" in that room and bed (`onAddResident`). Every bed is labelled for screen readers ("Bed 3,
+ * free"), so nothing depends on colour or hover. Colours were checked with the dataviz palette validator
+ * against the card's light and dark surfaces.
  */
-export function FreeRooms({ beds, rooms, notSetUp }: { beds: { taken: number; total: number }; rooms: RoomOccupancy[]; notSetUp: number }) {
+export function FreeRooms({ beds, rooms, notSetUp, onAddResident }: { beds: { taken: number; total: number }; rooms: RoomOccupancy[]; notSetUp: number; onAddResident: (roomNumber: string, bed: number) => void }) {
   const free = Math.max(0, beds.total - beds.taken)
   if (!beds.total) return null
   const shown = rooms.slice(0, shownRooms)
@@ -44,13 +45,15 @@ export function FreeRooms({ beds, rooms, notSetUp }: { beds: { taken: number; to
         {free > 0 && <span className="is-free" style={{ width: `${100 - takenShare}%` }} />}
       </div>
       <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked bed</li></ul>
-      {shown.length > 0 && <ul className="room-grid" aria-hidden="true">
+      {shown.length > 0 && <ul className="room-grid" aria-label="Rooms and beds; choose a free bed to add a resident to it">
         {withFree.slice(0, shownRooms).map(({ room, free: freeBeds }) => (
           <li key={room.number} className={`room-tile${freeBeds.length ? ' has-space' : ' is-full'}`} title={`Room ${room.number} · ${freeBeds.length ? `Free: ${bedList(freeBeds)}` : 'Fully booked'}`}>
-            <span className="room-tile-number">{room.number}</span>
+            <span className="room-tile-number"><span className="sr-only">Room </span>{room.number}</span>
             <span className="room-tile-beds">{Array.from({ length: room.beds }, (_, index) => {
               const bed = index + 1
-              return <i key={bed} className={freeBeds.includes(bed) ? 'is-free' : 'is-taken'}>{bed}</i>
+              return freeBeds.includes(bed)
+                ? <button key={bed} type="button" className="is-free" aria-label={`Bed ${bed}, free: add a resident`} title={`Add a resident to room ${room.number}, bed ${bed}`} onClick={() => onAddResident(room.number, bed)}>{bed}</button>
+                : <i key={bed} className="is-taken" role="img" aria-label={`Bed ${bed}, booked`}>{bed}</i>
             })}</span>
           </li>
         ))}
@@ -62,14 +65,6 @@ export function FreeRooms({ beds, rooms, notSetUp }: { beds: { taken: number; to
           notSetUp > 0 && `+${plural(notSetUp, 'room')} not set up yet (1 bed each until added under Rooms)`,
         ].filter(Boolean).join(' · ')}
       </p>}
-      <table className="sr-only">
-        <caption>{free} of {beds.total} beds free, by room</caption>
-        <thead><tr><th scope="col">Room</th><th scope="col">Beds</th><th scope="col">Free beds</th><th scope="col">Booked beds</th></tr></thead>
-        <tbody>
-          {withFree.map(({ room, free: freeBeds }) => <tr key={room.number}><th scope="row">Room {room.number}</th><td>{room.beds}</td><td>{bedList(freeBeds)}</td><td>{bedList(room.bookedBeds)}{room.unassigned ? `, plus ${room.unassigned} without a number` : ''}</td></tr>)}
-          {notSetUp > 0 && <tr><th scope="row">Not set up yet</th><td>{notSetUp}</td><td>{notSetUp}</td><td>none</td></tr>}
-        </tbody>
-      </table>
     </figure>
   )
 }

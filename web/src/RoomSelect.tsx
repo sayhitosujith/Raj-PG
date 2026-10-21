@@ -7,8 +7,11 @@ import { fetchRooms, freeBeds, sharingLabel, type Room } from './rooms'
  * list under Properties, so there is nothing to type and no way to invent a room. Reports the chosen
  * room's bed count (null when none is chosen), since a sharing type can have its own price. Then a bed
  * picker: the chosen room's free beds (and the resident's own bed when editing), or "next free bed".
+ * `preferredRoom` / `preferredBed` preselect a room and bed for a new resident (a free bed clicked on the
+ * Overview's room grid) without marking it as theirs, unlike `currentRoom` / `currentBed`.
  */
-export function RoomSelect({ propertyId, currentRoom, currentBed, onBedsChange }: { propertyId: string; currentRoom?: string; currentBed?: number; onBedsChange: (beds: number | null) => void }) {
+export function RoomSelect({ propertyId, currentRoom, currentBed, preferredRoom, preferredBed, onBedsChange }: { propertyId: string; currentRoom?: string; currentBed?: number; preferredRoom?: string; preferredBed?: number; onBedsChange: (beds: number | null) => void }) {
+  const startRoom = currentRoom ?? preferredRoom
   const [loaded, setLoaded] = useState<{ propertyId: string; rooms: Room[] } | null>(null)
   const [chosenRoom, setChosenRoom] = useState<string | null>(null)
   const [failedFor, setFailedFor] = useState<string | null>(null)
@@ -22,8 +25,8 @@ export function RoomSelect({ propertyId, currentRoom, currentBed, onBedsChange }
 
   // The preselected room once this property's rooms arrive; nothing while they load.
   useEffect(() => {
-    onBedsChange(loaded?.propertyId === propertyId ? loaded.rooms.find((room) => room.number === currentRoom)?.beds ?? null : null)
-  }, [loaded, propertyId, currentRoom, onBedsChange])
+    onBedsChange(loaded?.propertyId === propertyId ? loaded.rooms.find((room) => room.number === startRoom)?.beds ?? null : null)
+  }, [loaded, propertyId, startRoom, onBedsChange])
 
   const label = <>Room <span>(rooms with a free bed)</span></>
   if (!propertyId) return <label>{label}<select name="roomNumber" required disabled defaultValue=""><option value="">Choose a property first</option></select></label>
@@ -31,24 +34,24 @@ export function RoomSelect({ propertyId, currentRoom, currentBed, onBedsChange }
   if (loaded?.propertyId !== propertyId) return <label>{label}<select name="roomNumber" required disabled defaultValue=""><option value="">Loading rooms…</option></select></label>
 
   const options = loaded.rooms.filter((room) => freeBeds(room) > 0 || room.number === currentRoom)
-  const selected = options.find((room) => room.number === (chosenRoom ?? currentRoom))
+  const selected = options.find((room) => room.number === (chosenRoom ?? startRoom))
   if (!options.length) return <div className="room-select-empty">{label}<p>No free beds. Add rooms or beds under <strong>Properties</strong>, using the <strong>Rooms</strong> button on this property's card.</p></div>
   return (
     // Keyed by property so switching property resets the selection to a room that exists there.
-    <><label key={propertyId}>{label}<select name="roomNumber" required defaultValue={options.some((room) => room.number === currentRoom) ? currentRoom : ''} onChange={(event) => { setChosenRoom(event.target.value); onBedsChange(options.find((room) => room.number === event.target.value)?.beds ?? null) }}>
+    <><label key={propertyId}>{label}<select name="roomNumber" required defaultValue={options.some((room) => room.number === startRoom) ? startRoom : ''} onChange={(event) => { setChosenRoom(event.target.value); onBedsChange(options.find((room) => room.number === event.target.value)?.beds ?? null) }}>
       <option value="" disabled>Select a room</option>
       {options.map((room) => <option key={room.id} value={room.number}>{room.number} · {sharingLabel(room.beds)}{room.number === currentRoom ? ' (current)' : room.beds > 1 ? ` · ${freeBeds(room)} of ${room.beds} beds free` : ''}</option>)}
     </select></label>
-    {selected && <BedSelect key={`${propertyId}-${selected.number}`} room={selected} ownBed={selected.number === currentRoom ? currentBed : undefined} />}</>
+    {selected && <BedSelect key={`${propertyId}-${selected.number}`} room={selected} ownBed={selected.number === currentRoom ? currentBed : undefined} preferredBed={selected.number === preferredRoom ? preferredBed : undefined} />}</>
   )
 }
 
 /** The bed in the chosen room: its free beds, the resident's own bed when editing, or the next free one. */
-function BedSelect({ room, ownBed }: { room: Room; ownBed?: number }) {
+function BedSelect({ room, ownBed, preferredBed }: { room: Room; ownBed?: number; preferredBed?: number }) {
   const booked = new Set(room.bookedBeds)
   const beds = Array.from({ length: room.beds }, (_, index) => index + 1).filter((bed) => !booked.has(bed) || bed === ownBed)
   return (
-    <label>Bed <span>(free beds in room {room.number})</span><select name="bedNumber" defaultValue={ownBed ?? ''}>
+    <label>Bed <span>(free beds in room {room.number})</span><select name="bedNumber" defaultValue={ownBed ?? (preferredBed !== undefined && beds.includes(preferredBed) ? preferredBed : '')}>
       <option value="">Next free bed</option>
       {beds.map((bed) => <option key={bed} value={bed}>Bed {bed}{bed === ownBed ? ' (current)' : ''}</option>)}
     </select></label>

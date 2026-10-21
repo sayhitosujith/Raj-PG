@@ -50,7 +50,7 @@ function relativeTime(date: Date) {
  * from last month, a tip about free rooms, and a recent-activity feed merged from rent payments, new
  * residents, booking requests, maintenance requests and move-out notices.
  */
-export async function dashboardInsights(properties: Array<{ name: string; totalRooms: number | null; rooms: GridRoom[] }>, access: StaffAccess = { isOwner: true }) {
+export async function dashboardInsights(properties: Array<{ id: string; name: string; totalRooms: number | null; rooms: GridRoom[] }>, access: StaffAccess = { isOwner: true }) {
   // Everything below is limited to the caller's properties (all of them for a super admin).
   const residents_ = residentWhere(access)
   const byProperty = propertyIdWhere(access)
@@ -101,7 +101,7 @@ export async function dashboardInsights(properties: Array<{ name: string; totalR
       ? { headline: `Collected ${shortRupees(collectedNow)} so far`, emphasis: '', note: 'Nothing was recorded last month to compare with.' }
       : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} so far this month against ${shortRupees(collectedBefore)} last month.` },
     tip: emptiest && emptiest.free > 0
-      ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'bed is' : 'beds are'} free at ${emptiest.property.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.`, ...roomGridOf(emptiest.property) }
+      ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'bed is' : 'beds are'} free at ${emptiest.property.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.`, propertyId: emptiest.property.id, ...roomGridOf(emptiest.property) }
       : { title: 'Every bed is taken', text: totalBeds ? 'All beds are occupied. Keep a waiting list from booking requests.' : 'Add rooms under Properties to start tracking occupancy.' },
     activity: rows.sort((a, b) => b.at - a.at).slice(0, 6).map(({ at: _at, ...row }) => row),
   }
