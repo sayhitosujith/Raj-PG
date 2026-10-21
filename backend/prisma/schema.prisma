@@ -146,6 +146,9 @@ model Resident {
   // Several residents share a room up to its bed count (enforced in claimRoom, residents.ts).
   roomId                   String?
   room                     Room?                    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  // Which bed in the room (1 to Room.beds), so staff know exactly which beds are free (see beds.ts).
+  // Unique within a room; cleared with roomId when they move out.
+  bedNumber                Int?
   movedOutFrom             String?
   maintenanceRequests      MaintenanceRequest[]
   active                   Boolean                  @default(true)
@@ -221,6 +224,8 @@ model Resident {
   createdAt                DateTime                 @default(now())
 
   @@index([roomId])
+  // One resident per bed. Moved-out residents have no room (and no bed), and nulls never clash.
+  @@unique([roomId, bedNumber])
 }
 
 // A payment the owner records by hand. Amount is in whole rupees. Payer name and phone are copied

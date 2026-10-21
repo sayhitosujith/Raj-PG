@@ -116,7 +116,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'phone', 'email', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
+    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'bedNumber', 'phone', 'email', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
     const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, diet, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
@@ -145,7 +145,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={resident?.occupation ?? ''} placeholder="e.g. Software engineer, Student" /></label>
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} onBedsChange={setRoomBeds} />
+        <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} currentBed={resident && propertyId === resident.propertyId ? resident.bedNumber ?? undefined : undefined} onBedsChange={setRoomBeds} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>
         <EmergencyContactFields contact={resident} />
         <VehicleFields vehicle={resident} />

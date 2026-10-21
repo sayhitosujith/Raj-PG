@@ -1,5 +1,5 @@
 /** One of a property's owner-defined rooms: how many beds it has and who lives in it (empty when free). */
-export type Room = { id: string; number: string; beds: number; residentNames: string[] }
+export type Room = { id: string; number: string; beds: number; residentNames: string[]; /** Bed numbers in use, so only free beds are offered. */ bookedBeds: number[] }
 
 /** The most residents one room can hold; the backend enforces the same limit. */
 export const maxBeds = 10

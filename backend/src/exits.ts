@@ -222,7 +222,7 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     await prisma.$transaction(async (transaction) => {
       // Their password, access key and door access key are cleared too, so moving back in needs a new access key.
       await queueCurrentKeyRemoval(transaction, id, 'Moved out')
-      await transaction.resident.update({ where: { id }, data: { active: false, roomId: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } })
+      await transaction.resident.update({ where: { id }, data: { active: false, roomId: null, bedNumber: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } })
       await transaction.session.deleteMany({ where: { residentId: id } })
     })
     response.status(204).send()

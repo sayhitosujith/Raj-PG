@@ -21,8 +21,9 @@ const bedsError = `Beds must be a whole number from 1 to ${maxBeds}.`
 const compareRoomNumbers = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
 
 async function listRooms(propertyId: string) {
-  const property = await prisma.property.findUniqueOrThrow({ where: { id: propertyId }, select: { totalRooms: true, rooms: { select: { id: true, number: true, beds: true, residents: { select: { name: true }, orderBy: { name: 'asc' } } } } } })
-  const rooms = property.rooms.map((room) => ({ id: room.id, number: room.number, beds: room.beds, residentNames: room.residents.map((resident) => resident.name) })).sort((a, b) => compareRoomNumbers(a.number, b.number))
+  const property = await prisma.property.findUniqueOrThrow({ where: { id: propertyId }, select: { totalRooms: true, rooms: { select: { id: true, number: true, beds: true, residents: { select: { name: true, bedNumber: true }, orderBy: { name: 'asc' } } } } } })
+  // bookedBeds: the bed numbers in use, so the resident form offers only free beds.
+  const rooms = property.rooms.map((room) => ({ id: room.id, number: room.number, beds: room.beds, residentNames: room.residents.map((resident) => resident.name), bookedBeds: room.residents.flatMap((resident) => resident.bedNumber ? [resident.bedNumber] : []).sort((a, b) => a - b) })).sort((a, b) => compareRoomNumbers(a.number, b.number))
   return { totalRooms: property.totalRooms, rooms }
 }
 
@@ -77,10 +78,13 @@ roomsAdminRouter.patch('/properties/:id/rooms/:roomId', async (request, response
   const beds = parseBeds((request.body as { beds?: unknown }).beds)
   if (beds === null) { response.status(400).json({ error: bedsError }); return }
   try {
-    const room = await prisma.room.findFirst({ where: { id: roomId, propertyId: id }, select: { number: true, _count: { select: { residents: true } } } })
+    const room = await prisma.room.findFirst({ where: { id: roomId, propertyId: id }, select: { number: true, residents: { select: { name: true, bedNumber: true } } } })
     if (!room) { response.status(404).json({ error: 'Room was not found.' }); return }
-    const living = room._count.residents
+    const living = room.residents.length
     if (beds < living) { response.status(409).json({ error: `${living} residents live in room ${room.number}, so it needs at least ${living} beds. Move someone first.` }); return }
+    // Fewer beds must not leave someone in a bed that no longer exists (bed 7 of a room cut to 6).
+    const stranded = room.residents.find((resident) => (resident.bedNumber ?? 0) > beds)
+    if (stranded) { response.status(409).json({ error: `${stranded.name} is in bed ${stranded.bedNumber} of room ${room.number}. Move them to a bed from 1 to ${beds} first.` }); return }
     await prisma.$transaction(async (transaction) => {
       await transaction.room.update({ where: { id: roomId }, data: { beds } })
       await syncPropertyRents(transaction, id)

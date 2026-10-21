@@ -15,6 +15,7 @@ import { isLockedOut, isRentLocked } from './rentLock.js'
 import { closeAccount } from './accountDeletion.js'
 import type { AuthContext } from './auth.js'
 import { queueCurrentKeyRemoval, queueKeyIssued } from './doorLockTasks.js'
+import { BedUnavailableError, claimBed, lockRoom, parseBedNumber } from './beds.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyResidentCredentials } from './notifications.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
@@ -25,7 +26,7 @@ const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true,
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const noCredentialsWhere = { passwordHash: null, accessKeyHash: null } satisfies Prisma.ResidentWhereInput
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { bedNumber?: unknown; sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 /**
  * Sends the sign-in details and returns the channels that delivered. A messaging outage must never
@@ -58,6 +59,8 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
   return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
+    // Their bed in the room (1 to its beds); null only before a room is set or after moving out.
+    bedNumber: resident.bedNumber,
     rentFromProperty: Boolean(room && rentFor(room.property, room.beds, true) !== null), room: room?.number ?? '—', propertyId: room?.propertyId ?? '', property: room?.property.name ?? resident.movedOutFrom ?? 'Moved out', location: room?.property.location ?? '', movedOutFrom: resident.movedOutFrom }
 }
 
@@ -101,12 +104,27 @@ async function claimRoom(transaction: Prisma.TransactionClient, propertyId: stri
   const freeRoom = rooms.find((room) => room._count.residents < room.beds)
   if (freeRoom) {
     // Lock the room and count again: two residents saved at the same moment must not both take its last bed.
-    await transaction.$queryRaw`SELECT id FROM "Room" WHERE id = ${freeRoom.id} FOR UPDATE`
+    await lockRoom(transaction, freeRoom.id)
     if (await transaction.resident.count({ where: { roomId: freeRoom.id } }) < freeRoom.beds) return freeRoom
     throw new RoomUnavailableError(`The last bed in room ${freeRoom.number} was just taken. Choose another room.`)
   }
   if (roomNumber && rooms.length) throw new RoomUnavailableError(`Room ${roomNumber} is full.`)
   throw new RoomUnavailableError(roomNumber ? `Room ${roomNumber} does not exist in this property. Add it under Properties, then Rooms.` : 'This property has no free beds. Add rooms or beds under Properties, then Rooms.')
+}
+
+/**
+ * The bed a resident has after an edit. Moving room: the bed asked for in the new room, or its next free
+ * one. Same room: their bed unless another is asked for (blank also picks the next free one), or a bed is
+ * given to someone who has none yet. No room: no bed.
+ */
+async function bedAfterEdit(transaction: Prisma.TransactionClient, edit: { newRoom: { id: string; number: string; beds: number } | null; roomId: string | null; residentId: string; currentBed: number | null; requested: { bed: number | null } | null }) {
+  if (edit.newRoom) return claimBed(transaction, edit.newRoom, edit.requested?.bed ?? null, edit.residentId)
+  if (!edit.roomId) return null
+  const isChanging = edit.requested !== null && edit.requested.bed !== edit.currentBed
+  if (!isChanging && edit.currentBed !== null) return edit.currentBed
+  await lockRoom(transaction, edit.roomId)
+  const room = await transaction.room.findUniqueOrThrow({ where: { id: edit.roomId }, select: { id: true, number: true, beds: true } })
+  return claimBed(transaction, room, edit.requested?.bed ?? null, edit.residentId)
 }
 
 /**
@@ -131,7 +149,9 @@ function parseProfilePhoto(value: ResidentBody['profilePhoto']): { data: { profi
 }
 
 function respondToWriteError(response: Response, error: unknown, fallback: string) {
-  if (error instanceof RoomUnavailableError || error instanceof DuplicateError) { response.status(409).json({ error: error.message }); return }
+  if (error instanceof RoomUnavailableError || error instanceof DuplicateError || error instanceof BedUnavailableError) { response.status(409).json({ error: error.message }); return }
+  // The (roomId, bedNumber) unique index: another save took the bed between our check and the write.
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002' && String(error.meta?.target ?? '').includes('bedNumber')) { response.status(409).json({ error: 'That bed was just taken. Choose another bed, or leave it blank for the next free one.' }); return }
   if (error instanceof InputError) { response.status(400).json({ error: error.message }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') { response.status(400).json({ error: 'Property was not found.' }); return }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Resident was not found.' }); return }
@@ -245,6 +265,8 @@ residentRouter.post('/residents', async (request, response) => {
   if (body.accessKey && !isValidAccessKey(body.accessKey)) { response.status(400).json({ error: 'Access key is not in the generated format.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
   if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
+  const bed = parseBedNumber(body.bedNumber)
+  if ('error' in bed) { response.status(400).json({ error: bed.error }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident creation requires a database connection.' }); return }
   const { name } = data
   const { propertyId } = body
@@ -254,10 +276,11 @@ residentRouter.post('/residents', async (request, response) => {
       const duplicate = await findDuplicate(transaction, { email: data.email, phone: data.phone, ...(isIndian(nationality) ? { aadharNumber: identity.fields.aadharNumber } : { passportNumber: identity.fields.passportNumber }) })
       if (duplicate) throw new DuplicateError(duplicate)
       const room = await claimRoom(transaction, propertyId, body.roomNumber?.trim())
+      const bedNumber = await claimBed(transaction, room, bed.bed)
       const rent = await residentRentWrite(transaction, { roomId: room.id, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
       if ('error' in rent) throw new InputError(rent.error)
       const readyForReview = hasCompleteIdentity({ ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl), hasPassportScan: Boolean(identity.fields.passportScanUrl) })
-      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id } })
+      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id, bedNumber } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey, ...(body.sendCredentials === true ? { credentialsSent: await sendCredentials(residentId, accessKey) } : {}) })
@@ -287,13 +310,16 @@ residentRouter.put('/residents/:id', async (request, response) => {
   // Blank clears the override; absent leaves it alone.
   const rentAccessUntil = body.rentAccessUntil === '' ? null : parseDateOnly(body.rentAccessUntil)
   if (body.rentAccessUntil && rentAccessUntil === null) { response.status(400).json({ error: 'Allow access until must be a valid date.' }); return }
+  // Absent keeps their bed; a number asks for that bed; blank picks the next free one.
+  const bed = body.bedNumber === undefined ? null : parseBedNumber(body.bedNumber)
+  if (bed && 'error' in bed) { response.status(400).json({ error: bed.error }); return }
   if (!process.env.DATABASE_URL) { response.status(501).json({ error: 'Resident updates require a database connection.' }); return }
   try {
     // A closed account is a record, not a resident: editing it could move it back into a room or change what was kept.
     const closed = await prisma.resident.findUnique({ where: { id }, select: { deletedAt: true } })
     if (closed?.deletedAt) { response.status(409).json({ error: "This account was closed at the resident's request and is kept as a record; it cannot be edited." }); return }
     await prisma.$transaction(async (transaction) => {
-      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, foodRequestedAt: true, room: { select: { propertyId: true, number: true } } } })
+      const current = await transaction.resident.findUniqueOrThrow({ where: { id }, select: { roomId: true, bedNumber: true, active: true, email: true, phone: true, permanentAddress: true, aadharStatus: true, nationality: true, aadharNumber: true, passportNumber: true, passportExpiry: true, visaNumber: true, visaType: true, visaExpiry: true, rentTrackedFrom: true, foodOpted: true, foodRequestedAt: true, room: { select: { propertyId: true, number: true } } } })
       const expired = findExpiredDocument(identity.fields, current)
       if (expired) throw new InputError(expired)
       const nationality = identity.fields.nationality ?? current.nationality
@@ -319,7 +345,9 @@ residentRouter.put('/residents/:id', async (request, response) => {
       if (isReturning && !targetPropertyId) throw new InputError('Choose a property to move them back in.')
       const targetRoomNumber = body.roomNumber?.trim() || current.room?.number
       const isMoving = isReturning || (Boolean(current.room) && (targetPropertyId !== current.room?.propertyId || targetRoomNumber !== current.room?.number))
-      const roomId = isMoving ? (await claimRoom(transaction, targetPropertyId, targetRoomNumber)).id : current.roomId
+      const newRoom = isMoving ? await claimRoom(transaction, targetPropertyId, targetRoomNumber) : null
+      const roomId = newRoom ? newRoom.id : current.roomId
+      const bedNumber = await bedAfterEdit(transaction, { newRoom, roomId, residentId: id, currentBed: current.bedNumber, requested: bed })
       // After the room is settled: its sharing type can decide the rent.
       const rent = hasRoomAfter && roomId ? await residentRentWrite(transaction, { roomId, foodOpted, trackedFrom: current.rentTrackedFrom, typedRent: body.monthlyRent }) : { data: {} }
       if ('error' in rent) throw new InputError(rent.error)
@@ -331,7 +359,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
       const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
       // An address the owner types is theirs to vouch for, so it is shown as verified again.
       const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
-      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId } })
+      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
     })

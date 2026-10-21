@@ -301,7 +301,7 @@ app.get('/api/dashboard', async (_request, response) => {
 
   try {
     const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: { ...roomBedsSelect, number: true, residents: { select: { bedNumber: true } } } }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),

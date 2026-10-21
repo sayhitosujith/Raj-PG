@@ -59,6 +59,7 @@ import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
 import { MaintenanceView } from './MaintenanceView'
 import { StaffPanel } from './StaffPanel'
+import { FreeRooms, type RoomOccupancy } from './FreeRooms'
 import { DoorLocksView } from './DoorLocksView'
 import { useDoorLockTasks, type DoorLockTask } from './doorLocks'
 import type { Worker } from './workers'
@@ -137,7 +138,7 @@ const propertyCardsPerPage = 12
 
 type Activity = { title: string; description: string; amount: string; time: string; tone: string; icon: string }
 /** The Overview's computed text: stat-card detail lines, monthly insight and quick tip (absent in the offline fallback). */
-type DashboardInsights = { details: { properties: string; residents: string; collected: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string } }
+type DashboardInsights = { details: { properties: string; residents: string; collected: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string; /** Beds at the emptiest property, for the free-rooms chart. */ beds?: { taken: number; total: number }; /** Its set-up rooms in number order, for the room grid. */ rooms?: RoomOccupancy[]; /** Declared rooms not set up yet (free, but no number). */ roomsNotSetUp?: number } }
 type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
 
 const initialDashboard: DashboardData = {
@@ -567,7 +568,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
             <div className="panel activity-panel"><div className="panel-heading"><div><h2>Recent activity</h2><p>Latest updates from your workspace</p></div></div><div className="activity-list">{!activity.length && <p className="portal-empty">Nothing yet. Rent payments, new residents, bookings, maintenance and move-out notices will appear here.</p>}{activity.map(({ icon, ...item }) => <ActivityItem key={item.title} icon={icon === 'wallet' ? WalletCards : icon === 'door' ? DoorOpen : ClipboardList} {...item} />)}</div><button className="text-button" onClick={() => handleNavigation('Payments')}>See all payments <span>↗</span></button></div>
           </section>
 
-          <section className="bottom-grid"><div className="insight-banner"><div className="insight-graphic"><span>₹</span><div className="insight-line line-one" /><div className="insight-line line-two" /></div><div><p className="eyebrow">Monthly insight</p><h2>{insight?.headline ?? 'Rent collection'} {insight?.emphasis && <strong>{insight.emphasis}</strong>}</h2><p>{insight?.note ?? 'Connect the database to see this month against last month.'}</p></div><button className="outline-button" onClick={() => handleNavigation('Payments')}>View payments</button></div><div className="tip-card"><div className="tip-icon"><DoorOpen size={19} /></div><div><p className="eyebrow">Quick tip</p><h3>{tip?.title ?? 'Keep your rooms moving'}</h3><p>{tip?.text ?? 'Free rooms appear here once the database is connected.'}</p></div><button className="arrow-button" aria-label="Open referral requests" title="Referral Requests" onClick={() => handleNavigation('Referral Requests')}>↗</button></div></section>
+          <section className="bottom-grid"><div className="insight-banner"><div className="insight-graphic"><span>₹</span><div className="insight-line line-one" /><div className="insight-line line-two" /></div><div><p className="eyebrow">Monthly insight</p><h2>{insight?.headline ?? 'Rent collection'} {insight?.emphasis && <strong>{insight.emphasis}</strong>}</h2><p>{insight?.note ?? 'Connect the database to see this month against last month.'}</p></div><button className="outline-button" onClick={() => handleNavigation('Payments')}>View payments</button></div><div className="tip-card"><div className="tip-icon"><DoorOpen size={19} /></div><div><p className="eyebrow">Quick tip</p><h3>{tip?.title ?? 'Keep your rooms moving'}</h3><p>{tip?.text ?? 'Free rooms appear here once the database is connected.'}</p>{tip?.beds && <FreeRooms beds={tip.beds} rooms={tip.rooms ?? []} notSetUp={tip.roomsNotSetUp ?? 0} />}</div><button className="arrow-button" aria-label="Open referral requests" title="Referral Requests" onClick={() => handleNavigation('Referral Requests')}>↗</button></div></section>
           <section className="panel holidays-panel"><div className="panel-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India from Google's calendar; plan meals, housekeeping and staff around them</p></div></div><HolidayList holidays={holidays} limit={6} /></section>
           </div>
         </div>

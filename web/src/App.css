@@ -462,6 +462,44 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .late-meal-actions { display: flex; gap: 6px; }
 .late-meal-decided li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
 .late-meal-decided .late-meal-status { margin-top: 0; }
+/*
+ * The Overview tip's room grid (FreeRooms.tsx): free beds green, booked beds red (and square, as the dark
+ * pair's colour-blind separation is in the range that needs a second cue). Both pairs were validated
+ * against the card's own surfaces (#fff9f2 light, #2a2014 dark) with the dataviz palette validator. The doubled class plus :is() outranks the owner's-colour
+ * copies brandThemePlugin.ts makes of every green, which would otherwise repaint the validated accent.
+ */
+:is(:root, :root[data-brand][data-theme]) .free-chart.free-chart { --free-fill: #15803d; --taken-fill: #dc2626; --free-ink: #fff; --taken-ink: #fff; --chart-ink: #594337; --chart-muted: #8a6a55; --chart-surface: #fff9f2; }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart { --free-fill: #117535; --taken-fill: #ef5a5a; --free-ink: #fff; --taken-ink: #2a2014; --chart-ink: rgb(240 226 212); --chart-muted: rgb(214 196 180); --chart-surface: #2a2014; }
+.tip-card > div:has(.free-chart) { flex: 1; min-width: 0; }
+.free-chart { margin: 10px 0 0; }
+.free-chart-head { color: var(--chart-muted); font-size: 11px; }
+.free-chart-head span { color: var(--chart-muted); }
+.free-chart-hero { margin-right: 2px; color: var(--chart-ink); font: 800 22px Manrope, sans-serif; letter-spacing: -.5px; }
+/* The meter: one ratio against the property's whole capacity; a 2px surface gap between taken and free. */
+.free-meter { display: flex; gap: 2px; height: 8px; margin: 6px 0 8px; border-radius: 4px; overflow: hidden; }
+.free-meter span { display: block; height: 100%; }
+.free-meter .is-free, .room-tile-beds .is-free, .free-legend .is-free { background: var(--free-fill); }
+.free-meter .is-taken, .room-tile-beds .is-taken, .free-legend .is-taken { background: var(--taken-fill); }
+.free-legend { display: flex; gap: 12px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--chart-muted); font-size: 10px; }
+.free-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.free-legend i { width: 8px; height: 8px; border-radius: 50%; }
+/* Booked is red and also square, free green and round: red and green alone are hard to tell apart for many colour-blind viewers. */
+.free-legend i.is-taken { border-radius: 1px; }
+.room-tile-beds i.is-taken { border-radius: 3px; }
+/* The room grid: one tile per room, one 8px dot per bed with a 2px gap; rooms with space are outlined in the accent, full ones recede. */
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.room-tile { position: relative; display: grid; gap: 5px; padding: 6px 7px; border: 1px solid color-mix(in srgb, var(--taken-fill) 70%, transparent); border-radius: 8px; }
+.room-tile.has-space { border-color: var(--free-fill); background: color-mix(in srgb, var(--free-fill) 7%, transparent); }
+.room-tile.is-full { border-color: color-mix(in srgb, var(--taken-fill) 55%, transparent); }
+.room-tile-number { color: var(--chart-ink); font-size: 11px; font-weight: 700; line-height: 1; }
+.room-tile-beds { display: flex; flex-wrap: wrap; gap: 2px; }
+/* Numbered beds: each fill has its own number colour, measured at 4.5:1 or more (white everywhere but on the dark red). */
+.room-tile-beds i { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: var(--free-ink); font: 700 9px/1 Manrope, sans-serif; font-style: normal; }
+.room-tile-beds i.is-taken { color: var(--taken-ink); }
+/* Hover readout: value first, then context; the whole tile is the hit target, larger than its dots. */
+.free-tip { position: absolute; z-index: 2; bottom: calc(100% + 4px); left: 0; padding: 4px 8px; border-radius: 6px; color: var(--chart-ink); background: var(--chart-surface); box-shadow: 0 4px 14px rgb(0 0 0 / .14); font-size: 10px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.room-tile:hover .free-tip { opacity: 1; }
+.free-chart-note { margin: 8px 0 0 !important; color: var(--chart-muted) !important; font-size: 10px; }
 .late-meal-reapprove { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 9px; font-size: 11px; }
 :root[data-theme="dark"] .meal-not-served { color: rgb(252 165 165); }
 .meal-tile.is-serving .meal-icon { color: white; background: var(--teal); }

@@ -7,7 +7,26 @@ const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN')}`
 const shortRupees = (amount: number) => (amount >= 1_00_000 ? `₹${(amount / 1_00_000).toFixed(2)}L` : rupees(amount))
 
 /** One row of the Overview's "Recent activity". `icon` picks wallet, door or clipboard on the web side. */
-type ActivityRow = { title: string; description: string; amount: string; time: string; tone: string; icon: 'wallet' | 'door' | 'clipboard'; at: number }
+type GridRoom = { number: string; beds: number; _count: { residents: number }; residents: Array<{ bedNumber: number | null }> }
+
+/**
+ * Occupancy for the Overview's room grid at one property: its beds taken and in total, and every set-up
+ * room in room-number order (full rooms too, so the grid shows the whole property) with its beds and
+ * which bed numbers are booked; `unassigned` counts residents without a bed number yet, who still use a
+ * bed. Declared rooms that are not set up yet have no number, so they are counted on their own (as one
+ * free bed each).
+ */
+function roomGridOf(property: { totalRooms: number | null; rooms: GridRoom[] }) {
+  const rooms = property.rooms
+    .map((room) => {
+      const bookedBeds = room.residents.flatMap((resident) => resident.bedNumber ? [resident.bedNumber] : []).sort((a, b) => a - b)
+      return { number: room.number, beds: room.beds, bookedBeds, unassigned: room.residents.length - bookedBeds.length }
+    })
+    .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }))
+  return { beds: bedCounts(property), rooms, roomsNotSetUp: Math.max(0, (property.totalRooms ?? property.rooms.length) - property.rooms.length) }
+}
+
+type ActivityRow ={ title: string; description: string; amount: string; time: string; tone: string; icon: 'wallet' | 'door' | 'clipboard'; at: number }
 
 // Start of a property-local (IST) month as an instant; `offset` months from the current one.
 function monthStart(offset: number) {
@@ -31,7 +50,7 @@ function relativeTime(date: Date) {
  * from last month, a tip about free rooms, and a recent-activity feed merged from rent payments, new
  * residents, booking requests, maintenance requests and move-out notices.
  */
-export async function dashboardInsights(properties: Array<{ name: string } & Parameters<typeof bedCounts>[0]>, access: StaffAccess = { isOwner: true }) {
+export async function dashboardInsights(properties: Array<{ name: string; totalRooms: number | null; rooms: GridRoom[] }>, access: StaffAccess = { isOwner: true }) {
   // Everything below is limited to the caller's properties (all of them for a super admin).
   const residents_ = residentWhere(access)
   const byProperty = propertyIdWhere(access)
@@ -59,7 +78,7 @@ export async function dashboardInsights(properties: Array<{ name: string } & Par
   const beds = properties.map((property) => ({ name: property.name, ...bedCounts(property) }))
   const totalBeds = beds.reduce((sum, property) => sum + property.total, 0)
   const freeBeds = beds.reduce((sum, property) => sum + Math.max(0, property.total - property.taken), 0)
-  const emptiest = beds.map((property) => ({ name: property.name, free: Math.max(0, property.total - property.taken) })).sort((a, b) => b.free - a.free)[0]
+  const emptiest = properties.map((property, index) => ({ property, free: Math.max(0, beds[index].total - beds[index].taken) })).sort((a, b) => b.free - a.free)[0]
   const change = collectedBefore > 0 ? Math.round(((collectedNow - collectedBefore) / collectedBefore) * 1000) / 10 : null
 
   const rows: ActivityRow[] = [
@@ -82,7 +101,7 @@ export async function dashboardInsights(properties: Array<{ name: string } & Par
       ? { headline: `Collected ${shortRupees(collectedNow)} so far`, emphasis: '', note: 'Nothing was recorded last month to compare with.' }
       : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} so far this month against ${shortRupees(collectedBefore)} last month.` },
     tip: emptiest && emptiest.free > 0
-      ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'bed is' : 'beds are'} free at ${emptiest.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.` }
+      ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'bed is' : 'beds are'} free at ${emptiest.property.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.`, ...roomGridOf(emptiest.property) }
       : { title: 'Every bed is taken', text: totalBeds ? 'All beds are occupied. Keep a waiting list from booking requests.' : 'Add rooms under Properties to start tracking occupancy.' },
     activity: rows.sort((a, b) => b.at - a.at).slice(0, 6).map(({ at: _at, ...row }) => row),
   }
