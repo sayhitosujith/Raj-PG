@@ -11,7 +11,7 @@ import { whatsappAdminRouter } from './whatsappAdmin.js'
 import { financeAdminRouter } from './finance.js'
 import { emailAdminRouter } from './emailAdmin.js'
 import { fallbackDashboard } from './data.js'
-import { prisma } from './db.js'
+import { prisma, withDatabaseRetry } from './db.js'
 import { normalizePhone } from './validation.js'
 import { parseMealTimes, toMealTimes } from './meals.js'
 import { parseAmenities, parseTenantType, parseTotalRooms } from './propertyFeatures.js'
@@ -23,7 +23,7 @@ import { toWorkerView, workersAdminRouter, workersQuery } from './workers.js'
 import { doorLockTasksRouter } from './doorLockTasks.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
-import { rentAdminRouter } from './rent.js'
+import { activeConcessions, rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
 import { siteContentRouter } from './siteContent.js'
 import { residentPortalRouter } from './residentPortal.js'
@@ -300,13 +300,15 @@ app.get('/api/dashboard', async (_request, response) => {
   }
 
   try {
-    const [properties, residents, openRequests, pendingBookings] = await prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: { ...roomBedsSelect, number: true, residents: { select: { bedNumber: true } } } }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
+    // Retried, like the residents list and the Kitchen: Neon's pooled endpoint drops an idle connection now
+    // and then, and the Overview is the first page everyone opens.
+    const [properties, residents, openRequests, pendingBookings] = await withDatabaseRetry(() => prisma.$transaction([
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: { ...roomBedsSelect, number: true, residents: { select: { id: true, name: true, phone: true, joinedAt: true, bedNumber: true, profilePhotoUpdatedAt: true, monthlyRent: true, rentTrackedFrom: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } } } }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),
-    ])
-    const insights = await dashboardInsights(properties, access)
+    ]))
+    const insights = await withDatabaseRetry(() => dashboardInsights(properties, access))
 
     response.json({
       source: 'postgresql',

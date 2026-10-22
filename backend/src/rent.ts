@@ -93,6 +93,23 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee, monthAmounts, concessions: [...concessions] }
 }
 
+/**
+ * The resident's next rent date in one line's worth of data, for the Overview's bed card: overdue (the
+ * oldest unpaid due date and everything owed), due this month, or, when paid up, the first unpaid month
+ * ahead (residents may pay months in advance). Null when rent is not tracked. Dates are YYYY-MM-DD.
+ */
+export function nextRentDue(status: ReturnType<typeof rentStatus>, paidMonths: string[]) {
+  if (status.state === 'NOT_TRACKED' || !status.monthlyRent) return null
+  const dueDate = (month: string) => `${month}-${String(status.dueDay).padStart(2, '0')}`
+  if (status.overdueMonths.length) return { state: 'OVERDUE' as const, dueDate: dueDate(status.overdueMonths[0]), amount: status.amountDue }
+  if (status.outstandingMonths.includes(status.currentMonth)) return { state: 'DUE' as const, dueDate: dueDate(status.currentMonth), amount: status.monthAmounts[status.currentMonth] ?? status.monthlyRent }
+  const paid = new Set(paidMonths)
+  let month = nextMonthKey(status.currentMonth)
+  // Bounded: nobody pays years ahead, and a runaway loop must not hang the dashboard.
+  for (let ahead = 0; ahead < 36 && paid.has(month); ahead += 1) month = nextMonthKey(month)
+  return { state: 'UPCOMING' as const, dueDate: dueDate(month), amount: rentForMonth(status.monthlyRent, month, status.concessions) }
+}
+
 /** True when the resident is overdue (past the due day); pauses housekeeping requests during an access override. */
 export async function isRentLockDue(residentId: string) {
   const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } } } })
