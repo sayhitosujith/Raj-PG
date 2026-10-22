@@ -17,15 +17,21 @@ export function parseBedNumber(value: unknown): { bed: number | null } | { error
 /**
  * The bed a resident takes in a room: the one asked for when it exists and is free, otherwise the lowest
  * free bed. Call it inside the transaction that saves the resident, after the room is locked (claimRoom
- * does, or lockRoom below), so two residents saved together cannot be given the same bed; the unique
+ * does, or lockRoom below), so two residents saved together cannot be given the same bed; reserved beds
+ * (BedReservation) are never handed out and must be released first. The unique
  * (roomId, bedNumber) index is the last line of defence. `residentId` leaves the resident's own current
  * bed out of "taken", for an edit that keeps or changes their bed in the same room.
  */
 export async function claimBed(transaction: Prisma.TransactionClient, room: { id: string; number: string; beds: number }, requested: number | null, residentId?: string) {
-  const others = await transaction.resident.findMany({ where: { roomId: room.id, bedNumber: { not: null }, ...(residentId ? { id: { not: residentId } } : {}) }, select: { bedNumber: true } })
-  const taken = new Set(others.map((resident) => resident.bedNumber))
+  const [others, holds] = await Promise.all([
+    transaction.resident.findMany({ where: { roomId: room.id, bedNumber: { not: null }, ...(residentId ? { id: { not: residentId } } : {}) }, select: { bedNumber: true } }),
+    transaction.bedReservation.findMany({ where: { roomId: room.id }, select: { bedNumber: true } }),
+  ])
+  const reserved = new Set(holds.map((hold) => hold.bedNumber))
+  const taken = new Set([...others.map((resident) => resident.bedNumber), ...reserved])
   if (requested !== null) {
     if (requested > room.beds) throw new BedUnavailableError(`Room ${room.number} has ${room.beds} ${room.beds === 1 ? 'bed' : 'beds'}, so there is no bed ${requested}.`)
+    if (reserved.has(requested)) throw new BedUnavailableError(`Bed ${requested} in room ${room.number} is reserved. Release it on the Overview first, or choose another bed.`)
     if (taken.has(requested)) throw new BedUnavailableError(`Bed ${requested} in room ${room.number} is already taken. Choose another bed, or leave it blank for the next free one.`)
     return requested
   }

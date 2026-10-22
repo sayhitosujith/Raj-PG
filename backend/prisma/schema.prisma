@@ -94,9 +94,25 @@ model Room {
   propertyId String
   property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   residents  Resident[]
+  // Free beds held back by staff (see bedReservations.ts).
+  reservations BedReservation[]
 
   // Room numbers are defined by the owner and must be unique within a property.
   @@unique([propertyId, number])
+}
+
+// A free bed held back by staff (e.g. for someone expected), so it is neither offered nor given to a new
+// resident until released by hand (see bedReservations.ts). One hold per bed.
+model BedReservation {
+  id             String   @id @default(cuid())
+  roomId         String
+  room           Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  bedNumber      Int
+  note           String?
+  reservedByName String?
+  createdAt      DateTime @default(now())
+
+  @@unique([roomId, bedNumber])
 }
 
 model Resident {

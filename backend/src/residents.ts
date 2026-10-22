@@ -100,12 +100,14 @@ function parseResidentIdentity(body: ResidentBody): { fields: IdentityFields } |
  * defines them under Properties, so a typo can never invent a room.
  */
 async function claimRoom(transaction: Prisma.TransactionClient, propertyId: string, roomNumber?: string) {
-  const rooms = await transaction.room.findMany({ where: { propertyId, ...(roomNumber ? { number: roomNumber } : {}) }, select: { id: true, number: true, ...roomBedsSelect }, orderBy: { number: 'asc' } })
-  const freeRoom = rooms.find((room) => room._count.residents < room.beds)
+  // Reserved beds are not free: a room whose only free beds are reserved counts as full.
+  const rooms = await transaction.room.findMany({ where: { propertyId, ...(roomNumber ? { number: roomNumber } : {}) }, select: { id: true, number: true, beds: true, _count: { select: { residents: true, reservations: true } } }, orderBy: { number: 'asc' } })
+  const freeRoom = rooms.find((room) => room._count.residents + room._count.reservations < room.beds)
   if (freeRoom) {
     // Lock the room and count again: two residents saved at the same moment must not both take its last bed.
     await lockRoom(transaction, freeRoom.id)
-    if (await transaction.resident.count({ where: { roomId: freeRoom.id } }) < freeRoom.beds) return freeRoom
+    const [living, held] = await Promise.all([transaction.resident.count({ where: { roomId: freeRoom.id } }), transaction.bedReservation.count({ where: { roomId: freeRoom.id } })])
+    if (living + held < freeRoom.beds) return freeRoom
     throw new RoomUnavailableError(`The last bed in room ${freeRoom.number} was just taken. Choose another room.`)
   }
   if (roomNumber && rooms.length) throw new RoomUnavailableError(`Room ${roomNumber} is full.`)

@@ -468,8 +468,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
  * against the card's own surfaces (#fff9f2 light, #2a2014 dark) with the dataviz palette validator. The doubled class plus :is() outranks the owner's-colour
  * copies brandThemePlugin.ts makes of every green, which would otherwise repaint the validated accent.
  */
-:is(:root, :root[data-brand][data-theme]) .free-chart.free-chart { --free-fill: #15803d; --taken-fill: #dc2626; --free-ink: #fff; --taken-ink: #fff; --chart-ink: #594337; --chart-muted: #8a6a55; --chart-surface: #fff9f2; }
-:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart { --free-fill: #117535; --taken-fill: #ef5a5a; --free-ink: #fff; --taken-ink: #2a2014; --chart-ink: rgb(240 226 212); --chart-muted: rgb(214 196 180); --chart-surface: #2a2014; }
+:is(:root, :root[data-brand][data-theme]) .free-chart.free-chart { --free-fill: #15803d; --taken-fill: #dc2626; --held-fill: #ca8a04; --free-ink: #fff; --taken-ink: #fff; --held-ink: #2a2014; --chart-ink: #594337; --chart-muted: #8a6a55; --chart-surface: #fff9f2; }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart { --free-fill: #117535; --taken-fill: #ef5a5a; --held-fill: #d4a017; --free-ink: #fff; --taken-ink: #2a2014; --held-ink: #2a2014; --chart-ink: rgb(240 226 212); --chart-muted: rgb(214 196 180); --chart-surface: #2a2014; }
 .tip-card > div:has(.free-chart) { flex: 1; min-width: 0; }
 /* The free-rooms card on its own, full width, between the stat cards and Your properties. */
 .rooms-overview { margin-bottom: 16px; }
@@ -481,6 +481,19 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rooms-overview .tip-card .arrow-button { align-self: flex-start; }
 /* Each tile keeps its number and beds at the top, so 1-bed and 8-bed rooms line up row by row. */
 .room-tile { align-content: start; }
+/* Reserved beds (amber diamonds; numbers in dark ink, 5.4:1 and 6.7:1) and the select-to-reserve controls. */
+.free-meter .is-held, .free-legend .is-held, .room-tile-beds .is-held { background: var(--held-fill); }
+.free-legend i.is-held { border-radius: 1px; transform: rotate(45deg) scale(.85); }
+.room-tile-beds .is-held { color: var(--held-ink); border-radius: 3px; transform: rotate(45deg) scale(.8); cursor: pointer; }
+.room-tile-beds .is-held span { transform: rotate(-45deg); }
+.room-tile-beds .is-held:is(:hover, :focus-visible) { outline: none; box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--held-fill); transform: rotate(45deg) scale(.95); }
+.room-tile-beds .is-free.is-picked { box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--held-fill); transform: scale(1.15); }
+.free-chart-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.free-chart-bar .free-legend { margin: 0; }
+.reserve-start { padding: 6px 12px; font-size: 11px; }
+.reserve-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--chart-ink); font-size: 11px; font-weight: 600; }
+.reserve-bar input { width: 170px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--chart-ink); background: white; font: inherit; font-weight: 400; }
+.reserve-bar :is(.primary-button, .secondary-button) { padding: 6px 12px; font-size: 11px; }
 /* Your properties and Recent activity keep their own heights, so a short list leaves no empty block. */
 .dashboard-grid { align-items: start; }
 /* A receptionist's holidays sit in the grid beside Recent activity, level with it. */

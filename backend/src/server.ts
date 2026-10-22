@@ -21,6 +21,7 @@ import { lateMealAdminRouter, lateMealResidentRouter } from './lateMeals.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { toWorkerView, workersAdminRouter, workersQuery } from './workers.js'
 import { doorLockTasksRouter } from './doorLockTasks.js'
+import { bedReservationsRouter } from './bedReservations.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
 import { activeConcessions, rentAdminRouter } from './rent.js'
@@ -105,6 +106,7 @@ app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', workersAdminRouter)
 app.use('/api', doorLockTasksRouter)
+app.use('/api', bedReservationsRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
@@ -303,7 +305,7 @@ app.get('/api/dashboard', async (_request, response) => {
     // Retried, like the residents list and the Kitchen: Neon's pooled endpoint drops an idle connection now
     // and then, and the Overview is the first page everyone opens.
     const [properties, residents, openRequests, pendingBookings] = await withDatabaseRetry(() => prisma.$transaction([
-      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: { ...roomBedsSelect, number: true, residents: { select: { id: true, name: true, phone: true, joinedAt: true, bedNumber: true, profilePhotoUpdatedAt: true, monthlyRent: true, rentTrackedFrom: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } } } }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
+      prisma.property.findMany({ where: propertyWhere(access), include: { rooms: { select: { ...roomBedsSelect, number: true, residents: { select: { id: true, name: true, phone: true, joinedAt: true, bedNumber: true, profilePhotoUpdatedAt: true, monthlyRent: true, rentTrackedFrom: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } }, reservations: { select: { id: true, bedNumber: true, note: true, reservedByName: true, createdAt: true } } } }, sharingPrices: { select: sharingPriceFields }, workers: workersQuery } }),
       prisma.resident.count({ where: { active: true, ...residentWhere(access) } }),
       prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...propertyIdWhere(access) } }),
       prisma.booking.count({ where: { status: 'new', ...propertyIdWhere(access) } }),

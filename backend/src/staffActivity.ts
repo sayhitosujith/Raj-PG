@@ -75,6 +75,14 @@ const actions: Array<[string, RegExp, Describe]> = [
     const what = request ? `${request.resident.name}'s late ${request.meal.toLowerCase()} request for ${request.date.toISOString().slice(0, 10)}` : 'a late meal request'
     return `${body.approve === true ? 'Approved' : 'Declined'} ${what}`
   }],
+  ['POST', /^\/properties\/([^/]+)\/bed-reservations$/, async (body, [id]) => {
+    const count = Array.isArray(body.beds) ? body.beds.length : 0
+    return `Reserved ${count} ${count === 1 ? 'bed' : 'beds'} at ${await propertyName(id)}${text(body.note) ? `: ${text(body.note)}` : ''}`
+  }],
+  ['DELETE', /^\/properties\/([^/]+)\/bed-reservations\/([^/]+)$/, async (_body, [id, reservationId]) => {
+    const hold = await prisma.bedReservation.findUnique({ where: { id: reservationId }, select: { bedNumber: true, room: { select: { number: true } } } })
+    return `Released the reservation on ${hold ? `room ${hold.room.number}, bed ${hold.bedNumber}` : 'a bed'} at ${await propertyName(id)}`
+  }],
   ['POST', /^\/door-lock-tasks\/([^/]+)\/done$/, async (_body, [id]) => {
     const task = await prisma.doorLockTask.findUnique({ where: { id }, select: { action: true, residentName: true } })
     return task ? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.residentName}'s PIN on the door lock` : 'Completed a door lock task'

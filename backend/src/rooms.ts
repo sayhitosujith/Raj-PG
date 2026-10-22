@@ -78,13 +78,15 @@ roomsAdminRouter.patch('/properties/:id/rooms/:roomId', async (request, response
   const beds = parseBeds((request.body as { beds?: unknown }).beds)
   if (beds === null) { response.status(400).json({ error: bedsError }); return }
   try {
-    const room = await prisma.room.findFirst({ where: { id: roomId, propertyId: id }, select: { number: true, residents: { select: { name: true, bedNumber: true } } } })
+    const room = await prisma.room.findFirst({ where: { id: roomId, propertyId: id }, select: { number: true, residents: { select: { name: true, bedNumber: true } }, reservations: { select: { bedNumber: true } } } })
     if (!room) { response.status(404).json({ error: 'Room was not found.' }); return }
     const living = room.residents.length
     if (beds < living) { response.status(409).json({ error: `${living} residents live in room ${room.number}, so it needs at least ${living} beds. Move someone first.` }); return }
     // Fewer beds must not leave someone in a bed that no longer exists (bed 7 of a room cut to 6).
     const stranded = room.residents.find((resident) => (resident.bedNumber ?? 0) > beds)
     if (stranded) { response.status(409).json({ error: `${stranded.name} is in bed ${stranded.bedNumber} of room ${room.number}. Move them to a bed from 1 to ${beds} first.` }); return }
+    const heldBeyond = room.reservations.find((hold) => hold.bedNumber > beds)
+    if (heldBeyond) { response.status(409).json({ error: `Bed ${heldBeyond.bedNumber} of room ${room.number} is reserved. Release it on the Overview first.` }); return }
     await prisma.$transaction(async (transaction) => {
       await transaction.room.update({ where: { id: roomId }, data: { beds } })
       await syncPropertyRents(transaction, id)

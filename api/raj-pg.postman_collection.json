@@ -1304,6 +1304,77 @@
           }
         },
         {
+          "name": "POST /properties/:id/bed-reservations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/bed-reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "bed-reservations"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Reserves several free beds at once: { beds: [{ roomNumber: '107', bed: 3 }, …], note?: 'For Ravi' }. All or none.\n\nSource: backend/src/bedReservations.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"beds\": \"\",\n  \"note\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id/bed-reservations/:reservationId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/bed-reservations/:reservationId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "bed-reservations",
+                ":reservationId"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "reservationId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Releases one reservation, so the bed is free again.\n\nSource: backend/src/bedReservations.ts"
+          }
+        },
+        {
           "name": "GET /properties/:id/food-summary",
           "request": {
             "method": "GET",

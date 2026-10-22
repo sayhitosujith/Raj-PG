@@ -11,7 +11,8 @@ const shortRupees = (amount: number) => (amount >= 1_00_000 ? `₹${(amount / 1_
 
 /** One row of the Overview's "Recent activity". `icon` picks wallet, door or clipboard on the web side. */
 type GridResident = { id: string; name: string; phone: string | null; joinedAt: Date; bedNumber: number | null; profilePhotoUpdatedAt: Date | null; monthlyRent: number | null; rentTrackedFrom: Date | null; active: boolean; rentPayments: Array<{ month: string }>; rentConcessions: MonthConcession[] }
-type GridRoom = { number: string; beds: number; _count: { residents: number }; residents: GridResident[] }
+type GridReservation = { id: string; bedNumber: number; note: string | null; reservedByName: string | null; createdAt: Date }
+type GridRoom = { number: string; beds: number; _count: { residents: number }; residents: GridResident[]; reservations: GridReservation[] }
 
 /**
  * Occupancy for the Overview's room grid at one property: its beds taken and in total, and every set-up
@@ -27,7 +28,9 @@ function roomGridOf(property: { totalRooms: number | null; rooms: GridRoom[] }, 
       const occupants = room.residents
         .flatMap((resident) => resident.bedNumber ? [{ bed: resident.bedNumber, id: resident.id, name: resident.name, phone: resident.phone, joinedAt: resident.joinedAt, photoVersion: photoVersion(resident.profilePhotoUpdatedAt), rent: rentDueOf(resident, rules) }] : [])
         .sort((a, b) => a.bed - b.bed)
-      return { number: room.number, beds: room.beds, bookedBeds: occupants.map((occupant) => occupant.bed), occupants, unassigned: room.residents.length - occupants.length }
+      // Beds staff are holding back (bedReservations.ts): neither free nor booked.
+      const reservations = room.reservations.map((hold) => ({ id: hold.id, bed: hold.bedNumber, note: hold.note, reservedByName: hold.reservedByName, createdAt: hold.createdAt })).sort((a, b) => a.bed - b.bed)
+      return { number: room.number, beds: room.beds, bookedBeds: occupants.map((occupant) => occupant.bed), occupants, reservations, unassigned: room.residents.length - occupants.length }
     })
     .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }))
   return { beds: bedCounts(property), rooms, roomsNotSetUp: Math.max(0, (property.totalRooms ?? property.rooms.length) - property.rooms.length) }
