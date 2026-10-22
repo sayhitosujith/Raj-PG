@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import { expenseCategoryLabels, fetchExpenses, fetchFinanceSummary, type Expense, type ExpenseCategory, type FinanceSummary } from './finance'
 import { IncomeDonut } from './IncomeDonut'
@@ -19,11 +19,11 @@ const thisMonth = () => todayDateInputValue().slice(0, 7)
  * income, expenses, profit or loss, and income since the start. The owner records expenses here.
  * `version` changes whenever a payment changes, so the figures follow the list above.
  */
-export function FinanceOverview({ properties, version, refreshSignal, onNotice }: { properties: PropertyOption[]; version: number; refreshSignal: number; onNotice: (message: string) => void }) {
+export function FinanceOverview({ properties, version, refreshSignal, isAdding, onAddingChange, onNotice }: { properties: PropertyOption[]; version: number; refreshSignal: number; /** The add-expense form is open; its button lives in the Payments header. */ isAdding: boolean; onAddingChange: (open: boolean) => void; onNotice: (message: string) => void }) {
   const [month, setMonth] = useState(thisMonth)
   const [summary, setSummary] = useState<FinanceSummary | null>(null)
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [isAdding, setIsAdding] = useState(false)
+  const expenseForm = useRef<HTMLFormElement>(null)
   const pager = usePagination(expenses, 8, month)
 
   const load = useCallback(() => {
@@ -31,6 +31,8 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
   }, [month, onNotice])
   useEffect(load, [load, version])
   useRefreshSignal(refreshSignal, load)
+  // The button that opens the form is in the page header, far above it, so bring the form into view.
+  useEffect(() => { if (isAdding) expenseForm.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, [isAdding])
 
   async function addExpense(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -38,7 +40,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
     const response = await fetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: form.get('category'), amount: Number(form.get('amount')), date: form.get('date'), note: form.get('note'), propertyId: form.get('propertyId') }) }).catch(() => null)
     if (!response?.ok) { onNotice(response ? await readApiError(response, 'The expense could not be saved.') : 'Could not reach the server.'); return }
     const saved = await response.json() as Expense
-    setIsAdding(false)
+    onAddingChange(false)
     onNotice(`${formatRupees(saved.amount)} expense added.`)
     // The expense may belong to another month; jump there so it is visible.
     const savedMonth = saved.date.slice(0, 7)
@@ -64,7 +66,7 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
       </div>
       {!summary ? <p className="portal-empty">Loading…</p> : <>
         <div className="finance-kpis">
-          <div className="finance-kpi"><span>Rent collected · {formatMonth(month)}</span><strong>{formatRupees(summary.rentCollected)}</strong><small>of {formatRupees(summary.rentExpected)} expected{summary.rentExpected > summary.rentCollected ? ` · ${formatRupees(summary.rentExpected - summary.rentCollected)} still due` : ''}</small></div>
+          <div className="finance-kpi"><span>Rent collected · {formatMonth(month)}</span><strong>{formatRupees(summary.rentCollected)}</strong><small>{[`${formatRupees(summary.rentForMonth)} of ${formatRupees(summary.rentExpected)} ${formatMonth(month)} rent`, summary.rentExpected > summary.rentForMonth ? `${formatRupees(summary.rentExpected - summary.rentForMonth)} still due` : '', summary.rentAhead ? `${formatRupees(summary.rentAhead)} paid in advance` : ''].filter(Boolean).join(' · ')}</small></div>
           <div className="finance-kpi"><span>Other income</span><strong>{formatRupees(summary.otherIncome)}</strong><small>Payments not linked to rent</small></div>
           <div className="finance-kpi is-expense"><span>Expenses</span><strong>{formatRupees(summary.expenses)}</strong><small>{expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}</small></div>
           <div className={`finance-kpi ${isLoss ? 'is-loss' : 'is-profit'}`}><span>{isLoss ? 'Loss' : 'Profit'} · {formatMonth(month)}</span><strong>{isLoss ? <TrendingDown size={18} aria-hidden="true" /> : <TrendingUp size={18} aria-hidden="true" />}{isLoss ? '−' : ''}{formatRupees(Math.abs(summary.profit))}</strong><small>income − expenses</small></div>
@@ -74,9 +76,9 @@ export function FinanceOverview({ properties, version, refreshSignal, onNotice }
       </>}
 
       <div className="finance-expenses">
-        <div className="finance-expenses-head"><strong>Expenses · {formatMonth(month)}</strong><button type="button" className="secondary-button" onClick={() => setIsAdding((open) => !open)}><Plus size={14} /> {isAdding ? 'Close' : 'Add expense'}</button></div>
+        <div className="finance-expenses-head"><strong>Expenses · {formatMonth(month)}</strong></div>
         {isAdding && (
-          <form className="finance-expense-form" onSubmit={addExpense}>
+          <form ref={expenseForm} className="finance-expense-form" onSubmit={addExpense}>
             <label>Category<select name="category" defaultValue="salaries">{(Object.keys(expenseCategoryLabels) as ExpenseCategory[]).map((key) => <option key={key} value={key}>{expenseCategoryLabels[key]}</option>)}</select></label>
             <label>Amount (₹)<input name="amount" type="number" min={1} step={1} required /></label>
             <label>Date<input name="date" type="date" required defaultValue={month === thisMonth() ? todayDateInputValue() : `${month}-01`} max={todayDateInputValue()} /></label>

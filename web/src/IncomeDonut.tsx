@@ -4,11 +4,12 @@ import { formatRupees } from './rent'
 
 /**
  * "Where this month's income went": one slice per expense category plus a Profit slice for what
- * is left. A pie cannot show a negative, so in a loss month the ring is the expenses alone and the
- * centre states the loss. Colours are fixed per category (never by size): expenses in shades of
- * red, profit in green, in App.css (--slice-*).
+ * is left. A pie cannot show a negative, so in a loss month the ring is the expenses instead, split
+ * into the part income covered (green) and the loss (red), with the categories listed beside it.
+ * Income, expenses and profit or loss are always totalled under the legend. Colours are fixed per
+ * part (never by size): expenses in shades of red, profit in green, in App.css (--slice-*).
  */
-type Slice = { key: ExpenseCategory | 'profit'; label: string; amount: number }
+type Slice = { key: ExpenseCategory | 'profit' | 'covered' | 'loss'; label: string; amount: number }
 
 const radius = 70
 const stroke = 24
@@ -19,12 +20,15 @@ const gap = 2
 export function IncomeDonut({ summary }: { summary: FinanceSummary }) {
   const [active, setActive] = useState<Slice['key'] | null>(null)
   const [isTable, setIsTable] = useState(false)
-  const slices: Slice[] = [
-    ...(Object.keys(expenseCategoryLabels) as ExpenseCategory[]).map((key) => ({ key, label: expenseCategoryLabels[key], amount: summary.expensesByCategory[key] })),
-    ...(summary.profit > 0 ? [{ key: 'profit' as const, label: 'Profit', amount: summary.profit }] : []),
-  ].filter((slice) => slice.amount > 0)
-  const total = slices.reduce((sum, slice) => sum + slice.amount, 0)
   const isLoss = summary.profit < 0
+  const categories: Slice[] = (Object.keys(expenseCategoryLabels) as ExpenseCategory[])
+    .map((key) => ({ key, label: expenseCategoryLabels[key], amount: summary.expensesByCategory[key] }))
+    .filter((slice) => slice.amount > 0)
+  const slices: Slice[] = (isLoss
+    ? [{ key: 'covered' as const, label: 'Covered by income', amount: summary.income }, { key: 'loss' as const, label: 'Loss', amount: -summary.profit }]
+    : [...categories, { key: 'profit' as const, label: 'Profit', amount: summary.profit }]
+  ).filter((slice) => slice.amount > 0)
+  const total = slices.reduce((sum, slice) => sum + slice.amount, 0)
   const percent = (amount: number) => (total ? Math.round((amount / total) * 100) : 0)
 
   if (!total) return <div className="finance-donut is-empty"><p>No income or expenses recorded for this month yet.</p></div>
@@ -55,7 +59,7 @@ export function IncomeDonut({ summary }: { summary: FinanceSummary }) {
         </div>
       </div>
       <div className="finance-donut-side">
-        <p className="finance-donut-title">{isLoss ? 'Where the money went (expenses)' : 'Where this month’s income went'}</p>
+        <p className="finance-donut-title">{isLoss ? 'Expenses: covered by income vs loss' : 'Where this month’s income went'}</p>
         {isTable ? (
           <table className="finance-table">
             <thead><tr><th scope="col">Part</th><th scope="col">Amount</th><th scope="col">Share</th></tr></thead>
@@ -68,6 +72,12 @@ export function IncomeDonut({ summary }: { summary: FinanceSummary }) {
             </button></li>
           ))}</ul>
         )}
+        {isLoss && categories.length > 0 && <ul className="finance-breakdown" aria-label="Expenses by category">{categories.map((slice) => <li key={slice.key}><span>{slice.label}</span><span>{formatRupees(slice.amount)} · {Math.round((slice.amount / summary.expenses) * 100)}%</span></li>)}</ul>}
+        <dl className="finance-totals">
+          <div><dt>Income</dt><dd>{formatRupees(summary.income)}</dd></div>
+          <div><dt>Expenses</dt><dd>{formatRupees(summary.expenses)}</dd></div>
+          <div className={isLoss ? 'is-loss' : 'is-profit'}><dt>{isLoss ? 'Loss' : 'Profit'}</dt><dd>{isLoss ? '−' : ''}{formatRupees(Math.abs(summary.profit))}</dd></div>
+        </dl>
         <button type="button" className="text-link finance-table-toggle" onClick={() => setIsTable((value) => !value)}>{isTable ? 'Show as chart legend' : 'Show as table'}</button>
       </div>
     </div>

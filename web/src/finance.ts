@@ -5,8 +5,13 @@ export type ExpenseCategory = keyof typeof expenseCategoryLabels
 /** A month's money in and out, from GET /api/finance/summary. All amounts are whole rupees. */
 export type FinanceSummary = {
   month: string
+  /** Rent received during the month, whatever month it pays for. */
   rentCollected: number
+  /** The month's own rent paid so far, and what that month is owed in total. */
+  rentForMonth: number
   rentExpected: number
+  /** Part of rentCollected that pays for later months. */
+  rentAhead: number
   otherIncome: number
   income: number
   expenses: number

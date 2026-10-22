@@ -7,7 +7,7 @@ import { getSettings, rentRulesOf } from './settings.js'
 
 /**
  * Money in and out for the owner's Payments page: expenses they record, and a monthly summary of
- * income, expenses and profit/loss. Income is counted once: paid rent months come from the rent
+ * income, expenses and profit/loss. Income is counted once: rent received comes from the rent
  * ledger (RentPayment), and only Payments entries that are NOT rent (no claimed months, no rent QR)
  * are added as "other income", since rent reports and rent QR codes also create a RentPayment.
  */
@@ -65,8 +65,13 @@ financeAdminRouter.get('/finance/summary', async (request, response) => {
   const month = typeof request.query.month === 'string' && monthPattern.test(request.query.month) ? request.query.month : propertyNow().date.slice(0, 7)
   const range = monthRange(month)
   try {
-    const [rentThisMonth, rentAllTime, expenseRows, expensesAllTime, otherThisMonth, otherAllTime, outstanding] = await Promise.all([
+    // Rent counts in the month it was received (as on the Overview), whatever month it pays for, so
+    // confirming an advance payment shows up now rather than in a month the picker cannot reach yet.
+    const received = { paidAt: { gte: range.istStart, lt: range.istEnd } }
+    const [rentReceived, rentForMonth, rentAhead, rentAllTime, expenseRows, expensesAllTime, otherThisMonth, otherAllTime, outstanding] = await Promise.all([
+      prisma.rentPayment.aggregate({ _sum: { amount: true }, where: received }),
       prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { month } }),
+      prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...received, month: { gt: month } } }),
       prisma.rentPayment.aggregate({ _sum: { amount: true } }),
       prisma.expense.groupBy({ by: ['category'], _sum: { amount: true }, where: { date: { gte: range.start, lt: range.end } } }),
       prisma.expense.aggregate({ _sum: { amount: true } }),
@@ -74,7 +79,8 @@ financeAdminRouter.get('/finance/summary', async (request, response) => {
       otherIncome(),
       rentOutstanding(month),
     ])
-    const rentCollected = rentThisMonth._sum.amount ?? 0
+    const rentCollected = rentReceived._sum.amount ?? 0
+    const monthsRent = rentForMonth._sum.amount ?? 0
     const expensesByCategory = Object.fromEntries(expenseCategories.map((category) => [category, expenseRows.find((row) => row.category === category)?._sum.amount ?? 0])) as Record<ExpenseCategory, number>
     const expenses = Object.values(expensesByCategory).reduce((sum, amount) => sum + amount, 0)
     const income = rentCollected + otherThisMonth
@@ -83,7 +89,10 @@ financeAdminRouter.get('/finance/summary', async (request, response) => {
     response.json({
       month,
       rentCollected,
-      rentExpected: rentCollected + outstanding,
+      // The month's own rent, paid whenever, against what that month is owed.
+      rentForMonth: monthsRent,
+      rentExpected: monthsRent + outstanding,
+      rentAhead: rentAhead._sum.amount ?? 0,
       otherIncome: otherThisMonth,
       income,
       expenses,
