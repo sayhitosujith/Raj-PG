@@ -33,11 +33,11 @@ function usePhotoSave(onChanged: () => Promise<void>, onNotice: (message: string
 
 /**
  * The resident's own photo: click to choose a new one. Without `onOpenProfile` the link under it
- * removes the photo. On the Home card (`onOpenProfile` set) the link is "View Profile" instead, and
- * in the phone and tablet layout the photo opens Profile too; on desktop removing the photo is the
+ * removes the photo. In the portal top bar (`onOpenProfile` set) there is no link: in the phone and
+ * tablet layout the photo opens Profile instead, and on desktop removing the photo is the
  * RemovePhotoButton beside "Your profile". The image is resized in the browser before upload.
  */
-export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, onOpenProfile }: { name: string; photoVersion: number | null; onChanged: () => Promise<void>; onNotice: (message: string) => void; /** Set on the Home card: shows "View Profile", and on phones and tablets the photo opens Profile. */ onOpenProfile?: () => void }) {
+export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, onOpenProfile }: { name: string; photoVersion: number | null; onChanged: () => Promise<void>; onNotice: (message: string) => void; /** Set in the portal top bar: on phones and tablets the photo opens Profile. */ onOpenProfile?: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const { isSaving, save, remove } = usePhotoSave(onChanged, onNotice)
   const isTabLayout = useTabLayout()
@@ -61,9 +61,7 @@ export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, on
         {!photoOpensProfile && <span className="profile-photo-overlay" aria-hidden="true">{isSaving ? <LoaderCircle size={22} className="spin" /> : <Camera size={20} />}<small>{isSaving ? 'Saving…' : photoUrl ? 'Change' : 'Add photo'}</small></span>}
       </button>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={choose} />
-      {onOpenProfile
-        ? <button type="button" className="secondary-button profile-view-button" onClick={onOpenProfile}>View Profile</button>
-        : photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
+      {!onOpenProfile && photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
     </div>
   )
 }

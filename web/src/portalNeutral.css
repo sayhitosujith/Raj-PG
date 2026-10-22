@@ -621,9 +621,6 @@
 .portal-shell .theme-toggle {
     color: #6b6b6b
 }
-:root[data-theme="dark"] .portal-shell .portal-property-text {
-    background-image: linear-gradient(100deg, var(--brand-pale) 0%, var(--brand-border) 40%, rgb(255 255 255) 50%, var(--brand-border) 60%, var(--brand-pale) 100%)
-}
 :root[data-theme="dark"] .portal-shell .brand-logo, :root[data-theme="dark"] .portal-shell .logo-field:not(.is-tall) .logo-preview img {
     filter: drop-shadow(0 0 1px rgb(255 255 255 / .85)) drop-shadow(0 0 5px rgb(255 255 255 / .28))
 }
@@ -904,7 +901,7 @@
 .portal-shell .today-tile.is-highlight {
     border-color: #b8b8b8
 }
-:root[data-theme="dark"] .portal-shell .today-grid, :root[data-theme="dark"] .portal-shell .meals-row, :root[data-theme="dark"] .portal-shell .my-details-card {
+:root[data-theme="dark"] .portal-shell .today-grid, :root[data-theme="dark"] .portal-shell .meals-row {
     border-color: rgb(255 255 255 / .1);
     background: rgb(255 255 255 / .02)
 }
@@ -973,15 +970,9 @@
 .portal-shell .cricket-teams span {
     color: #4d4d4d
 }
-.portal-shell .portal-topbar .home-title {
-    color: rgb(73 73 73)
-}
 :root[data-theme="dark"] .portal-shell .portal-topbar {
     border-bottom-color: rgb(58 62 70);
     background: linear-gradient(90deg, rgb(24 26 30), rgb(34 37 43))
-}
-:root[data-theme="dark"] .portal-shell .portal-topbar .home-title {
-    color: rgb(145 145 145)
 }
 :root[data-theme="dark"] .portal-shell .portal-topbar .secondary-button {
     border-color: rgb(78 84 94);

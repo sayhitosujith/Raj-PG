@@ -82,6 +82,18 @@ export function nextMonthToRecord(rent: RentSummary) {
   return month
 }
 
+/**
+ * The last day rent already covers, as "YYYY-MM-DD": the end of the month before the first unpaid one.
+ * "due" while any rent is owed now; null when rent is not tracked, as there is nothing to cover.
+ */
+export function rentPaidThrough(rent: RentSummary): string | 'due' | null {
+  if (rent.state === 'NOT_TRACKED' || !rent.monthlyRent) return null
+  if (rent.outstandingMonths.length) return 'due'
+  const [year, month] = nextMonthToRecord(rent).split('-').map(Number)
+  // Day 0 of the first unpaid month is the last day of the month before it.
+  return new Date(Date.UTC(year, month - 1, 0)).toISOString().slice(0, 10)
+}
+
 function monthAfter(key: string) {
   const [year, month] = key.split('-').map(Number)
   return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`

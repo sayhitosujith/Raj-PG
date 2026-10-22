@@ -7,7 +7,7 @@ import { findAccessBlock } from './accessBlocks.js'
 import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
-import { prisma } from './db.js'
+import { prisma, withDatabaseRetry } from './db.js'
 import { toMealTimes } from './meals.js'
 import { contentVersion, findProfilePhotoProblem, photoVersion, sendProfilePhoto, sendPropertyImage, sendUpiQr } from './photo.js'
 import { rentSummary } from './rent.js'
@@ -27,6 +27,7 @@ import { activeFireAlert, raiseFireAlert } from './fireAlerts.js'
 import { cancelExit, earliestExitDate, exitDues, noticeDaysOf, requestExit } from './exits.js'
 import { cancelAccountDeletion, requestAccountDeletion } from './accountDeletion.js'
 import { passkeyLoginRoutes, residentPasskeyRoutes } from './passkeys.js'
+import { ensureMembershipId } from './membership.js'
 import { ensureReferralCode } from './referrals.js'
 import { workersQuery } from './workers.js'
 
@@ -103,17 +104,19 @@ residentPortalRouter.post('/resident-portal/login', async (request, response) =>
 residentPortalRouter.get('/resident-portal/me', requireResident, async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
-    const resident = await prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: { include: { workers: { where: { role: WorkerRole.HOUSEKEEPING }, ...workersQuery } } } } } } })
+    // Both reads retry when Neon has dropped an idle pooled connection (db.ts), instead of failing the
+    // whole portal with "temporarily unavailable" on the first load after a quiet spell.
+    const resident = await withDatabaseRetry(() => prisma.resident.findUnique({ where: { id: userId }, include: { room: { include: { property: { include: { workers: { where: { role: WorkerRole.HOUSEKEEPING }, ...workersQuery } } } } } } }))
     if (!resident?.active || !resident.room) { response.status(401).json({ error: 'Sign in required.' }); return }
     const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
     const { id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, profilePhotoUpdatedAt, policiesAcceptedVersion, foodOpted, foodRequestedAt, whatsappOptIn, emailOptIn, doorAccessKey, room } = resident
     // Everything below reads from the row above where it can, and runs the remaining independent lookups
     // together: each is a round-trip to the database, and every open portal re-fetches this each minute.
     // Measured from India against Neon in London, the old one-after-another version took 3.8 s.
-    const [settings, rent, upiClaim, dues] = await Promise.all([getSettings(), rentSummary(id), pendingUpiClaim(id), resident.exitDate ? exitDues(id) : null])
+    const [settings, rent, upiClaim, dues] = await withDatabaseRetry(() => Promise.all([getSettings(), rentSummary(id), pendingUpiClaim(id), resident.exitDate ? exitDues(id) : null]))
     const noticeDays = noticeDaysOf(room.property, settings)
     // The resident's own ID number in full, for their own view only (the owner already sees it).
-    response.json({ doorAccessKey, referralCode: resident.referralCode ?? await ensureReferralCode(id), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled(), foodOpted, diet: resident.diet, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ doorAccessKey, referralCode: resident.referralCode ?? await ensureReferralCode(id), membershipId: await ensureMembershipId(resident, room.property.name), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled(), foodOpted, diet: resident.diet, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })

@@ -1,12 +1,13 @@
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { LazyCountryLabel } from './CountryField'
+import { MemberCard } from './MemberCard'
 import { Briefcase, Building2, CalendarDays, DoorOpen, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
 import type { AadharStatus } from './resident'
 import { ResidentIdVerification } from './ResidentIdVerification'
-import { isIndian, visaText, visaTypeLabels } from './identity'
+import { isIndian, visaText } from './identity'
 import { ExpiryDate } from './ExpiryDate'
 import { formatAadhar } from './aadharNumber'
 import { readApiError } from './superAdmin'
@@ -42,7 +43,6 @@ import { ExitPg, type ExitNotice } from './ExitPg'
 import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { PasskeySettings } from './PasskeySettings'
 import { rememberProperty } from './lastProperty'
-import { useTabLayout } from './useTabLayout'
 import { NotificationBell } from './NotificationBell'
 import { buildResidentNotices, useRepairRequests } from './residentNotices'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
@@ -70,7 +70,7 @@ import { sharingLabel } from './rooms'
 import { dietLabels, type Diet } from './diet'
 import { DietMark } from './DietToggle'
 
-type ResidentProfile = { /** Door lock PIN issued by a super admin, if any. */ doorAccessKey?: string | null; /** The owner's last decision on a food request, for the notification. */ foodDecidedAt?: string | null; foodApproved?: boolean | null; /** When the weekly menu last changed, and what changed. */ menuUpdatedAt?: string | null; menuChanges?: string | null; /** The code in this resident's "Refer a friend" link. */ referralCode?: string | null; /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharNumber?: string | null; passportNumber?: string | null; /** Passport and Indian visa details (non-Indian residents), expiry dates as "YYYY-MM-DD…". */ passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; vehicleType?: string | null; vehicleNumber?: string | null; occupation?: string | null; createdAt: string; joinedAt: string; room: string; /** Beds in the room: 1 is single, 2 is two sharing… Absent from a backend older than this field. */ roomBeds?: number; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; /** Veg or non-veg, as the owner set it; null is Not set. */ diet?: Diet | null; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { /** Door lock PIN issued by a super admin, if any. */ doorAccessKey?: string | null; /** "PS-2026-0001": PG initials, joining year, member number; never changes. */ membershipId: string; /** The owner's last decision on a food request, for the notification. */ foodDecidedAt?: string | null; foodApproved?: boolean | null; /** When the weekly menu last changed, and what changed. */ menuUpdatedAt?: string | null; menuChanges?: string | null; /** The code in this resident's "Refer a friend" link. */ referralCode?: string | null; /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; email?: string | null; nationality: string; aadharNumber?: string | null; passportNumber?: string | null; /** Passport and Indian visa details (non-Indian residents), expiry dates as "YYYY-MM-DD…". */ passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; vehicleType?: string | null; vehicleNumber?: string | null; occupation?: string | null; createdAt: string; joinedAt: string; room: string; /** Beds in the room: 1 is single, 2 is two sharing… Absent from a backend older than this field. */ roomBeds?: number; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; /** Veg or non-veg, as the owner set it; null is Not set. */ diet?: Diet | null; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 // Overdue rent, an ended stay or a closed account signed the resident out; its message replaces the portal,
 // even on a background refresh.
 class AccessBlockedError extends Error {
@@ -143,11 +143,9 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
   useResidentTheme(profile.workspace.residentTheme)
-  // Profile has no tab of its own: on phones and tablets the Home photo and "View Profile" open it;
-  // on desktop, where everything is one page, "View Profile" scrolls down to it.
-  const isTabLayout = useTabLayout()
+  // Profile has no tab of its own: on phones and tablets the photo in the top bar opens it (the picker
+  // only calls this in that layout); on desktop everything is one page, with Profile further down.
   const openProfile = () => {
-    if (!isTabLayout) { document.getElementById('your-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
     setTab('profile')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -188,21 +186,15 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
 
   // Only the ID document number and address are checked (by the owner, against the upload); phone and email are as typed.
   const isAadharVerified = profile.aadharStatus === 'VERIFIED'
-  // The ID that matches nationality for the My Details card: Aadhaar (last four digits) for Indian
-  // nationals, passport for everyone else (as in the details list below). The nationality line above it
-  // shows which one applies.
-  const nationalityLine = profile.nationality && <span className="my-details-id"><strong className="my-details-id-label">Nationality</strong>: <Suspense fallback={profile.nationality}><LazyCountryLabel code={profile.nationality} /></Suspense></span>
-  const idDocumentLine = isIndian(profile.nationality)
-    ? profile.aadharNumber && <span className="my-details-id"><strong className="my-details-id-label">Aadhaar Number</strong>: {formatAadhar(profile.aadharNumber)}</span>
-    : profile.passportNumber && <span className="my-details-id"><strong className="my-details-id-label">Passport Number</strong>: {profile.passportNumber}</span>
-  // Non-Indian residents also see their visa and when it expires, flagged once it has passed.
-  const visaLine = !isIndian(profile.nationality) && profile.visaNumber && <span className="my-details-id"><strong className="my-details-id-label">Visa</strong>: {profile.visaType ? visaTypeLabels[profile.visaType] ?? profile.visaType : profile.visaNumber} · expires <ExpiryDate value={profile.visaExpiry} /></span>
+  // Occupation and diet as tags under the cardholder on the Home member card.
+  const identityTags = (profile.occupation?.trim() || profile.foodOpted) && <div className="portal-details-tags">{profile.occupation?.trim() && <span className="portal-details-room"><Briefcase size={13} aria-hidden="true" /><span>{profile.occupation.trim()}</span></span>}{profile.foodOpted && (profile.diet ? <span className={`welcome-diet is-${profile.diet === 'VEG' ? 'veg' : 'non-veg'}`}><DietMark diet={profile.diet} /> {dietLabels[profile.diet]}</span> : <span className="welcome-diet is-unset">Diet not set</span>)}</div>
   // Each detail with the icon its card shows (see .detail-card in App.css).
   const details: Array<[string, ReactNode, LucideIcon]> = [
     ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>, Building2],
     ['Room', profile.room, DoorOpen],
     ['Phone', profile.phone ? <PhoneText value={profile.phone} /> : '—', Phone],
     ['Email', profile.email || '—', Mail],
+    ['Nationality', profile.nationality ? <Suspense fallback={profile.nationality}><LazyCountryLabel code={profile.nationality} /></Suspense> : '—', Globe],
     ['Emergency contact', <EmergencyContactText contact={profile} />, Siren],
     ['Vehicle', vehicleText(profile), vehicleIcon(profile.vehicleType)],
     isIndian(profile.nationality)
@@ -235,8 +227,8 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <PortalScenery />
       <PortalAnimals />
       <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        {/* The resident's own PG by name in place of the app logo, so the portal feels like their home. */}
-        <div className="brand-row"><span className="portal-property-name" title={profile.property}><span className="portal-property-text">{profile.property}</span></span><span className="home-title portal-title">Resident Home</span></div>
+        {/* Who is signed in, on every tab: photo (opens Profile on phones) and name. */}
+        <div className="brand-row portal-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div className="portal-identity-text"><p className="portal-identity-name" title={displayName(profile.name)}>{displayName(profile.name)}</p></div></div>
         <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
@@ -247,7 +239,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         {profile.foodOpted && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}
         <section className="welcome-row"><div><h1>Hello, {greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())} <span className="wave">✦</span></h1>{festival && <FestivalGreeting festival={festival} />}</div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
         <section className="workspace-view">
-          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div className="portal-details-body"><p className="portal-details-name" title={displayName(profile.name)}>{displayName(profile.name)}</p>{(profile.occupation?.trim() || profile.foodOpted) && <div className="portal-details-tags">{profile.occupation?.trim() && <span className="portal-details-room"><Briefcase size={13} aria-hidden="true" /><span>{profile.occupation.trim()}</span></span>}{profile.foodOpted && (profile.diet ? <span className={`welcome-diet is-${profile.diet === 'VEG' ? 'veg' : 'non-veg'}`}><DietMark diet={profile.diet} /> {dietLabels[profile.diet]}</span> : <span className="welcome-diet is-unset">Diet not set</span>)}</div>}<div className="my-details-card"><div className="my-details-main">{(profile.phone || profile.email || nationalityLine || idDocumentLine || profile.doorAccessKey) && <p className="my-details-contact">{profile.phone && <span><Phone size={14} /><PhoneText value={profile.phone} /></span>}{profile.email && <span><Mail size={14} /><a href={`mailto:${profile.email}`} title={profile.email}>{profile.email}</a></span>}{nationalityLine && <span><Globe size={14} />{nationalityLine}</span>}{idDocumentLine && <span><IdCard size={14} />{idDocumentLine}</span>}{visaLine && <span><Plane size={14} />{visaLine}</span>}</p>}</div></div></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
+          <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><div className="portal-details-body"><MemberCard property={profile.property} membershipId={profile.membershipId} name={displayName(profile.name)} room={profile.room} roomBeds={profile.roomBeds} rent={profile.rent} tags={identityTags} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <ResidentAmenities amenities={profile.amenities} /><RentHighlight rent={profile.rent} room={`Room ${profile.room}${profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}`} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
