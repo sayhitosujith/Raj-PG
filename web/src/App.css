@@ -483,6 +483,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .room-tile { align-content: start; }
 /* Your properties and Recent activity keep their own heights, so a short list leaves no empty block. */
 .dashboard-grid { align-items: start; }
+/* A receptionist's holidays sit in the grid beside Recent activity, level with it. */
+.dashboard-grid > .holidays-panel { margin-top: 0; }
 /* With the free-rooms card moved up, the monthly insight is alone in the bottom row and spans it. */
 .bottom-grid.is-single { grid-template-columns: 1fr; }
 /* Who is in a booked bed (BedOccupantCard.tsx), shown on hover or focus; placed by script at the top of the page. */
