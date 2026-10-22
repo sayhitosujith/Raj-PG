@@ -432,8 +432,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .meal-copy { display: grid; gap: 2px; min-width: 0; }
 .meal-copy strong { color: #344449; font-size: 12px; }
 .meal-copy small { color: var(--muted); font-size: 11px; white-space: nowrap; }
-/* Today's dishes under the time (Info tab); long menus are cut at three lines. */
-.meal-items { display: -webkit-box; overflow: hidden; margin-top: 2px; color: #45544f; font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+/* Today's dishes under the time, one chip each, wrapping so a long menu is never cut off. The border
+   follows the portal's theme colour where there is one. */
+.meal-dishes { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.meal-dishes li { max-width: 100%; padding: 2px 8px; border: 1px solid var(--brand-border, var(--line)); border-radius: 999px; color: var(--ink); background: rgb(255 255 255 / .85); font-size: 10.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+:root[data-theme="dark"] .meal-dishes li { border-color: rgb(255 255 255 / .18); background: rgb(255 255 255 / .06); }
 .meal-tag { position: absolute; top: -8px; right: 10px; padding: 2px 7px; border-radius: 999px; color: white; background: var(--teal); font-size: 8px; font-style: normal; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
 .meal-tile.is-serving { border-color: var(--teal); background: var(--teal-soft); }
 /* A meal the resident is not eating today (opted out, or no answer): dimmed, with the notice kept at full strength. */
@@ -1723,6 +1726,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .meal-tile { flex-direction: column; gap: 6px; padding: 12px 6px 10px; text-align: center; }
   .portal-shell .meal-icon { width: 28px; height: 28px; }
   .portal-shell .meal-copy small { font-size: 10px; white-space: normal; }
+  /* The tiles are centred stacks here, so their dish chips centre too. */
+  .portal-shell .meal-dishes { justify-content: center; }
   .portal-shell .meal-tag { right: 50%; translate: 50% 0; }
   /* Centred under the stacked tile, and tighter, since each tile is a third of the phone's width. */
   .portal-shell .meal-copy :is(.late-meal-button, .late-meal-status) { justify-self: center; }
@@ -2115,6 +2120,15 @@ div.portal-panel { display: contents; }
 .maintenance-item-head p { margin: 2px 0 0; color: #45544f; font-size: 12px; }
 .maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+
+/* The laundry shop on the resident's Help tab (LaundryShopCard.tsx): an icon tile beside the name, timings and link. */
+.laundry-shop-body { display: flex; align-items: flex-start; gap: 12px; }
+.laundry-shop-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 10px; color: var(--brand-on, white); background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, var(--teal))); }
+.laundry-shop-details { display: grid; justify-items: start; gap: 6px; min-width: 0; }
+.laundry-shop-details strong { color: var(--ink); font-size: 14px; }
+.laundry-shop-hours { display: inline-flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.laundry-shop-hours svg { flex: none; margin-top: 2px; }
+.laundry-shop-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; text-decoration: none; }
 
 /* Profile tab (phones and tablets): photo, details, move-out, notifications and password (sign out stays in the top bar). There those
    leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */

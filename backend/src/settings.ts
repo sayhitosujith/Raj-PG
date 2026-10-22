@@ -80,11 +80,16 @@ const timeWindows = [
 ] as const
 type WindowField = `${(typeof timeWindows)[number]['key']}${'From' | 'To'}`
 
-type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown; doorKeysEnabled?: unknown; lockModel?: unknown; lockLocation?: unknown; doorPinLength?: unknown; doorUnlockInstructions?: unknown; lateMealLimit?: unknown } & Partial<Record<WindowField, unknown>>
+type SettingsInput = { upiId?: unknown; upiPayeeName?: unknown; termsAndConditions?: unknown; privacyPolicy?: unknown; businessName?: unknown; contactPhone?: unknown; contactEmail?: unknown; rentDueDay?: unknown; rentReminderOneDay?: unknown; rentReminderTwoDay?: unknown; rentReminderThreeDay?: unknown; lateFee?: unknown; securityDeposit?: unknown; noticePeriodDays?: unknown; extraHouseRules?: unknown; faqs?: unknown; dailyRateWithFood?: unknown; dailyRateWithoutFood?: unknown; housekeepingWeeklyLimit?: unknown; laundryShopName?: unknown; laundryShopUrl?: unknown; laundryShopHours?: unknown; residentTheme?: unknown; portalThemeColor?: unknown; portalButtonTextColor?: unknown; portalErrorColor?: unknown; portalTextColor?: unknown; portalPlaceholderColor?: unknown; portalNewBadgeColor?: unknown; portalSoonBadgeColor?: unknown; portalBetaBadgeColor?: unknown; portalBackgroundColor?: unknown; portalCardColor?: unknown; portalChildCardColor?: unknown; featureBadges?: unknown; doorKeysEnabled?: unknown; lockModel?: unknown; lockLocation?: unknown; doorPinLength?: unknown; doorUnlockInstructions?: unknown; lateMealLimit?: unknown } & Partial<Record<WindowField, unknown>>
 
 
 const isWholeNumber = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
 const isDay = (value: unknown): value is number => isWholeNumber(value, 1, 28)
+
+/** An absolute http(s) link, e.g. "https://quickwash.in/book". */
+function isWebAddress(value: string) {
+  try { return ['http:', 'https:'].includes(new URL(value).protocol) } catch { return false }
+}
 
 // Whole-number settings: [field, min, max, nullable, error]. A nullable field is cleared with null.
 const numberFields = [
@@ -131,12 +136,19 @@ function parseSettings(input: SettingsInput, current: WorkspaceSettings): { data
     data.upiPayeeName = payeeName
   }
   // Smart lock details; blank clears them.
-  for (const [field, label, max] of [['lockModel', 'Lock model', 60], ['lockLocation', 'Lock location', 60], ['doorUnlockInstructions', 'Unlock instructions', 500]] as const) {
+  for (const [field, label, max] of [['lockModel', 'Lock model', 60], ['lockLocation', 'Lock location', 60], ['doorUnlockInstructions', 'Unlock instructions', 500], ['laundryShopName', 'Laundry shop name', 60], ['laundryShopHours', 'Laundry shop timings', 120]] as const) {
     const text = input[field]
     if (text === undefined) continue
     if (text !== null && typeof text !== 'string') return { error: `${label} must be text.` }
     if (text && text.trim().length > max) return { error: `${label} can be up to ${max} characters.` }
     data[field] = text?.trim() || null
+  }
+  // The laundry shop's link opens from residents' phones, so only a full web address is accepted.
+  if (input.laundryShopUrl !== undefined) {
+    if (input.laundryShopUrl !== null && typeof input.laundryShopUrl !== 'string') return { error: 'Laundry shop website must be text.' }
+    const url = input.laundryShopUrl?.trim() || null
+    if (url && (url.length > 300 || !isWebAddress(url))) return { error: 'Enter the laundry shop website as a full link, e.g. https://quickwash.in.' }
+    data.laundryShopUrl = url
   }
   if (input.doorKeysEnabled !== undefined) {
     if (typeof input.doorKeysEnabled !== 'boolean') return { error: 'Door access keys must be on or off.' }

@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { LazyCountryLabel } from './CountryField'
+import { LaundryShopCard } from './LaundryShopCard'
 import { MemberCard } from './MemberCard'
 import { Briefcase, Building2, CalendarDays, DoorOpen, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
@@ -244,7 +245,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>
-        <div className="portal-panel" data-panel="info"><section className="help-emergency"><div><strong>Emergency support</strong><small>Get immediate help 24/7</small></div><EmergencyNumbers /></section><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} /><ResidentFaqs faqs={profile.info.faqs} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
+        <div className="portal-panel" data-panel="info"><section className="help-emergency"><div><strong>Emergency support</strong><small>Get immediate help 24/7</small></div><EmergencyNumbers /></section><HouseRules rules={{ ...profile.workspace.houseRules, noticePeriodDays: profile.exit.noticeDays }} extra={profile.info.rules} vehicle={profile} />{profile.workspace.laundryShop && <LaundryShopCard shop={profile.workspace.laundryShop} />}<ResidentFaqs faqs={profile.info.faqs} />{/* Phones and tablets only (CSS): wide screens keep these in the Home card. */}<div className="portal-info-settings">{notifications}{deleteAccount}</div></div>
         <div className="portal-panel" data-panel="home"><ResidentInfo info={profile.info} onNotice={showNotice} action={managerPhone ? <CallOwnerButton ownerName={profile.workspace.businessName} ownerPhone={managerPhone} /> : undefined} /></div>
         <ResidentDoorAccess enabled={profile.workspace.doorKeysEnabled !== false} doorAccessKey={profile.doorAccessKey} isRentOverdue={profile.rent.state === 'LOCK_DUE'} location={profile.workspace.lockLocation} instructions={profile.workspace.doorUnlockInstructions} onNotice={showNotice} />
         <PropertyGallery refreshSignal={refreshSignal} />

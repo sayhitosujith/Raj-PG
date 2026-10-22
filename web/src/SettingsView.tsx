@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, Hand, House, ImageUp, LockKeyhole, QrCode, Palette, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, Hand, House, ImageUp, LockKeyhole, QrCode, Palette, Shirt, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -244,6 +244,12 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
           <SettingsSection icon={<Sparkles size={18} />} title="Housekeeping hours" description="The time windows residents choose from when requesting a cleaning." onSubmit={(form) => onSaveSettings({ ...windowFields(form, ['morning', 'afternoon', 'evening']), housekeepingWeeklyLimit: optionalNumber(form, 'housekeepingWeeklyLimit') })}>
             {(['morning', 'afternoon', 'evening'] as const).map((slot) => <TimeWindowRow key={slot} name={slot} label={slot[0].toUpperCase() + slot.slice(1)} settings={settings} />)}
             <label>Cleanings per week <span>(per resident, Monday to Sunday; blank for no limit)</span><input name="housekeepingWeeklyLimit" type="number" min={1} max={21} step={1} defaultValue={settings.housekeepingWeeklyLimit ?? ''} placeholder="No limit" /></label>
+          </SettingsSection>
+
+          <SettingsSection icon={<Shirt size={18} />} title="Laundry shop" description="The laundry shop residents can use, shown on the Help tab of their portal. Leave everything blank to hide it." onSubmit={(form) => onSaveSettings({ laundryShopName: value(form, 'laundryShopName'), laundryShopUrl: value(form, 'laundryShopUrl'), laundryShopHours: value(form, 'laundryShopHours') })}>
+            <label>Shop name <span>(optional)</span><input name="laundryShopName" maxLength={60} defaultValue={settings.laundryShopName ?? ''} placeholder="e.g. QuickWash Laundry" /></label>
+            <label>Website or booking link <span>(optional)</span><input name="laundryShopUrl" type="url" maxLength={300} defaultValue={settings.laundryShopUrl ?? ''} placeholder="https://quickwash.in" /></label>
+            <label>Timings <span>(optional)</span><input name="laundryShopHours" maxLength={120} defaultValue={settings.laundryShopHours ?? ''} placeholder="e.g. Mon–Sat 8 am – 8 pm, Sunday closed" /></label>
           </SettingsSection>
 
           <SettingsSection icon={<Hand size={18} />} title="Late meal requests" description="Residents can ask for a meal after the 9 pm cutoff, until it starts; reception or a super admin approves it on the Kitchen page." onSubmit={(form) => onSaveSettings({ lateMealLimit: Number(value(form, 'lateMealLimit')) })}>

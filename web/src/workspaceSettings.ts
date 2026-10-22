@@ -43,6 +43,10 @@ export type WorkspaceSettings = {
   quietTo: string
   /** Cleanings a resident may book per Monday–Sunday week; null = no limit. */
   housekeepingWeeklyLimit: number | null
+  /** Settings → Laundry shop, shown on residents' Help tab; null when not set. Timings are free text. */
+  laundryShopName: string | null
+  laundryShopUrl: string | null
+  laundryShopHours: string | null
   /** Most late meal requests that may be approved for one meal at a property. */
   lateMealLimit: number
   morningFrom: string
@@ -89,5 +93,8 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 
 /** What a resident needs from the workspace: contacts, house rules, housekeeping slots and limit, and the policies. */
 /** How residents pay the owner directly: a UPI ID, an uploaded QR image (by version), or both. */
+/** The laundry shop on the resident's Help tab; each part is null when the owner left it blank. */
+export type LaundryShop = { name: string | null; url: string | null; hours: string | null }
+
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { /** Settings → Smart lock, for the Door access card; the details are null when unset or door keys are off. */ doorKeysEnabled?: boolean; doorUnlockInstructions?: string | null; lockLocation?: string | null; businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { /** Settings → Smart lock, for the Door access card; the details are null when unset or door keys are off. */ doorKeysEnabled?: boolean; doorUnlockInstructions?: string | null; lockLocation?: string | null; businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; /** Null while the owner has set no laundry shop; absent from an older backend. */ laundryShop?: LaundryShop | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

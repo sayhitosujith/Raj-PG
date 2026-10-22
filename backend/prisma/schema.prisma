@@ -666,6 +666,11 @@ model WorkspaceSettings {
   quietTo                 String        @default("07:00")
   // Cleanings a resident may book per Monday–Sunday week; null = no limit.
   housekeepingWeeklyLimit Int?
+  // The laundry shop residents use, shown on the Help tab of their portal; all optional, and the card
+  // is hidden while none is set. Timings are free text ("Mon–Sat 8 am – 8 pm, Sunday closed").
+  laundryShopName         String?
+  laundryShopUrl          String?
+  laundryShopHours        String?
   // Most late meal requests staff may approve for one meal (e.g. Tuesday dinner) at one property, so the
   // kitchen never gets more unplanned extras than it can cook for (see lateMeals.ts).
   lateMealLimit           Int           @default(10)

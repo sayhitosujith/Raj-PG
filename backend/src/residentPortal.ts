@@ -63,10 +63,16 @@ function residentUpiPayee(settings: WorkspaceSettings) {
   return { id: settings.upiId, payeeName: settings.upiPayeeName || settings.businessName, qrVersion: photoVersion(settings.upiQrUpdatedAt) }
 }
 
+/** Settings → Laundry shop, for the Help tab's Laundry card; null while nothing is set. */
+function residentLaundryShop(settings: WorkspaceSettings) {
+  if (!settings.laundryShopName && !settings.laundryShopUrl && !settings.laundryShopHours) return null
+  return { name: settings.laundryShopName, url: settings.laundryShopUrl, hours: settings.laundryShopHours }
+}
+
 async function residentWorkspace() {
   const settings = await getSettings()
   // The Door access card (Settings → Smart lock); its details are left out when door keys are switched off.
-  return { doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
+  return { doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: residentLaundryShop(settings), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */

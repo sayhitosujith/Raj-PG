@@ -464,7 +464,7 @@
 .portal-shell .housekeeping-action-form textarea:focus {
     box-shadow: 0 0 0 3px #49494919
 }
-.portal-shell .meal-items {
+.portal-shell .meal-dishes li {
     color: #4d4d4d
 }
 .portal-shell .late-meal-status.is-approved {
