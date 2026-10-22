@@ -485,10 +485,12 @@
 }
 .portal-shell :is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart {
     --free-fill: #434343;
-    --taken-fill: #ef5a5a;
+    --taken-fill: #94a3b8;
+    --owed-fill: #ef5a5a;
     --held-fill: #d4a017;
     --free-ink: #fff;
     --taken-ink: #2a2014;
+    --owed-ink: #2a2014;
     --held-ink: #2a2014;
     --chart-ink: rgb(240 226 212);
     --chart-muted: rgb(214 196 180);

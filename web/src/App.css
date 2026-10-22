@@ -468,8 +468,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
  * against the card's own surfaces (#fff9f2 light, #2a2014 dark) with the dataviz palette validator. The doubled class plus :is() outranks the owner's-colour
  * copies brandThemePlugin.ts makes of every green, which would otherwise repaint the validated accent.
  */
-:is(:root, :root[data-brand][data-theme]) .free-chart.free-chart { --free-fill: #15803d; --taken-fill: #dc2626; --held-fill: #ca8a04; --free-ink: #fff; --taken-ink: #fff; --held-ink: #2a2014; --chart-ink: #594337; --chart-muted: #8a6a55; --chart-surface: #fff9f2; }
-:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart { --free-fill: #117535; --taken-fill: #ef5a5a; --held-fill: #d4a017; --free-ink: #fff; --taken-ink: #2a2014; --held-ink: #2a2014; --chart-ink: rgb(240 226 212); --chart-muted: rgb(214 196 180); --chart-surface: #2a2014; }
+:is(:root, :root[data-brand][data-theme]) .free-chart.free-chart { --free-fill: #15803d; --taken-fill: #475569; --owed-fill: #dc2626; --held-fill: #ca8a04; --free-ink: #fff; --taken-ink: #fff; --owed-ink: #fff; --held-ink: #2a2014; --chart-ink: #594337; --chart-muted: #8a6a55; --chart-surface: #fff9f2; }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .free-chart.free-chart { --free-fill: #117535; --taken-fill: #94a3b8; --owed-fill: #ef5a5a; --held-fill: #d4a017; --free-ink: #fff; --taken-ink: #2a2014; --owed-ink: #2a2014; --held-ink: #2a2014; --chart-ink: rgb(240 226 212); --chart-muted: rgb(214 196 180); --chart-surface: #2a2014; }
 .tip-card > div:has(.free-chart) { flex: 1; min-width: 0; }
 /* The free-rooms card on its own, full width, between the stat cards and Your properties. */
 .rooms-overview { margin-bottom: 16px; }
@@ -530,7 +530,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .free-legend { display: flex; gap: 12px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--chart-muted); font-size: 10px; }
 .free-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .free-legend i { width: 8px; height: 8px; border-radius: 50%; }
-/* Booked is red and also square, free green and round: red and green alone are hard to tell apart for many colour-blind viewers. */
+/* Booked is square, free round: the shape carries the difference for colour-blind viewers, not the fill alone. */
 .free-legend i.is-taken { border-radius: 1px; }
 .room-tile-beds .is-taken { border-radius: 3px; }
 /* The room grid: one tile per room, one 8px dot per bed with a 2px gap; rooms with space are outlined in the accent, full ones recede. */
@@ -544,6 +544,12 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Numbered beds: each fill has its own number colour, measured at 4.5:1 or more (white everywhere but on the dark red). */
 .room-tile-beds :is(i, button) { display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; color: var(--free-ink); font: 700 9px/1 Manrope, sans-serif; font-style: normal; }
 .room-tile-beds .is-taken { color: var(--taken-ink); }
+/* Rent owed: overdue is filled red; due this month (not yet late) is a red outline, so the two differ without relying on colour. */
+.room-tile-beds .is-overdue, .free-legend .is-overdue { color: var(--owed-ink); background: var(--owed-fill); }
+.room-tile-beds .is-due, .free-legend .is-due { color: var(--owed-fill); background: transparent; box-shadow: inset 0 0 0 2px var(--owed-fill); }
+.free-legend i.is-due { box-shadow: inset 0 0 0 1.5px var(--owed-fill); }
+.room-tile-beds .is-owed.is-occupied:is(:hover, :focus-visible) { box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--owed-fill); }
+.room-tile-beds .is-due.is-occupied:is(:hover, :focus-visible) { box-shadow: inset 0 0 0 2px var(--owed-fill), 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--owed-fill); }
 /* Free beds are buttons (add a resident to that bed): a ring on hover and keyboard focus. */
 .room-tile-beds button { cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .room-tile-beds button:is(:hover, :focus-visible) { outline: none; box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--free-fill); transform: scale(1.15); }

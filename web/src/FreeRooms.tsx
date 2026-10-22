@@ -29,7 +29,7 @@ function freeBedsOf(room: RoomOccupancy) {
 /**
  * The Overview tip's room grid: a hero number and a meter for the property's free beds against its total,
  * then every room as a tile with its beds numbered 1 to N, each state in its own colour and shape: free
- * green and round, booked red and square, reserved amber and diamond. Hover a booked bed to see who is in
+ * green and round, booked slate and square (red when rent is owed, see BookedBed), reserved amber and diamond. Hover a booked bed to see who is in
  * it (BedOccupantCard). A free bed starts "Add resident" in that bed (`onAddResident`); in "Select beds"
  * mode, free beds are ticked instead and reserved together, with an optional note. Clicking a reserved
  * bed offers to release it. Every bed is labelled for screen readers, so nothing depends on colour or
@@ -98,7 +98,7 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
         {free > 0 && <span className="is-free" style={{ width: share(free) }} />}
       </div>
       <div className="free-chart-bar">
-        <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked bed</li><li><i className="is-held" />Reserved</li></ul>
+        <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked · rent paid</li><li><i className="is-taken is-owed is-due" />Rent due</li><li><i className="is-taken is-owed is-overdue" />Rent overdue</li><li><i className="is-held" />Reserved</li></ul>
         {shown.length > 0 && (selecting
           ? <div className="reserve-bar" role="group" aria-label="Reserve selected beds">
               <span>{selected.size ? `${plural(selected.size, 'bed')} selected` : 'Tap free beds to select them'}</span>
@@ -138,12 +138,18 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
   )
 }
 
+// Red is kept for money owed: overdue beds are filled red, rent due this month (not yet late) is outlined red.
+// Paid-up, next-due-later and untracked rent all stay the neutral booked colour.
+const rentMarks = { OVERDUE: { className: ' is-owed is-overdue', label: ', rent overdue' }, DUE: { className: ' is-owed is-due', label: ', rent due this month' } } as const
+
 /**
- * A booked bed: hovering or focusing it shows who is in it (BedOccupantCard), so it can be tabbed to. A bed
- * booked by a resident without a bed number has no one to show, so it stays a plain marker.
+ * A booked bed, coloured by its occupant's rent: hovering or focusing it shows who is in it (BedOccupantCard),
+ * so it can be tabbed to. A bed booked by a resident without a bed number has no one to show, so it stays a
+ * plain neutral marker.
  */
 function BookedBed({ bed, occupant, onShow, onHide }: { bed: number; occupant: BedOccupant | undefined; onShow: (occupant: BedOccupant, anchor: DOMRect) => void; onHide: () => void }) {
   if (!occupant) return <i className="is-taken" role="img" aria-label={`Bed ${bed}, booked`}>{bed}</i>
+  const mark = occupant.rent?.state === 'OVERDUE' || occupant.rent?.state === 'DUE' ? rentMarks[occupant.rent.state] : null
   const show = (target: Element) => onShow(occupant, target.getBoundingClientRect())
-  return <i className="is-taken is-occupied" role="img" tabIndex={0} aria-label={`Bed ${bed}, booked by ${occupant.name}`} onMouseEnter={(event) => show(event.currentTarget)} onFocus={(event) => show(event.currentTarget)} onMouseLeave={onHide} onBlur={onHide}>{bed}</i>
+  return <i className={`is-taken is-occupied${mark?.className ?? ''}`} role="img" tabIndex={0} aria-label={`Bed ${bed}, booked by ${occupant.name}${mark?.label ?? ''}`} onMouseEnter={(event) => show(event.currentTarget)} onFocus={(event) => show(event.currentTarget)} onMouseLeave={onHide} onBlur={onHide}>{bed}</i>
 }
