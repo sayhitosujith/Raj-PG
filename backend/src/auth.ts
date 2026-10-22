@@ -68,7 +68,9 @@ async function findLiveSession(request: Request) {
  * so it applies to sessions already open.
  */
 async function rejectBlocked(residentId: string, response: Response) {
-  const block = await findAccessBlock(residentId)
+  // Safe to retry on a dropped connection: its only write, revoking sign-in once a stay is over, does
+  // the same thing when repeated.
+  const block = await withDatabaseRetry(() => findAccessBlock(residentId))
   if (!block) return false
   await prisma.session.deleteMany({ where: { residentId } })
   response.clearCookie(sessionCookieName, { path: '/' })
