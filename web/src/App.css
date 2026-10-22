@@ -520,7 +520,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .free-legend i.is-taken { border-radius: 1px; }
 .room-tile-beds .is-taken { border-radius: 3px; }
 /* The room grid: one tile per room, one 8px dot per bed with a 2px gap; rooms with space are outlined in the accent, full ones recede. */
-.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 204px; margin: 0; padding: 0 4px 0 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
+/* Every room shows: the card has the full width to itself, so a tall grid stretches nothing beside it. */
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
 .room-tile { position: relative; display: grid; gap: 5px; padding: 6px 7px; border: 1px solid color-mix(in srgb, var(--taken-fill) 70%, transparent); border-radius: 8px; }
 .room-tile.has-space { border-color: var(--free-fill); background: color-mix(in srgb, var(--free-fill) 7%, transparent); }
 .room-tile.is-full { border-color: color-mix(in srgb, var(--taken-fill) 55%, transparent); }

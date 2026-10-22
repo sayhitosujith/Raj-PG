@@ -7,7 +7,7 @@ import { BedOccupantCard, type BedOccupant } from './BedOccupantCard'
  */
 export type RoomOccupancy = { number: string; beds: number; bookedBeds: number[]; occupants: BedOccupant[]; unassigned: number }
 
-// The grid scrolls inside the card, so it can hold every room of a large PG; past this it ends with "+N more rooms".
+// Every room is shown; this only guards against an extreme property, past which the grid ends with "+N more rooms".
 const shownRooms = 300
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
@@ -24,8 +24,7 @@ function freeBedsOf(room: RoomOccupancy) {
  * then every room as a small tile with its number and its beds numbered 1 to N: free beds green and round,
  * booked beds red and square (shape as well as colour), so the owner sees exactly which beds are free.
  * Rooms with a free bed are outlined green, fully booked ones red. Hover a booked bed to see who is in it
- * (BedOccupantCard), or a free bed for its "add a resident" hint. The grid scrolls inside the card past
- * about three rows, so a large PG does not stretch the Overview. Each free bed is a button that starts
+ * (BedOccupantCard), or a free bed for its "add a resident" hint. Every room is shown, row after row. Each free bed is a button that starts
  * "Add resident" in that room and bed (`onAddResident`). Every bed is labelled for screen readers ("Bed 3,
  * free"), so nothing depends on colour or hover. Colours were checked with the dataviz palette validator
  * against the card's light and dark surfaces.
@@ -49,7 +48,7 @@ export function FreeRooms({ beds, rooms, notSetUp, onAddResident }: { beds: { ta
         {free > 0 && <span className="is-free" style={{ width: `${100 - takenShare}%` }} />}
       </div>
       <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked bed</li></ul>
-      {shown.length > 0 && <ul className="room-grid" aria-label="Rooms and beds; choose a free bed to add a resident to it" onScroll={() => setShownOccupant(null)}>
+      {shown.length > 0 && <ul className="room-grid" aria-label="Rooms and beds; choose a free bed to add a resident to it">
         {withFree.slice(0, shownRooms).map(({ room, free: freeBeds }) => (
           <li key={room.number} className={`room-tile${freeBeds.length ? ' has-space' : ' is-full'}`}>
             <span className="room-tile-number"><span className="sr-only">Room </span>{room.number}</span>
