@@ -62,17 +62,19 @@ export function toPublicSuperAdmin({ id, name, email, phone, aadharNumber, passp
 export type StaffRoleInput = { staffRole: StaffRole; propertyIds: string[] }
 
 /**
- * Reads the role and assigned properties from a request body. Receptionists need at least one existing
- * property; super admins reach everything, so any list sent for them is dropped. Absent role = no change.
+ * Reads the role and assigned property from a request body. A receptionist manages exactly one existing
+ * property (still stored as a one-item list, so access checks stay unchanged); super admins reach
+ * everything, so any list sent for them is dropped. Absent role = no change.
  */
 export async function parseStaffRole(body: { staffRole?: unknown; propertyIds?: unknown }): Promise<{ ok: true; value: StaffRoleInput | null } | { ok: false; error: string }> {
   if (body.staffRole === undefined) return { ok: true, value: null }
   if (body.staffRole !== StaffRole.SUPER_ADMIN && body.staffRole !== StaffRole.RECEPTIONIST) return { ok: false, error: 'Role must be Super admin or Receptionist.' }
   if (body.staffRole === StaffRole.SUPER_ADMIN) return { ok: true, value: { staffRole: StaffRole.SUPER_ADMIN, propertyIds: [] } }
   const ids = Array.isArray(body.propertyIds) ? [...new Set(body.propertyIds.filter((id): id is string => typeof id === 'string' && id.length > 0))] : []
-  if (!ids.length) return { ok: false, error: 'Choose at least one property for this receptionist.' }
+  if (!ids.length) return { ok: false, error: 'Choose the property this receptionist manages.' }
+  if (ids.length > 1) return { ok: false, error: 'A receptionist can manage only one property. Choose one.' }
   const found = await prisma.property.count({ where: { id: { in: ids } } })
-  if (found !== ids.length) return { ok: false, error: 'One of the chosen properties no longer exists.' }
+  if (found !== ids.length) return { ok: false, error: 'The chosen property no longer exists.' }
   return { ok: true, value: { staffRole: StaffRole.RECEPTIONIST, propertyIds: ids } }
 }
 

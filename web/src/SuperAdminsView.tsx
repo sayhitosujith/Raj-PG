@@ -34,7 +34,7 @@ async function fetchSuperAdmins() {
 
 /** Lists super admins and lets the signed-in admin add, edit, or delete others, and reset passwords. */
 /**
- * Role for a team member, and the properties a receptionist manages (shown once Receptionist is chosen). Your own
+ * Role for a team member, and the one property a receptionist manages (shown once Receptionist is chosen). Your own
  * role cannot be changed here, so it is shown but not sent.
  */
 function StaffRoleFields({ admin, properties, isSelf }: { admin?: SuperAdmin; properties: Array<{ id?: string; name: string }>; isSelf: boolean }) {
@@ -46,14 +46,15 @@ function StaffRoleFields({ admin, properties, isSelf }: { admin?: SuperAdmin; pr
         <option value="RECEPTIONIST">Receptionist: day-to-day work for their properties</option>
         <option value="SUPER_ADMIN">Super admin: everything, including settings and the team</option>
       </select></label>
-      {role === 'RECEPTIONIST' && <fieldset className="staff-properties"><legend>Properties they manage</legend>
-        {choices.length ? choices.map((property) => <label key={property.id} className="staff-property"><input type="checkbox" name="propertyIds" value={property.id} defaultChecked={admin?.propertyIds.includes(property.id)} disabled={isSelf} /> {property.name}</label>) : <p className="field-hint">Add a property first.</p>}
+      {/* One property per receptionist (the server enforces it); someone set up with several before keeps the first ticked until saved. */}
+      {role === 'RECEPTIONIST' && <fieldset className="staff-properties"><legend>Property they manage</legend>
+        {choices.length ? choices.map((property) => <label key={property.id} className="staff-property"><input type="radio" name="propertyIds" value={property.id} required defaultChecked={admin?.propertyIds[0] === property.id} disabled={isSelf} /> {property.name}</label>) : <p className="field-hint">Add a property first.</p>}
       </fieldset>}
     </>
   )
 }
 
-/** Form values for the team routes: every field, with the ticked properties as a list. */
+/** Form values for the team routes: every field, with the chosen property as a (one-item) list. */
 const teamBody = (form: FormData) => JSON.stringify({ ...Object.fromEntries(form), propertyIds: form.getAll('propertyIds') })
 
 export function SuperAdminsView({ currentAdminId, properties, refreshSignal, onBack, onNotice, onAdminChange }: { currentAdminId: string; properties: Array<{ id?: string; name: string }>; refreshSignal: number; onBack: () => void; onNotice: (message: string) => void; onAdminChange: (admin: SuperAdmin) => void }) {
