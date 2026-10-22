@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { StaffRole, UserRole } from '@prisma/client'
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
-import { prisma } from './db.js'
+import { prisma, withDatabaseRetry } from './db.js'
 import { isValidEmail } from './validation.js'
 import { findResidentByCredentials, isAwaitingNewAccessKey } from './residentCredentials.js'
 import { findDuplicate } from './duplicates.js'
@@ -56,7 +56,9 @@ export async function hasLiveSession(request: Request) {
 async function findLiveSession(request: Request) {
   const token = readSessionToken(request)
   if (!token) return null
-  const session = await prisma.session.findUnique({ where: { tokenHash: hashToken(token) } })
+  // Runs before every signed-in request, so a dropped Neon connection is retried (db.ts) rather than
+  // answering "Sign-in is temporarily unavailable".
+  const session = await withDatabaseRetry(() => prisma.session.findUnique({ where: { tokenHash: hashToken(token) } }))
   return session && session.expiresAt > new Date() ? session : null
 }
 
@@ -95,7 +97,8 @@ export function requireRole(role: UserRole) {
       const auth: AuthContext = { role, userId: session.superAdminId ?? session.residentId ?? '', sessionId: session.id }
       if (session.superAdminId) {
         // Read fresh on every request, so a changed role or property list applies at once.
-        const staff = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId }, select: { staffRole: true, propertyIds: true, ...latestSubscriptionSelect } })
+        const superAdminId = session.superAdminId
+        const staff = await withDatabaseRetry(() => prisma.superAdmin.findUnique({ where: { id: superAdminId }, select: { staffRole: true, propertyIds: true, ...latestSubscriptionSelect } }))
         if (!staff) { response.status(401).json({ error: 'Sign in required.' }); return }
         const ended = subscriptionBlock(staff)
         if (ended) { await rejectEndedSubscription(session.superAdminId, ended, response); return }

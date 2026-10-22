@@ -1,14 +1,19 @@
 import { Prisma, PrismaClient } from '@prisma/client'
 
-// Neon suspends an idle database and takes a few seconds to wake it, longer over a slow link;
-// Prisma's default 5 s connect timeout turns that wake-up into "Can't reach database server".
-// Applied here, unless the URL sets its own, so every environment gets it without editing env vars.
-const connectTimeoutSeconds = '15'
+// Connection settings for Neon, applied here unless the URL sets its own, so every environment gets
+// them without editing env vars:
+// - connect_timeout: Neon suspends an idle database and takes a few seconds to wake it, longer over a
+//   slow link; Prisma's default 5 s turns that wake-up into "Can't reach database server".
+// - max_idle_connection_lifetime: Prisma keeps idle pooled connections for 300 s by default, about
+//   when Neon suspends and closes them, so requests kept picking up dead connections ("Server has
+//   closed the connection", then pool timeouts while they hung). Closing them after 60 s idle means
+//   a quiet spell ends with a fresh connection instead.
+const connectionDefaults = { connect_timeout: '15', max_idle_connection_lifetime: '60' }
 
-function withConnectTimeout(url: string | undefined) {
+function withConnectionDefaults(url: string | undefined) {
   if (!url) return undefined
   const parsed = new URL(url)
-  if (!parsed.searchParams.has('connect_timeout')) parsed.searchParams.set('connect_timeout', connectTimeoutSeconds)
+  for (const [key, value] of Object.entries(connectionDefaults)) if (!parsed.searchParams.has(key)) parsed.searchParams.set(key, value)
   return parsed.toString()
 }
 
@@ -17,7 +22,7 @@ function withConnectTimeout(url: string | undefined) {
  * more time than Prisma's 5 s default: each step is a round-trip to Neon, which from a slow or
  * distant link can take seconds, and a save that would finish in 12 s must not be thrown away.
  */
-export const prisma = new PrismaClient({ datasourceUrl: withConnectTimeout(process.env.DATABASE_URL), transactionOptions: { maxWait: 10_000, timeout: 20_000 } })
+export const prisma = new PrismaClient({ datasourceUrl: withConnectionDefaults(process.env.DATABASE_URL), transactionOptions: { maxWait: 10_000, timeout: 20_000 } })
 
 // Failures that mean the database could not be reached or a pooled connection dropped, as
 // opposed to a bad query; only these are worth retrying.
