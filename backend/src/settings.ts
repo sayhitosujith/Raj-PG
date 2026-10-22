@@ -65,7 +65,7 @@ export const slotOptionsOf = (settings: WorkspaceSettings) => (Object.keys(slotN
 
 const residentThemes: readonly ResidentTheme[] = ['AUTO', 'LIGHT', 'DARK']
 // Resident features that can carry a banner (the same keys as web/src/FeatureBadges.tsx), and the banners.
-const featureBadgeKeys = ['faqs', 'passkeys', 'whatsapp', 'email', 'photos', 'housekeeping', 'repairs', 'referral'] as const
+const featureBadgeKeys = ['faqs', 'passkeys', 'whatsapp', 'email', 'photos', 'housekeeping', 'repairs', 'referral', 'laundry'] as const
 const featureBadgeKinds = ['NEW', 'SOON', 'BETA'] as const
 const hexColourPattern = /^#[0-9a-f]{6}$/i
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/

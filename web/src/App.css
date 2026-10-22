@@ -2121,14 +2121,12 @@ div.portal-panel { display: contents; }
 .maintenance-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .maintenance-item-actions input { flex: 1 1 260px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 
-/* The laundry shop on the resident's Help tab (LaundryShopCard.tsx): an icon tile beside the name, timings and link. */
-.laundry-shop-body { display: flex; align-items: flex-start; gap: 12px; }
-.laundry-shop-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 10px; color: var(--brand-on, white); background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, var(--teal))); }
-.laundry-shop-details { display: grid; justify-items: start; gap: 6px; min-width: 0; }
-.laundry-shop-details strong { color: var(--ink); font-size: 14px; }
-.laundry-shop-hours { display: inline-flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-.laundry-shop-hours svg { flex: none; margin-top: 2px; }
-.laundry-shop-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; text-decoration: none; }
+/* The laundry shop row on the resident's Help tab (LaundryShopCard.tsx) reuses the FAQs card; these are its extras.
+   The row is a link when the shop has a website, so it drops the link underline; timings carry a small clock. */
+a.faq-card { text-decoration: none; }
+.faq-card-copy .laundry-shop-name { color: var(--ink); font-weight: 600; }
+.faq-card-copy .laundry-shop-hours { display: inline-flex; align-items: center; gap: 4px; }
+.faq-card-copy .laundry-shop-hours svg { flex: none; }
 
 /* Profile tab (phones and tablets): photo, details, move-out, notifications and password (sign out stays in the top bar). There those
    leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */

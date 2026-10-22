@@ -13,6 +13,7 @@ export const featureBadgeFeatures = [
   { key: 'housekeeping', label: 'Housekeeping' },
   { key: 'repairs', label: 'Complaints & repairs' },
   { key: 'referral', label: 'Refer a friend' },
+  { key: 'laundry', label: 'Laundry' },
 ] as const
 export type FeatureKey = (typeof featureBadgeFeatures)[number]['key']
 
