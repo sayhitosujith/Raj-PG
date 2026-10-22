@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BedDouble } from 'lucide-react'
 import { BedOccupantCard, type BedOccupant } from './BedOccupantCard'
 import { readApiError } from './superAdmin'
 
@@ -105,7 +106,7 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
               <button type="button" className="primary-button" disabled={!selected.size || isSaving} onClick={() => void reserve()}>{isSaving ? 'Reserving…' : 'Reserve'}</button>
               <button type="button" className="secondary-button" onClick={stopSelecting}>Cancel</button>
             </div>
-          : <button type="button" className="secondary-button reserve-start" onClick={() => setSelecting(true)}>Select beds to reserve</button>)}
+          : <button type="button" className="primary-button reserve-start" onClick={() => setSelecting(true)}><BedDouble size={15} /> Select beds to reserve</button>)}
       </div>
       {shown.length > 0 && <ul className={`room-grid${selecting ? ' is-selecting' : ''}`} aria-label={selecting ? 'Rooms and beds; choose free beds to reserve' : 'Rooms and beds; choose a free bed to add a resident to it'}>
         {withFree.slice(0, shownRooms).map(({ room, free: freeBeds }) => (

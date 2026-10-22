@@ -490,7 +490,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .room-tile-beds .is-free.is-picked { box-shadow: 0 0 0 2px var(--chart-surface), 0 0 0 4px var(--held-fill); transform: scale(1.15); }
 .free-chart-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 .free-chart-bar .free-legend { margin: 0; }
-.reserve-start { padding: 6px 12px; font-size: 11px; }
+/* The way into reserving, so it reads as an action, not a footnote. */
+.reserve-start { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 12px; box-shadow: 0 4px 12px rgb(0 0 0 / .12); }
 .reserve-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--chart-ink); font-size: 11px; font-weight: 600; }
 .reserve-bar input { width: 170px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--chart-ink); background: white; font: inherit; font-weight: 400; }
 .reserve-bar :is(.primary-button, .secondary-button) { padding: 6px 12px; font-size: 11px; }
