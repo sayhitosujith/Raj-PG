@@ -10,13 +10,14 @@ export type RentDue = { state: 'OVERDUE' | 'DUE' | 'UPCOMING'; dueDate: string; 
 /** The resident in a booked bed, as the Overview's room grid receives them; `rent` is null when rent is not tracked. */
 export type BedOccupant = { bed: number; id: string; name: string; phone: string | null; joinedAt: string; photoVersion: number | null; rent: RentDue | null }
 
-function rentLine(rent: RentDue) {
+/** The rent line as two parts that never break inside: what and when, then how much. */
+function rentParts(rent: RentDue) {
   const date = formatJoinDate(rent.dueDate)
-  if (rent.state === 'OVERDUE') return `Rent overdue since ${date} · ${formatRupees(rent.amount)} owed`
-  return `${rent.state === 'DUE' ? 'Rent due' : 'Paid · next due'} ${date} · ${formatRupees(rent.amount)}`
+  if (rent.state === 'OVERDUE') return [`Overdue since ${date}`, `${formatRupees(rent.amount)} owed`]
+  return [`${rent.state === 'DUE' ? 'Due' : 'Paid · next due'} ${date}`, formatRupees(rent.amount)]
 }
 
-const cardWidth = 230
+const cardWidth = 250
 // Roughly the card's tallest (five lines), to decide whether it fits below the bed.
 const cardHeight = 150
 const gap = 8
@@ -42,7 +43,7 @@ export function BedOccupantCard({ occupant, roomNumber, anchor }: { occupant: Be
           <small>Room {roomNumber} · Bed {occupant.bed}</small>
           {occupant.phone && <small>{occupant.phone}</small>}
           <small>Joined {formatJoinDate(occupant.joinedAt)} · {daysStayedLabel(occupant.joinedAt)}</small>
-          {occupant.rent && <small className={`bed-occupant-rent${occupant.rent.state === 'OVERDUE' ? ' is-overdue' : ''}`}>{rentLine(occupant.rent)}</small>}
+          {occupant.rent && <small className={`bed-occupant-rent${occupant.rent.state === 'OVERDUE' ? ' is-overdue' : ''}`}>{rentParts(occupant.rent).map((part) => <span key={part}>{part}</span>)}</small>}
         </div>
       </div>
     </ModalLayer>
