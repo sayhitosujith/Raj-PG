@@ -563,7 +563,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />
             <StatCard icon={Users} label="Active residents" value={stats.residents} detail={details?.residents ?? 'Sample data'} accent="coral" />
-            <StatCard icon={CircleDollarSign} label="Collected this month" value={stats.collected} detail={details?.collected ?? 'Sample data'} accent="blue" />
+            <StatCard icon={CircleDollarSign} label="This month's rent collected" value={stats.collected} detail={details?.collected ?? 'Sample data'} accent="blue" />
             <StatCard icon={ClipboardList} label="Open requests" value={stats.openRequests} detail={details?.openRequests ?? 'Sample data'} accent="gold" />
           </section>
 

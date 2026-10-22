@@ -73,9 +73,14 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   // Cached after the first read (see settings.ts), so this costs no extra query on most loads.
   const rentRules = rentRulesOf(await getSettings())
-  const [collected, collectedLast, expected, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: thisMonth }, ...rentOf } }),
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth }, ...rentOf } }),
+  // Rent is counted by the month it pays for, not the day it arrived: a resident paying four months ahead
+  // must not make this month look 243% collected. Months are "YYYY-MM" in property time.
+  const monthNow = propertyNow().date.slice(0, 7)
+  const monthBefore = new Date(lastMonth.getTime() + propertyUtcOffsetMs).toISOString().slice(0, 7)
+  const [collected, collectedLast, advance, expected, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { month: monthNow, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { month: monthBefore, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { month: { gt: monthNow }, ...rentOf } }),
     prisma.resident.aggregate({ _sum: { monthlyRent: true }, where: { active: true, roomId: { not: null }, rentTrackedFrom: { not: null }, ...residents_ } }),
     prisma.resident.count({ where: { joinedAt: { gte: thisMonth }, ...residents_ } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...byProperty } }),
@@ -89,6 +94,7 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
 
   const collectedNow = collected._sum.amount ?? 0
   const collectedBefore = collectedLast._sum.amount ?? 0
+  const paidAhead = advance._sum.amount ?? 0
   const expectedNow = expected._sum.monthlyRent ?? 0
   const beds = properties.map((property) => ({ name: property.name, ...bedCounts(property) }))
   const totalBeds = beds.reduce((sum, property) => sum + property.total, 0)
@@ -109,12 +115,12 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
     details: {
       properties: freeBeds ? `${freeBeds} ${freeBeds === 1 ? 'bed' : 'beds'} free` : totalBeds ? 'All beds full' : 'No rooms set up yet',
       residents: joinedThisMonth ? `${joinedThisMonth} joined this month` : 'No new residents this month',
-      collected: expectedNow ? `${Math.round((collectedNow / expectedNow) * 100)}% of ${shortRupees(expectedNow)} expected` : 'No monthly rent set up yet',
+      collected: [expectedNow ? `${Math.round((collectedNow / expectedNow) * 100)}% of ${shortRupees(expectedNow)} expected` : 'No monthly rent set up yet', paidAhead ? `${shortRupees(paidAhead)} paid in advance` : ''].filter(Boolean).join(' · '),
       openRequests: openRequests ? (newRequests ? `${newRequests} new this week` : 'Waiting for you') : 'All clear',
     },
     insight: change === null
       ? { headline: `Collected ${shortRupees(collectedNow)} so far`, emphasis: '', note: 'Nothing was recorded last month to compare with.' }
-      : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} so far this month against ${shortRupees(collectedBefore)} last month.` },
+      : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} of this month's rent so far, against ${shortRupees(collectedBefore)} of last month's.` },
     tip: emptiest && emptiest.free > 0
       ? { title: 'Keep your rooms moving', text: `${emptiest.free} ${emptiest.free === 1 ? 'bed is' : 'beds are'} free at ${emptiest.property.name}. Share your booking link to fill ${emptiest.free === 1 ? 'it' : 'them'}.`, propertyId: emptiest.property.id, ...roomGridOf(emptiest.property, rentRules) }
       : { title: 'Every bed is taken', text: totalBeds ? 'All beds are occupied. Keep a waiting list from booking requests.' : 'Add rooms under Properties to start tracking occupancy.' },
