@@ -8,7 +8,7 @@ import { requirePortalAccess } from './residentPortal.js'
 import { getSettings } from './settings.js'
 
 /**
- * Late meal requests: once a meal's 9 pm-the-day-before cutoff has passed, a resident who is not down
+ * Late meal requests: once a meal's 11:59 pm-the-day-before cutoff has passed, a resident who is not down
  * for it can still ask to eat it, until it starts. Reception or a super admin approves or declines;
  * approving sets the resident's choice to eating, so the Kitchen headcount counts them. At most
  * `lateMealLimit` (Settings) can be approved per meal at a property. Only asking to eat needs approval:

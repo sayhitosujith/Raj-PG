@@ -88,12 +88,12 @@ function drawRow(doc: Doc, columns: Column[], cells: Array<{ text: string; bold?
 
 /**
  * Headcount: today's meals only, eating and not eating (not opting in counts as not eating). The kitchen
- * prints it for the day it cooks; tomorrow's numbers still change until 9 pm, so they stay on screen.
+ * prints it for the day it cooks; tomorrow's numbers still change until 11:59 pm, so they stay on screen.
  */
 export function renderHeadcountPdf(summary: FoodSummaryData, header: ReportHeader): Promise<Buffer> {
   const residents = summary.residentList
   return renderPdf('Headcount', header, (doc) => {
-    let y = drawHeading(doc, header, 'Headcount', `${summary.residents} active ${summary.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 9 pm the day before; anyone who has not opted in is not eating.`)
+    let y = drawHeading(doc, header, 'Headcount', `${summary.residents} active ${summary.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 11:59 pm the day before; anyone who has not opted in is not eating.`)
     const today = summary.headcounts[0]
     if (!today) return
     // Veg and non-veg split the eaters; anyone eating with no diet set is in Eating but in neither.
@@ -148,7 +148,7 @@ const answerCells: Record<'EATING' | 'NOT_EATING', { text: string; bold?: boolea
 /**
  * Residents on food: who opted for each meal, today and tomorrow. Per day, a table of every resident on
  * the food plan with their answer for breakfast, lunch and dinner, then the names eating each meal, so
- * the kitchen can tick people off. Tomorrow's answers can still change until 9 pm, which the sheet says.
+ * the kitchen can tick people off. Tomorrow's answers can still change until 11:59 pm, which the sheet says.
  */
 export function renderResidentsPdf(summary: FoodSummaryData, header: ReportHeader): Promise<Buffer> {
   const residents = summary.residentList
@@ -163,7 +163,7 @@ export function renderResidentsPdf(summary: FoodSummaryData, header: ReportHeade
         y += 26
         if (y > doc.page.height - bottomMargin - 120) { doc.addPage(); doc.rect(0, 0, doc.page.width, 6).fill(colors.teal); y = 40 }
       }
-      doc.font('Helvetica-Bold').fontSize(12).fillColor(colors.teal).text(`${label}${date ? ` · ${dayLabel(date)}` : ''}${key === 'tomorrow' ? '  (can still change until 9 pm today)' : ''}`, left, y, { lineBreak: false })
+      doc.font('Helvetica-Bold').fontSize(12).fillColor(colors.teal).text(`${label}${date ? ` · ${dayLabel(date)}` : ''}${key === 'tomorrow' ? '  (can still change until 11:59 pm today)' : ''}`, left, y, { lineBreak: false })
       y = drawColumnTitles(doc, columns, y + 24)
       for (const resident of residents) {
         const answers = resident[key]

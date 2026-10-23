@@ -10,7 +10,7 @@ import { getSettings } from './settings.js'
 
 /**
  * Food menu: a repeating weekly menu per property, residents answering eat or skip for every meal by
- * 9 pm the day before (so the owner sees firm headcounts), and thumbs up/down feedback on meals that
+ * 11:59 pm the day before (so the owner sees firm headcounts), and thumbs up/down feedback on meals that
  * have been served. All time rules are decided here in property-local time; the UIs only show what is allowed.
  */
 type Meal = (typeof meals)[number]
@@ -33,8 +33,11 @@ const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').m
 type MealWindow = { from: string; to: string }
 type Now = { date: string; minutes: number }
 
-/** Choices for a day's meals close at this time (property-local) on the day before. */
-const choiceCutoffMinutes = 21 * 60
+/**
+ * Choices for a day's meals close at this time (property-local) on the day before. A whole day's
+ * minutes, so they stay open until 11:59 pm and close at midnight.
+ */
+const choiceCutoffMinutes = 24 * 60
 /**
  * The first date on which a meal with no answer counts as not eating. Earlier dates keep the old rule
  * (eating unless skipped), so residents were not marked absent for days they could no longer answer for
@@ -42,7 +45,7 @@ const choiceCutoffMinutes = 21 * 60
  */
 const choicesRequiredFrom = '2026-10-15'
 
-// A day's choices can change until 9 pm the day before; a meal can be rated once it has started (today only).
+// A day's choices can change until 11:59 pm the day before; a meal can be rated once it has started (today only).
 export function mealRules(date: string, window: MealWindow, now: Now) {
   const dayBefore = isoDate(addDays(parseDateOnly(date) as Date, -1))
   const canChange = now.date < dayBefore || (now.date === dayBefore && now.minutes < choiceCutoffMinutes)
@@ -79,7 +82,7 @@ export async function requireFoodPlan(_request: Request, response: Response, nex
 /**
  * The next seven days starting today, each meal with its menu, timing, the resident's answer and what
  * they may do; plus `answerDue`, tomorrow's date while any of its meals still needs an answer before
- * the 9 pm cutoff (the portal asks for it and will not let the resident carry on until they answer).
+ * the 11:59 pm cutoff (the portal asks for it and will not let the resident carry on until they answer).
  */
 foodResidentRouter.get('/resident-portal/food', requireResident, requirePortalAccess, requireFoodPlan, async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
@@ -145,7 +148,7 @@ foodResidentRouter.put('/resident-portal/food/choices', requireResident, require
     const today = parseDateOnly(now.date) as Date
     if (date < today || date >= addDays(today, daysShown)) { response.status(400).json({ error: `Meals can be chosen up to ${daysShown} days ahead.` }); return }
     const times = await mealTimesOf(response.locals.propertyId as string)
-    if (entries.some(([meal]) => !mealRules(isoDate(date), times[meal as Meal], now).canChange)) { response.status(409).json({ error: 'Meal choices close at 9 pm the day before, so that day can no longer be changed.' }); return }
+    if (entries.some(([meal]) => !mealRules(isoDate(date), times[meal as Meal], now).canChange)) { response.status(409).json({ error: 'Meal choices close at 11:59 pm the day before, so that day can no longer be changed.' }); return }
     await prisma.$transaction(entries.map(([meal, eating]) => {
       const key = { residentId: userId, date, meal: mealTypes[meal as Meal] }
       return prisma.mealChoice.upsert({ where: { residentId_date_meal: key }, create: { ...key, eating: eating as boolean }, update: { eating: eating as boolean } })

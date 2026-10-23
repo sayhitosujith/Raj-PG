@@ -36,7 +36,7 @@ function MealChoiceToggle({ label, answer, disabled, onChoose }: { label: string
 
 /** The status a meal shows once it can no longer be changed, or while it still needs an answer. */
 function choiceStatus(meal: ResidentMeal) {
-  if (meal.answer === null && meal.canChange) return <span className="status-pill gold">Answer by 9 pm the day before</span>
+  if (meal.answer === null && meal.canChange) return <span className="status-pill gold">Answer by 11:59 pm the day before</span>
   if (meal.canChange) return null
   if (meal.answer === null && !meal.eating) return <span className="status-pill coral">No answer · not eating</span>
   return meal.eating ? <span className="status-pill sage">Eating</span> : <span className="status-pill gold">Skipping</span>
@@ -103,7 +103,7 @@ function MealFeedback({ meal, onSaved, onNotice, onSubmitted }: { meal: Resident
 }
 
 /**
- * The resident's food menu for the next seven days: eat or skip each meal by 9 pm the day before
+ * The resident's food menu for the next seven days: eat or skip each meal by 11:59 pm the day before
  * (no answer means not eating), and rate today's meals once they have been served. Mounted only while
  * the modal is open, so each opening fetches the latest menu.
  */
@@ -172,7 +172,7 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
       {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
         <div className="profile-modal menu-modal" role="dialog" aria-modal="true" aria-labelledby="weekly-menu-title">
           <div className="modal-heading"><div><p className="eyebrow">Food</p><h2 id="weekly-menu-title">Weekly menu</h2></div><button type="button" className="icon-button" aria-label="Close weekly menu" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
-          <p className="menu-modal-hint">Choose eat or skip for every meal by 9 pm the day before; a meal with no answer counts as not eating. Tell us how today's meals were.</p>
+          <p className="menu-modal-hint">Choose eat or skip for every meal by 11:59 pm the day before; a meal with no answer counts as not eating. Tell us how today's meals were.</p>
           <MenuBody refreshSignal={refreshSignal} onNotice={onNotice} />
         </div>
       </div></ModalLayer>}
@@ -196,7 +196,7 @@ export function useTodayMenu(refreshSignal: number, enabled: boolean) {
 }
 
 /**
- * Asks for tomorrow's breakfast, lunch and dinner while any is unanswered before the 9 pm cutoff, as a
+ * Asks for tomorrow's breakfast, lunch and dinner while any is unanswered before the 11:59 pm cutoff, as a
  * window that cannot be closed until every meal has an answer: the kitchen cooks only for residents
  * who said they are eating, so an answer is required. "Eating all three" answers in one tap.
  */
@@ -233,7 +233,7 @@ export function MealChoiceGate({ refreshSignal, onNotice }: { refreshSignal: num
     <ModalLayer><div className="modal-backdrop" role="presentation">
       <div className="profile-modal meal-choice-modal" role="dialog" aria-modal="true" aria-labelledby="meal-choice-title">
         <div className="modal-heading"><div><p className="eyebrow">Food · required</p><h2 id="meal-choice-title">Your meals {dayLabel}</h2></div></div>
-        <p className="menu-modal-hint">Tell the kitchen by 9 pm today. A meal you do not answer counts as not eating.</p>
+        <p className="menu-modal-hint">Tell the kitchen by 11:59 pm today. A meal you do not answer counts as not eating.</p>
         <ul className="menu-meals">
           {open.map((meal) => {
             const { label, icon: Icon } = mealDetails.find((detail) => detail.meal === meal.meal)!

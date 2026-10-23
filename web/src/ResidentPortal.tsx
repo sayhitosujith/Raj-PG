@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { LazyCountryLabel } from './CountryField'
 import { LaundryShopCard } from './LaundryShopCard'
 import { MemberCard } from './MemberCard'
@@ -54,6 +54,7 @@ import { MealChoiceGate, MealRatingPrompt, useTodayMenu, WeeklyMenuButton } from
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
+import { useStatusBarColor } from './useStatusBarColor'
 import { PropertyGallery } from './PropertyGallery'
 import { FeatureBadgesProvider } from './FeatureBadges'
 import { SignOutConfirm } from './SignOutConfirm'
@@ -144,6 +145,9 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
   useResidentTheme(profile.workspace.residentTheme)
+  // The phone's status bar takes the header's theme colour while the portal is open.
+  const topbar = useRef<HTMLElement>(null)
+  useStatusBarColor(topbar)
   // Profile has no tab of its own: on phones and tablets the photo in the top bar opens it (the picker
   // only calls this in that layout); on desktop everything is one page, with Profile further down.
   const openProfile = () => {
@@ -227,7 +231,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       {festival && <FestivalCelebration />}
       <PortalScenery />
       <PortalAnimals />
-      <header className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
+      <header ref={topbar} className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* Who is signed in, on every tab: photo (opens Profile on phones) and name. */}
         <div className="brand-row portal-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div className="portal-identity-text"><p className="portal-identity-name" title={displayName(profile.name)}>{displayName(profile.name)}</p></div></div>
         <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>

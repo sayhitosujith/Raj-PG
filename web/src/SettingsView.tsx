@@ -252,7 +252,7 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
             <label>Timings <span>(optional)</span><input name="laundryShopHours" maxLength={120} defaultValue={settings.laundryShopHours ?? ''} placeholder="e.g. Mon–Sat 8 am – 8 pm, Sunday closed" /></label>
           </SettingsSection>
 
-          <SettingsSection icon={<Hand size={18} />} title="Late meal requests" description="Residents can ask for a meal after the 9 pm cutoff, until it starts; reception or a super admin approves it on the Kitchen page." onSubmit={(form) => onSaveSettings({ lateMealLimit: Number(value(form, 'lateMealLimit')) })}>
+          <SettingsSection icon={<Hand size={18} />} title="Late meal requests" description="Residents can ask for a meal after the 11:59 pm cutoff, until it starts; reception or a super admin approves it on the Kitchen page." onSubmit={(form) => onSaveSettings({ lateMealLimit: Number(value(form, 'lateMealLimit')) })}>
             <label>Approvals per meal <span>(per property, e.g. Tuesday dinner; the kitchen cooks for at most this many extras)</span><input name="lateMealLimit" type="number" min={1} max={100} step={1} required defaultValue={settings.lateMealLimit} /></label>
           </SettingsSection>
 

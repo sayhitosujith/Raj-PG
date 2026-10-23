@@ -230,13 +230,22 @@
 /* General text in the owner's chosen colour, light view only: dark view keeps its light text, which a
    dark chosen colour would make unreadable. Without a choice these fall back to the usual colours. */
 :root:not([data-theme="dark"]) .portal-shell { --ink: var(--portal-ink, #202e35); --portal-text: var(--portal-ink, #1b2528); }
-/* The resident header in the theme colour, like the tab bar at the bottom: the resident's name and tags
-   use the button text colour (--brand-on) so they read on it. */
+/* The resident header in the theme colour, like the tab bar at the bottom: the resident's name uses the
+   button text colour (--brand-on) so it reads on it. Light view swaps this for the app background below. */
 :root[data-theme] .portal-shell .portal-topbar { border-bottom-color: transparent; background: linear-gradient(135deg, var(--brand), var(--brand-deep)); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-deep) 25%, transparent); }
 :root[data-theme] .portal-shell .portal-topbar .secondary-button { border-color: rgb(255 255 255 / .5); color: var(--brand-deep); background: rgb(255 255 255 / .92); }
 /* The bell matches the weather pill beside it: see-through on the brand colour, white icon. */
 :root .portal-shell .portal-topbar .notification-bell-button.secondary-button { border-color: rgb(255 255 255 / .35); color: rgb(255 255 255); background: rgb(255 255 255 / .16); }
 :root .portal-shell .portal-topbar .notification-bell-button.secondary-button:hover { background: rgb(255 255 255 / .26); }
+/* Light view: the header takes the app background colour (Settings > Views), so it and the phone's status
+   bar (useStatusBarColor) read as one plain strip with the page; a hairline keeps it apart from content
+   scrolling under it. On the plain background the name is dark and the bell and sign-out buttons are
+   outlined in the theme colour. Dark view keeps the theme-colour header above. */
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar { border-bottom: 1px solid var(--line); background: var(--app-bg, #ffffff); box-shadow: none; }
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar p.portal-identity-name { color: var(--ink); }
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-identity .profile-photo-button { border-color: var(--line); }
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button) { border-color: color-mix(in srgb, var(--brand, var(--teal)) 35%, transparent); color: var(--brand-deep, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button):is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brand, var(--teal)) 16%, transparent); }
 /* The footer in the theme colour too, matching the header and tab bar: its text and the Terms and
    Privacy links in the button text colour; the share icons keep their white circles and brand colours.
    (:is with a tab-bar selector lifts these over the older footer text rule in dark view.) */

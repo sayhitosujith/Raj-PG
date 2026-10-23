@@ -3,7 +3,7 @@ import type { Meal } from './meals'
 
 /**
  * One meal on one day as the resident sees it: their answer (null = not answered yet), whether they are
- * eating (no answer counts as not eating), and what the server allows: changing it until 9 pm the day
+ * eating (no answer counts as not eating), and what the server allows: changing it until 11:59 pm the day
  * before, rating it once served.
  */
 export type ResidentMeal = { meal: Meal; from: string; to: string; items: string | null; answer: boolean | null; eating: boolean; canChange: boolean; canRate: boolean; feedback: { liked: boolean; comment: string | null } | null; /** Past the cutoff, not eating and not started: may ask staff for it. */ canRequestLate: boolean; lateRequest: { status: LateMealStatus; staffNote: string | null; decidedByName: string | null } | null }
@@ -29,7 +29,7 @@ export type FoodSummary = {
   feedback: Array<{ id: string; date: string; meal: Meal; liked: boolean; comment: string | null; residentName: string }>
   /**
    * Everyone on the food plan, in room order; diet null is Not set. `today` and `tomorrow` are their answers
-   * per meal, counted as the headcount counts them; tomorrow's can still change until 9 pm tonight.
+   * per meal, counted as the headcount counts them; tomorrow's can still change until 11:59 pm tonight.
    */
   residentList: Array<{ id: string; name: string; phone: string | null; room: string; diet: Diet | null; today: Record<Meal, TodayMealStatus>; tomorrow: Record<Meal, TodayMealStatus> }>
 }

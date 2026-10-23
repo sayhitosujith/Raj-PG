@@ -47,7 +47,7 @@ function MealChips({ statuses }: { statuses: Record<Meal, TodayMealStatus> }) {
 
 /**
  * Everyone on the food plan with their phone, room, veg / non-veg and what they opted for today and
- * tomorrow (tomorrow's can still change until 9 pm), so the kitchen can see who it is cooking for and
+ * tomorrow (tomorrow's can still change until 11:59 pm), so the kitchen can see who it is cooking for and
  * chase anyone who has not answered; the counts say how much of each to plan. Same list as the headcount PDF.
  */
 function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string; residents: FoodSummary['residentList'] | null; status: (text: string) => ReactNode }) {
@@ -60,7 +60,7 @@ function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string
       <div className="settings-section-head"><span className="settings-section-icon"><Users size={18} /></span><div><h3>Residents on food</h3><p>{status(residents?.length ? `${residents.length} on the food plan: ${count('VEG')} veg · ${count('NON_VEG')} non-veg · ${count(null)} not set.` : 'Nobody is on the food plan yet.')}</p></div>{residents && residents.length > 0 && <PdfExportLink propertyId={propertyId} report="residents" />}</div>
       {residents && residents.length > 0 && <>
         <table className="finance-table food-residents">
-          <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th><th>Today</th><th>Tomorrow <span className="food-today-hint">(until 9 pm)</span></th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th><th>Today</th><th>Tomorrow <span className="food-today-hint">(until 11:59 pm)</span></th></tr></thead>
           <tbody>{pager.pageItems.map((resident) => (
             <tr key={resident.id}>
               <td><strong>{displayName(resident.name)}</strong></td>
@@ -163,7 +163,7 @@ export function FoodView({ properties: allProperties, refreshSignal, onBack, onN
         <LateMealRequestsPanel key={propertyId} propertyId={propertyId} refreshSignal={refreshSignal} onDecided={() => void loadSummary(propertyId)} onNotice={onNotice} />
 
         <div className="settings-section">
-          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{status(data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 9 pm the day before; anyone who has not opted in is not eating.` : '')}</p></div>{data && <PdfExportLink propertyId={propertyId} report="headcount" />}</div>
+          <div className="settings-section-head"><span className="settings-section-icon"><UtensilsCrossed size={18} /></span><div><h3>Headcount</h3><p>{status(data ? `${data.residents} active ${data.residents === 1 ? 'resident' : 'residents'} on food. Residents opt in by 11:59 pm the day before; anyone who has not opted in is not eating.` : '')}</p></div>{data && <PdfExportLink propertyId={propertyId} report="headcount" />}</div>
           {data && <div className="headcount-days">{data.headcounts.map((day, index) => (
             <div key={day.date}><small>{index === 0 ? 'Today' : 'Tomorrow'} · {formatShortDate(day.date)}</small>
               <ul className="headcount-meals">{day.meals.map((meal) => <li key={meal.meal}><span>{mealLabel(meal.meal)}</span><strong>{meal.eating}</strong>{meal.eating > 0 && (meal.veg > 0 || meal.nonVeg > 0) && <small className="headcount-diet"><span className="is-veg">{meal.veg} veg</span> · <span className="is-non-veg">{meal.nonVeg} non-veg</span></small>}{meal.notEating > 0 && <small>{meal.notEating} not eating</small>}</li>)}</ul>

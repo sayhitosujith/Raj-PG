@@ -4,7 +4,7 @@ import type { ResidentMeal } from './food'
 import { readApiError } from './superAdmin'
 
 /**
- * For a meal the resident is not down for after its 9 pm cutoff: a "Request Meal" button, or the
+ * For a meal the resident is not down for after its 11:59 pm cutoff: a "Request Meal" button, or the
  * request's state once sent: waiting, declined with the staff's note, or approved with who approved it
  * (the meal then shows as eating). Shared by the Home meal cards and the weekly menu.
  */

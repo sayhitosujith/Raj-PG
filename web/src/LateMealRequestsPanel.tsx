@@ -42,7 +42,7 @@ function DecidedRow({ request, onDecide }: { request: LateMealRequest; onDecide:
 }
 
 /**
- * Late meal requests for one property: residents asking for a meal after its 9 pm cutoff. Reception or a
+ * Late meal requests for one property: residents asking for a meal after its 11:59 pm cutoff. Reception or a
  * super admin approves (they are then counted in the headcount) or declines, with an optional note the
  * resident sees. Decided ones for today onwards stay listed below and can be switched until the meal
  * starts; any decision can move the headcount, so `onDecided` reloads it after each one.
@@ -69,7 +69,7 @@ export function LateMealRequestsPanel({ propertyId, refreshSignal, onDecided, on
   const decided = requests?.filter((request) => request.status !== 'PENDING') ?? []
   return (
     <div className="settings-section wide">
-      <div className="settings-section-head"><span className="settings-section-icon"><Hand size={18} /></span><div><h3>Late meal requests</h3><p>{hasError && !requests ? 'Could not load late requests; it will retry on the next refresh.' : !requests ? 'Loading…' : pending.length ? `${pending.length} waiting. Residents asked for these after the 9 pm cutoff; approving counts them in the headcount.` : 'None waiting. Residents can ask for a meal after the 9 pm cutoff, until it starts.'}</p></div></div>
+      <div className="settings-section-head"><span className="settings-section-icon"><Hand size={18} /></span><div><h3>Late meal requests</h3><p>{hasError && !requests ? 'Could not load late requests; it will retry on the next refresh.' : !requests ? 'Loading…' : pending.length ? `${pending.length} waiting. Residents asked for these after the 11:59 pm cutoff; approving counts them in the headcount.` : 'None waiting. Residents can ask for a meal after the 11:59 pm cutoff, until it starts.'}</p></div></div>
       {pending.length > 0 && <ul className="late-meal-list">{pending.map((request) => <PendingRow key={request.id} request={request} onDecide={(approve, note) => decide(request, approve, note)} />)}</ul>}
       {decided.length > 0 && <ul className="late-meal-decided">{decided.map((request) => <DecidedRow key={request.id} request={request} onDecide={(approve) => decide(request, approve, '')} />)}</ul>}
     </div>
