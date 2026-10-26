@@ -76,7 +76,7 @@ export function PortalColourFields({ theme, text, error, ink, placeholder, newBa
   const [childCardColour, setChildCardColour] = useState(childCard)
   return (
     <>
-      <ColourChoice name="portalThemeColor" label="Theme colour" presets={themePresets} value={themeColour} fallback={defaultPortalColours.theme} onChange={setThemeColour} />
+      <ColourChoice name="portalThemeColor" label="App Theme" presets={themePresets} value={themeColour} fallback={defaultPortalColours.theme} onChange={setThemeColour} />
       <ColourChoice name="portalButtonTextColor" label="Button text colour" presets={textPresets} value={textColour} fallback={defaultPortalColours.text} onChange={setTextColour} />
       <ColourChoice name="portalBackgroundColor" label="App background colour (light view)" presets={backgroundPresets} value={backgroundColour} fallback={defaultPortalColours.background} onChange={setBackgroundColour} />
       <ColourChoice name="portalCardColor" label="Main card background (light view)" presets={cardPresets} value={cardColour} fallback={defaultPortalColours.card} onChange={setCardColour} />

@@ -3,7 +3,8 @@ import { Router, type Response } from 'express'
 import { createAccessKey, createDoorAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { findDuplicate } from './duplicates.js'
-import { documentDataUrlPattern, findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
+import { parseStudentIdCard, studentIdCardWrite } from './studentId.js'
+import { findExpiredDocument, sendDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
 import { prisma, withDatabaseRetry } from './db.js'
 import { roomBedsSelect } from './occupancy.js'
 import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo.js'
@@ -21,12 +22,13 @@ import { notifyResidentCredentials } from './notifications.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
-// each; served on demand by GET /api/residents/:id/aadhar-card and /passport-scan instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
+// each; served on demand by GET /api/residents/:id/aadhar-card, /passport-scan and /student-id-card instead).
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, studentIdCardUrl: true, profilePhotoUrl: true }, include: { room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
+const hasStudentIdCardWhere = { AND: [{ studentIdCardUrl: { not: null } }, { studentIdCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const noCredentialsWhere = { passwordHash: null, accessKeyHash: null } satisfies Prisma.ResidentWhereInput
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { bedNumber?: unknown; sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { studentIdCardUrl?: unknown; bedNumber?: unknown; sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 /**
  * Sends the sign-in details and returns the channels that delivered. A messaging outage must never
@@ -64,15 +66,16 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
     rentFromProperty: Boolean(room && rentFor(room.property, room.beds, true) !== null), room: room?.number ?? '—', propertyId: room?.propertyId ?? '', property: room?.property.name ?? resident.movedOutFrom ?? 'Moved out', location: room?.property.location ?? '', movedOutFrom: resident.movedOutFrom }
 }
 
-type DocumentsOnFile = { hasAadharCard: boolean; hasPassportScan: boolean }
+type DocumentsOnFile = { hasAadharCard: boolean; hasPassportScan: boolean; hasStudentIdCard: boolean }
 
 // Counted rather than selected, so checking for an upload never loads the 2 MB data URL.
 async function findDocumentsOnFile(client: Prisma.TransactionClient, id: string): Promise<DocumentsOnFile> {
-  const [aadharCards, passportScans] = await Promise.all([
+  const [aadharCards, passportScans, studentIdCards] = await Promise.all([
     client.resident.count({ where: { id, ...hasAadharCardWhere } }),
     client.resident.count({ where: { id, ...hasPassportScanWhere } }),
+    client.resident.count({ where: { id, ...hasStudentIdCardWhere } }),
   ])
-  return { hasAadharCard: aadharCards > 0, hasPassportScan: passportScans > 0 }
+  return { hasAadharCard: aadharCards > 0, hasPassportScan: passportScans > 0, hasStudentIdCard: studentIdCards > 0 }
 }
 
 async function findResidentSummary(id: string) {
@@ -166,19 +169,21 @@ export const residentRouter = Router()
 
 // Owner summaries for the residents matching `where`, newest first by `orderBy`.
 async function listResidentSummaries(where: Prisma.ResidentWhereInput, orderBy: Prisma.ResidentOrderByWithRelationInput) {
-  const [residents, withCards, withScans, withoutCredentials] = await withDatabaseRetry(() => Promise.all([
+  const [residents, withCards, withScans, withStudentIds, withoutCredentials] = await withDatabaseRetry(() => Promise.all([
     prisma.resident.findMany({ ...residentSummaryQuery, where, orderBy }),
     prisma.resident.findMany({ where: { AND: [where, hasAadharCardWhere] }, select: { id: true } }),
     prisma.resident.findMany({ where: { AND: [where, hasPassportScanWhere] }, select: { id: true } }),
+    prisma.resident.findMany({ where: { AND: [where, hasStudentIdCardWhere] }, select: { id: true } }),
     prisma.resident.findMany({ where: { AND: [where, noCredentialsWhere] }, select: { id: true } }),
   ]))
   const cardIds = new Set(withCards.map(({ id }) => id))
   const scanIds = new Set(withScans.map(({ id }) => id))
+  const studentIdIds = new Set(withStudentIds.map(({ id }) => id))
   const keylessIds = new Set(withoutCredentials.map(({ id }) => id))
   const settings = await getSettings()
   const rules = rentRulesOf(settings)
   const rates = dailyRatesOf(settings)
-  return residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id) }, rules, keylessIds.has(resident.id), rates))
+  return residents.map((resident) => toResidentSummary(resident, { hasAadharCard: cardIds.has(resident.id), hasPassportScan: scanIds.has(resident.id), hasStudentIdCard: studentIdIds.has(resident.id) }, rules, keylessIds.has(resident.id), rates))
 }
 
 // Everyone except accounts closed at the resident's request, which live on the Deleted records page.
@@ -208,13 +213,6 @@ residentRouter.get('/residents/access-key', (_request, response) => {
   response.json({ accessKey: createAccessKey() })
 })
 
-function sendDocument(response: Response, dataUrl: string | null | undefined, documentName: string) {
-  const match = dataUrl?.match(documentDataUrlPattern)
-  if (!match) { response.status(404).json({ error: `No ${documentName.toLowerCase()} on file.` }); return }
-  // Identity documents must not be cached by the browser or content-sniffed into something executable.
-  response.set({ 'Content-Type': match[1], 'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
-}
-
 residentRouter.get('/residents/:id/aadhar-card', async (request, response) => {
   try {
     const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { aadharCardUrl: true } })
@@ -235,6 +233,16 @@ residentRouter.get('/residents/:id/passport-scan', async (request, response) => 
   }
 })
 
+residentRouter.get('/residents/:id/student-id-card', async (request, response) => {
+  try {
+    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { studentIdCardUrl: true } })
+    sendDocument(response, resident?.studentIdCardUrl, 'Student ID card')
+  } catch (error) {
+    console.error('Student ID card lookup failed:', error)
+    response.status(503).json({ error: 'Student ID card could not be loaded.' })
+  }
+})
+
 residentRouter.get('/residents/:id/photo', async (request, response) => {
   try {
     const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { profilePhotoUrl: true } })
@@ -249,8 +257,13 @@ residentRouter.post('/residents', async (request, response) => {
   const body = request.body as ResidentBody
   const data = pickTextFields(body)
   if (!data.name || !body.propertyId) { response.status(400).json({ error: 'Name and property are required.' }); return }
+  if (!data.occupation) { response.status(400).json({ error: 'Choose the occupation.' }); return }
   const invalidField = findInvalidField(data)
   if (invalidField) { response.status(400).json({ error: invalidField }); return }
+  const studentIdCard = parseStudentIdCard(body.studentIdCardUrl)
+  if ('error' in studentIdCard) { response.status(400).json({ error: studentIdCard.error }); return }
+  const studentId = studentIdCardWrite(data.occupation, studentIdCard.card, false)
+  if ('error' in studentId) { response.status(400).json({ error: studentId.error }); return }
   const identity = parseResidentIdentity(body)
   if ('error' in identity) { response.status(400).json({ error: identity.error }); return }
   const expired = findExpiredDocument(identity.fields)
@@ -282,7 +295,7 @@ residentRouter.post('/residents', async (request, response) => {
       const rent = await residentRentWrite(transaction, { roomId: room.id, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
       if ('error' in rent) throw new InputError(rent.error)
       const readyForReview = hasCompleteIdentity({ ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl), hasPassportScan: Boolean(identity.fields.passportScanUrl) })
-      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id, bedNumber } })
+      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), ...studentId.data, nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id, bedNumber } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey, ...(body.sendCredentials === true ? { credentialsSent: await sendCredentials(residentId, accessKey) } : {}) })
@@ -297,6 +310,8 @@ residentRouter.put('/residents/:id', async (request, response) => {
   const data = pickTextFields(body)
   const invalidField = findInvalidField(data)
   if (invalidField) { response.status(400).json({ error: invalidField }); return }
+  const studentIdCard = parseStudentIdCard(body.studentIdCardUrl)
+  if ('error' in studentIdCard) { response.status(400).json({ error: studentIdCard.error }); return }
   const identity = parseResidentIdentity(body)
   if ('error' in identity) { response.status(400).json({ error: identity.error }); return }
   const photo = parseProfilePhoto(body.profilePhoto)
@@ -356,12 +371,15 @@ residentRouter.put('/residents/:id', async (request, response) => {
       const returnedHome = isReturning ? { movedOutFrom: null, movedOutAt: null, exitStatus: null, exitDate: null, exitReason: null, exitRequestedAt: null } : {}
       // Completing the details on an unsubmitted resident queues them for review; it never verifies.
       const onFile = await findDocumentsOnFile(transaction, id)
+      // Only the full form sends the occupation, so other partial updates (approving food, say) never ask for a card.
+      const studentId = data.occupation === undefined ? { data: {} } : studentIdCardWrite(data.occupation, studentIdCard.card, onFile.hasStudentIdCard)
+      if ('error' in studentId) throw new InputError(studentId.error)
       const isComplete = hasCompleteIdentity({ ...current, ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl) || (onFile.hasAadharCard && !isNationalityChange), hasPassportScan: Boolean(identity.fields.passportScanUrl) || (onFile.hasPassportScan && !isNationalityChange) })
       const isUnsubmitted = isNationalityChange || current.aadharStatus === AadharVerificationStatus.NOT_SUBMITTED
       const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
       // An address the owner types is theirs to vouch for, so it is shown as verified again.
       const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
-      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
+      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...studentId.data, ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
     })

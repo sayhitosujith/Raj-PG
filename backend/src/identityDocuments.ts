@@ -1,3 +1,4 @@
+import type { Response } from 'express'
 import { isValidAadharNumber } from './aadhar.js'
 import { isCountryCode } from './countries.js'
 import { parseDateOnly, propertyNow } from './dates.js'
@@ -26,6 +27,14 @@ const maxDocumentBytes = 2_000_000
 export const passportNumberPattern = /^[A-Z0-9]{6,9}$/
 // Visa sticker numbers and e-Visa application IDs vary by issue; letters and digits only.
 const visaNumberPattern = /^[A-Z0-9]{4,20}$/
+
+/** Sends a stored document (a data URL) as the file itself, or a 404 when there is none; never cached. */
+export function sendDocument(response: Response, dataUrl: string | null | undefined, documentName: string) {
+  const match = dataUrl?.match(documentDataUrlPattern)
+  if (!match) { response.status(404).json({ error: `No ${documentName.toLowerCase()} on file.` }); return }
+  // Identity documents must not be cached by the browser or content-sniffed into something executable.
+  response.set({ 'Content-Type': match[1], 'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(match[2], 'base64'))
+}
 
 /** Why an uploaded document is unacceptable, or null when it is fine. */
 export function findDocumentProblem(dataUrl: string, documentName: string) {

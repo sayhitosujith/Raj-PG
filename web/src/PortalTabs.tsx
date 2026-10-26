@@ -26,7 +26,7 @@ export function PortalTabs({ active, onChange, name, photoVersion }: { active: P
     <nav className="portal-tabs" aria-label="Portal sections">
       {tabs.map(({ key, label, icon: Icon }) => (
         <button key={key} type="button" className={active === key ? 'is-active' : undefined} aria-current={active === key ? 'page' : undefined} onClick={() => { onChange(key); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
-          {Icon === 'avatar' ? <span className="portal-tab-avatar-ring"><Avatar name={name} photoUrl={photoUrlFor(photoVersion)} className="portal-tab-avatar" /></span> : <Icon size={19} />}<span>{label}</span>
+          {Icon === 'avatar' ? <span className="portal-tab-avatar-ring"><Avatar name={name} photoUrl={photoUrlFor(photoVersion)} className="portal-tab-avatar" /></span> : <Icon size={19} />}{/* The photo fills the Profile tab, so its name is for screen readers only. */}<span className={Icon === 'avatar' ? 'sr-only' : undefined}>{label}</span>
         </button>
       ))}
     </nav>

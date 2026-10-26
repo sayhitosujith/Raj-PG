@@ -54,6 +54,8 @@ button { cursor: pointer; }
 .resident-modal .document-upload input { padding: 5px 8px; }
 .current-card-link { display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 5px; color: var(--teal); font-size: 11px; text-decoration: none; }
 .current-card-link:hover { text-decoration: underline; }
+/* Occupation (OccupationFields.tsx): its choice, the Other text and a student's ID card upload stack in one form cell. */
+.occupation-fields { display: grid; align-content: start; gap: 8px; min-width: 0; }
 .resident-modal .access-key-control { margin-top: 4px; }
 .resident-modal .modal-actions { margin-top: 16px; }
 /* Wide screens: a roomier form with single-line fields in pairs. Everything else (photo, address,
@@ -2084,14 +2086,16 @@ div.portal-panel { display: contents; }
   .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
   .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(60 66 76 / .1); }
-  /* The Profile tab's photo (or initials) in place of an icon: a circle, larger than the icons so a
-     face reads, inside a thin ring in the tab's text colour so it stands out on the bar. The ring is its own
-     element because the initials set their own text colour, and it thickens while Profile is open. Being
-     5px taller than the 19px icons, it rises 5px into the bar's top padding (10px): labels stay level, the
-     bar keeps its height, and even the thicker ring (2.5px) stays inside the bar's top edge. */
-  .portal-tab-avatar-ring { display: grid; margin-top: -5px; border-radius: 50%; box-shadow: 0 0 0 1.5px currentColor; }
-  .portal-tabs button.is-active .portal-tab-avatar-ring { box-shadow: 0 0 0 2.5px currentColor; }
-  .portal-tab-avatar { display: grid; place-items: center; width: 24px; height: 24px; overflow: hidden; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 10px/1 Manrope, sans-serif; }
+  /* The Profile tab is the resident's photo (or initials) alone: a 44px circle in a thin ring of the tab's
+     text colour, with the tab's name kept for screen readers. It floats over the bar's top edge like a raised
+     button, with a soft shadow where it overlaps the page. Negative margins keep its layout box at 30px (what
+     the other tabs' icon and label take) and the lift is a transform, so the bar keeps its height and the other
+     tabs do not move. The ring is its own element because the initials set their own text
+     colour, and it thickens while Profile is open. */
+  .portal-tabs button:has(.portal-tab-avatar-ring) { align-content: center; }
+  .portal-tab-avatar-ring { display: grid; margin: -7px 0; border-radius: 50%; box-shadow: 0 0 0 1.5px currentColor, 0 4px 12px rgb(0 0 0 / .28); transform: translateY(-18px); }
+  .portal-tabs button.is-active .portal-tab-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 4px 12px rgb(0 0 0 / .28); }
+  .portal-tab-avatar { display: grid; place-items: center; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 16px/1 Manrope, sans-serif; }
   .portal-tab-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
   :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }

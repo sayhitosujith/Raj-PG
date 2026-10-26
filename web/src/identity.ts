@@ -27,7 +27,8 @@ export function readIdentityFields(form: FormData): Record<string, string> {
 }
 
 /** Uploaded documents waiting to be sent with a form; only chosen files are present. */
-export type DocumentUploads = { aadharCardUrl?: string; passportScanUrl?: string }
+/** ID document files chosen in a form, as data URLs; an absent key keeps the file on file. */
+export type DocumentUploads = { aadharCardUrl?: string; passportScanUrl?: string; studentIdCardUrl?: string }
 
 /** The identity details a resident record carries, for completeness checks and display. */
 export type IdentityDetails = { nationality?: string | null; aadharNumber?: string | null; passportNumber?: string | null; passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; hasAadharCard: boolean; hasPassportScan: boolean }

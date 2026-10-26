@@ -3,6 +3,7 @@ import { Check, Copy, Eye, EyeOff, KeyRound, RefreshCw, Save, Send, UserPlus, X 
 import { copyWithNotice } from './clipboard'
 import { readIdentityFields, type DocumentUploads } from './identity'
 import { IdentityDocumentFields } from './IdentityDocumentFields'
+import { OccupationFields } from './OccupationFields'
 import { todayDateInputValue } from './joinDate'
 import type { Resident } from './resident'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
@@ -143,7 +144,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <label>Resident name<input name="name" required onChange={(event) => setPreviewName(event.target.value)} defaultValue={resident?.name ?? prefill?.name} placeholder="e.g. Ananya Sharma" /></label>
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
-        <label>Occupation <span>(optional)</span><input name="occupation" maxLength={60} defaultValue={resident?.occupation ?? ''} placeholder="e.g. Software engineer, Student" /></label>
+        <OccupationFields saved={resident?.occupation} hasCardOnFile={resident?.hasStudentIdCard} currentCardUrl={resident && `/api/residents/${resident.id}/student-id-card`} onCard={(card) => setUploads((current) => ({ ...current, studentIdCardUrl: card }))} onError={setError} />
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
         <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} currentBed={resident && propertyId === resident.propertyId ? resident.bedNumber ?? undefined : undefined} preferredRoom={!resident && prefill && propertyId === prefill.propertyId ? prefill.roomNumber : undefined} preferredBed={!resident && prefill && propertyId === prefill.propertyId ? prefill.bedNumber : undefined} onBedsChange={setRoomBeds} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>

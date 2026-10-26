@@ -24,6 +24,7 @@ import { AccountDeletionReview, deletionBadge } from './AccountDeletionReview'
 import { useIsSuperAdmin } from './staffContext'
 import { dietLabels } from './diet'
 import { DietMark } from './DietToggle'
+import { isStudent } from './occupations'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -182,6 +183,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             <div><dt>Emergency contact</dt><dd><EmergencyContactText contact={resident} /></dd></div>
             <div><dt>Vehicle</dt><dd>{vehicleText(resident)}</dd></div>
             <div><dt>Occupation</dt><dd>{resident.occupation || '—'}</dd></div>
+            {isStudent(resident.occupation) && <div><dt>Student ID card</dt><dd>{resident.hasStudentIdCard ? <a href={`/api/residents/${resident.id}/student-id-card`} target="_blank" rel="noopener noreferrer">View student ID <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>}
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
             {doorKeysEnabled && <div><dt>Door access key</dt><dd className="sign-in-cell">{isRecord ? (resident.doorAccessKey ?? 'Not issued') : <DoorKeyManager residentId={resident.id} residentName={resident.name} doorAccessKey={resident.doorAccessKey} revokedAt={resident.doorAccessKeyRevokedAt} onChanged={onChanged} onNotice={onNotice} />}</dd></div>}

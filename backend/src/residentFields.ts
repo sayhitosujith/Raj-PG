@@ -2,8 +2,8 @@ import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
 
 /**
  * The resident's plain contact fields, shared by the owner's resident form and the resident's own
- * "My details" form so both trim, normalise and reject input the same way. The emergency contact,
- * vehicle and occupation are optional throughout; a blank value clears them.
+ * "My details" form so both trim, normalise and reject input the same way. The emergency contact and
+ * vehicle are optional throughout (a blank value clears them); the occupation is required (studentId.ts).
  */
 export const textFields = ['name', 'phone', 'email', 'permanentAddress', 'emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'occupation'] as const
 
@@ -48,6 +48,8 @@ export function findInvalidField(data: Partial<Record<TextField, string>>) {
   if ((data.emergencyContactName || data.emergencyContactRelation) && data.emergencyContactPhone === '') return 'Add a phone number for the emergency contact, or clear its name and relationship.'
   if (data.vehicleType && !(vehicleTypes as readonly string[]).includes(data.vehicleType)) return `Vehicle type must be one of: ${vehicleTypes.join(', ')}.`
   if (data.vehicleNumber && !vehicleNumberPattern.test(data.vehicleNumber)) return 'Enter the vehicle number as on its number plate, e.g. KA 01 AB 1234.'
+  // Sent means the form's occupation field: it may not be blank. Partial updates that leave it out are fine.
+  if (data.occupation !== undefined && !data.occupation) return 'Choose the occupation.'
   if (data.occupation && data.occupation.length > 60) return 'Keep the occupation under 60 characters.'
   // A number with no type is ambiguous; a bicycle may have no number, so only this way round.
   if (data.vehicleNumber && data.vehicleType === '') return 'Choose the vehicle type for that number.'
@@ -55,7 +57,7 @@ export function findInvalidField(data: Partial<Record<TextField, string>>) {
 }
 
 // Optional fields stored as null when blank.
-const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'occupation'] as const
+const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber'] as const
 type OptionalField = (typeof optionalFields)[number]
 
 /**

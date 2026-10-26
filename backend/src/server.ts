@@ -58,7 +58,8 @@ const port = Number(process.env.PORT ?? 4000)
 app.use(cors())
 // Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.
 app.post('/api/razorpay/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
-app.use(express.json({ limit: '6mb' }))
+// A resident form can carry a profile photo and two ID documents (2 MB each, about 2.7 MB as base64).
+app.use(express.json({ limit: '10mb' }))
 // API answers are live data (notifications, rent, requests): never let the browser or Netlify's edge
 // reuse an old copy, or the app shows stale counts until a hard refresh. Image routes set their own
 // long cache (their URLs change when the image does), which replaces this.

@@ -134,8 +134,12 @@ model Resident {
   // registration number, upper case. Both optional; a bicycle may have no number.
   vehicleType              String?
   vehicleNumber            String?
-  // What the resident does (e.g. "Software engineer", "Student"), as they or the owner typed it.
+  // What the resident does: "Student", "Working professional", "Business", or their own words for anything
+  // else (studentId.ts). Required by the forms; null only for residents saved before it was.
   occupation               String?
+  // A student's college or school ID card, as a data URL like aadharCardUrl. Required while the occupation is
+  // Student, and cleared when it no longer is, so the image is not kept without need.
+  studentIdCardUrl         String?
   // False after the resident edits their own address: its "Verified" badge waits for the owner again.
   addressVerified          Boolean                  @default(true)
   aadharCardUrl            String?

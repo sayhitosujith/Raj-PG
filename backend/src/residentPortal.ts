@@ -4,7 +4,8 @@ import { findDuplicate } from './duplicates.js'
 import { findInvalidField, pickTextFields, toResidentWrite } from './residentFields.js'
 import { newAccessKeyMessage } from './rentLock.js'
 import { findAccessBlock } from './accessBlocks.js'
-import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
+import { findExpiredDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, parseIdentityFields, sendDocument, type IdentityInput } from './identityDocuments.js'
+import { parseStudentIdCard, studentIdCardWrite } from './studentId.js'
 import { requireRole, startSession, type AuthContext } from './auth.js'
 import { hashPassword, isAcceptablePassword, passwordRequirement, verifyPassword } from './credentials.js'
 import { prisma, withDatabaseRetry } from './db.js'
@@ -122,7 +123,7 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     const [settings, rent, upiClaim, dues] = await withDatabaseRetry(() => Promise.all([getSettings(), rentSummary(id), pendingUpiClaim(id), resident.exitDate ? exitDues(id) : null]))
     const noticeDays = noticeDaysOf(room.property, settings)
     // The resident's own ID number in full, for their own view only (the owner already sees it).
-    response.json({ doorAccessKey, referralCode: resident.referralCode ?? await ensureReferralCode(id), membershipId: await ensureMembershipId(resident, room.property.name), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, bedNumber: resident.bedNumber, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled(), foodOpted, diet: resident.diet, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ doorAccessKey, referralCode: resident.referralCode ?? await ensureReferralCode(id), membershipId: await ensureMembershipId(resident, room.property.name), hasStudentIdCard: Boolean(resident.studentIdCardUrl), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, bedNumber: resident.bedNumber, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled(), foodOpted, diet: resident.diet, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -292,6 +293,17 @@ residentPortalRouter.get('/resident-portal/weather', requireResident, requirePor
   }
 })
 
+residentPortalRouter.get('/resident-portal/student-id-card', requireResident, async (_request, response) => {
+  const { userId } = response.locals.auth as AuthContext
+  try {
+    const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { studentIdCardUrl: true } })
+    sendDocument(response, resident?.studentIdCardUrl, 'Student ID card')
+  } catch (error) {
+    console.error('Student ID card lookup failed:', error)
+    response.status(503).json({ error: 'Your student ID card could not be loaded.' })
+  }
+})
+
 residentPortalRouter.get('/resident-portal/photo', requireResident, async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
@@ -311,15 +323,22 @@ residentPortalRouter.put('/resident-portal/details', requireResident, requirePor
   const data = pickTextFields(request.body as Record<string, unknown>)
   const invalid = findInvalidField(data)
   if (invalid) { response.status(400).json({ error: invalid }); return }
+  const studentIdCard = parseStudentIdCard((request.body as { studentIdCardUrl?: unknown }).studentIdCardUrl)
+  if ('error' in studentIdCard) { response.status(400).json({ error: studentIdCard.error }); return }
   // Phone or email is how they sign in, so at least one must stay.
   if (!data.phone && !data.email) { response.status(400).json({ error: 'Enter a phone number or an email so you can still sign in.' }); return }
   try {
-    const current = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { permanentAddress: true } })
+    const [current, cardsOnFile] = await Promise.all([
+      prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { permanentAddress: true } }),
+      prisma.resident.count({ where: { id: userId, studentIdCardUrl: { not: null } } }),
+    ])
+    const studentId = data.occupation === undefined ? { data: {} } : studentIdCardWrite(data.occupation, studentIdCard.card, cardsOnFile > 0)
+    if ('error' in studentId) { response.status(400).json({ error: studentId.error }); return }
     // Residents are not told whose account holds a detail, only that it is taken.
     const duplicate = await findDuplicate(prisma, { email: data.email, phone: data.phone }, { residentId: userId }, { revealOwner: false })
     if (duplicate) { response.status(409).json({ error: duplicate }); return }
     const isNewAddress = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '')
-    await prisma.resident.update({ where: { id: userId }, data: { ...toResidentWrite(data), phone: data.phone || null, email: data.email || null, permanentAddress: data.permanentAddress || null, ...(isNewAddress ? { addressVerified: false } : {}) } })
+    await prisma.resident.update({ where: { id: userId }, data: { ...toResidentWrite(data), ...studentId.data, phone: data.phone || null, email: data.email || null, permanentAddress: data.permanentAddress || null, ...(isNewAddress ? { addressVerified: false } : {}) } })
     response.status(204).send()
   } catch (error) {
     console.error('Resident details update failed:', error)
