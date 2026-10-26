@@ -2,10 +2,10 @@ import { useRef, useState } from 'react'
 import { Camera, LoaderCircle } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { resizeToSquareJpeg } from './imageResize'
-import { useTabLayout } from './useTabLayout'
 import { readApiError } from './superAdmin'
 
-const photoUrlFor = (photoVersion: number | null) => photoVersion ? `/api/resident-portal/photo?v=${photoVersion}` : null
+/** The resident's own photo URL for a photo version (it changes with each upload, so caches refresh); null without one. */
+export const photoUrlFor = (photoVersion: number | null) => photoVersion ? `/api/resident-portal/photo?v=${photoVersion}` : null
 
 /**
  * Saving a change to the resident's photo: runs the request, then re-fetches the profile so the new
@@ -32,15 +32,13 @@ function usePhotoSave(onChanged: () => Promise<void>, onNotice: (message: string
 }
 
 /**
- * The resident's own photo: click to choose a new one. Without `onOpenProfile` the link under it
- * removes the photo. In the portal top bar (`onOpenProfile` set) there is no link: in the phone and
- * tablet layout the photo opens Profile instead, and on desktop removing the photo is the
- * RemovePhotoButton beside "Your profile". The image is resized in the browser before upload.
+ * The resident's own photo on their Profile: click to choose a new one, and the link under it removes
+ * it (on desktop that is the RemovePhotoButton beside "Your profile"). The image is resized in the
+ * browser before upload.
  */
-export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, onOpenProfile }: { name: string; photoVersion: number | null; onChanged: () => Promise<void>; onNotice: (message: string) => void; /** Set in the portal top bar: on phones and tablets the photo opens Profile. */ onOpenProfile?: () => void }) {
+export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice }: { name: string; photoVersion: number | null; onChanged: () => Promise<void>; onNotice: (message: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const { isSaving, save, remove } = usePhotoSave(onChanged, onNotice)
-  const isTabLayout = useTabLayout()
   const photoUrl = photoUrlFor(photoVersion)
 
   async function choose(event: React.ChangeEvent<HTMLInputElement>) {
@@ -53,15 +51,14 @@ export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice, on
   }
 
   const choosePhoto = () => inputRef.current?.click()
-  const photoOpensProfile = Boolean(onOpenProfile) && isTabLayout
   return (
     <div className="profile-photo-picker">
-      <button type="button" className={`profile-photo-button${isSaving ? ' is-saving' : ''}${photoOpensProfile ? ' opens-profile' : ''}`} onClick={photoOpensProfile ? onOpenProfile : choosePhoto} disabled={isSaving} aria-label={photoOpensProfile ? 'Open your profile' : photoUrl ? 'Change profile photo' : 'Add profile photo'}>
+      <button type="button" className={`profile-photo-button${isSaving ? ' is-saving' : ''}`} onClick={choosePhoto} disabled={isSaving} aria-label={photoUrl ? 'Change profile photo' : 'Add profile photo'}>
         <Avatar name={name} photoUrl={photoUrl} className="profile-photo" />
-        {!photoOpensProfile && <span className="profile-photo-overlay" aria-hidden="true">{isSaving ? <LoaderCircle size={22} className="spin" /> : <Camera size={20} />}<small>{isSaving ? 'Saving…' : photoUrl ? 'Change' : 'Add photo'}</small></span>}
+        <span className="profile-photo-overlay" aria-hidden="true">{isSaving ? <LoaderCircle size={22} className="spin" /> : <Camera size={20} />}<small>{isSaving ? 'Saving…' : photoUrl ? 'Change' : 'Add photo'}</small></span>
       </button>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={choose} />
-      {!onOpenProfile && photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
+      {photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
     </div>
   )
 }

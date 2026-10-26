@@ -340,9 +340,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Profile photos: shared avatar image, the resident's picker in the greeting row. */
 .resident-avatar.has-photo, .profile-photo.has-photo { overflow: hidden; padding: 0; background: #e6ece8; }
 .resident-avatar img, .profile-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* The page's 16px gap alone spaces the greeting from the card below, as it does between every card. */
-.portal-shell .welcome-row { align-items: center; margin-bottom: 0; }
-.portal-shell .welcome-row h1 { margin-bottom: 0; }
+/* The page's 16px gap alone spaces the row from the card below, as it does between every card. The
+   amenities and the weather line up at the top, since the chips can run to several rows. */
+.portal-shell .welcome-row { align-items: flex-start; margin-bottom: 0; }
 .profile-photo-picker { display: grid; flex: 0 0 auto; justify-items: center; gap: 6px; }
 .profile-photo-button { position: relative; width: 88px; height: 88px; padding: 0; border: 3px solid white; border-radius: 50%; background: none; box-shadow: 0 8px 24px #18352f1f; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
 .profile-photo-button:hover { transform: translateY(-2px); box-shadow: 0 12px 28px #18352f29; }
@@ -631,17 +631,16 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .property-modal .rooms-field .rooms-field-label { display: inline-flex; align-items: center; gap: 6px; color: #55635f; font-weight: 700; }
 .rooms-field-label svg { color: var(--teal); }
 
-/* Resident's property amenities, between the greeting and their photo. */
-.resident-amenities { display: grid; flex: 0 1 420px; gap: 8px; min-width: 0; margin-left: auto; animation: rise-in .35s ease both; }
+/* The resident's property amenities at the top of Home, beside the weather (below any festival greeting);
+   the intro column takes the row's free width so the chips wrap there and the weather keeps its place. */
+.portal-shell .welcome-row > .welcome-intro { display: grid; flex: 1; gap: 10px; min-width: 0; }
+.resident-amenities { display: grid; gap: 8px; min-width: 0; animation: rise-in .35s ease both; }
 .resident-amenities .eyebrow { margin: 0; }
-/* In the resident Home card, between the blue details card and the rent card. */
-.workspace-view > .resident-amenities { margin: 16px 0 0; }
 .resident-amenity-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .resident-amenity { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #cfe7dc; border-radius: 999px; color: #2f5d55; background: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px #18352f0d; }
 .resident-amenity svg { color: var(--teal); }
 @media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-wrap: wrap; }
-  .resident-amenities { order: 3; flex-basis: 100%; margin-left: 0; }
 }
 
 /* Rent: owner's panel in resident details, resident's reminder banner. */
@@ -1491,10 +1490,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* MemberCard: laid out like a membership card on the blue heading, all text in white capitals (however
    the owner typed the PG or the name). Its paragraphs are prefixed to outrank the muted
    ".workspace-view-heading p" style meant for hint sentences. */
-.member-card { display: grid; gap: 14px; color: rgb(255 255 255); }
+.member-card { display: grid; gap: 12px; color: rgb(255 255 255); }
 .portal-shell .portal-details-heading .member-card p { margin: 0; color: inherit; font-size: inherit; }
 .member-card-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.member-card-badge { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border: 1px solid rgb(255 255 255 / .35); border-radius: 9px; background: rgb(255 255 255 / .14); }
+/* The building mark in the chip's gold, on a faint gold tint, like the crest on a member card. */
+.member-card-badge { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border: 1px solid rgb(248 220 120 / .55); border-radius: 9px; color: #f8dc78; background: rgb(248 220 120 / .14); }
 .portal-shell .portal-details-heading p.member-card-brand { display: grid; flex: 1; gap: 1px; min-width: 0; }
 .member-card-brand strong { overflow: hidden; font-size: 13px; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .member-card-brand small { font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
@@ -1502,31 +1502,32 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .member-card-pill { flex: none; padding: 2px 9px; border: 1px solid rgb(255 255 255 / .4); border-radius: 999px; background: rgb(255 255 255 / .16); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .member-card-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 /* The card chip: a gold square with contact lines, drawn in CSS; decoration only. */
-.member-card-chip { width: 38px; height: 28px; border-radius: 6px; background: linear-gradient(90deg, transparent 32%, rgb(150 110 20 / .45) 32% 36%, transparent 36% 64%, rgb(150 110 20 / .45) 64% 68%, transparent 68%), linear-gradient(0deg, transparent 46%, rgb(150 110 20 / .45) 46% 54%, transparent 54%), linear-gradient(135deg, #f8dc78, #e2b33c); box-shadow: inset 0 0 0 1px rgb(150 110 20 / .4); }
+.member-card-chip { flex: none; width: 34px; height: 26px; border-radius: 6px; background: linear-gradient(90deg, transparent 32%, rgb(150 110 20 / .45) 32% 36%, transparent 36% 64%, rgb(150 110 20 / .45) 64% 68%, transparent 68%), linear-gradient(0deg, transparent 46%, rgb(150 110 20 / .45) 46% 54%, transparent 54%), linear-gradient(135deg, #f8dc78, #e2b33c); box-shadow: inset 0 0 0 1px rgb(150 110 20 / .4); }
 /* A field: a small spaced-out label over its value. */
 .member-card-field { display: grid; gap: 3px; min-width: 0; }
 .member-card-field.is-end { justify-items: end; text-align: right; }
 .member-card-field > span { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
 .member-card-field > strong { overflow: hidden; font-size: 13px; letter-spacing: .04em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 /* The membership ID in monospace, so letters and digits line up and read back clearly. */
-.member-card-field > strong.member-card-id { font: 700 21px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
+/* The ID takes the middle of its row, beside the chip, and may shrink before the validity date does. */
+.member-card-id-field { flex: 1; }
+.member-card-field > strong.member-card-id { font: 700 19px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
+/* On a narrow Home card (small phones) the ID steps down a size so the whole of it fits beside the chip
+   and the validity date, rather than being cut with an ellipsis. */
+@container (max-width: 400px) { .member-card-field > strong.member-card-id { font-size: 16px; letter-spacing: .05em; } }
 /* Rent owed: a white pill with red text, which reads on the blue where red text alone would not. */
 .member-card-field > strong.member-card-due { padding: 1px 8px; border-radius: 999px; color: #b42318; background: rgb(255 255 255); }
 /* Top-aligned: the cardholder's tags make that side taller, and "Unit" stays level with "Cardholder". */
-.member-card-foot { align-items: flex-start; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / .22); }
+.member-card-foot { align-items: flex-start; padding-top: 10px; border-top: 1px solid rgb(255 255 255 / .22); }
 
-/* The resident in the portal top bar, on the theme colour: photo, then the name. The name wraps rather
-   than being cut, so a full name still shows on a phone. Text follows the theme's button text colour so
-   it reads on the bar. */
-.portal-topbar .portal-identity { gap: 10px; min-width: 0; padding: 0; letter-spacing: normal; }
-.portal-identity-text { display: grid; min-width: 0; }
-.portal-shell .portal-topbar p.portal-identity-name { margin: 0; color: var(--brand-on, rgb(255 255 255)); font: 700 18px/1.2 Manrope, sans-serif; letter-spacing: -.01em; overflow-wrap: anywhere; }
-/* A rounded square here, like the property photo, rather than the circle used elsewhere. */
-.portal-topbar .portal-identity .profile-photo-button { width: 48px; height: 48px; border-width: 2px; box-shadow: none; }
-.portal-topbar .portal-identity .profile-photo-button { border-radius: 10px; }
-/* Inside the 2px border, so 2px less, to follow the frame's curve. */
-.portal-topbar .portal-identity :is(.profile-photo, .profile-photo-overlay) { border-radius: 8px; }
-.portal-topbar .portal-identity .profile-photo { font-size: 16px; }
+/* The resident's top bar holds only the bell and sign-out (their name is in the greeting, their photo on the
+   Profile tab), so the buttons are pushed to the right edge on their own. */
+.portal-topbar .view-actions { margin-left: auto; }
+/* The greeting at the left of the top bar ("Good evening, Sujith ✦"): bold italic, dark on the light header
+   and in the button text colour on the dark view's theme-colour header. It shrinks with the screen (about
+   17px at 320px, 22px from 400px) so it stays on one line beside the two buttons; a long name wraps. */
+.portal-shell .portal-topbar .portal-greeting { min-width: 0; margin: 0; color: var(--ink); font: italic 700 clamp(17px, calc(4vw + 4px), 22px)/1.2 Manrope, sans-serif; letter-spacing: -.03em; overflow-wrap: anywhere; }
+:root[data-theme="dark"] .portal-shell .portal-topbar .portal-greeting { color: var(--brand-on, rgb(255 255 255)); }
 /* Occupation and diet as tags under the cardholder's name on the member card, the way profile cards
    show a role: the occupation a frosted pill, the diet keeping its veg / non-veg colours on a white
    pill, where they still read on the blue. */
@@ -1747,9 +1748,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .workspace-view { padding: 18px 14px; }
   .portal-shell .workspace-view-heading { padding-bottom: 14px; }
   .portal-shell .workspace-view-heading h2 { font-size: 20px; }
-  /* Shrinks with the screen below 390px (24px there, about 18px at 320px) so "Hello, good afternoon" stays on
-     one row with the weather. */
-  .portal-shell .welcome-row h1 { font-size: clamp(17px, calc(8.57vw - 9.4px), 24px); }
   .portal-shell .rent-highlight { padding: 12px 14px; }
   .portal-shell .rent-highlight-copy strong { font-size: 22px; }
   .portal-shell .pagination-summary { text-align: left; }
@@ -2083,9 +2081,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .portal-tabs { display: none; }
 div.portal-panel { display: contents; }
 @media (max-width: 1024px) {
-  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
+  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
   .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(60 66 76 / .1); }
+  /* The Profile tab's photo (or initials) in place of an icon: a circle, larger than the icons so a
+     face reads, inside a thin ring in the tab's text colour so it stands out on the bar. The ring is its own
+     element because the initials set their own text colour, and it thickens while Profile is open. Being
+     5px taller than the 19px icons, it rises 5px into the bar's top padding (10px): labels stay level, the
+     bar keeps its height, and even the thicker ring (2.5px) stays inside the bar's top edge. */
+  .portal-tab-avatar-ring { display: grid; margin-top: -5px; border-radius: 50%; box-shadow: 0 0 0 1.5px currentColor; }
+  .portal-tabs button.is-active .portal-tab-avatar-ring { box-shadow: 0 0 0 2.5px currentColor; }
+  .portal-tab-avatar { display: grid; place-items: center; width: 24px; height: 24px; overflow: hidden; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 10px/1 Manrope, sans-serif; }
+  .portal-tab-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
   :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
   :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(200 206 214 / .14); }
@@ -2206,8 +2213,6 @@ a.faq-card { text-decoration: none; }
   /* Phones change their password from the Profile tab, so the top bar keeps only refresh, theme and sign out. */
   .portal-topbar .topbar-change-password { display: none; }
 }
-/* Resident greeting in italic. */
-.portal-shell .welcome-row h1 { font-style: italic; }
 
 /* Phones: short tabs no longer leave the footer floating mid-screen. The page fills the window and
    the footer sits at the bottom, just above the tab bar. */
@@ -2304,14 +2309,14 @@ a.faq-card { text-decoration: none; }
 .portal-shell .resident-amenity:nth-child(7) { animation-delay: .3s; }
 .portal-shell .resident-amenity:nth-child(n + 8) { animation-delay: .35s; }
 @keyframes chip-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
-.portal-shell .welcome-row .wave { display: inline-block; animation: sparkle-twinkle 2.8s ease-in-out infinite; }
+.portal-shell .portal-greeting .wave { display: inline-block; animation: sparkle-twinkle 2.8s ease-in-out infinite; }
 @keyframes sparkle-twinkle { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; } 50% { transform: scale(1.3) rotate(25deg); opacity: .7; } }
 .portal-shell :is(.today-tile, .meal-tile, .rent-highlight, .detail-card, .whatsapp-preference, .passkey-settings) { transition: transform .2s ease, box-shadow .2s ease; }
 .portal-shell :is(.today-tile, .meal-tile, .rent-highlight, .detail-card, .whatsapp-preference, .passkey-settings):hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgb(20 30 40 / .08); }
 .portal-shell .rent-highlight.is-due .rent-highlight-copy strong { display: inline-block; transform-origin: left center; animation: rent-due-pulse 2.4s ease-in-out infinite; }
 @keyframes rent-due-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) {
-  .portal-shell .page-content > :not(.portal-panel), .portal-shell .portal-panel > *, .portal-shell .resident-amenity, .portal-shell .welcome-row .wave, .portal-shell .rent-highlight.is-due .rent-highlight-copy strong { animation: none; }
+  .portal-shell .page-content > :not(.portal-panel), .portal-shell .portal-panel > *, .portal-shell .resident-amenity, .portal-shell .portal-greeting .wave, .portal-shell .rent-highlight.is-due .rent-highlight-copy strong { animation: none; }
   .portal-shell :is(.today-tile, .meal-tile, .rent-highlight, .detail-card, .whatsapp-preference, .passkey-settings):hover { transform: none; }
 }
 

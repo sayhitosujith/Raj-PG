@@ -23,11 +23,12 @@ export function MemberCard({ property, membershipId, name, room, bed, roomBeds, 
         <Nfc className="member-card-nfc" size={18} aria-hidden="true" />
         {roomBeds ? <span className="member-card-pill">{sharingLabel(roomBeds)}</span> : null}
       </div>
-      <div className="member-card-row">
+      {/* Chip, membership ID and validity share one row, which keeps the card short. */}
+      <div className="member-card-row member-card-mid">
         <span className="member-card-chip" aria-hidden="true" />
+        <p className="member-card-field member-card-id-field"><span>Membership ID</span><strong className="member-card-id">{membershipId}</strong></p>
         {paidThrough && <p className="member-card-field is-end"><span>Valid thru</span>{paidThrough === 'due' ? <strong className="member-card-due">Rent due</strong> : <strong>{cardDate(paidThrough)}</strong>}</p>}
       </div>
-      <p className="member-card-field"><span>Membership ID</span><strong className="member-card-id">{membershipId}</strong></p>
       <div className="member-card-row member-card-foot">
         <div className="member-card-field"><span>Cardholder</span><strong>{name}</strong>{tags}</div>
         <p className="member-card-field is-end"><span>Unit</span><strong>Room {room}</strong>{bed ? <strong>Bed {bed}</strong> : null}</p>

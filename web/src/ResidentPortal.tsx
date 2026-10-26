@@ -148,12 +148,6 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   // The phone's status bar takes the header's theme colour while the portal is open.
   const topbar = useRef<HTMLElement>(null)
   useStatusBarColor(topbar)
-  // Profile has no tab of its own: on phones and tablets the photo in the top bar opens it (the picker
-  // only calls this in that layout); on desktop everything is one page, with Profile further down.
-  const openProfile = () => {
-    setTab('profile')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
   const { greeting, minutesIntoDay } = useGreeting()
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -232,20 +226,20 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <PortalScenery />
       <PortalAnimals />
       <header ref={topbar} className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        {/* Who is signed in, on every tab: photo (opens Profile on phones) and name. */}
-        <div className="brand-row portal-identity"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} onOpenProfile={openProfile} /><div className="portal-identity-text"><p className="portal-identity-name" title={displayName(profile.name)}>{displayName(profile.name)}</p></div></div>
+        {/* The greeting heads every tab ("Good evening, Sujith"), beside the bell and sign-out. */}
+        <h1 className="portal-greeting">{greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}, {displayName(profile.name)} <span className="wave">✦</span></h1>
         <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
-        <PortalTabs active={tab} onChange={setTab} />
+        <PortalTabs active={tab} onChange={setTab} name={profile.name} photoVersion={profile.photoVersion} />
         <div className="portal-panel" data-panel="home">
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
         {profile.foodOpted && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div><h1>Hello, {greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())} <span className="wave">✦</span></h1>{festival && <FestivalGreeting festival={festival} />}</div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
+        <section className="welcome-row"><div className="welcome-intro">{festival && <FestivalGreeting festival={festival} />}<ResidentAmenities amenities={profile.amenities} /></div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
         <section className="workspace-view">
           <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><div className="portal-details-body"><MemberCard property={profile.property} membershipId={profile.membershipId} name={displayName(profile.name)} room={profile.room} bed={profile.bedNumber} roomBeds={profile.roomBeds} rent={profile.rent} tags={identityTags} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="meals-row">{profile.foodOpted && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore /><MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} /></div>{!profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
-          <ResidentAmenities amenities={profile.amenities} /><RentHighlight rent={profile.rent} room={`Room ${profile.room}${profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}`} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
+          <RentHighlight rent={profile.rent} room={`Room ${profile.room}${profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}`} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>
           <div className="home-notification-prefs">{notifications}{deleteAccount}</div>
         </section>
         </div>

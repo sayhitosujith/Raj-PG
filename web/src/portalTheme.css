@@ -239,11 +239,9 @@
 :root .portal-shell .portal-topbar .notification-bell-button.secondary-button:hover { background: rgb(255 255 255 / .26); }
 /* Light view: the header takes the app background colour (Settings > Views), so it and the phone's status
    bar (useStatusBarColor) read as one plain strip with the page; a hairline keeps it apart from content
-   scrolling under it. On the plain background the name is dark and the bell and sign-out buttons are
-   outlined in the theme colour. Dark view keeps the theme-colour header above. */
+   scrolling under it. On the plain background the bell and sign-out buttons are outlined in the theme
+   colour. Dark view keeps the theme-colour header above. */
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar { border-bottom: 1px solid var(--line); background: var(--app-bg, #ffffff); box-shadow: none; }
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar p.portal-identity-name { color: var(--ink); }
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-identity .profile-photo-button { border-color: var(--line); }
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button) { border-color: color-mix(in srgb, var(--brand, var(--teal)) 35%, transparent); color: var(--brand-deep, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button):is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brand, var(--teal)) 16%, transparent); }
 /* The footer in the theme colour too, matching the header and tab bar: its text and the Terms and
