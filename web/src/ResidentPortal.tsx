@@ -2,7 +2,8 @@ import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } fr
 import { LazyCountryLabel } from './CountryField'
 import { LaundryShopCard } from './LaundryShopCard'
 import { MemberCard } from './MemberCard'
-import { Briefcase, Building2, CalendarDays, DoorOpen, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { isStudent } from './occupations'
+import { Briefcase, Building2, CalendarDays, DoorOpen, ExternalLink, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
@@ -203,7 +204,8 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
     ['Joining date', formatJoinDate(profile.joinedAt), CalendarDays],
     ['Days stayed', daysStayedLabel(profile.joinedAt), Hourglass],
     ['Food plan', profile.foodOpted ? 'With food' : 'Without food', UtensilsCrossed],
-    ['Occupation', profile.occupation || '—', Briefcase],
+    // A student can open the ID card on file from here; without one, they are told it is missing.
+    ['Occupation', isStudent(profile.occupation) ? <>{profile.occupation} · {profile.hasStudentIdCard ? <a className="detail-card-link" href="/api/resident-portal/student-id-card" target="_blank" rel="noopener noreferrer">View ID card <ExternalLink size={12} aria-hidden="true" /></a> : 'ID card not uploaded'}</> : profile.occupation || '—', Briefcase],
   ]
 
   // One detail as a card: icon, label over value, and an arrow, in the portal's card style.

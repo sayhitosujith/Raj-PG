@@ -1019,8 +1019,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Resident portal: property location after the room line, linking to the map. */
 .portal-location { display: inline-flex; align-items: center; gap: 4px; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); color: var(--teal); text-decoration: none; }
 .portal-location:hover { text-decoration: underline; text-underline-offset: 3px; }
-.detail-location { display: inline-flex; align-items: center; gap: 3px; color: var(--teal); font-weight: 600; text-decoration: none; }
-.detail-location:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Links inside a Profile detail card: the property location, a student's ID card. */
+:is(.detail-location, .detail-card-link) { display: inline-flex; align-items: center; gap: 3px; color: var(--teal); font-weight: 600; text-decoration: none; }
+:is(.detail-location, .detail-card-link):hover { text-decoration: underline; text-underline-offset: 3px; }
 /* Stacked under the room line wherever the greeting column is too narrow to keep it inline. */
 @media (max-width: 900px) { .portal-location { display: flex; margin: 6px 0 0; padding-left: 0; border-left: 0; } }
 
