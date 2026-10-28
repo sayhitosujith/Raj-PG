@@ -9,6 +9,8 @@ export type SiteProperty = BookableProperty & {
   city: string | null
   /** The PG's own website, if the owner added one. */
   websiteUrl: string | null
+  /** The PG's manager number (E.164), shown on its card for visitors to call; null when not set. */
+  managerPhone: string | null
   amenities: string[]
   sharingPrices: SharingPrice[]
   freeBeds: number

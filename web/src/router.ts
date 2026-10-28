@@ -49,5 +49,16 @@ export const sitePaths = {
   login: '/login',
 }
 
+/**
+ * `to` as a link from the page being viewed. On /website (the home page for signed-in staff) links to the
+ * home page or its sections stay on /website ("/#properties" becomes "/website#properties"), since "/"
+ * shows staff the dashboard; everywhere else `to` is returned as it is.
+ */
+export function withinSite(to: string) {
+  if (window.location.pathname !== sitePaths.website) return to
+  if (to === sitePaths.home) return sitePaths.website
+  return to.startsWith('/#') ? sitePaths.website + to.slice(1) : to
+}
+
 /** Website pages that never need a session ("/" shows the site only when signed out; see AuthGate). */
 export const isPublicSitePath = (path: string) => path.startsWith('/pg/') || path === sitePaths.foodAndRules || path === sitePaths.contact || path === sitePaths.website

@@ -1,7 +1,7 @@
 import cors from 'cors'
 import 'dotenv/config'
 import express from 'express'
-import { UserRole } from '@prisma/client'
+import { Prisma, UserRole } from '@prisma/client'
 import { authRouter, requireRole } from './auth.js'
 import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
 import { publicSiteRouter } from './publicSite.js'
@@ -259,15 +259,22 @@ app.put('/api/properties/:id', async (request, response) => {
       const defined = await prisma.room.count({ where: { propertyId: request.params.id } })
       if (totalRooms.totalRooms < defined) { response.status(400).json({ error: `This property has ${defined} ${defined === 1 ? 'room' : 'rooms'} defined, so it needs at least ${defined}. Remove free rooms under Rooms first.` }); return }
     }
-    // Price and residents' rents change together, so a resident never shows a stale rent.
-    const property = await prisma.$transaction(async (transaction) => {
+    // Price and residents' rents change together, so a resident never shows a stale rent. Retried when the
+    // database drops the connection: it writes the same values again, so a repeat is harmless.
+    const property = await withDatabaseRetry(() => prisma.$transaction(async (transaction) => {
       const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows ? { sharingPrices: { deleteMany: {}, create: sharing.rows } } : {}) }, include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } })
       if (Object.keys(rents.data).length || sharing.rows) await syncPropertyRents(transaction, updated.id)
       return updated
-    })
+    }))
     const { rooms: _rooms, ...fields } = property
     response.json({ ...fields, ...occupancySummary(property), mealTimes: toMealTimes(property) })
-  } catch { response.status(404).json({ error: 'Property could not be updated.' }) }
+  } catch (error) {
+    // P2025: no property with this id. Anything else (a dropped database connection, say) is logged, so a
+    // failed save can be traced, and the owner is told to try again rather than that the PG is missing.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') { response.status(404).json({ error: 'Property not found.' }); return }
+    console.error('Property update failed:', error)
+    response.status(503).json({ error: 'The property could not be saved. Please try again.' })
+  }
 })
 
 app.get('/api/announcements', async (_request, response) => {

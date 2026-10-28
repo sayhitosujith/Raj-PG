@@ -376,5 +376,10 @@ p.site-sheet-help { padding-left: 12px; }
 .site-property-link::after { position: absolute; inset: 0; z-index: 0; content: ''; }
 .site-property-link:focus-visible { outline: none; }
 .site-property-card:has(.site-property-link:focus-visible) { outline: 3px solid color-mix(in srgb, var(--site-brand) 55%, transparent); outline-offset: 2px; }
-.site-property-website { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; justify-self: start; max-width: 100%; overflow: hidden; color: var(--site-brand-deep); font-size: 13px; font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.site-property-website:hover { text-decoration: underline; }
+.site-property-call { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; justify-self: start; max-width: 100%; overflow: hidden; color: var(--site-brand-deep); font-size: 13px; font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.site-property-call:hover { text-decoration: underline; }
+/* The manager's number with a WhatsApp chat button at the row's right end; both sit above the card's
+   stretched link, so they open on their own. */
+.site-property-contact { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.site-property-whatsapp { position: relative; z-index: 1; display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: #fff; background: #25d366; box-shadow: 0 4px 12px rgb(37 211 102 / .35); transition: transform .15s ease; }
+.site-property-whatsapp:hover, .site-property-whatsapp:focus-visible { transform: scale(1.08); }

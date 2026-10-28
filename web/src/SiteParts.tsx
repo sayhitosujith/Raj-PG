@@ -1,9 +1,11 @@
-import { BedDouble, Building2, Globe, MapPin, Users } from 'lucide-react'
+import { BedDouble, Building2, MapPin, Phone, Users } from 'lucide-react'
+import { PhoneText } from './PhoneField'
 import { amenityItems, tenantHint } from './propertyFeatureOptions'
 import { formatRupees } from './rent'
 import { sharingLabel } from './rooms'
 import { sitePaths } from './router'
-import { addressOf, mapLinkOf, startingPrice, type SiteProperty } from './siteData'
+import { addressOf, mapLinkOf, startingPrice, whatsappLink, type SiteProperty } from './siteData'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { SiteLink } from './SiteLink'
 
 /** A section's eyebrow, title and lead line, the same on every page. */
@@ -11,13 +13,16 @@ export function SiteHeading({ eyebrow, title, lead }: { eyebrow: string; title: 
   return <div className="site-heading"><p className="site-eyebrow">{eyebrow}</p><h2>{title}</h2>{lead && <p>{lead}</p>}</div>
 }
 
-/**
- * A property's full address as a map link: the owner's own map link when they pasted one, otherwise a
- * map search for the address. Not for use inside another link (a property card shows plain text).
- */
+/** Where a property opens on a map: the owner's own map link when they pasted one, otherwise a map search for its address; null with neither. */
+function mapHrefOf(property: SiteProperty) {
+  const address = addressOf(property)
+  return mapLinkOf(property) ?? (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.name}, ${address}`)}` : null)
+}
+
+/** A property's full address as a map link, for its own page. */
 export function PropertyAddress({ property }: { property: SiteProperty }) {
   const address = addressOf(property)
-  const href = mapLinkOf(property) ?? (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.name}, ${address}`)}` : null)
+  const href = mapHrefOf(property)
   if (!href) return null
   return <a className="site-location" href={href} target="_blank" rel="noopener noreferrer" title="Open in Google Maps"><MapPin size={14} aria-hidden="true" /> {address || 'Open map'}</a>
 }
@@ -40,7 +45,8 @@ export function PropertyCard({ property }: { property: SiteProperty }) {
   const from = startingPrice(property)
   const forWhom = tenantHint(property.tenantType)
   // The name's link stretches over the whole card (see .site-property-link in site.css), so the card stays
-  // one big click target while the PG's own website link sits on top and opens on its own.
+  // one big click target while its manager's number sits on top: a call link, with a WhatsApp chat (opened with
+  // the PG named) on the right. The PG's website and map link are on its own page.
   return (
     <article className="site-property-card">
       <div className="site-property-photo">{property.image ? <img src={property.image} alt="" loading="lazy" /> : <Building2 size={40} aria-hidden="true" />}<FreeBeds property={property} /></div>
@@ -49,19 +55,13 @@ export function PropertyCard({ property }: { property: SiteProperty }) {
         <p className="site-meta">{forWhom && <span><Users size={13} aria-hidden="true" /> {forWhom}</span>}{addressOf(property) && <span><MapPin size={13} aria-hidden="true" /> {addressOf(property)}</span>}</p>
         <AmenityChips amenities={property.amenities} />
         <p className="site-price">{from ? <>From <strong>{formatRupees(from)}</strong> / month</> : 'Ask us for prices'}</p>
-        {property.websiteUrl && <a className="site-property-website" href={property.websiteUrl} target="_blank" rel="noopener noreferrer" title={property.websiteUrl}><Globe size={14} aria-hidden="true" /> {websiteLabel(property.websiteUrl)}</a>}
+        {property.managerPhone && <div className="site-property-contact">
+          <a className="site-property-call" href={`tel:${property.managerPhone}`} title="Call the manager"><Phone size={14} aria-hidden="true" /> <PhoneText value={property.managerPhone} /></a>
+          <a className="site-property-whatsapp" href={whatsappLink(property.managerPhone, `Hi, I'm interested in ${property.name}.`)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp the manager of ${property.name}`} title="WhatsApp the manager"><WhatsAppIcon size={18} /></a>
+        </div>}
       </div>
     </article>
   )
-}
-
-/** "yourpg.com" from "https://www.yourpg.com/rooms": the short name a card shows for a website link. */
-function websiteLabel(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return url
-  }
 }
 
 /**
