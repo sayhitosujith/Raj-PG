@@ -38,6 +38,8 @@ export function navigate(to: string, { replace = false } = {}) {
 /** The website's addresses, in one place so links and the page switch cannot drift apart. */
 export const sitePaths = {
   home: '/',
+  // The home page for signed-in staff too ("/" shows them the dashboard): the sidebar's Home link opens it.
+  website: '/website',
   locations: '/#locations',
   properties: '/#properties',
   property: (id: string) => `/pg/${encodeURIComponent(id)}`,
@@ -48,4 +50,4 @@ export const sitePaths = {
 }
 
 /** Website pages that never need a session ("/" shows the site only when signed out; see AuthGate). */
-export const isPublicSitePath = (path: string) => path.startsWith('/pg/') || path === sitePaths.foodAndRules || path === sitePaths.contact
+export const isPublicSitePath = (path: string) => path.startsWith('/pg/') || path === sitePaths.foodAndRules || path === sitePaths.contact || path === sitePaths.website

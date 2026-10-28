@@ -94,6 +94,7 @@ import { IsSuperAdminProvider } from './staffContext'
 import { AuditLogsView } from './AuditLogsView'
 import { weatherCityWarning } from './weather'
 import { PerformanceTestsView } from './PerformanceTestsView'
+import { sitePaths } from './router'
 
 type IconType = typeof Home
 
@@ -506,6 +507,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         {isOwner && <WorkspaceMenu businessName={businessName} contactPhone={settings?.contactPhone} contactEmail={settings?.contactEmail} onOpenSettings={openSettingsSection} />}
         <nav className="primary-nav" aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
+          {/* The public website, in a new tab so the dashboard stays open here. */}
+          <a className="nav-item" href={sitePaths.website} target="_blank" rel="noopener"><Home size={18} /><span>Home</span></a>
           <NavItem icon={LayoutGrid} label="Overview" active={activeView === 'Overview'} onClick={() => handleNavigation('Overview')} />
           {isOwner && <NavItem icon={Building2} label="Properties" badge={stats.properties} active={activeView === 'Properties'} onClick={() => handleNavigation('Properties')} />}
           <NavItem icon={Users} label="Residents" badge={activeResidentCount ? String(activeResidentCount).padStart(2, '0') : undefined} active={activeView === 'Residents'} onClick={() => handleNavigation('Residents')} />

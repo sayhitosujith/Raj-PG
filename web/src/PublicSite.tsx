@@ -60,7 +60,7 @@ export function PublicSite({ path }: { path: string }) {
   const content = site?.content ?? emptySiteContent
   const links = visibleLinks(navItems, content)
   const isHome = !path.startsWith('/pg/') && path !== sitePaths.foodAndRules && path !== sitePaths.contact
-  const isCurrent = (to: string) => to === path || (to === sitePaths.properties && path.startsWith('/pg/'))
+  const isCurrent = (to: string) => to === path || (to === sitePaths.properties && path.startsWith('/pg/')) || (to === sitePaths.home && path === sitePaths.website)
   const page = !site ? null
     : path.startsWith('/pg/') ? <SitePropertyPage site={site} propertyId={decodeURIComponent(path.slice('/pg/'.length))} />
     : path === sitePaths.foodAndRules && isShown(site.content, 'foodAndRules') ? <SiteFoodRules site={site} />
