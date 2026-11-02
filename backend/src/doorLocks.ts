@@ -4,25 +4,48 @@ import { prisma } from './db.js'
 import { syncPropertyDoorAccess } from './doorAccess.js'
 
 /**
- * Each property's door locks and who gets a PIN on them (residents, staff or both), set up on the Door
- * locks page. Every change re-syncs the property's PIN holders, so the locks' to-do list gains exactly the
+ * Each property's access devices (smart, fingerprint and card locks, gate controllers), how they open and who
+ * uses them (residents, staff or both), set up on the Door locks page. Every change re-syncs the property's PIN holders, so the locks' to-do list gains exactly the
  * PINs to add or delete. Owner-only through staffGuard; mounted behind the staff sign-in check.
  */
 
 const maxLocksPerProperty = 10
 const maxNameLength = 40
 
-const lockSelect = { id: true, propertyId: true, name: true, forResidents: true, forStaff: true } as const
+/** The kinds of access device a property can have. */
+const deviceTypes = ['SMART_LOCK', 'FINGERPRINT_LOCK', 'CARD_LOCK', 'GATE_CONTROLLER'] as const
+/** How a device can be opened; only those taking a PIN get PIN tasks (doorAccess.ts). */
+const unlockMethods = ['PIN', 'FINGERPRINT', 'CARD', 'APP'] as const
 
-type LockBody = { propertyId?: unknown; name?: unknown; forResidents?: unknown; forStaff?: unknown }
+const lockSelect = { id: true, propertyId: true, name: true, deviceType: true, brand: true, model: true, serialNumber: true, unlockMethods: true, installedAt: true, notes: true, forResidents: true, forStaff: true } as const
 
-function parseLock(body: LockBody): { name: string; forResidents: boolean; forStaff: boolean } | { error: string } {
+type LockBody = Partial<Record<'propertyId' | 'name' | 'deviceType' | 'brand' | 'model' | 'serialNumber' | 'unlockMethods' | 'installedAt' | 'notes' | 'forResidents' | 'forStaff', unknown>>
+type LockData = { name: string; deviceType: string; brand: string | null; model: string | null; serialNumber: string | null; unlockMethods: string[]; installedAt: string | null; notes: string | null; forResidents: boolean; forStaff: boolean }
+
+// Optional free text: trimmed, a blank stored as null, too long refused.
+function optionalText(value: unknown, label: string, max: number): { value: string | null } | { error: string } {
+  if (value === undefined || value === null) return { value: null }
+  if (typeof value !== 'string') return { error: `${label} must be text.` }
+  const trimmed = value.trim()
+  if (trimmed.length > max) return { error: `Keep ${label.toLowerCase()} under ${max} characters.` }
+  return { value: trimmed || null }
+}
+
+function parseLock(body: LockBody): LockData | { error: string } {
   const name = typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : ''
   if (!name) return { error: 'Name the lock, e.g. Main door.' }
   if (name.length > maxNameLength) return { error: `Keep the name under ${maxNameLength} characters.` }
+  const deviceType = body.deviceType ?? 'SMART_LOCK'
+  if (typeof deviceType !== 'string' || !(deviceTypes as readonly string[]).includes(deviceType)) return { error: 'Choose the device type from the list.' }
+  const methods = body.unlockMethods ?? ['PIN']
+  if (!Array.isArray(methods) || !methods.length || !methods.every((method) => (unlockMethods as readonly unknown[]).includes(method))) return { error: 'Choose at least one way the device opens.' }
   if (typeof body.forResidents !== 'boolean' || typeof body.forStaff !== 'boolean') return { error: 'Say whether residents and staff use this lock.' }
   if (!body.forResidents && !body.forStaff) return { error: 'A lock must be for residents, staff or both.' }
-  return { name, forResidents: body.forResidents, forStaff: body.forStaff }
+  const texts = { brand: optionalText(body.brand, 'Brand', 40), model: optionalText(body.model, 'Model', 60), serialNumber: optionalText(body.serialNumber, 'Device ID', 80), installedAt: optionalText(body.installedAt, 'Location', 80), notes: optionalText(body.notes, 'Notes', 500) }
+  for (const parsed of Object.values(texts)) if ('error' in parsed) return parsed
+  const text = (key: keyof typeof texts) => (texts[key] as { value: string | null }).value
+  // Kept in list order without repeats, so the same choice always reads the same.
+  return { name, deviceType, unlockMethods: unlockMethods.filter((method) => methods.includes(method)), forResidents: body.forResidents, forStaff: body.forStaff, brand: text('brand'), model: text('model'), serialNumber: text('serialNumber'), installedAt: text('installedAt'), notes: text('notes') }
 }
 
 async function isNameTaken(propertyId: string, name: string, exceptId?: string) {

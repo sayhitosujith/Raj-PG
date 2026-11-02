@@ -36,9 +36,10 @@ async function loadHolder(db: Db, ref: HolderRef): Promise<Holder | null> {
 /** The locks a holder's PIN belongs on: their property's locks meant for them, or its unnamed lock (residents only). */
 async function locksFor(db: Db, holder: Holder): Promise<LockRef[]> {
   if (!holder.property) return []
-  const locks = await db.doorLock.findMany({ where: { propertyId: holder.property.id, removedAt: null }, select: { id: true, name: true, forResidents: true, forStaff: true } })
+  const locks = await db.doorLock.findMany({ where: { propertyId: holder.property.id, removedAt: null }, select: { id: true, name: true, forResidents: true, forStaff: true, unlockMethods: true } })
   if (!locks.length) return holder.kind === 'RESIDENT' ? [{ id: null, name: null }] : []
-  return locks.filter((lock) => (holder.kind === 'RESIDENT' ? lock.forResidents : lock.forStaff))
+  // A card-only lock or a gate with no keypad has nowhere to put a PIN.
+  return locks.filter((lock) => lock.unlockMethods.includes('PIN') && (holder.kind === 'RESIDENT' ? lock.forResidents : lock.forStaff))
 }
 
 /**

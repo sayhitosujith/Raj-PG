@@ -117,7 +117,7 @@ workersAdminRouter.post('/properties/:id/workers/:workerId/door-key', async (req
     const settings = await getSettings()
     if (!settings.doorKeysEnabled) { response.status(409).json({ error: 'Door access keys are switched off in Settings → Smart lock.' }); return }
     // Unlike residents, staff have no unnamed fallback lock: a PIN with no lock to go on would open nothing.
-    if (!await prisma.doorLock.count({ where: { propertyId, removedAt: null, forStaff: true } })) { response.status(409).json({ error: 'This property has no door lock for staff. Add one under Door locks first.' }); return }
+    if (!await prisma.doorLock.count({ where: { propertyId, removedAt: null, forStaff: true, unlockMethods: { has: 'PIN' } } })) { response.status(409).json({ error: 'This property has no PIN door lock for staff. Add one under Door locks first.' }); return }
     const doorAccessKey = await prisma.$transaction(async (transaction) => {
       const pin = await createUniqueDoorPin(transaction, settings.doorPinLength)
       await transaction.worker.update({ where: { id: workerId, propertyId }, data: { doorAccessKey: pin } })

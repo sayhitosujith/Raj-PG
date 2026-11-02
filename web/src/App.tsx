@@ -27,6 +27,7 @@ import {
   X,
   Trash2,
   Images,
+  ListChecks,
   LockKeyhole,
 } from 'lucide-react'
 import './App.css'
@@ -61,6 +62,7 @@ import { MaintenanceView } from './MaintenanceView'
 import { StaffPanel } from './StaffPanel'
 import { FreeRooms, type RoomOccupancy } from './FreeRooms'
 import { DoorLocksView } from './DoorLocksView'
+import { LockTasksView } from './LockTasksView'
 import { useDoorLockTasks, type DoorLockTask } from './doorLocks'
 import type { Worker } from './workers'
 import { FoodView } from './FoodView'
@@ -518,7 +520,6 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <p className="nav-label nav-label-spaced">Manage</p>
           <NavItem icon={Sparkles} label="Staff management" badge={newHousekeepingCount ? String(newHousekeepingCount) : undefined} active={activeView === 'Staff management'} onClick={() => handleNavigation('Staff management')} />
           {isOwner && <NavItem icon={ShieldCheck} label="Team management" active={activeView === 'Team management'} onClick={() => handleNavigation('Team management')} />}
-          {isOwner && settings?.doorKeysEnabled !== false && <NavItem icon={LockKeyhole} label="Door locks" badge={pendingLockTasks ? String(pendingLockTasks) : undefined} active={activeView === 'Door locks'} onClick={() => handleNavigation('Door locks')} />}
           <NavItem icon={Wrench} label="Maintenance" badge={stats.openRequests !== '0' ? stats.openRequests : undefined} active={activeView === 'Maintenance'} onClick={() => handleNavigation('Maintenance')} />
           <NavItem icon={UtensilsCrossed} label="Kitchen" active={activeView === 'Kitchen'} onClick={() => handleNavigation('Kitchen')} />
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
@@ -527,6 +528,11 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {!isOwner && <NavItem icon={BadgeIndianRupee} label="Subscription" active={activeView === 'My subscription'} onClick={() => handleNavigation('My subscription')} />}
           {isOwner && <NavItem icon={Palette} label="Views" active={activeView === 'Views'} onClick={() => handleNavigation('Views')} />}
           {isOwner && <NavItem icon={Globe} label="Website" active={activeView === 'Website'} onClick={() => handleNavigation('Website')} />}
+          {isOwner && settings?.doorKeysEnabled !== false && <>
+            <p className="nav-label nav-label-spaced">Device management</p>
+            <NavItem icon={LockKeyhole} label="Door locks" active={activeView === 'Door locks'} onClick={() => handleNavigation('Door locks')} />
+            <NavItem icon={ListChecks} label="Lock tasks" badge={pendingLockTasks ? String(pendingLockTasks) : undefined} active={activeView === 'Lock tasks'} onClick={() => handleNavigation('Lock tasks')} />
+          </>}
         </nav>
         {/* Performance tests and Audit logs sit at the bottom of the menu, just above the database status. */}
         {isOwner && <div className="sidebar-bottom-nav"><NavItem icon={Gauge} label="Performance tests" active={activeView === 'Performance tests'} onClick={() => handleNavigation('Performance tests')} /><NavItem icon={History} label="Audit logs" active={activeView === 'Audit logs'} onClick={() => handleNavigation('Audit logs')} /></div>}
@@ -558,10 +564,11 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Staff management' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<StaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, workers: property.workers ?? [] }] : [])} canManage={isOwner} doorKeysEnabled={settings?.doorKeysEnabled ?? true} onChanged={saveWorkers} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Kitchen' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Overview')} onNotice={showNotice} />}
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView === 'Door locks' && isOwner && <DoorLocksView lock={settings ? { model: settings.lockModel, location: settings.lockLocation } : null} properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} tasks={doorLocks.tasks} hasError={doorLocks.hasError} onRetry={doorLocks.reload} onDone={markLockTaskDone} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Door locks' && isOwner && <DoorLocksView lock={settings ? { model: settings.lockModel } : null} properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} onLocksChanged={doorLocks.reload} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
+          {activeView === 'Lock tasks' && isOwner && <LockTasksView lock={settings ? { model: settings.lockModel, location: settings.lockLocation } : null} tasks={doorLocks.tasks} hasError={doorLocks.hasError} onRetry={doorLocks.reload} onDone={markLockTaskDone} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Overview')} />}
-          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
+          {activeView !== 'Overview' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Lock tasks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Overview')} />}
           <div className={activeView === 'Overview' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

@@ -579,7 +579,7 @@
             "description": "Source: backend/src/doorLocks.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
+              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"deviceType\": \"\",\n  \"brand\": \"\",\n  \"model\": \"\",\n  \"serialNumber\": \"\",\n  \"unlockMethods\": \"\",\n  \"installedAt\": \"\",\n  \"notes\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -643,7 +643,7 @@
             "description": "Renames a lock or changes who uses it; the PINs to add or delete for that are queued at once.\n\nSource: backend/src/doorLocks.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
+              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"deviceType\": \"\",\n  \"brand\": \"\",\n  \"model\": \"\",\n  \"serialNumber\": \"\",\n  \"unlockMethods\": \"\",\n  \"installedAt\": \"\",\n  \"notes\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

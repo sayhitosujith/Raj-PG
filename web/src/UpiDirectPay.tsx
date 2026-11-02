@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Copy, Smartphone } from 'lucide-react'
-import { siGooglepay, siPaytm, siPhonepe, type SimpleIcon } from 'simple-icons'
+import { siPaytm, siPhonepe, type SimpleIcon } from 'simple-icons'
 import credIcon from './assets/upi/cred.png'
+import googlePayMark from './assets/upi/google-pay.svg'
 import superMoneyIcon from './assets/upi/super-money.png'
 import { formatMonth, formatRupees, nextMonthToRecord, rentForMonth, type RentSummary } from './rent'
 import { readApiError } from './superAdmin'
 import type { UpiPayee } from './workspaceSettings'
 
-// The best-known UPI apps, so residents recognise theirs at a glance: logos from simple-icons, plus the app icons
-// super.money and CRED publish on their own sites (simple-icons has neither). The QR and link work in any UPI app.
-const upiApps: SimpleIcon[] = [siGooglepay, siPhonepe, siPaytm]
+// The best-known UPI apps, so residents recognise theirs at a glance. Google Pay's current mark is cropped from the
+// logo on Google's own Pay site (simple-icons only has the old flat wordmark); PhonePe and Paytm come from
+// simple-icons; super.money and CRED are the app icons they publish on their own sites. The QR works in any UPI app.
+const upiAppMarks = [{ name: 'Google Pay', src: googlePayMark }]
+const upiApps: SimpleIcon[] = [siPhonepe, siPaytm]
 const upiAppIcons = [{ name: 'super.money', src: superMoneyIcon }, { name: 'CRED', src: credIcon }]
 
 /** A payment the resident reported that the owner has not confirmed yet. */
@@ -100,7 +103,7 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
       <div className="upi-direct-body">
         <p className="eyebrow">{caption}</p>
         {amount ? <strong className="upi-direct-amount">{formatRupees(amount)}</strong> : <strong className="upi-direct-amount">{payee.payeeName}</strong>}
-        <ul className="upi-apps" aria-label="Accepted UPI apps">{upiApps.map((app) => <li key={app.slug} title={app.title} className={`is-${app.slug}`}><svg viewBox="0 0 24 24" role="img" aria-label={app.title} fill={`#${app.hex}`}><path d={app.path} /></svg></li>)}{upiAppIcons.map((app) => <li key={app.name} title={app.name} className="is-image"><img src={app.src} alt={app.name} /></li>)}<li className="is-any">+ any UPI app</li></ul>
+        <ul className="upi-apps" aria-label="Accepted UPI apps">{upiAppMarks.map((app) => <li key={app.name} title={app.name} className="is-mark"><img src={app.src} alt={app.name} /></li>)}{upiApps.map((app) => <li key={app.slug} title={app.title} className={`is-${app.slug}`}><svg viewBox="0 0 24 24" role="img" aria-label={app.title} fill={`#${app.hex}`}><path d={app.path} /></svg></li>)}{upiAppIcons.map((app) => <li key={app.name} title={app.name} className="is-image"><img src={app.src} alt={app.name} /></li>)}<li className="is-any">+ any UPI app</li></ul>
         <p>{scanHint(amount, payee.payeeName, Boolean(uploadedQr))}{payee.id ? ' Or pay to this UPI ID:' : ''}</p>
         {payee.id && <><div className="upi-direct-id"><code>{payee.id}</code><button type="button" className="icon-button" aria-label="Copy UPI ID" title="Copy UPI ID" onClick={copyId}><Copy size={15} /></button></div>
         <a className="secondary-button upi-direct-open" href={link ?? undefined}><Smartphone size={15} /> Open UPI app</a></>}

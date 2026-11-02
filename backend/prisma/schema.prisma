@@ -454,6 +454,17 @@ model DoorLock {
   propertyId   String
   property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   name         String
+  // SMART_LOCK, FINGERPRINT_LOCK, CARD_LOCK or GATE_CONTROLLER (doorLocks.ts).
+  deviceType    String        @default("SMART_LOCK")
+  brand         String?
+  model         String?
+  // The device ID or serial shown on the device or in its app, so the right one is picked there.
+  serialNumber  String?
+  // How it opens: PIN, FINGERPRINT, CARD, APP. Only a device that takes PINs gets PIN tasks (doorAccess.ts).
+  unlockMethods String[]      @default(["PIN"])
+  // Where it is installed (floor, side) and anything else worth knowing about it.
+  installedAt   String?
+  notes         String?
   forResidents Boolean        @default(true)
   forStaff     Boolean        @default(false)
   removedAt    DateTime?

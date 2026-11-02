@@ -1447,12 +1447,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .door-lock-property { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; }
 .door-lock-property > strong { color: var(--ink); font-size: 12px; }
 .door-lock-property > small { color: var(--muted); font-size: 11px; }
-.door-lock-item { display: flex; align-items: center; gap: 4px; }
-.door-lock-item > span { flex: 1; font-size: 12px; }
-.door-lock-item small { margin-left: 6px; color: var(--muted); font-size: 11px; }
-.door-lock-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.door-lock-form input:not([type="checkbox"]) { flex: 1 1 160px; max-width: 240px; }
-.door-lock-form label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+.door-lock-item { display: flex; align-items: flex-start; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
+.door-lock-item-text { display: grid; flex: 1; gap: 2px; min-width: 0; font-size: 12px; }
+.door-lock-item-text .resident-badge { margin-left: 4px; }
+.door-lock-notes { font-style: italic; }
+.door-lock-item small { color: var(--muted); font-size: 11px; }
+.door-lock-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.door-lock-form > label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.door-lock-form fieldset { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding: 0; border: 0; }
+.door-lock-form legend { width: 100%; margin-bottom: 4px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.door-lock-form-wide { grid-column: 1 / -1; }
+.door-lock-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.door-lock-form fieldset label { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); font-size: 12px; }
 .door-lock-add { justify-self: start; display: inline-flex; align-items: center; gap: 4px; }
 .staff-card-door-key { flex-wrap: wrap; }
 
@@ -2844,5 +2850,9 @@ a.faq-card { text-decoration: none; }
 .upi-apps li { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .upi-apps svg { width: 26px; height: 26px; }
 .upi-apps li.is-paytm svg { width: 36px; height: 36px; }
+.upi-apps li.is-mark img { display: block; width: 30px; height: auto; }
 .upi-apps li.is-image img { display: block; width: 28px; height: 28px; border-radius: 7px; object-fit: contain; }
 .upi-apps li.is-any { width: auto; height: auto; padding: 0; border: 0; color: var(--muted); background: transparent; font-size: 11px; font-weight: 600; }
+/* The two dashboard roles, as a bulleted list under the Team management heading. */
+.team-roles { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.team-roles b { color: var(--ink); font-weight: 700; }
