@@ -4,6 +4,7 @@ import { Avatar } from './Avatar'
 import { formatJoinDate } from './joinDate'
 import { ModalLayer } from './ModalLayer'
 import { StaffFormModal } from './StaffFormModal'
+import { DoorKeyManager } from './DoorAccessKey'
 import { readApiError } from './superAdmin'
 import { workerPhotoUrl, workerRoles, type Worker } from './workers'
 
@@ -14,7 +15,7 @@ type StaffProperty = { id: string; name: string; workers: Worker[] }
  * edit and remove them; receptionists see the same cards read-only, since the API refuses their
  * changes. Residents see only the housekeeping names, in their Housekeeping card.
  */
-export function StaffPanel({ properties, canManage, onChanged, onNotice }: { properties: StaffProperty[]; canManage: boolean; onChanged: (propertyId: string, workers: Worker[]) => void; onNotice: (message: string) => void }) {
+export function StaffPanel({ properties, canManage, doorKeysEnabled, onChanged, onNotice }: { properties: StaffProperty[]; canManage: boolean; /** Settings → Smart lock; staff PINs go on the locks marked for staff (Door locks). */ doorKeysEnabled: boolean; onChanged: (propertyId: string, workers: Worker[]) => void; onNotice: (message: string) => void }) {
   const [chosenId, setChosenId] = useState(properties[0]?.id ?? '')
   // null: the add form; a worker: their edit form; undefined: no form open.
   const [editing, setEditing] = useState<Worker | null | undefined>(undefined)
@@ -61,6 +62,7 @@ export function StaffPanel({ properties, canManage, onChanged, onNotice }: { pro
                   <strong>{worker.name}</strong>
                   {worker.phone ? <a href={`tel:${worker.phone}`}><Phone size={11} /> {worker.phone}</a> : <small>{canManage ? 'No phone yet; edit to add it' : 'No phone'}</small>}
                   {worker.joinedOn ? <small><CalendarDays size={11} /> Joined {formatJoinDate(worker.joinedOn)}</small> : canManage && <small>No joining date yet</small>}
+                  {doorKeysEnabled && <small className="staff-card-door-key">Door PIN: <DoorKeyManager keyUrl={`/api/properties/${property.id}/workers/${worker.id}/door-key`} holderName={worker.name} doorAccessKey={worker.doorAccessKey} onChanged={(doorAccessKey) => onChanged(property.id, workers.map((item) => item.id === worker.id ? { ...item, doorAccessKey } : item))} onNotice={onNotice} /></small>}
                 </div>
                 {canManage && <div className="staff-card-actions">
                   <button type="button" className="icon-button" aria-label={`Edit ${worker.name}`} title="Edit" onClick={() => setEditing(worker)}><Pencil size={14} /></button>

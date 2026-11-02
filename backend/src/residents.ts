@@ -1,6 +1,6 @@
 import { AadharVerificationStatus, Diet, Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
-import { createAccessKey, createDoorAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
+import { createAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { findDuplicate } from './duplicates.js'
 import { parseStudentIdCard, studentIdCardWrite } from './studentId.js'
@@ -15,7 +15,7 @@ import { findInvalidField, pickTextFields, toResidentWrite, type TextField } fro
 import { isLockedOut, isRentLocked } from './rentLock.js'
 import { closeAccount } from './accountDeletion.js'
 import type { AuthContext } from './auth.js'
-import { queueCurrentKeyRemoval, queueKeyIssued } from './doorLockTasks.js'
+import { createUniqueDoorPin, syncDoorAccess } from './doorAccess.js'
 import { BedUnavailableError, claimBed, lockRoom, parseBedNumber } from './beds.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyResidentCredentials } from './notifications.js'
@@ -54,11 +54,11 @@ class InputError extends Error {}
 // separately because the summary query never loads the credential hashes.
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean, rates: DailyRates) {
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
-  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, profilePhotoUpdatedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
+  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, profilePhotoUpdatedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     // Their bed in the room (1 to its beds); null only before a room is set or after moving out.
@@ -88,7 +88,7 @@ async function findResidentSummary(id: string) {
   return toResidentSummary(resident, documents, rentRulesOf(settings), keyless > 0, dailyRatesOf(settings))
 }
 
-const resetVerification = { aadharStatus: AadharVerificationStatus.NOT_SUBMITTED, aadharRejectionReason: null, aadharSubmittedAt: null, aadharReviewedAt: null }
+const resetVerification = { aadharStatus: AadharVerificationStatus.NOT_SUBMITTED, aadharRejectionReason: null, aadharSubmittedAt: null, aadharReviewedAt: null, aadharReviewedByName: null }
 const queueForReview = () => ({ aadharStatus: AadharVerificationStatus.PENDING, aadharSubmittedAt: new Date() })
 
 /** Validates the identity fields of a create or update body, or returns why they are invalid. */
@@ -382,6 +382,8 @@ residentRouter.put('/residents/:id', async (request, response) => {
       await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...studentId.data, ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
+      // A door PIN follows the resident to another property's locks; a move within the property changes nothing.
+      if (isMoving) await syncDoorAccess(transaction, { residentId: id }, 'Moved to another room')
     })
     response.json(await findResidentSummary(id))
   } catch (error) {
@@ -427,7 +429,7 @@ residentRouter.post('/residents/:id/access-key', async (request, response) => {
 // password itself is stored only as a hash. Retires the access key and signs the resident out.
 // Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE
 // removes it. Super admins only (see staffGuard). Anyone who has left gets no key. Each change also queues
-// the matching PIN change for the owner to make on the lock (see doorLockTasks.ts).
+// the matching PIN changes for the owner to make on each lock (see doorAccess.ts).
 residentRouter.post('/residents/:id/door-key', async (request, response) => {
   try {
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: request.params.id }, select: { deletedAt: true, movedOutAt: true } })
@@ -436,10 +438,11 @@ residentRouter.post('/residents/:id/door-key', async (request, response) => {
     if (await isLockedOut(request.params.id)) { response.status(409).json({ error: 'Rent is overdue, so door access is paused. Record the payment or allow access until a date first.' }); return }
     const settings = await getSettings()
     if (!settings.doorKeysEnabled) { response.status(409).json({ error: 'Door access keys are switched off in Settings → Smart lock.' }); return }
-    const doorAccessKey = createDoorAccessKey(settings.doorPinLength)
-    await prisma.$transaction(async (transaction) => {
-      await queueKeyIssued(transaction, request.params.id, doorAccessKey)
-      await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey, doorAccessKeyRevokedAt: null } })
+    const doorAccessKey = await prisma.$transaction(async (transaction) => {
+      const pin = await createUniqueDoorPin(transaction, settings.doorPinLength)
+      await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey: pin, doorAccessKeyRevokedAt: null } })
+      await syncDoorAccess(transaction, { residentId: request.params.id }, 'New door access key')
+      return pin
     })
     response.json({ doorAccessKey })
   } catch (error) {
@@ -450,8 +453,8 @@ residentRouter.post('/residents/:id/door-key', async (request, response) => {
 residentRouter.delete('/residents/:id/door-key', async (request, response) => {
   try {
     await prisma.$transaction(async (transaction) => {
-      await queueCurrentKeyRemoval(transaction, request.params.id, 'Key removed by a super admin')
       await transaction.resident.update({ where: { id: request.params.id }, data: { doorAccessKey: null, doorAccessKeyRevokedAt: null } })
+      await syncDoorAccess(transaction, { residentId: request.params.id }, 'Key removed by a super admin')
     })
     response.status(204).end()
   } catch (error) {
@@ -494,9 +497,12 @@ residentRouter.post('/residents/:id/aadhar-verification', async (request, respon
       const missing = identityDocumentName(resident.nationality) === 'Aadhaar' ? 'Both the Aadhaar number and the card' : 'The passport number, expiry and scan, and the visa number, type and expiry,'
       response.status(409).json({ error: `${missing} must be on file before approving.` }); return
     }
+    const { userId } = response.locals.auth as AuthContext
+    const reviewer = await prisma.superAdmin.findUnique({ where: { id: userId }, select: { name: true } })
+    const reviewed = { aadharReviewedAt: new Date(), aadharReviewedByName: reviewer?.name ?? null }
     await prisma.resident.update({ where: { id }, data: decision === 'approve'
-      ? { aadharStatus: AadharVerificationStatus.VERIFIED, aadharRejectionReason: null, aadharReviewedAt: new Date(), addressVerified: true }
-      : { aadharStatus: AadharVerificationStatus.REJECTED, aadharRejectionReason: trimmedReason, aadharReviewedAt: new Date() } })
+      ? { aadharStatus: AadharVerificationStatus.VERIFIED, aadharRejectionReason: null, ...reviewed, addressVerified: true }
+      : { aadharStatus: AadharVerificationStatus.REJECTED, aadharRejectionReason: trimmedReason, ...reviewed } })
     response.json(await findResidentSummary(id))
   } catch (error) {
     respondToWriteError(response, error, 'Verification could not be saved.')

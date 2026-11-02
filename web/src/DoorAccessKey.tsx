@@ -5,25 +5,26 @@ import { readApiError } from './superAdmin'
 import { useIsSuperAdmin } from './staffContext'
 
 /**
- * The owner's side of a resident's door lock PIN. The app only records the PIN: the lock itself is
- * programmed by hand, which is why every change asks for confirmation and says so. Receptionists see
- * the PIN (they hand it over at the desk) but only super admins can issue or remove one.
+ * The owner's side of a door lock PIN, for a resident or a member of the property staff. The app only records
+ * the PIN: the locks are programmed by hand, which is why every change asks for confirmation and says so.
+ * Receptionists see the PIN (they hand it over at the desk) but only super admins can issue or remove one.
  */
-export function DoorKeyManager({ residentId, residentName, doorAccessKey, revokedAt, onChanged, onNotice }: { residentId: string; residentName: string; doorAccessKey: string | null | undefined; /** Set when it was removed automatically for overdue rent. */ revokedAt?: string | null; onChanged: () => void; onNotice: (message: string) => void }) {
+export function DoorKeyManager({ keyUrl, holderName, doorAccessKey, revokedAt, onChanged, onNotice }: { /** The holder's door-key endpoint: POST issues a PIN, DELETE removes it. */ keyUrl: string; holderName: string; doorAccessKey: string | null | undefined; /** Set when it was removed automatically for overdue rent. */ revokedAt?: string | null; /** Called with the new PIN, or null once removed. */ onChanged: (doorAccessKey: string | null) => void; onNotice: (message: string) => void }) {
   const canManage = useIsSuperAdmin()
   const [isBusy, setIsBusy] = useState(false)
 
   async function change(method: 'POST' | 'DELETE') {
     const question = method === 'DELETE'
-      ? `Remove ${residentName}'s door access key? Also remove it from the lock so it stops opening the door.`
-      : doorAccessKey ? `Issue a new door access key for ${residentName}? The old PIN keeps working until you delete it from the lock; both changes are added to Door locks.` : null
+      ? `Remove ${holderName}'s door access key? Also delete it from the locks so it stops opening the doors.`
+      : doorAccessKey ? `Issue a new door access key for ${holderName}? The old PIN keeps working until you delete it from the locks; the changes are added to Door locks.` : null
     if (question && !window.confirm(question)) return
     setIsBusy(true)
     try {
-      const response = await fetch(`/api/residents/${residentId}/door-key`, { method })
+      const response = await fetch(keyUrl, { method })
       if (!response.ok) { onNotice(await readApiError(response, method === 'DELETE' ? 'Could not remove the door access key.' : 'Could not issue a door access key.')); return }
-      onNotice(method === 'DELETE' ? 'Door access key removed. Delete the PIN from the lock: it is on the Door locks list.' : 'Door access key issued. Add it to the lock: it is on the Door locks list.')
-      onChanged()
+      const issued = method === 'POST' ? (await response.json() as { doorAccessKey: string }).doorAccessKey : null
+      onNotice(method === 'DELETE' ? 'Door access key removed. Delete the PIN from the locks: it is on the Door locks list.' : 'Door access key issued. Add it to the locks: it is on the Door locks list.')
+      onChanged(issued)
     } catch {
       onNotice('Could not reach the server.')
     } finally {

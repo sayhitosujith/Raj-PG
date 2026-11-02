@@ -1,6 +1,8 @@
 import { Prisma, WorkerRole } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
+import { createUniqueDoorPin, syncDoorAccess } from './doorAccess.js'
+import { getSettings } from './settings.js'
 import { parseDateOnly } from './dates.js'
 import { findProfilePhotoProblem, photoVersion, sendWorkerPhoto } from './photo.js'
 import { normalizePhone, phoneRequirement } from './validation.js'
@@ -8,7 +10,8 @@ import { normalizePhone, phoneRequirement } from './validation.js'
 const maxWorkersPerProperty = 100
 const maxNameLength = 40
 
-const rowSelect = { id: true, name: true, role: true, phone: true, joinedOn: true, photoUpdatedAt: true } as const
+// Includes the door PIN, so only for the dashboard: the resident portal selects names only.
+const rowSelect = { id: true, name: true, role: true, phone: true, joinedOn: true, doorAccessKey: true, photoUpdatedAt: true } as const
 type WorkerRow = Prisma.WorkerGetPayload<{ select: typeof rowSelect }>
 
 /** What clients see of a worker: the photo as a version for its URL, never the image itself. */
@@ -91,13 +94,52 @@ workersAdminRouter.put('/properties/:id/workers/:workerId', async (request, resp
   }
 })
 
-// Removes one worker from the property.
+// Removes one worker from the property, queuing their door PIN's removal from the locks first.
 workersAdminRouter.delete('/properties/:id/workers/:workerId', async (request, response) => {
+  const { id: propertyId, workerId } = request.params
   try {
-    await prisma.worker.delete({ where: { id: request.params.workerId, propertyId: request.params.id } })
+    await prisma.$transaction(async (transaction) => {
+      await transaction.worker.update({ where: { id: workerId, propertyId }, data: { doorAccessKey: null } })
+      await syncDoorAccess(transaction, { workerId }, 'Staff member removed')
+      await transaction.worker.delete({ where: { id: workerId } })
+    })
     response.status(204).end()
   } catch (error) {
     respondToError(response, error, 'Staff member could not be removed.')
+  }
+})
+
+// Door lock PIN for the property's locks marked for staff: POST issues a new one (replacing any old one), DELETE
+// removes it. Super admins only (see staffGuard). Each change queues the PIN changes to make on those locks.
+workersAdminRouter.post('/properties/:id/workers/:workerId/door-key', async (request, response) => {
+  const { id: propertyId, workerId } = request.params
+  try {
+    const settings = await getSettings()
+    if (!settings.doorKeysEnabled) { response.status(409).json({ error: 'Door access keys are switched off in Settings → Smart lock.' }); return }
+    // Unlike residents, staff have no unnamed fallback lock: a PIN with no lock to go on would open nothing.
+    if (!await prisma.doorLock.count({ where: { propertyId, removedAt: null, forStaff: true } })) { response.status(409).json({ error: 'This property has no door lock for staff. Add one under Door locks first.' }); return }
+    const doorAccessKey = await prisma.$transaction(async (transaction) => {
+      const pin = await createUniqueDoorPin(transaction, settings.doorPinLength)
+      await transaction.worker.update({ where: { id: workerId, propertyId }, data: { doorAccessKey: pin } })
+      await syncDoorAccess(transaction, { workerId }, 'New door access key')
+      return pin
+    })
+    response.json({ doorAccessKey })
+  } catch (error) {
+    respondToError(response, error, 'Door access key could not be saved.')
+  }
+})
+
+workersAdminRouter.delete('/properties/:id/workers/:workerId/door-key', async (request, response) => {
+  const { id: propertyId, workerId } = request.params
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.worker.update({ where: { id: workerId, propertyId }, data: { doorAccessKey: null } })
+      await syncDoorAccess(transaction, { workerId }, 'Key removed by a super admin')
+    })
+    response.status(204).end()
+  } catch (error) {
+    respondToError(response, error, 'Door access key could not be removed.')
   }
 })
 

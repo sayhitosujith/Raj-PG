@@ -536,6 +536,125 @@
       ]
     },
     {
+      "name": "Door locks",
+      "item": [
+        {
+          "name": "GET /door-locks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-locks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-locks"
+              ]
+            },
+            "description": "Every property's locks in use, in the order they were added.\n\nSource: backend/src/doorLocks.ts"
+          }
+        },
+        {
+          "name": "POST /door-locks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-locks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-locks"
+              ]
+            },
+            "description": "Source: backend/src/doorLocks.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /door-locks/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-locks/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-locks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "A lock taken out of use: its unfinished tasks are dropped (there is nothing left to program) and it is no longer synced. Its history stays readable. Removing a property's last lock brings back its unnamed lock.\n\nSource: backend/src/doorLocks.ts"
+          }
+        },
+        {
+          "name": "PUT /door-locks/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/door-locks/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "door-locks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Renames a lock or changes who uses it; the PINs to add or delete for that are queued at once.\n\nSource: backend/src/doorLocks.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"\",\n  \"name\": \"\",\n  \"forResidents\": \"\",\n  \"forStaff\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Email",
       "item": [
         {
@@ -1922,7 +2041,7 @@
                 }
               ]
             },
-            "description": "Removes one worker from the property.\n\nSource: backend/src/workers.ts"
+            "description": "Removes one worker from the property, queuing their door PIN's removal from the locks first.\n\nSource: backend/src/workers.ts"
           }
         },
         {
@@ -1968,6 +2087,70 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "DELETE /properties/:id/workers/:workerId/door-key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers/:workerId/door-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers",
+                ":workerId",
+                "door-key"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "workerId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/workers.ts"
+          }
+        },
+        {
+          "name": "POST /properties/:id/workers/:workerId/door-key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/:id/workers/:workerId/door-key",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "properties",
+                ":id",
+                "workers",
+                ":workerId",
+                "door-key"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                },
+                {
+                  "key": "workerId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Door lock PIN for the property's locks marked for staff: POST issues a new one (replacing any old one), DELETE removes it. Super admins only (see staffGuard). Each change queues the PIN changes to make on those locks.\n\nSource: backend/src/workers.ts"
           }
         },
         {
@@ -2285,7 +2468,7 @@
             "description": "Residents manage their own photo once they have full portal access. The resident's own contact details from \"My details\". Saves straight away with the same checks as the owner's form; a changed address loses its \"Verified\" badge until the owner checks it.\n\nSource: backend/src/residentPortal.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\"\n}",
+              "raw": "{\n  \"studentIdCardUrl\": \"\",\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2400,7 +2583,7 @@
                 "food"
               ]
             },
-            "description": "The next seven days starting today, each meal with its menu, timing, the resident's answer and what they may do; plus `answerDue`, tomorrow's date while any of its meals still needs an answer before the 9 pm cutoff (the portal asks for it and will not let the resident carry on until they answer).\n\nSource: backend/src/food.ts"
+            "description": "The next seven days starting today, each meal with its menu, timing, the resident's answer and what they may do; plus `answerDue`, tomorrow's date while any of its meals still needs an answer before the 11:59 pm cutoff (the portal asks for it and will not let the resident carry on until they answer).\n\nSource: backend/src/food.ts"
           }
         },
         {
@@ -3165,6 +3348,25 @@
           }
         },
         {
+          "name": "GET /resident-portal/student-id-card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/resident-portal/student-id-card",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resident-portal",
+                "student-id-card"
+              ]
+            },
+            "description": "Source: backend/src/residentPortal.ts"
+          }
+        },
+        {
           "name": "GET /resident-portal/upi-qr",
           "request": {
             "method": "GET",
@@ -3248,7 +3450,7 @@
             "description": "Source: backend/src/residents.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"bedNumber\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"studentIdCardUrl\": \"\",\n  \"bedNumber\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3312,7 +3514,7 @@
             "description": "Source: backend/src/residents.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"bedNumber\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"studentIdCardUrl\": \"\",\n  \"bedNumber\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3589,7 +3791,7 @@
                 }
               ]
             },
-            "description": "Lets the owner choose a resident's password so they can tell the resident what it is; the password itself is stored only as a hash. Retires the access key and signs the resident out. Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE removes it. Super admins only (see staffGuard). Anyone who has left gets no key. Each change also queues the matching PIN change for the owner to make on the lock (see doorLockTasks.ts).\n\nSource: backend/src/residents.ts"
+            "description": "Lets the owner choose a resident's password so they can tell the resident what it is; the password itself is stored only as a hash. Retires the access key and signs the resident out. Door lock PIN: POST issues a new one (replacing any old one, which the owner then reprograms), DELETE removes it. Super admins only (see staffGuard). Anyone who has left gets no key. Each change also queues the matching PIN changes for the owner to make on each lock (see doorAccess.ts).\n\nSource: backend/src/residents.ts"
           }
         },
         {
@@ -3917,6 +4119,32 @@
           }
         },
         {
+          "name": "GET /residents/:id/student-id-card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/student-id-card",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "student-id-card"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Source: backend/src/residents.ts"
+          }
+        },
+        {
           "name": "GET /residents/access-key",
           "request": {
             "method": "GET",
@@ -4000,7 +4228,7 @@
             "description": "Source: backend/src/settings.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"lateMealLimit\": \"\",\n  \"image\": \"\"\n}",
+              "raw": "{\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"laundryShopName\": \"\",\n  \"laundryShopUrl\": \"\",\n  \"laundryShopHours\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"lateMealLimit\": \"\",\n  \"image\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

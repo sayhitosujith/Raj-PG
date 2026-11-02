@@ -40,7 +40,7 @@ function IdentitySubmissionForm({ defaultNationality, submitLabel, onSubmitted, 
 }
 
 /**
- * Shown to a signed-in resident until the owner approves their ID: Aadhaar for Indian nationals,
+ * Shown to a signed-in resident until their ID is approved by the owner or a receptionist: Aadhaar for Indian nationals,
  * passport and visa for everyone else. The server refuses portal data until then, so this is the
  * only thing a resident can do besides signing out.
  */
@@ -61,11 +61,11 @@ export function ResidentIdVerification({ profile, lastRefreshedAt, onRefresh, on
         {profile.aadharStatus === 'REJECTED' && <div className="verification-callout is-rejected"><ShieldAlert size={16} /><div><strong>Your last submission was not accepted</strong><p>{profile.aadharRejectionReason || 'Please submit your details again.'}</p></div></div>}
         {isPending && !isReplacing
           ? <>
-              <div className="verification-callout is-pending"><Clock size={16} /><div><strong>Submitted{submittedOn ? ` on ${submittedOn}` : ''}</strong><p>Your property owner will check your {documentName === 'Aadhaar' ? 'Aadhaar card' : 'passport and visa'}. You will get full access as soon as it is approved.</p></div></div>
+              <div className="verification-callout is-pending"><Clock size={16} /><div><strong>Submitted{submittedOn ? ` on ${submittedOn}` : ''}</strong><p>Your property owner or receptionist will check your {documentName === 'Aadhaar' ? 'Aadhaar card' : 'passport and visa'}. You will get full access as soon as it is approved.</p></div></div>
               <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setIsReplacing(true)}>Replace submission</button><button type="button" className="primary-button" onClick={onChanged}><RotateCw size={15} /> Check status</button></div>
             </>
           : <>
-              <p className="login-hint">Your property owner needs to verify your ID before you can use your resident account. Indian citizens use their Aadhaar card; everyone else uses their passport and Indian visa. Uploads can be a clear photo or PDF, up to 2 MB.</p>
+              <p className="login-hint">Your property owner or receptionist needs to verify your ID before you can use your resident account. Indian citizens use their Aadhaar card; everyone else uses their passport and Indian visa. Uploads can be a clear photo or PDF, up to 2 MB.</p>
               <IdentitySubmissionForm defaultNationality={profile.nationality} submitLabel={isReplacing ? 'Replace submission' : 'Submit for verification'} onSubmitted={() => { setIsReplacing(false); onChanged() }} onCancel={isReplacing ? () => setIsReplacing(false) : undefined} />
             </>}
         <button type="button" className="text-link portal-signout" onClick={onSignOut}>Sign out</button>

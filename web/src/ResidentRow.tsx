@@ -37,13 +37,23 @@ const verificationBadges: Record<Exclude<AadharStatus, 'VERIFIED'>, { label: str
 
 const formatDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
+// "Verified by Superadmin · 2 Nov 2026"; the name or date is left out when not on record.
+const reviewedText = (resident: Resident) => [resident.aadharReviewedByName && `by ${resident.aadharReviewedByName}`, resident.aadharReviewedAt && formatDateTime(resident.aadharReviewedAt)].filter(Boolean).join(' · ')
+
+/** The ID's verification status, shown under the document number in the resident list. */
+function VerificationLine({ resident }: { resident: Resident }) {
+  // Laid out like the document lines above it: the status in the label column, the details beside it.
+  if (resident.aadharStatus !== 'VERIFIED') return <span className={`resident-document resident-verification is-${resident.aadharStatus.toLowerCase()}`}><b className="document-label">Status</b> {identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>
+  return <span className="resident-document resident-verification is-verified"><b className="document-label">Verified</b> {reviewedText(resident) || '—'}</span>
+}
+
 /**
- * The owner's side of verification. Approve is offered once every detail of the resident's
- * document set and its upload are on file (the owner is attesting they checked them): Aadhaar for
- * Indian nationals, passport and visa for everyone else. Reject asks for a reason the resident sees.
+ * The staff side of verification, for super admins and receptionists alike (receptionists check IDs at the
+ * desk). Approve is offered once every detail of the resident's document set and its upload are on file (the
+ * reviewer is attesting they checked them): Aadhaar for Indian nationals, passport and visa for everyone else.
+ * Reject asks for a reason the resident sees. Who decided is recorded and shown as "Verified by …".
  */
 function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; onVerify: (decision: AadharDecision) => Promise<string | null> }) {
-  const canDecide = useIsSuperAdmin()
   const [isRejecting, setIsRejecting] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -61,7 +71,7 @@ function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; o
   }
 
   const statusText: Record<AadharStatus, string> = {
-    VERIFIED: `Verified${resident.aadharReviewedAt ? ` on ${formatDateTime(resident.aadharReviewedAt)}` : ''}`,
+    VERIFIED: `Verified${reviewedText(resident) ? ` ${reviewedText(resident)}` : ''}`,
     PENDING: `Submitted${resident.aadharSubmittedAt ? ` on ${formatDateTime(resident.aadharSubmittedAt)}` : ''} — check the ${isAadhar ? 'Aadhaar card' : 'passport and visa'}, then approve or reject`,
     REJECTED: `Rejected: ${resident.aadharRejectionReason ?? 'no reason given'}`,
     NOT_SUBMITTED: !hasAnyIdentity(resident) ? 'Waiting for the resident to submit' : isAadhar ? 'Incomplete — needs both the Aadhaar number and the card' : 'Incomplete — needs the passport number, expiry and scan, and the visa number, type and expiry',
@@ -75,7 +85,6 @@ function AadharVerificationPanel({ resident, onVerify }: { resident: Resident; o
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={300} placeholder={`Reason shown to the resident, e.g. '${isAadhar ? 'Card' : 'Passport'} photo is blurry — please upload a clearer one.'`} aria-label="Reason for rejecting" autoFocus />
             <div className="aadhar-verification-actions"><button type="button" className="secondary-button" onClick={() => { setIsRejecting(false); setReason('') }}>Cancel</button><button type="button" className="danger-button" disabled={!reason.trim() || isSaving} onClick={() => decide({ decision: 'reject', reason: reason.trim() })}>Reject</button></div>
           </div>
-        : !canDecide ? (canApprove || canReject) && <p className="approval-note">A super admin approves or rejects ID documents.</p>
         : (canApprove || canReject) && <div className="aadhar-verification-actions">
             {canReject && <button type="button" className="secondary-button" onClick={() => setIsRejecting(true)}>{resident.aadharStatus === 'VERIFIED' ? 'Revoke verification' : 'Reject'}</button>}
             {canApprove && <button type="button" className="primary-button" disabled={isSaving} onClick={() => decide({ decision: 'approve' })}><BadgeCheck size={15} /> Approve</button>}
@@ -147,7 +156,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={resident.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
-        <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}</div>
+        <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}{hasAnyIdentity(resident) && <VerificationLine resident={resident} />}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}{resident.bedNumber ? ` · Bed ${resident.bedNumber}` : ''}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         {resident.approvalPending ? <span className="status-pill gold">Pending approval</span> : <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>}
         {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}
@@ -186,7 +195,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             {isStudent(resident.occupation) && <div><dt>Student ID card</dt><dd>{resident.hasStudentIdCard ? <a href={`/api/residents/${resident.id}/student-id-card`} target="_blank" rel="noopener noreferrer">View student ID <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>}
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
-            {doorKeysEnabled && <div><dt>Door access key</dt><dd className="sign-in-cell">{isRecord ? (resident.doorAccessKey ?? 'Not issued') : <DoorKeyManager residentId={resident.id} residentName={resident.name} doorAccessKey={resident.doorAccessKey} revokedAt={resident.doorAccessKeyRevokedAt} onChanged={onChanged} onNotice={onNotice} />}</dd></div>}
+            {doorKeysEnabled && <div><dt>Door access key</dt><dd className="sign-in-cell">{isRecord ? (resident.doorAccessKey ?? 'Not issued') : <DoorKeyManager keyUrl={`/api/residents/${resident.id}/door-key`} holderName={resident.name} doorAccessKey={resident.doorAccessKey} revokedAt={resident.doorAccessKeyRevokedAt} onChanged={onChanged} onNotice={onNotice} />}</dd></div>}
             <div><dt>Joining date</dt><dd>{formatJoinDate(resident.joinedAt)}</dd></div>
             <div><dt>Days stayed</dt><dd>{daysStayedLabel(resident.joinedAt)}</dd></div>
             <div><dt>Food plan</dt><dd className="sign-in-cell">{!resident.foodOpted ? 'Without food' : resident.diet ? <span className="diet-inline"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="diet-inline is-unset">Diet not set</span>}{hasFoodRequest && <FoodRequestReview residentId={resident.id} residentName={resident.name} requestedAt={resident.foodRequestedAt!} rentFromProperty={resident.rentFromProperty} onChanged={onChanged} onNotice={onNotice} />}</dd></div>

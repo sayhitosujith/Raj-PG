@@ -47,7 +47,19 @@ function draw(bitmap: ImageBitmap, width: number, height: number, source: [numbe
  */
 export async function resizeToSquareJpeg(file: File): Promise<Result> {
   const bitmap = await decode(file)
-  if ('error' in bitmap) return bitmap
+  return 'error' in bitmap ? bitmap : squareJpeg(bitmap)
+}
+
+/** The current frame of a live camera preview as a 256×256 JPEG profile photo, cropped like an upload. */
+export async function captureSquareJpeg(video: HTMLVideoElement): Promise<Result> {
+  try {
+    return squareJpeg(await createImageBitmap(video))
+  } catch {
+    return { error: 'The camera picture could not be taken. Try again.' }
+  }
+}
+
+function squareJpeg(bitmap: ImageBitmap): Result {
   const side = Math.min(bitmap.width, bitmap.height)
   const canvas = draw(bitmap, photoSize, photoSize, [(bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side])
   return canvas ? { dataUrl: canvas.toDataURL('image/jpeg', 0.85) } : { error: 'Your browser could not process the image.' }

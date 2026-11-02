@@ -2,7 +2,7 @@ import { ExitStatus } from '@prisma/client'
 import { Router } from 'express'
 import { parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
-import { queueCurrentKeyRemoval } from './doorLockTasks.js'
+import { syncDoorAccess } from './doorAccess.js'
 import { notifyExitCancelled, notifyExitDateChanged, notifyExitDecision, notifyExitRequested, notifyInBackground } from './notifications.js'
 import { rentForMonth, rentStatus, type MonthConcession, activeConcessions } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
@@ -221,8 +221,8 @@ exitAdminRouter.post('/residents/:id/exit/complete', async (request, response) =
     const movedOutFrom = resident.room ? `${resident.room.property.name} · Room ${resident.room.number}` : null
     await prisma.$transaction(async (transaction) => {
       // Their password, access key and door access key are cleared too, so moving back in needs a new access key.
-      await queueCurrentKeyRemoval(transaction, id, 'Moved out')
       await transaction.resident.update({ where: { id }, data: { active: false, roomId: null, bedNumber: null, movedOutAt: new Date(), passwordHash: null, accessKeyHash: null, doorAccessKey: null, doorAccessKeyRevokedAt: null, passkeys: { deleteMany: {} }, ...(movedOutFrom ? { movedOutFrom } : {}) } })
+      await syncDoorAccess(transaction, { residentId: id }, 'Moved out')
       await transaction.session.deleteMany({ where: { residentId: id } })
     })
     response.status(204).send()

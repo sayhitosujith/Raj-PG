@@ -37,7 +37,7 @@ export function StaffFormModal({ propertyId, propertyName, worker, onSaved, onCl
       <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
         <form className="profile-modal" onSubmit={save}>
           <div className="modal-heading"><div><p className="eyebrow">Staff · {propertyName}</p><h2>{worker ? `Edit ${worker.name}` : 'Add staff member'}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
-          <ResidentPhotoField name={name} currentUrl={worker ? workerPhotoUrl(propertyId, worker) : null} change={photoChange} onChange={setPhotoChange} onError={setError} subject="staff member" />
+          <ResidentPhotoField name={name} currentUrl={worker ? workerPhotoUrl(propertyId, worker) : null} change={photoChange} onChange={setPhotoChange} subject="staff member" />
           <label>Full name<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={40} autoComplete="off" /></label>
           <label>Role<select name="role" defaultValue={worker?.role ?? 'HOUSEKEEPING'}>{workerRoles.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <PhoneField name="phone" label="Phone number" required defaultValue={worker?.phone} />

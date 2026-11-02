@@ -21,6 +21,7 @@ import { lateMealAdminRouter, lateMealResidentRouter } from './lateMeals.js'
 import { housekeepingAdminRouter, housekeepingResidentRouter } from './housekeeping.js'
 import { toWorkerView, workersAdminRouter, workersQuery } from './workers.js'
 import { doorLockTasksRouter } from './doorLockTasks.js'
+import { doorLocksRouter } from './doorLocks.js'
 import { bedReservationsRouter } from './bedReservations.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
 import { paymentsAdminRouter } from './payments.js'
@@ -107,6 +108,7 @@ app.use('/api', residentRouter)
 app.use('/api', housekeepingAdminRouter)
 app.use('/api', workersAdminRouter)
 app.use('/api', doorLockTasksRouter)
+app.use('/api', doorLocksRouter)
 app.use('/api', bedReservationsRouter)
 app.use('/api', rentAdminRouter)
 app.use('/api', paymentsAdminRouter)

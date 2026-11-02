@@ -239,6 +239,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .contact-copy:hover, .contact-copy:focus-visible { opacity: 1; color: var(--teal); background: var(--teal-soft); }
 /* Aadhaar (in full) or passport, under the email. */
 .resident-document { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.resident-verification .document-label { color: #8d9994; }
+.resident-verification.is-verified .document-label { color: #2f7a55; }
+.resident-verification.is-pending .document-label { color: #a8771a; }
+.resident-verification.is-rejected .document-label { color: #b5523f; }
+:root[data-theme="dark"] .resident-verification.is-verified .document-label { color: #6fcf97; }
 .resident-card .resident-room { display: flex; align-items: center; gap: 10px; }
 .resident-room-meta { display: grid; gap: 4px; }
 .resident-room .rent-chip { margin-top: 0; }
@@ -374,6 +379,14 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-photo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; }
 .resident-photo-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 11px; }
 .resident-photo-actions .icon-button { color: #b5523f; }
+.camera-backdrop { z-index: 50; }
+.camera-frame { position: relative; display: grid; place-items: center; overflow: hidden; aspect-ratio: 1; border-radius: 10px; background: #18352f; }
+.camera-frame video, .camera-frame img { width: 100%; height: 100%; object-fit: cover; }
+/* Mirrored like a selfie camera so moving into frame feels natural; the saved photo is not mirrored. */
+.camera-frame video { transform: scaleX(-1); }
+.camera-frame video[hidden] { display: none; }
+.camera-status { position: absolute; color: #e6ece8; font-size: 12px; }
+.camera-hint { margin: 10px 0 0; color: #8d9994; font-size: 11px; }
 
 /* Housekeeping: resident request card and form, owner work queue. */
 .housekeeping-card { margin-top: 20px; }
@@ -1422,6 +1435,26 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .door-lock-text strong { color: var(--ink); font-size: 12px; }
 .door-lock-text small { color: var(--muted); font-size: 11px; }
 .door-lock-done-title { display: flex; align-items: center; gap: 6px; margin: 26px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.door-lock-steps { display: grid; gap: 4px; margin: 18px 0 0; padding: 12px 14px 12px 32px; border-radius: 10px; color: var(--ink); background: var(--teal-soft); font-size: 12px; }
+.door-lock-door { margin-top: 18px; }
+.door-lock-door > h3 { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); font-size: 14px; }
+.door-lock-door > h3 span { color: var(--muted); font-size: 11px; font-weight: 600; }
+.door-lock-door .door-lock-list { margin-top: 8px; }
+.door-lock-done { margin-top: 26px; }
+.door-lock-done > summary { cursor: pointer; margin: 0; }
+.door-lock-text strong .resident-badge { margin-left: 6px; }
+.door-lock-setup { display: grid; gap: 10px; }
+.door-lock-property { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; }
+.door-lock-property > strong { color: var(--ink); font-size: 12px; }
+.door-lock-property > small { color: var(--muted); font-size: 11px; }
+.door-lock-item { display: flex; align-items: center; gap: 4px; }
+.door-lock-item > span { flex: 1; font-size: 12px; }
+.door-lock-item small { margin-left: 6px; color: var(--muted); font-size: 11px; }
+.door-lock-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.door-lock-form input:not([type="checkbox"]) { flex: 1 1 160px; max-width: 240px; }
+.door-lock-form label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+.door-lock-add { justify-self: start; display: inline-flex; align-items: center; gap: 4px; }
+.staff-card-door-key { flex-wrap: wrap; }
 
 /* "Verified" beside details the owner has checked (Aadhaar number and address). */
 .verified-badge { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 1px 7px 1px 5px; border-radius: 999px; color: var(--teal); background: var(--teal-soft); font-size: 9.5px; font-weight: 700; letter-spacing: .2px; vertical-align: 1px; white-space: nowrap; }

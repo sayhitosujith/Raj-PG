@@ -51,7 +51,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
   }
 
   function changeDocument() {
-    if (!window.confirm(`Change your ${documentName}? You'll enter the new details and upload a photo of it, and most of your portal stays locked until your property owner approves it.`)) return
+    if (!window.confirm(`Change your ${documentName}? You'll enter the new details and upload a photo of it, and most of your portal stays locked until your property owner or receptionist approves it.`)) return
     void send(() => fetch('/api/resident-portal/identity/change', { method: 'POST' }), `Could not reopen your ${documentName}.`, `Enter your new ${documentName} details.`)
   }
 

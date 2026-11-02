@@ -55,6 +55,7 @@ model Property {
   // The people who work at the property (cooks, housekeeping, security…); see workers.ts.
   workers             Worker[]
   doorLockTasks       DoorLockTask[]
+  doorLocks           DoorLock[]
   lateMealRequests    LateMealRequest[]
   expenses            Expense[]
   activities          Activity[]
@@ -197,6 +198,9 @@ model Resident {
   aadharRejectionReason    String?
   aadharSubmittedAt        DateTime?
   aadharReviewedAt         DateTime?
+  // Who approved or rejected, by name as it was then (like deletedByName), so it survives their account being removed.
+  // Null for decisions recorded before this was kept.
+  aadharReviewedByName     String?
   // Small square JPEG (resized in the browser) stored as a data URL; the timestamp versions the
   // photo URL so browsers fetch the new one after a change instead of showing a cached copy.
   profilePhotoUrl          String?
@@ -442,16 +446,41 @@ enum DoorLockAction {
   DELETE
 }
 
-// A PIN change the owner must make on the physical lock by hand: the lock (Qubo) has no API the app
-// can reach, so every door access key issued or cleared queues one of these (see doorLockTasks.ts).
-// Names are copied in so the task still reads correctly after the resident or property is gone.
+// One of a property's smart locks (main door, staff door, back door…) and who gets a PIN on it. A property
+// with none set up uses a single unnamed lock for residents, as before locks could be listed (doorAccess.ts).
+// Removing a lock only stamps removedAt, so the PIN history on it still reads and is no longer synced.
+model DoorLock {
+  id           String         @id @default(cuid())
+  propertyId   String
+  property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name         String
+  forResidents Boolean        @default(true)
+  forStaff     Boolean        @default(false)
+  removedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  tasks        DoorLockTask[]
+
+  @@index([propertyId])
+}
+
+// A PIN change the owner must make on one physical lock by hand: the locks (Qubo) have no API the app can
+// reach, so every door access key issued or cleared queues one of these per lock (see doorAccess.ts).
+// Names are copied in so the task still reads correctly after the holder, lock or property is gone.
 model DoorLockTask {
   id           String         @id @default(cuid())
   action       DoorLockAction
   pin          String
+  // Null for the single unnamed lock of a property with no locks set up.
+  lockId       String?
+  lock         DoorLock?      @relation(fields: [lockId], references: [id], onDelete: SetNull)
+  lockName     String?
+  // Whose PIN it is: a resident or a member of the property staff (RESIDENT or STAFF).
+  holderKind   String         @default("RESIDENT")
   residentId   String?
   resident     Resident?      @relation(fields: [residentId], references: [id], onDelete: SetNull)
-  residentName String
+  workerId     String?
+  worker       Worker?        @relation(fields: [workerId], references: [id], onDelete: SetNull)
+  holderName   String
   propertyId   String?
   property     Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   propertyName String?
@@ -464,6 +493,7 @@ model DoorLockTask {
 
   @@index([doneAt, createdAt])
   @@index([residentId, action, pin])
+  @@index([workerId])
 }
 
 // What a property worker does. Only housekeeping names are shown to the property's residents.
@@ -492,7 +522,10 @@ model Worker {
   photoUpdatedAt DateTime?
   // Date of joining (calendar day only). Required by the API; null only for staff added before it existed.
   joinedOn       DateTime?  @db.Date
+  // PIN for the property's locks marked for staff; queued on them like a resident's (doorAccess.ts).
+  doorAccessKey  String?
   createdAt      DateTime   @default(now())
+  doorLockTasks  DoorLockTask[]
 
   @@index([propertyId, role])
 }

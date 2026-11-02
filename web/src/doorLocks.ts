@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 
-/** A PIN change to make on the physical door lock by hand; mirrors the API's DoorLockTask. */
-export type DoorLockTask = { id: string; action: 'ADD' | 'DELETE'; pin: string; residentName: string; propertyName: string | null; reason: string; createdAt: string; doneAt: string | null; doneByName: string | null }
+/** A PIN change to make on one physical door lock by hand; mirrors the API's DoorLockTask. `lockName` is null for a property with no locks listed. */
+export type DoorLockTask = { id: string; action: 'ADD' | 'DELETE'; pin: string; lockId: string | null; lockName: string | null; holderKind: 'RESIDENT' | 'STAFF'; holderName: string; propertyName: string | null; reason: string; createdAt: string; doneAt: string | null; doneByName: string | null }
 
 type DoorLockTasks = { pending: DoorLockTask[]; done: DoorLockTask[] }
 

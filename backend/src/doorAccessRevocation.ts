@@ -1,5 +1,5 @@
 import { prisma } from './db.js'
-import { queuePinRemoval } from './doorLockTasks.js'
+import { syncDoorAccess } from './doorAccess.js'
 import { isRentLocked } from './rentLock.js'
 import { getSettings, rentRulesOf } from './settings.js'
 
@@ -25,7 +25,7 @@ export async function revokeOverdueDoorAccess() {
     // and not logged twice.
     const count = await prisma.$transaction(async (transaction) => {
       const { count } = await transaction.resident.updateMany({ where: { id: resident.id, doorAccessKey: pin }, data: { doorAccessKey: null, doorAccessKeyRevokedAt: now } })
-      if (count) await queuePinRemoval(transaction, { residentId: resident.id, residentName: resident.name, pin, property }, 'Rent overdue')
+      if (count) await syncDoorAccess(transaction, { residentId: resident.id }, 'Rent overdue')
       return count
     })
     if (!count) continue

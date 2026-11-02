@@ -17,6 +17,8 @@ type Describe = (body: Record<string, unknown>, ids: string[]) => Promise<string
 const residentName = async (id: string) => (await prisma.resident.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a resident'
 const propertyName = async (id: string) => (await prisma.property.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a property'
 const staffName = async (id: string) => (id && (await prisma.superAdmin.findUnique({ where: { id }, select: { name: true } }))?.name) || 'a receptionist'
+const workerName = async (id: string) => (await prisma.worker.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a staff member'
+const lockName = async (id: string) => (await prisma.doorLock.findUnique({ where: { id }, select: { name: true } }))?.name ?? 'a door lock'
 const text = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : null
 
 // [method, path pattern (relative to /api, capturing ids), description]. First match wins.
@@ -84,9 +86,14 @@ const actions: Array<[string, RegExp, Describe]> = [
     return `Released the reservation on ${hold ? `room ${hold.room.number}, bed ${hold.bedNumber}` : 'a bed'} at ${await propertyName(id)}`
   }],
   ['POST', /^\/door-lock-tasks\/([^/]+)\/done$/, async (_body, [id]) => {
-    const task = await prisma.doorLockTask.findUnique({ where: { id }, select: { action: true, residentName: true } })
-    return task ? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.residentName}'s PIN on the door lock` : 'Completed a door lock task'
+    const task = await prisma.doorLockTask.findUnique({ where: { id }, select: { action: true, holderName: true, lockName: true } })
+    return task ? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.holderName}'s PIN on ${task.lockName ?? 'the door lock'}` : 'Completed a door lock task'
   }],
+  ['POST', /^\/door-locks$/, async (body) => `Added the door lock ${text(body.name) ?? ''}`],
+  ['PUT', /^\/door-locks\/([^/]+)$/, async (_body, [id]) => `Changed the door lock ${await lockName(id)}`],
+  ['DELETE', /^\/door-locks\/([^/]+)$/, async (_body, [id]) => `Removed the door lock ${await lockName(id)}`],
+  ['POST', /^\/properties\/[^/]+\/workers\/([^/]+)\/door-key$/, async (_body, [workerId]) => `Issued a new door access key for ${await workerName(workerId)}`],
+  ['DELETE', /^\/properties\/[^/]+\/workers\/([^/]+)\/door-key$/, async (_body, [workerId]) => `Removed ${await workerName(workerId)}'s door access key`],
   ['POST', /^\/properties\/([^/]+)\/workers$/, async (body, [id]) => `Added ${text(body.name) ?? 'a staff member'} to ${await propertyName(id)}'s staff`],
   ['PUT', /^\/properties\/([^/]+)\/workers\/[^/]+$/, async (body, [id]) => `Updated ${text(body.name) ?? 'a staff member'} in ${await propertyName(id)}'s staff`],
   ['DELETE', /^\/properties\/([^/]+)\/workers\/([^/]+)$/, async (_body, [id, workerId]) => `Removed ${(await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true } }))?.name ?? 'a staff member'} from ${await propertyName(id)}'s staff`],

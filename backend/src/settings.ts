@@ -233,15 +233,17 @@ export function toClientSettings(settings: WorkspaceSettings) {
 }
 
 /**
- * Why door access keys cannot be switched off yet, or null. Hiding them while a resident still holds a
- * PIN, or a lock change is pending, would leave a working PIN on the lock that nobody can see.
+ * Why door access keys cannot be switched off yet, or null. Hiding them while a resident or staff member still
+ * holds a PIN, or a lock change is pending, would leave a working PIN on a lock that nobody can see.
  */
 async function doorKeysOffBlocker() {
-  const [holders, pending] = await Promise.all([
+  const [residentHolders, staffHolders, pending] = await Promise.all([
     prisma.resident.count({ where: { doorAccessKey: { not: null } } }),
+    prisma.worker.count({ where: { doorAccessKey: { not: null } } }),
     prisma.doorLockTask.count({ where: { doneAt: null } }),
   ])
-  if (holders) return `${holders} ${holders === 1 ? 'resident still has' : 'residents still have'} a door access key. Remove ${holders === 1 ? 'it' : 'them'} first, then delete the PINs from the lock.`
+  const holders = residentHolders + staffHolders
+  if (holders) return `${holders} ${holders === 1 ? 'person still has' : 'people still have'} a door access key (residents and staff). Remove ${holders === 1 ? 'it' : 'them'} first, then delete the PINs from the locks.`
   if (pending) return `Finish the ${pending} pending ${pending === 1 ? 'task' : 'tasks'} under Door locks first.`
   return null
 }
