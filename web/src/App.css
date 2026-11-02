@@ -2131,6 +2131,19 @@ div.portal-panel { display: contents; }
   .portal-tabs button.is-active .portal-tab-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 4px 12px rgb(0 0 0 / .28); }
   .portal-tab-avatar { display: grid; place-items: center; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 16px/1 Manrope, sans-serif; }
   .portal-tab-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* A slowly turning colour ring around the photo (like a story ring), so the Profile tab reads as tappable;
+     it turns faster while Profile is open, and a soft pulse spreads out from it. */
+  .portal-tab-avatar-ring { position: relative; isolation: isolate; }
+  .portal-tab-avatar-ring::before, .portal-tab-avatar-ring::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; pointer-events: none; }
+  .portal-tab-avatar-ring::before { z-index: -1; background: conic-gradient(from 0deg, #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
+  .portal-tab-avatar-ring::after { z-index: -2; background: rgb(255 255 255 / .4); animation: avatar-ring-pulse 2.4s ease-out infinite; }
+  .portal-tabs button.is-active .portal-tab-avatar-ring::before { animation-duration: 2.5s; }
+  .portal-tab-avatar { transition: transform .18s ease; }
+  .portal-tabs button:active .portal-tab-avatar { transform: scale(.9); }
+  @media (prefers-reduced-motion: reduce) {
+    .portal-tab-avatar-ring::before { animation: none; }
+    .portal-tab-avatar-ring::after { display: none; }
+  }
   :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
   :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(200 206 214 / .14); }
@@ -2823,3 +2836,13 @@ a.faq-card { text-decoration: none; }
 /* Notification targets land below the sticky top bar rather than under it. */
 #portal-payments, #portal-repairs, .portal-services-exit, .portal-details-heading, .portal-info-meals, .home-notification-prefs { scroll-margin-top: 90px; }
 .announcement-message { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+@keyframes avatar-ring-spin { to { transform: rotate(1turn); } }
+@keyframes avatar-ring-pulse { from { transform: scale(1); opacity: .8; } to { transform: scale(1.45); opacity: 0; } }
+/* Accepted UPI apps on the pay panel: one row of equal square icons, brand logos and app icons (they keep
+   their colours in dark mode too). Paytm's logo is a wordmark, so it is drawn wider. */
+.upi-apps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 6px; padding: 0; list-style: none; }
+.upi-apps li { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.upi-apps svg { width: 26px; height: 26px; }
+.upi-apps li.is-paytm svg { width: 36px; height: 36px; }
+.upi-apps li.is-image img { display: block; width: 28px; height: 28px; border-radius: 7px; object-fit: contain; }
+.upi-apps li.is-any { width: auto; height: auto; padding: 0; border: 0; color: var(--muted); background: transparent; font-size: 11px; font-weight: 600; }
