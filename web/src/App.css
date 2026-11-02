@@ -2820,3 +2820,6 @@ a.faq-card { text-decoration: none; }
 .welcome-whatsapp-text { margin: 4px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #f6f9f7; font: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .welcome-whatsapp .modal-actions a.primary-button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 :root[data-theme="dark"] .welcome-whatsapp-text { border-color: rgb(255 255 255 / .12); background: rgb(255 255 255 / .04); }
+/* Notification targets land below the sticky top bar rather than under it. */
+#portal-payments, #portal-repairs, .portal-services-exit, .portal-details-heading, .portal-info-meals, .home-notification-prefs { scroll-margin-top: 90px; }
+.announcement-message { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.6; white-space: pre-wrap; }

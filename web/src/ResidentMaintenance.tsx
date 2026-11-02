@@ -70,7 +70,7 @@ export function ResidentMaintenance({ refreshSignal, onNotice }: { refreshSignal
   }, [refreshSignal])
 
   return (
-    <section className={`workspace-view portal-tab-services${ribbon ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>{ribbon && <FeatureRibbon badge={ribbon} />}
+    <section id="portal-repairs" className={`workspace-view portal-tab-services${ribbon ? ' has-ribbon' : ''}`} onClickCapture={markSeen}>{ribbon && <FeatureRibbon badge={ribbon} />}
       <div className="workspace-view-heading"><div><p className="eyebrow">Service</p><h2>Complaints &amp; repairs{tag && <FeatureTag badge={tag} />}</h2><p>Something broken or not working? Tell your property owner and track it here.</p></div><button type="button" className="primary-button" onClick={() => setIsReporting(true)}><Wrench size={15} /> Report a problem</button></div>
       {requests === null ? <p className="portal-empty">Loading…</p> : requests.length ? (
         <div className="crud-list">

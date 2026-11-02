@@ -45,7 +45,7 @@ import { ExitPg, type ExitNotice } from './ExitPg'
 import { DeleteAccountRequest } from './DeleteAccountRequest'
 import { PasskeySettings } from './PasskeySettings'
 import { rememberProperty } from './lastProperty'
-import { NotificationBell } from './NotificationBell'
+import { NotificationBell, type Notice, type NoticeKind } from './NotificationBell'
 import { buildResidentNotices, useRepairRequests } from './residentNotices'
 import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
@@ -102,6 +102,16 @@ async function fetchList<T>(path: string) {
 
 type Announcement = { id: string; title: string; message: string; createdAt: string }
 
+// Where each kind of notification leads; kinds the portal has no section for (team, subscription…) only mark read.
+const noticeTargets: Partial<Record<NoticeKind, { tab: PortalTab; sections: string[] }>> = {
+  Rent: { tab: 'rent', sections: ['#portal-payments'] },
+  Reward: { tab: 'rent', sections: ['#portal-payments'] },
+  'Move-out': { tab: 'services', sections: ['.portal-services-exit', '.portal-details-heading'] },
+  Repair: { tab: 'services', sections: ['#portal-repairs'] },
+  Food: { tab: 'home', sections: ['.portal-info-meals', '.portal-details-heading'] },
+  Account: { tab: 'home', sections: ['.home-notification-prefs'] },
+}
+
 // Amounts are stored in paise, matching how the owner dashboard records them.
 
 /**
@@ -145,6 +155,7 @@ function ResidentPasswordForm({ requireCurrent, submitLabel, onSaved, onCancel }
 function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRaised }: { profile: ResidentProfile; refreshSignal: number; onRefresh: () => Promise<void>; onSignOut: () => void; onFireRaised: () => void }) {
   // Phones show one part of the portal at a time (see PortalTabs); wide screens show everything.
   const [tab, setTab] = useState<PortalTab>('home')
+  const [openAnnouncement, setOpenAnnouncement] = useState<Announcement | null>(null)
   useResidentTheme(profile.workspace.residentTheme)
   // The phone's status bar takes the header's theme colour while the portal is open.
   const topbar = useRef<HTMLElement>(null)
@@ -215,6 +226,20 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   // Home card on wide screens, Profile tab on phones (CSS shows one), like the details list above.
   // The receptionist's number (the property's manager number, else the workspace's), for the call button in Property info.
   const managerPhone = profile.ownerPhone ?? profile.workspace.contactPhone
+  // A clicked notification goes to what it is about: an announcement opens in full (it has no section of its
+  // own); the rest switch to their tab and scroll to their section. Phones show one tab while wide screens show
+  // everything, so each lists the sections it could be in, and the first one showing is used.
+  function openNotice(clicked: Notice) {
+    if (clicked.kind === 'Announcement') { setOpenAnnouncement(announcements?.find((item) => clicked.id === `announcement-${item.id}`) ?? null); return }
+    const target = noticeTargets[clicked.kind]
+    if (!target) return
+    setTab(target.tab)
+    requestAnimationFrame(() => {
+      const section = target.sections.map((selector) => document.querySelector<HTMLElement>(selector)).find((element) => element?.offsetParent)
+      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      else window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }
   const exitPg = <ExitPg exit={profile.exit} amountDue={profile.rent.amountDue} deposit={profile.workspace.houseRules.securityDeposit} noticeDays={profile.exit.noticeDays} onChanged={onRefresh} onNotice={showNotice} />
   // Under the notification settings: in the Profile tab on phones, on the Home card on wide screens.
   const deleteAccount = <DeleteAccountRequest requestedAt={profile.deletionRequestedAt} declinedAt={profile.deletionDeclinedAt} declineReason={profile.deletionDeclineReason} onChanged={onRefresh} onNotice={showNotice} />
@@ -230,7 +255,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <header ref={topbar} className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* The greeting heads every tab ("Good evening, Sujith"), beside the bell and sign-out. */}
         <h1 className="portal-greeting">{greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}, {displayName(profile.name)} <span className="wave">✦</span></h1>
-        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} onOpen={openNotice} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} name={profile.name} photoVersion={profile.photoVersion} />
@@ -263,7 +288,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <ResidentHousekeeping holidays={holidays} refreshSignal={refreshSignal} isPaused={profile.rent.state === 'LOCK_DUE'} slots={profile.workspace.slots} weeklyLimit={profile.workspace.housekeepingWeeklyLimit} staff={profile.housekeepingStaff ?? []} onNotice={showNotice} />
         </div>
         <div className="portal-grid">
-          <section className="workspace-view portal-panel" data-panel="rent">
+          <section id="portal-payments" className="workspace-view portal-panel" data-panel="rent">
             <div className="workspace-view-heading"><div><p className="eyebrow">Rent</p><h2>My payments</h2><p>Your rent, month by month.</p></div></div>
             {profile.workspace.upi ? <UpiDirectPay payee={profile.workspace.upi} rent={profile.rent} monthlyRent={profile.rent.monthlyRent} pendingClaim={profile.pendingUpiClaim} onReported={onRefresh} onNotice={showNotice} /> : null}
             {payAction && <div className="pay-rent-row">{payAction}</div>}
@@ -286,6 +311,11 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       {isChangingPassword && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsChangingPassword(false)}><div className="profile-modal" role="dialog" aria-labelledby="change-password-title"><div className="modal-heading"><div><p className="eyebrow">Account</p><h2 id="change-password-title">Change password</h2></div><button type="button" className="icon-button" aria-label="Close change password" onClick={() => setIsChangingPassword(false)}><X size={18} /></button></div><ResidentPasswordForm requireCurrent submitLabel="Change password" onCancel={() => setIsChangingPassword(false)} onSaved={() => { setIsChangingPassword(false); showNotice('Password changed. Your other devices were signed out.') }} /></div></div></ModalLayer>}
       {pendingConsent && <PolicyConsentModal consent={pendingConsent} workspace={profile.workspace} onSignOut={onSignOut} onAccepted={async (version) => { if (version) setAcceptedVersion(version); await onRefresh() }} />}
       {isConfirmingSignOut && <SignOutConfirm title="Do you want to logout?" confirmLabel="Yes" cancelLabel="No" onConfirm={() => { setIsConfirmingSignOut(false); onSignOut() }} onCancel={() => setIsConfirmingSignOut(false)} />}
+      {openAnnouncement && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setOpenAnnouncement(null)}><div className="profile-modal" role="dialog" aria-labelledby="announcement-title">
+        <div className="modal-heading"><div><p className="eyebrow">Announcement · {new Date(openAnnouncement.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p><h2 id="announcement-title">{openAnnouncement.title}</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={() => setOpenAnnouncement(null)}><X size={18} /></button></div>
+        <p className="announcement-message">{openAnnouncement.message}</p>
+        <div className="modal-actions"><button type="button" className="primary-button" onClick={() => setOpenAnnouncement(null)}>Close</button></div>
+      </div></div></ModalLayer>}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>
     </FeatureBadgesProvider>

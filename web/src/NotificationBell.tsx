@@ -38,10 +38,11 @@ const kindClass = (kind: NoticeKind) => kind.toLowerCase().replace(/[^a-z]/g, ''
 /**
  * The bell in the resident portal's top bar: a count of unread notices and, when tapped, a panel
  * listing them newest first. A notice is read only when the resident clicks it, which clears just
- * that one from the panel and the count; opening the panel marks nothing. Closes on a tap outside,
+ * that one from the panel and the count, and with `onOpen` also closes the panel and goes to what it is
+ * about; opening the panel marks nothing. Closes on a tap outside,
  * Escape, or the bell.
  */
-export function NotificationBell({ ownerId, notices }: { ownerId: string; notices: Notice[] }) {
+export function NotificationBell({ ownerId, notices, onOpen }: { ownerId: string; notices: Notice[]; /** Takes the reader to what a clicked notice is about. */ onOpen?: (notice: Notice) => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const [seen, setSeen] = useState(() => readSeen(ownerId))
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -78,7 +79,7 @@ export function NotificationBell({ ownerId, notices }: { ownerId: string; notice
       {isOpen && <div className="notification-panel" role="dialog" aria-label="Notifications" style={{ '--panel-top': `${panelTop}px` } as React.CSSProperties}>
         <p className="notification-panel-title">Notifications</p>
         {sorted.length
-          ? <ul>{sorted.map((notice) => <li key={notice.id} className={`is-kind-${kindClass(notice.kind)}`}><button type="button" className="notification-item" title="Mark as read" onClick={() => markRead(notice.id)}><span className={`notice-kind is-${kindClass(notice.kind)}`}>{notice.kind}</span><strong>{notice.title}</strong>{notice.detail && <small>{notice.detail}</small>}{notice.at && <time dateTime={notice.at}>{when(notice.at)}</time>}</button></li>)}</ul>
+          ? <ul>{sorted.map((notice) => <li key={notice.id} className={`is-kind-${kindClass(notice.kind)}`}><button type="button" className="notification-item" title={onOpen ? 'Open' : 'Mark as read'} onClick={() => { markRead(notice.id); if (onOpen) { setIsOpen(false); onOpen(notice) } }}><span className={`notice-kind is-${kindClass(notice.kind)}`}>{notice.kind}</span><strong>{notice.title}</strong>{notice.detail && <small>{notice.detail}</small>}{notice.at && <time dateTime={notice.at}>{when(notice.at)}</time>}</button></li>)}</ul>
           : <p className="notification-empty">You're all caught up.</p>}
       </div>}
     </div>
