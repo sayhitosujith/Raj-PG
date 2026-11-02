@@ -63,7 +63,7 @@ export function BookingRequestsView({ properties, refreshSignal, onConvert, onBa
 
   return (
     <section className="workspace-view crud-view booking-requests">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Referral Requests</h2><p>Requests from your booking link on Instagram, Facebook, WhatsApp and Google, plus calls and walk-ins you add.</p></div><div className="view-actions"><button className="secondary-button" onClick={() => setIsSharing((open) => !open)}><Share2 size={15} /> Share booking link</button><button className="primary-button" onClick={() => setIsAdding(true)}><Plus size={16} /> Add request</button><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Referral Requests</h2><p>Requests from your booking link on Instagram, Facebook, WhatsApp and Google, plus calls and walk-ins you add.</p></div><div className="view-actions"><button className="secondary-button" onClick={() => setIsSharing((open) => !open)}><Share2 size={15} /> Share booking link</button><button className="primary-button" onClick={() => setIsAdding(true)}><Plus size={16} /> Add request</button><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
 
       {isSharing && (
         <div className="booking-share">

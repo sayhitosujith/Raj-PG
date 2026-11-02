@@ -70,7 +70,7 @@ export function PaymentsView({ showFinance = true, properties, residents, refres
 
   return (
     <section className="workspace-view crud-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Payments</h2><p>Record payments received by cash, UPI, bank transfer, cheque or card.</p></div><div className="view-actions"><button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> Add payment</button>{showFinance && <button className="secondary-button" onClick={() => setIsAddingExpense((open) => !open)}><Plus size={16} /> {isAddingExpense ? 'Close expense' : 'Add expense'}</button>}<button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Payments</h2><p>Record payments received by cash, UPI, bank transfer, cheque or card.</p></div><div className="view-actions"><button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> Add payment</button>{showFinance && <button className="secondary-button" onClick={() => setIsAddingExpense((open) => !open)}><Plus size={16} /> {isAddingExpense ? 'Close expense' : 'Add expense'}</button>}<button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       <div className="crud-list">
         {payments.length ? pager.pageItems.map((payment) => (
           <div className="crud-row" key={payment.id}>

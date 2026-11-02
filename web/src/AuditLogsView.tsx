@@ -50,7 +50,7 @@ export function AuditLogsView({ refreshSignal, onBack }: { refreshSignal: number
 
   return (
     <section className="workspace-view audit-logs-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Audit logs</h2><p>Every change made by your team: who did what, and when.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Audit logs</h2><p>Every change made by your team: who did what, and when.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       <div className="residents-toolbar">
         <label className="toolbar-search"><Search size={15} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search changes or names" aria-label="Search the audit log" /></label>
         <select value={person} onChange={(event) => setPerson(event.target.value)} aria-label="Filter by person"><option value="">Everyone</option>{people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>

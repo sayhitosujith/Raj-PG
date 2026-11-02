@@ -66,7 +66,7 @@ export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loa
 
   return (
     <section className="workspace-view residents-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Residents</h2><p>Everyone living across your properties.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button><button className="primary-button" onClick={onAdd}><UserPlus size={16} /> Add resident</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Residents</h2><p>Everyone living across your properties.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button><button className="primary-button" onClick={onAdd}><UserPlus size={16} /> Add resident</button></div></div>
       <div className="workspace-summary residents-summary">
         {tiles.map((tile, index) => tile.status
           ? <button key={tile.label} type="button" className={`summary-tile${query.status === tile.status ? ' is-selected' : ''}`} style={{ '--stagger': index } as React.CSSProperties} aria-pressed={query.status === tile.status} onClick={() => toggleStatus(tile.status!)}><span>{tile.label}</span><strong>{loadState === 'ready' ? tile.value : '–'}</strong></button>

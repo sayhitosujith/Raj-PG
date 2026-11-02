@@ -55,7 +55,7 @@ export function DeletedRecordsView({ refreshSignal, securityDeposit, onBack, onN
 
   return (
     <section className="workspace-view residents-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Deleted records</h2><p>Residents your team removed, and accounts closed at the resident's request, kept with their full details.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Deleted records</h2><p>Residents your team removed, and accounts closed at the resident's request, kept with their full details.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       {!records
         ? (loadError ? <div className="workspace-empty"><h3>Deleted records could not be loaded</h3><p>Check your connection and try again.</p><button className="primary-button" onClick={() => void load()}>Retry</button></div> : <InlineLoader label="Loading deleted records…" />)
         : !records.length

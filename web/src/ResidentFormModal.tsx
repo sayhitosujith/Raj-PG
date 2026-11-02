@@ -39,7 +39,7 @@ async function fetchAccessKeyPreview() {
  * `resident` switches it to edit mode.
  */
 /** Starting values for a new resident, e.g. from a booking request being converted. */
-export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null; permanentAddress?: string | null; nationality?: string; monthlyRent?: number | null; whatsappOptIn?: boolean; emailOptIn?: boolean; /** A room and bed to preselect, e.g. a free bed clicked on the Overview's room grid. */ roomNumber?: string; bedNumber?: number }
+export type ResidentPrefill = { name: string; phone: string; email: string | null; propertyId: string; foodOpted: boolean | null; joinedAt: string | null; permanentAddress?: string | null; nationality?: string; monthlyRent?: number | null; whatsappOptIn?: boolean; emailOptIn?: boolean; /** A room and bed to preselect, e.g. a free bed clicked on the Dashboard's room grid. */ roomNumber?: string; bedNumber?: number }
 
 /**
  * "Clone": a new resident's form started from an existing one. Copies what roommates and siblings

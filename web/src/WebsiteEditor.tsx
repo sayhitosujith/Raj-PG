@@ -73,7 +73,7 @@ export function WebsiteEditor({ onNotice, onBack }: { onNotice: (message: string
 
   return (
     <section className="workspace-view website-editor">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Website</h2><p>The text on your public website and which sections it shows. Leave a box empty to keep the text shown in grey.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Website</h2><p>The text on your public website and which sections it shows. Leave a box empty to keep the text shown in grey.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       {!draft ? (error ? <p className="login-error" role="alert">{error}</p> : <InlineLoader label="Loading the website text…" />) : (
         <form className="website-editor-grid" onSubmit={save}>
           <fieldset className="website-editor-card website-editor-wide">

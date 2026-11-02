@@ -70,7 +70,7 @@ export function MaintenanceView({ onBack, onNotice, onChanged }: { onBack: () =>
 
   return (
     <section className="workspace-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Maintenance</h2><p>Complaints and repair requests from residents.</p></div><button className="secondary-button" onClick={onBack}>Back to overview</button></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Maintenance</h2><p>Complaints and repair requests from residents.</p></div><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div>
       <div className="booking-source-chips" role="group" aria-label="Filter by status">{filters.map(([key, label]) => <button key={key} type="button" className={`booking-chip${filter === key ? ' is-selected' : ''}`} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}<b>{count(key)}</b></button>)}</div>
       {loadError ? <p className="login-error" role="alert">{loadError}</p> : requests === null ? <p className="portal-empty">Loading…</p> : visible.length
         ? <div className="maintenance-list">{visible.map((request) => <MaintenanceItem key={request.id} request={request} onUpdate={update} />)}</div>

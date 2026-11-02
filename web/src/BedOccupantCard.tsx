@@ -7,7 +7,7 @@ import { formatRupees } from './rent'
 /** The next rent date: overdue (since the oldest unpaid due date), due this month, or the first unpaid month ahead. */
 export type RentDue = { state: 'OVERDUE' | 'DUE' | 'UPCOMING'; dueDate: string; amount: number }
 
-/** The resident in a booked bed, as the Overview's room grid receives them; `rent` is null when rent is not tracked. */
+/** The resident in a booked bed, as the Dashboard's room grid receives them; `rent` is null when rent is not tracked. */
 export type BedOccupant = { bed: number; id: string; name: string; phone: string | null; joinedAt: string; photoVersion: number | null; rent: RentDue | null }
 
 /** The rent line as two parts that never break inside: what and when, then how much. */
@@ -23,7 +23,7 @@ const cardHeight = 150
 const gap = 8
 
 /**
- * Who is in a booked bed, shown while the bed is hovered or focused on the Overview's room grid: photo
+ * Who is in a booked bed, shown while the bed is hovered or focused on the Dashboard's room grid: photo
  * (or initials), name, room and bed, phone, joining date and when rent is next due (red when overdue).
  * Rendered at the top of the page (ModalLayer) and placed by the bed's on-screen position, because the grid
  * scrolls inside a card and cards are CSS containers, either of which would clip a popover drawn in place.

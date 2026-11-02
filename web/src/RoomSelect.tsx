@@ -8,7 +8,7 @@ import { fetchRooms, freeBeds, sharingLabel, type Room } from './rooms'
  * room's bed count (null when none is chosen), since a sharing type can have its own price. Then a bed
  * picker: the chosen room's free beds (and the resident's own bed when editing), or "next free bed".
  * `preferredRoom` / `preferredBed` preselect a room and bed for a new resident (a free bed clicked on the
- * Overview's room grid) without marking it as theirs, unlike `currentRoom` / `currentBed`.
+ * Dashboard's room grid) without marking it as theirs, unlike `currentRoom` / `currentBed`.
  */
 export function RoomSelect({ propertyId, currentRoom, currentBed, preferredRoom, preferredBed, onBedsChange }: { propertyId: string; currentRoom?: string; currentBed?: number; preferredRoom?: string; preferredBed?: number; onBedsChange: (beds: number | null) => void }) {
   const startRoom = currentRoom ?? preferredRoom

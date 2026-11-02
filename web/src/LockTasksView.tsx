@@ -48,7 +48,7 @@ export function LockTasksView({ lock, tasks, hasError, onRetry, onDone, onBack }
   const doors = tasks ? groupByDoor(tasks.pending, unnamedLock) : []
   return (
     <section className="workspace-view door-locks-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Device management</p><h2>Lock tasks</h2><p>The app cannot reach the locks, so PINs are added and deleted by hand in {lock?.model || 'the lock'}'s own app.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Device management</p><h2>Lock tasks</h2><p>The app cannot reach the locks, so PINs are added and deleted by hand in {lock?.model || 'the lock'}'s own app.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       {hasError && !tasks && <div className="workspace-empty"><div className="workspace-empty-icon"><RotateCw size={22} /></div><h3>Lock tasks could not be loaded</h3><p>Check your connection and try again.</p><button className="primary-button" onClick={onRetry}>Try again</button></div>}
       {tasks && (doors.length
         ? <>

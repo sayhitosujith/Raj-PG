@@ -10,7 +10,7 @@ import { LoginTestPanel } from './LoginTestPanel'
 export function PerformanceTestsView({ onBack }: { onBack: () => void }) {
   return (
     <section className="workspace-view performance-tests-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Performance tests</h2><p>Check that residents can sign in and use their portal, and how fast it answers when several do at once.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Performance tests</h2><p>Check that residents can sign in and use their portal, and how fast it answers when several do at once.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       <LoginTestPanel />
     </section>
   )

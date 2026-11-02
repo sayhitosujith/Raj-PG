@@ -7,7 +7,7 @@ import { readApiError } from './superAdmin'
 export type BedHold = { id: string; bed: number; note: string | null; reservedByName: string | null; createdAt: string }
 
 /**
- * One set-up room at a property, as the Overview's room grid receives it: its beds, the bed numbers that
+ * One set-up room at a property, as the Dashboard's room grid receives it: its beds, the bed numbers that
  * are booked and who is in each, the beds held back as reservations, and residents in it without a bed
  * number yet (they still use a bed).
  */

@@ -133,7 +133,7 @@ export function SubscriptionsView({ properties, refreshSignal, onBack, onNotice 
 
   return (
     <section className="workspace-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Subscriptions</h2><p>Each receptionist can sign in until their subscription ends. Add or renew it here; a receptionist with none set is not restricted.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Manage</p><h2>Subscriptions</h2><p>Each receptionist can sign in until their subscription ends. Add or renew it here; a receptionist with none set is not restricted.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       {loadError && <p className="login-error" role="alert">{loadError} <button className="text-button" onClick={() => void load()}>Retry</button></p>}
       {rows && !rows.length && <p className="portal-empty">No receptionists yet. Add one under Team, then set their subscription here.</p>}
       <div className="crud-list">{rows?.map((receptionist, index) => {

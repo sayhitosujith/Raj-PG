@@ -22,7 +22,7 @@ export function MySubscriptionView({ subscription, onBack }: { subscription: MyS
   const current = subscription?.current
   return (
     <section className="workspace-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Account</p><h2>Subscription</h2><p>Your access to this dashboard. Your super admin renews it; ask them before it ends.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to overview</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Account</p><h2>Subscription</h2><p>Your access to this dashboard. Your super admin renews it; ask them before it ends.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button></div></div>
       {!subscription && <p className="portal-empty">Loading your subscription…</p>}
       {subscription && !current && <p className="portal-empty">No subscription has been set for you, so your access is not time-limited.</p>}
       {current && badge && (
