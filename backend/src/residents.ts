@@ -18,7 +18,8 @@ import type { AuthContext } from './auth.js'
 import { createUniqueDoorPin, syncDoorAccess } from './doorAccess.js'
 import { BedUnavailableError, claimBed, lockRoom, parseBedNumber } from './beds.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
-import { notifyResidentCredentials } from './notifications.js'
+import { notifyRegistrationLink, notifyResidentCredentials } from './notifications.js'
+import { newRegistrationLink, registrationUrl } from './selfRegistration.js'
 import { residentWhere, staffAccess } from './staffAccess.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
@@ -54,11 +55,11 @@ class InputError extends Error {}
 // separately because the summary query never loads the credential hashes.
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean, rates: DailyRates) {
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
-  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, profilePhotoUpdatedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
+  const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, registrationTokenHash, registrationSentAt, registrationExpiresAt, registrationSubmittedAt, profilePhotoUpdatedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, registration: registrationSentAt ? { status: registrationTokenHash ? 'INVITED' : 'SUBMITTED', sentAt: registrationSentAt, expiresAt: registrationExpiresAt, submittedAt: registrationSubmittedAt } : null, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     // Their bed in the room (1 to its beds); null only before a room is set or after moving out.
@@ -514,14 +515,80 @@ async function deleteResident(id: string) {
   await prisma.resident.delete({ where: { id } })
 }
 
-// A super admin's decision on a resident a receptionist added: approve lets them sign in; reject removes
-// them and frees the room, since they never became a resident. Super admins only (see staffGuard.ts).
+/**
+ * Sends a resident's registration link on WhatsApp. A messaging failure never undoes the invite, so it comes
+ * back as the outcome and the link itself, which staff share by hand when WhatsApp is off or fails.
+ */
+async function sendRegistrationLink(residentId: string, token: string, sentAt: Date) {
+  const link = registrationUrl(token)
+  try {
+    return { registrationLink: link, whatsapp: await notifyRegistrationLink(residentId, link, sentAt) }
+  } catch (error) {
+    console.error('Sending the registration link failed:', error)
+    return { registrationLink: link, whatsapp: 'failed' as const }
+  }
+}
+
+// Self-registration (selfRegistration.ts): staff reserve a bed for a new resident and WhatsApp them a link to
+// fill in their own details. The record waits for approval (approvalPending) from the start, so it cannot
+// sign in or be approved until the resident has submitted and staff have reviewed it.
+residentRouter.post('/residents/invite', async (request, response) => {
+  const body = request.body as ResidentBody
+  const data = pickTextFields({ name: body.name ?? '', phone: body.phone ?? '' })
+  if (!data.name) { response.status(400).json({ error: 'Enter the resident\'s name.' }); return }
+  if (!data.phone) { response.status(400).json({ error: 'Enter the WhatsApp number to send the link to.' }); return }
+  const invalid = findInvalidField(data)
+  if (invalid) { response.status(400).json({ error: invalid }); return }
+  if (!body.propertyId) { response.status(400).json({ error: 'Choose the property.' }); return }
+  if (body.foodOpted !== undefined && typeof body.foodOpted !== 'boolean') { response.status(400).json({ error: 'Food plan must be true or false.' }); return }
+  const joinedAt = parseDateOnly(body.joinedAt)
+  if (joinedAt === null) { response.status(400).json({ error: 'Joining date must be a valid date.' }); return }
+  const bed = parseBedNumber(body.bedNumber)
+  if ('error' in bed) { response.status(400).json({ error: bed.error }); return }
+  const foodOpted = body.foodOpted ?? true
+  const link = newRegistrationLink()
+  const { propertyId } = body
+  try {
+    const residentId = await prisma.$transaction(async (transaction) => {
+      const duplicate = await findDuplicate(transaction, { phone: data.phone })
+      if (duplicate) throw new DuplicateError(duplicate)
+      const room = await claimRoom(transaction, propertyId, body.roomNumber?.trim())
+      const bedNumber = await claimBed(transaction, room, bed.bed)
+      const rent = await residentRentWrite(transaction, { roomId: room.id, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
+      if ('error' in rent) throw new InputError(rent.error)
+      const resident = await transaction.resident.create({ data: { approvalPending: true, name: data.name as string, phone: data.phone, foodOpted, ...rent.data, ...(joinedAt ? { joinedAt } : {}), ...link.data, roomId: room.id, bedNumber } })
+      return resident.id
+    })
+    response.status(201).json({ ...await findResidentSummary(residentId), ...await sendRegistrationLink(residentId, link.token, link.data.registrationSentAt) })
+  } catch (error) {
+    respondToWriteError(response, error, 'The registration link could not be created.')
+  }
+})
+
+// A fresh link for a resident who has not submitted yet: the old one stops working.
+residentRouter.post('/residents/:id/registration-link', async (request, response) => {
+  try {
+    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { registrationTokenHash: true, deletedAt: true } })
+    if (!resident || resident.deletedAt) { response.status(404).json({ error: 'Resident was not found.' }); return }
+    if (!resident.registrationTokenHash) { response.status(409).json({ error: 'This resident has already submitted their registration.' }); return }
+    const link = newRegistrationLink()
+    await prisma.resident.update({ where: { id: request.params.id }, data: link.data })
+    response.json({ ...await findResidentSummary(request.params.id), ...await sendRegistrationLink(request.params.id, link.token, link.data.registrationSentAt) })
+  } catch (error) {
+    respondToWriteError(response, error, 'The registration link could not be sent.')
+  }
+})
+
+// A super admin's decision on a resident a receptionist added or invited: approve lets them sign in; reject
+// removes them and frees the room, since they never became a resident. Super admins only (see staffGuard.ts).
 residentRouter.post('/residents/:id/approval', async (request, response) => {
   const { approve } = request.body as { approve?: unknown }
   if (typeof approve !== 'boolean') { response.status(400).json({ error: 'Choose approve or reject.' }); return }
   try {
-    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { approvalPending: true } })
+    const resident = await prisma.resident.findUnique({ where: { id: request.params.id }, select: { approvalPending: true, registrationTokenHash: true } })
     if (!resident?.approvalPending) { response.status(409).json({ error: 'This resident is not waiting for approval.' }); return }
+    // An invited resident has no details yet; rejecting (withdrawing the invite) is still allowed.
+    if (approve && resident.registrationTokenHash) { response.status(409).json({ error: 'They have not filled in the registration link yet. Approve once they submit it.' }); return }
     if (approve) {
       await prisma.resident.update({ where: { id: request.params.id }, data: { approvalPending: false } })
       response.json(await findResidentSummary(request.params.id))

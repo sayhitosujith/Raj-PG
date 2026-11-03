@@ -30,6 +30,7 @@ import { brandingRouter, settingsRouter } from './settings.js'
 import { siteContentRouter } from './siteContent.js'
 import { residentPortalRouter } from './residentPortal.js'
 import { residentRouter } from './residents.js'
+import { selfRegistrationRouter } from './selfRegistration.js'
 import { roomsAdminRouter } from './rooms.js'
 import { bedCounts, roomBedsSelect } from './occupancy.js'
 import { holidaysAdminRouter } from './holidays.js'
@@ -73,6 +74,8 @@ app.use('/api', authRouter)
 app.use('/api', residentPortalRouter)
 app.use('/api', brandingRouter)
 app.use('/api', bookingPublicRouter)
+// The resident opening their registration link has no account yet.
+app.use('/api', selfRegistrationRouter)
 app.use('/api', publicSiteRouter)
 app.use('/api', cronRouter)
 app.use('/api', housekeepingResidentRouter)

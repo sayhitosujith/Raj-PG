@@ -149,6 +149,13 @@ model Resident {
   // Added by a receptionist and not yet approved by a super admin: the room is held, but they cannot
   // sign in. Super admins' own additions never wait.
   approvalPending          Boolean                  @default(false)
+  // Self-registration (selfRegistration.ts): staff send a link and the resident fills in their own details.
+  // Only the link token's hash is kept, cleared once they submit (registrationSubmittedAt); they stay
+  // approvalPending until staff review and approve.
+  registrationTokenHash    String?                  @unique
+  registrationExpiresAt    DateTime?
+  registrationSentAt       DateTime?
+  registrationSubmittedAt  DateTime?
   // Scan of the passport photo page, as a data URL like aadharCardUrl.
   passportScanUrl          String?
   visaNumber               String?

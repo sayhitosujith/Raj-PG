@@ -16,7 +16,7 @@ import { isWhatsAppEnabled, sendTemplate, uploadPdf, whatsappNumber } from './wh
  * stored in OutboundMessage, so retries of the daily job or a double click never message twice.
  * Residents who turned a channel off get nothing on it, except receipts by email (they are records).
  */
-export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update', residentWelcome: 'resident_welcome', fireAlert: 'fire_alert' } as const
+export const templates = { rentReminder: 'rent_reminder', rentOverdue: 'rent_overdue', paymentReceived: 'payment_received', announcement: 'announcement', housekeeping: 'housekeeping_update', residentWelcome: 'resident_welcome', fireAlert: 'fire_alert', registrationLink: 'resident_registration' } as const
 
 type Channel = 'whatsapp' | 'email'
 /** What happened to one message: skipped when the channel is off or the resident has no address for it. */
@@ -117,6 +117,20 @@ export async function notifyHousekeeping(request: { id: string; residentId: stri
   const { label, hours } = slotDetails(settings, request.slot)
   const when = `${request.date.toLocaleDateString('en-IN', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' })}, ${label} (${hours})`
   await toWhatsApp(resident, templates.housekeeping, [displayName(resident.name), settings.businessName, when, wording, request.ownerNote || 'No notes'], `housekeeping:${request.id}:${request.status}`)
+}
+
+/**
+ * A self-registration link (selfRegistration.ts) to a resident staff have reserved a bed for. WhatsApp only, and
+ * sent even before they opt in to updates, since it is how they join. The template "resident_registration" must be
+ * approved in Meta with four variables: {{1}} name, {{2}} business, {{3}} property and room, {{4}} link.
+ */
+export async function notifyRegistrationLink(residentId: string, link: string, sentAt: Date): Promise<DeliveryResult> {
+  const resident = await prisma.resident.findUnique({ where: { id: residentId }, select: { ...recipientSelect, bedNumber: true, room: { select: { number: true, property: { select: { name: true } } } } } })
+  if (!resident) return 'skipped'
+  const { businessName } = await getSettings()
+  const place = resident.room ? `${resident.room.property.name}, room ${resident.room.number}${resident.bedNumber ? ` bed ${resident.bedNumber}` : ''}` : ''
+  // Unique per link, so "Resend link" always sends again while a retry of the same link does not.
+  return toWhatsApp({ ...resident, whatsappOptIn: true }, templates.registrationLink, [displayName(resident.name), businessName, place, link], `registration:${resident.id}:${sentAt.getTime()}`)
 }
 
 /**

@@ -54,7 +54,8 @@ const ownerOnly: Rule[] = [
 const viaResident = (residentId: string) => prisma.resident.findUnique({ where: { id: residentId }, select: { room: { select: { propertyId: true } } } }).then((resident) => resident?.room?.propertyId)
 const recordLookups: Array<{ path: RegExp; propertyOf: (id: string) => Promise<string | null | undefined> }> = [
   { path: /^\/properties\/([^/]+)/, propertyOf: async (id) => id },
-  { path: /^\/residents\/(?!deleted$|access-key$)([^/]+)/, propertyOf: viaResident },
+  // /residents/invite is about the property in its body (checked below), not a resident.
+  { path: /^\/residents\/(?!deleted$|access-key$|invite$)([^/]+)/, propertyOf: viaResident },
   { path: /^\/payments\/([^/]+)/, propertyOf: (id) => prisma.payment.findUnique({ where: { id }, select: { propertyId: true } }).then((row) => row?.propertyId) },
   { path: /^\/bookings\/([^/]+)/, propertyOf: (id) => prisma.booking.findUnique({ where: { id }, select: { propertyId: true } }).then((row) => row?.propertyId) },
   { path: /^\/announcements\/([^/]+)/, propertyOf: (id) => prisma.announcement.findUnique({ where: { id }, select: { propertyId: true } }).then((row) => row?.propertyId) },

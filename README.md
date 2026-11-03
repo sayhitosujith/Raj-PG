@@ -85,6 +85,7 @@ variable, which is why each ends with fixed text.
 | `payment_received` | **Document** | `Hi {{1}}, {{2}} has received {{3}} for {{4}} at {{5}}. Your receipt is attached. Thank you!` | name, business, amount, month, property |
 | `announcement` | none | `Hi {{1}}, a new notice from {{2}}: {{3}}. {{4}} Thank you.` | name, business, title, message |
 | `housekeeping_update` | none | `Hi {{1}}, {{2}} here. Your housekeeping request for {{3}} is now {{4}}. Note: {{5}}. Thank you.` | name, business, date and slot, status, owner's note |
+| `resident_registration` | none | `Hi {{1}}, {{2}} has reserved a bed for you at {{3}}. Please complete your registration here: {{4}} The link works for 7 days. Thank you.` | name, business, property and room, registration link |
 
 Meta asks for sample values when you submit each one; approval usually takes minutes to a day.
 Meta may re-categorise `announcement` as Marketing (a higher per-message price) depending on

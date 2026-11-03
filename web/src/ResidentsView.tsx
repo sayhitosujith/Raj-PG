@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { RotateCw, Search, UserPlus, Users } from 'lucide-react'
+import { RotateCw, Search, Send, UserPlus, Users } from 'lucide-react'
 import type { Resident } from './resident'
 import { applyResidentQuery, defaultResidentQuery, summarizeResidents, type ResidentQuery, type ResidentSort, type ResidentStatusFilter } from './residentFilters'
 import { ResidentRow, type AadharDecision } from './ResidentRow'
@@ -15,7 +15,7 @@ const statusOptions: Array<[ResidentStatusFilter, string]> = [['all', 'All statu
 const sortOptions: Array<[ResidentSort, string]> = [['recent', 'Recently joined'], ['longest', 'Longest stay'], ['name', 'Name A–Z'], ['room', 'Room number']]
 
 /** Residents screen: summary tiles, search/filter/sort toolbar, and the expandable resident list. */
-export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loadState, onRetry, onAdd, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, onBack }: { residents: Resident[]; /** From Settings; shown against dues in move-out notices. */ securityDeposit: number | null; /** Settings → Smart lock. */ doorKeysEnabled: boolean; onChanged: () => void; onNotice: (message: string) => void; loadState: ResidentsLoadState; onRetry: () => void; onAdd: () => void; onEdit: (resident: Resident) => void; onClone: (resident: Resident) => void; onDelete: (resident: Resident) => void; onVerify: (resident: Resident, decision: AadharDecision) => Promise<string | null>; onRecordRent: (resident: Resident, month: string) => Promise<string | null>; onUndoRent: (resident: Resident, paymentId: string) => Promise<string | null>; onBack: () => void }) {
+export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loadState, onRetry, onAdd, onInvite, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, onBack }: { residents: Resident[]; /** From Settings; shown against dues in move-out notices. */ securityDeposit: number | null; /** Settings → Smart lock. */ doorKeysEnabled: boolean; onChanged: () => void; onNotice: (message: string) => void; loadState: ResidentsLoadState; onRetry: () => void; onAdd: () => void; /** Opens "Send registration link", for a new resident to fill in their own details. */ onInvite: () => void; onEdit: (resident: Resident) => void; onClone: (resident: Resident) => void; onDelete: (resident: Resident) => void; onVerify: (resident: Resident, decision: AadharDecision) => Promise<string | null>; onRecordRent: (resident: Resident, month: string) => Promise<string | null>; onUndoRent: (resident: Resident, paymentId: string) => Promise<string | null>; onBack: () => void }) {
   const [query, setQuery] = useState<ResidentQuery>(defaultResidentQuery)
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set())
   const visibleResidents = useMemo(() => applyResidentQuery(residents, query), [residents, query])
@@ -66,7 +66,7 @@ export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loa
 
   return (
     <section className="workspace-view residents-view">
-      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Residents</h2><p>Everyone living across your properties.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button><button className="primary-button" onClick={onAdd}><UserPlus size={16} /> Add resident</button></div></div>
+      <div className="workspace-view-heading"><div><p className="eyebrow">Workspace module</p><h2>Residents</h2><p>Everyone living across your properties.</p></div><div className="view-actions"><button className="secondary-button" onClick={onBack}>Back to dashboard</button><button className="secondary-button" onClick={onInvite}><Send size={15} /> Send registration link</button><button className="primary-button" onClick={onAdd}><UserPlus size={16} /> Add resident</button></div></div>
       <div className="workspace-summary residents-summary">
         {tiles.map((tile, index) => tile.status
           ? <button key={tile.label} type="button" className={`summary-tile${query.status === tile.status ? ' is-selected' : ''}`} style={{ '--stagger': index } as React.CSSProperties} aria-pressed={query.status === tile.status} onClick={() => toggleStatus(tile.status!)}><span>{tile.label}</span><strong>{loadState === 'ready' ? tile.value : '–'}</strong></button>

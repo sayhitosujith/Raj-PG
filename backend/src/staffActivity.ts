@@ -33,6 +33,8 @@ const actions: Array<[string, RegExp, Describe]> = [
   ['DELETE', /^\/residents\/([^/]+)\/door-key$/, async (_body, [id]) => `Removed ${await residentName(id)}'s door access key`],
   ['DELETE', /^\/residents\/([^/]+)\/food-request$/, async (_body, [id]) => `Declined ${await residentName(id)}'s food request`],
   ['POST', /^\/residents\/([^/]+)\/concessions\/[^/]+\/cancel$/, async (_body, [id]) => `Cancelled a rent concession for ${await residentName(id)}`],
+  ['POST', /^\/residents\/invite$/, async (body) => `Sent a registration link to ${text(body.name) ?? 'a new resident'}`],
+  ['POST', /^\/residents\/([^/]+)\/registration-link$/, async (_body, [id]) => `Sent a new registration link to ${await residentName(id)}`],
   ['POST', /^\/residents\/([^/]+)\/approval$/, async (body, [id]) => `${body.approve === false ? 'Rejected' : 'Approved'} new resident ${await residentName(id)}`],
   ['POST', /^\/residents\/([^/]+)\/aadhar-verification$/, async (body, [id]) => `${text(body.decision) === 'approve' ? 'Verified' : 'Rejected'} ${await residentName(id)}'s ID document`],
   ['POST', /^\/residents\/([^/]+)\/deletion\/decision$/, async (body, [id]) => `${body.approve === false ? 'Declined' : 'Approved'} ${await residentName(id)}'s account deletion`],

@@ -20,7 +20,8 @@ const dueDateLabel = (month: string, dueDay: number) => new Date(Date.UTC(Number
 export async function runRentReminders() {
   if (!isWhatsAppEnabled() && !isEmailEnabled()) return { skipped: 'Neither WhatsApp nor email is configured.' }
   const rules = rentRulesOf(await getSettings())
-  const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions, room: { select: { property: { select: { name: true } } } } } })
+  // Nobody waiting for approval (an invited or receptionist-added resident) lives there yet, so no reminders.
+  const residents = await prisma.resident.findMany({ where: { active: true, approvalPending: false, monthlyRent: { not: null } }, select: { ...recipientSelect, monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions, room: { select: { property: { select: { name: true } } } } } })
   const sent = { reminder1: 0, reminder2: 0, reminder3: 0, overdue: 0 }
   for (const resident of residents) {
     const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)

@@ -1,5 +1,5 @@
 import { Suspense, useState, type CSSProperties } from 'react'
-import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, ShieldX, Trash2 } from 'lucide-react'
+import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, Send, ShieldX, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import type { AadharStatus, Resident } from './resident'
@@ -16,6 +16,8 @@ import { readApiError } from './superAdmin'
 import { EmergencyContactText } from './EmergencyContact'
 import { vehicleText } from './VehicleFields'
 import { CopyButton } from './CopyButton'
+import { RegistrationLinkShare } from './RegistrationLinkShare'
+import { linkOutcomeText, type RegistrationLinkResult } from './registrationLink'
 import { LazyCountryLabel } from './CountryField'
 import { hasAnyIdentity, hasCompleteIdentity, identityDocumentName, isIndian, visaText } from './identity'
 import { ExpiryDate } from './ExpiryDate'
@@ -101,29 +103,58 @@ const maxStaggerSteps = 10
  * One resident: a compact header that expands to the full details. Clicking anywhere on the
  * header toggles it; the chevron button is the keyboard- and screen-reader-accessible control.
  */
+// What the waiting panel says: an invite still out, a registration to review, or a receptionist's addition.
+function approvalText(resident: Resident, canDecide: boolean) {
+  const registration = resident.registration
+  if (registration?.status === 'INVITED') return { title: 'Registration link sent', detail: `Sent ${formatDateTime(registration.sentAt)}, works until ${formatDateTime(registration.expiresAt ?? registration.sentAt)}. Waiting for ${resident.name} to fill it in; their bed is held meanwhile.` }
+  if (registration?.status === 'SUBMITTED') return { title: 'Registration submitted · review', detail: `${resident.name} filled in the link${registration.submittedAt ? ` on ${formatDateTime(registration.submittedAt)}` : ''}. Check their details and ID below, then ${canDecide ? 'approve to let them sign in with the password they chose' : 'ask a super admin to approve'}.` }
+  return { title: 'Waiting for approval', detail: canDecide ? 'A receptionist added this resident. Approve to let them sign in, or reject to remove them and free the room.' : 'A super admin needs to approve this resident before they can sign in.' }
+}
+
 /**
- * A resident a receptionist added, waiting for a super admin. Super admins approve (the resident can
- * then sign in) or reject (the resident is removed and the room freed); receptionists see that it waits.
+ * A resident waiting for a super admin: added by a receptionist, or invited by registration link (sent, then
+ * submitted). Super admins approve (the resident can then sign in) or reject (the resident is removed and the
+ * room freed); any staff member can send a fresh link while the resident has not filled it in yet.
  */
 function ResidentApprovalPanel({ resident, onChanged, onNotice }: { resident: Resident; onChanged: () => void; onNotice: (message: string) => void }) {
   const canDecide = useIsSuperAdmin()
   const [isSaving, setIsSaving] = useState(false)
+  const isInvited = resident.registration?.status === 'INVITED'
+  // A new link the app's WhatsApp could not send, shown for staff to send from their own WhatsApp.
+  const [unsentLink, setUnsentLink] = useState<string | null>(null)
+  const { title, detail } = approvalText(resident, canDecide)
+
   async function decide(approve: boolean) {
-    if (!approve && !window.confirm(`Reject ${resident.name}? They will be removed and their room freed.`)) return
+    if (!approve && !window.confirm(isInvited ? `Withdraw ${resident.name}'s registration link? The record is removed and their bed freed.` : `Reject ${resident.name}? They will be removed and their room freed.`)) return
     setIsSaving(true)
     const response = await fetch(`/api/residents/${resident.id}/approval`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approve }) }).catch(() => null)
     setIsSaving(false)
     if (!response?.ok) { onNotice(response ? await readApiError(response, 'The decision could not be saved.') : 'Could not reach the server.'); return }
-    onNotice(approve ? `${resident.name} is approved and can now sign in.` : `${resident.name} was rejected and removed.`)
+    onNotice(approve ? `${resident.name} is approved and can now sign in.` : `${resident.name} was ${isInvited ? 'withdrawn' : 'rejected'} and removed.`)
     onChanged()
   }
+
+  async function resendLink() {
+    setIsSaving(true)
+    const response = await fetch(`/api/residents/${resident.id}/registration-link`, { method: 'POST' }).catch(() => null)
+    setIsSaving(false)
+    if (!response?.ok) { onNotice(response ? await readApiError(response, 'The link could not be sent.') : 'Could not reach the server.'); return }
+    const result = await response.json() as RegistrationLinkResult
+    onNotice(linkOutcomeText(resident.name, result))
+    // A link waiting to be sent by hand stays on screen; reloading the row now would lose it.
+    if (result.whatsapp === 'sent') onChanged()
+    else setUnsentLink(result.registrationLink)
+  }
+
   return (
     <div className="resident-approval">
-      <div><strong>Waiting for approval</strong><small>{canDecide ? 'A receptionist added this resident. Approve to let them sign in, or reject to remove them and free the room.' : 'A super admin needs to approve this resident before they can sign in.'}</small></div>
-      {canDecide && <div className="aadhar-verification-actions">
-        <button type="button" className="secondary-button" disabled={isSaving} onClick={() => void decide(false)}>Reject</button>
-        <button type="button" className="primary-button" disabled={isSaving} onClick={() => void decide(true)}><BadgeCheck size={15} /> Approve</button>
-      </div>}
+      <div><strong>{title}</strong><small>{detail}</small></div>
+      {unsentLink && <RegistrationLinkShare name={resident.name} phone={resident.phone} link={unsentLink} onNotice={onNotice} />}
+      <div className="aadhar-verification-actions">
+        {isInvited && <button type="button" className="secondary-button" disabled={isSaving} onClick={() => void resendLink()}><Send size={14} /> Send new link</button>}
+        {canDecide && <button type="button" className="secondary-button" disabled={isSaving} onClick={() => void decide(false)}>{isInvited ? 'Withdraw' : 'Reject'}</button>}
+        {canDecide && !isInvited && <button type="button" className="primary-button" disabled={isSaving} onClick={() => void decide(true)}><BadgeCheck size={15} /> Approve</button>}
+      </div>
     </div>
   )
 }
@@ -158,7 +189,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
         <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}{hasAnyIdentity(resident) && <VerificationLine resident={resident} />}</div>
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}{resident.bedNumber ? ` · Bed ${resident.bedNumber}` : ''}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
-        {resident.approvalPending ? <span className="status-pill gold">Pending approval</span> : <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>}
+        {resident.approvalPending ? <span className="status-pill gold">{resident.registration?.status === 'INVITED' ? 'Link sent' : resident.registration?.status === 'SUBMITTED' ? 'Review registration' : 'Pending approval'}</span> : <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>}
         {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}
         {!isRecord && <button className="row-edit row-clone" aria-label={`Clone ${resident.name}`} title="Clone: add a new resident with the same property, rent and address" onClick={onClone}><CopyPlus size={14} /></button>}
         <button className="row-delete" aria-label={`${isRecord ? 'Delete record of' : 'Remove'} ${resident.name}`} title={isRecord ? 'Delete this record permanently' : 'Remove resident'} onClick={onDelete}><Trash2 size={14} /></button>

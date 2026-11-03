@@ -2856,3 +2856,12 @@ a.faq-card { text-decoration: none; }
 /* The two dashboard roles, as a bulleted list under the Team management heading. */
 .team-roles { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .team-roles b { color: var(--ink); font-weight: 700; }
+/* A new resident's registration page (/register/<token>): the booking card, wide enough for the resident form's two columns. */
+.registration-card { width: min(760px, 100%); }
+.registration-intro, .registration-done, .registration-form .resident-photo-field { grid-column: 1 / -1; }
+.registration-done { display: grid; justify-items: center; gap: 8px; padding: 12px 0; color: var(--teal); text-align: center; }
+.registration-form label small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.invite-intro, .registration-link-copy { grid-column: 1 / -1; }
+.registration-link-copy { margin: 4px 0 8px; }
+.registration-link-share { display: grid; gap: 8px; grid-column: 1 / -1; margin: 6px 0; }
+.registration-link-share > .primary-button { display: inline-flex; justify-self: start; align-items: center; gap: 6px; text-decoration: none; }

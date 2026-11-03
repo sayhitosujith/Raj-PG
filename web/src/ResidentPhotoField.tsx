@@ -11,7 +11,7 @@ export type PhotoChange = string | null | undefined
  * the device camera, never picked from saved files, so it shows the actual person. Nothing is uploaded until the
  * form is saved; the picture is previewed here in the meantime.
  */
-export function ResidentPhotoField({ name, currentUrl, change, onChange, subject = 'resident' }: { name: string; currentUrl: string | null; change: PhotoChange; onChange: (change: PhotoChange) => void; /** Who the photo belongs to, for the hint text; the staff form reuses this picker. */ subject?: string }) {
+export function ResidentPhotoField({ name, currentUrl, change, onChange, subject = 'resident', isRequired = false }: { name: string; currentUrl: string | null; change: PhotoChange; onChange: (change: PhotoChange) => void; /** The resident's own registration needs one; staff forms may leave it out. */ isRequired?: boolean; /** Who the photo belongs to, for the hint text; the staff form reuses this picker. */ subject?: string }) {
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const previewUrl = change === undefined ? currentUrl : change
   const hasPhoto = Boolean(previewUrl)
@@ -20,7 +20,7 @@ export function ResidentPhotoField({ name, currentUrl, change, onChange, subject
     <div className="resident-photo-field">
       <Avatar name={name || '?'} photoUrl={previewUrl ?? null} className="resident-photo-preview" />
       <div className="resident-photo-copy">
-        <strong>Profile photo <span>(optional)</span></strong>
+        <strong>Profile photo <span>{isRequired ? '(required)' : '(optional)'}</span></strong>
         <small>{change === null ? 'Photo will be removed when you save.' : change ? `New photo will be saved with the ${subject}.` : 'Taken live with the camera; it will be cropped to a circle.'}</small>
         <div className="resident-photo-actions">
           <button type="button" className="secondary-button" onClick={() => setIsCameraOpen(true)}><Camera size={14} /> {hasPhoto ? 'Retake' : 'Take photo'}</button>

@@ -2366,6 +2366,75 @@
       ]
     },
     {
+      "name": "Registration",
+      "item": [
+        {
+          "name": "GET /registration/:token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/:token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "registration",
+                ":token"
+              ],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "What the registration page shows before the form: who it is for and the bed reserved for them.\n\nSource: backend/src/selfRegistration.ts"
+          }
+        },
+        {
+          "name": "POST /registration/:token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/:token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "registration",
+                ":token"
+              ],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "The resident's submission. Everything the owner's Add resident form requires is required here too, plus a live photo and a password; the phone stays the one the link was sent to. The ID joins the review queue.\n\nSource: backend/src/selfRegistration.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"studentIdCardUrl\": \"\",\n  \"profilePhoto\": \"\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Resident portal",
       "item": [
         {
@@ -3657,7 +3726,7 @@
                 }
               ]
             },
-            "description": "A super admin's decision on a resident a receptionist added: approve lets them sign in; reject removes them and frees the room, since they never became a resident. Super admins only (see staffGuard.ts).\n\nSource: backend/src/residents.ts",
+            "description": "A super admin's decision on a resident a receptionist added or invited: approve lets them sign in; reject removes them and frees the room, since they never became a resident. Super admins only (see staffGuard.ts).\n\nSource: backend/src/residents.ts",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"approve\": \"\"\n}",
@@ -4048,6 +4117,32 @@
           }
         },
         {
+          "name": "POST /residents/:id/registration-link",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/:id/registration-link",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                ":id",
+                "registration-link"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "A fresh link for a resident who has not submitted yet: the old one stops working.\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
           "name": "POST /residents/:id/rent-payments",
           "request": {
             "method": "POST",
@@ -4180,6 +4275,39 @@
               ]
             },
             "description": "Accounts closed at the resident's request, with every detail kept, most recently closed first.\n\nSource: backend/src/residents.ts"
+          }
+        },
+        {
+          "name": "POST /residents/invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residents/invite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residents",
+                "invite"
+              ]
+            },
+            "description": "Self-registration (selfRegistration.ts): staff reserve a bed for a new resident and WhatsApp them a link to fill in their own details. The record waits for approval (approvalPending) from the start, so it cannot sign in or be approved until the resident has submitted and staff have reviewed it.\n\nSource: backend/src/residents.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"phone\": \"\",\n  \"email\": \"\",\n  \"permanentAddress\": \"\",\n  \"emergencyContactName\": \"\",\n  \"emergencyContactRelation\": \"\",\n  \"emergencyContactPhone\": \"\",\n  \"vehicleType\": \"\",\n  \"vehicleNumber\": \"\",\n  \"occupation\": \"\",\n  \"propertyId\": \"\",\n  \"roomNumber\": \"\",\n  \"accessKey\": \"\",\n  \"joinedAt\": \"\",\n  \"rentAccessUntil\": \"\",\n  \"nationality\": \"\",\n  \"aadharNumber\": \"\",\n  \"aadharCardUrl\": \"\",\n  \"passportNumber\": \"\",\n  \"passportExpiry\": \"\",\n  \"passportScanUrl\": \"\",\n  \"visaNumber\": \"\",\n  \"visaType\": \"\",\n  \"visaExpiry\": \"\",\n  \"studentIdCardUrl\": \"\",\n  \"bedNumber\": \"\",\n  \"sendCredentials\": false,\n  \"active\": false,\n  \"profilePhoto\": \"\",\n  \"monthlyRent\": \"\",\n  \"foodOpted\": \"\",\n  \"diet\": \"\",\n  \"whatsappOptIn\": \"\",\n  \"emailOptIn\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           }
         }
       ]
