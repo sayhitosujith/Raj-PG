@@ -4,7 +4,7 @@ import { Ambulance, Flame, Phone, ShieldAlert, Siren, type LucideIcon } from 'lu
 
 /** India's single emergency number (112 reaches police, fire and ambulance), as a tap-to-call button. */
 export function EmergencyButton() {
-  return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /> Emergency</a>
+  return <a className="emergency-button is-sos" href="tel:112" aria-label="Call emergency services on 112"><Siren size={14} /><span className="emergency-label">Emergency</span></a>
 }
 
 const directLines: { label: string; number: string; icon: LucideIcon }[] = [

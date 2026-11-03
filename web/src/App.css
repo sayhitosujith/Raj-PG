@@ -2880,3 +2880,24 @@ a.faq-card { text-decoration: none; }
 .staff-property-initial { width: 80px; height: 80px; border-radius: 12px; }
 .staff-property-initial { display: grid; place-items: center; color: #fff; background: rgb(255 255 255 / .18); font: 700 32px/1 Manrope, sans-serif; }
 .staff-property-mark strong { max-width: 100%; overflow: hidden; color: inherit; font: 700 15px/1.2 Manrope, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+/* Phones: the dashboard's top bar fits on one line. The title shrinks and truncates, Emergency keeps only its icon
+   (it still dials 112, labelled for screen readers), and the action buttons sit closer, so the profile menu is not
+   pushed off the screen. */
+@media (max-width: 560px) {
+  .topbar:not(.portal-topbar) { gap: 8px; padding: 0 12px; }
+  .topbar-heading { flex: 1; min-width: 0; }
+  .topbar .home-title { display: block; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-actions { flex: none; gap: 4px; }
+  .topbar-actions .emergency-button { padding: 7px 9px; }
+  .topbar-actions .emergency-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .topbar-actions .icon-button { width: 34px; height: 34px; }
+  .free-legend { flex-wrap: wrap; gap: 6px 12px; }
+  .free-legend li { white-space: nowrap; }
+}
+/* Phones: three rooms to a row (auto-fill fits only two at this width), with slightly smaller tiles and bed dots so an
+   eight-bed room still fits its beds in two rows. */
+@media (max-width: 560px) {
+  .room-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .room-tile { padding: 5px; }
+  .room-tile-beds :is(i, button) { width: 15px; height: 15px; font-size: 8px; }
+}

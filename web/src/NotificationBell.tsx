@@ -5,7 +5,7 @@ import { Bell } from 'lucide-react'
  * One notification. `id` must change whenever the news changes (a new status, a new month), so a
  * fresh update counts as unread again; `at` orders the list, newest first, when it is known.
  */
-export type Notice = { id: string; title: string; detail?: string | null; at?: string | null; /** Shown as a small badge, e.g. "Announcement". */ kind: NoticeKind }
+export type Notice = { id: string; title: string; detail?: string | null; at?: string | null; /** Shown as a small badge, e.g. "Announcement". */ kind: NoticeKind; /** The resident it is about, so opening it can go straight to them (staff notifications). */ residentId?: string }
 
 /** What a notice is about, shown as its badge. */
 export type NoticeKind = 'Announcement' | 'Rent' | 'Move-out' | 'Repair' | 'Account' | 'Food' | 'ID check' | 'Housekeeping' | 'Reward' | 'Team' | 'Subscription'

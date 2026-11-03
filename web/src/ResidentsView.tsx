@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RotateCw, Search, Send, UserPlus, Users } from 'lucide-react'
 import type { Resident } from './resident'
 import { applyResidentQuery, defaultResidentQuery, summarizeResidents, type ResidentQuery, type ResidentSort, type ResidentStatusFilter } from './residentFilters'
@@ -15,9 +15,25 @@ const statusOptions: Array<[ResidentStatusFilter, string]> = [['all', 'All statu
 const sortOptions: Array<[ResidentSort, string]> = [['recent', 'Recently joined'], ['longest', 'Longest stay'], ['name', 'Name A–Z'], ['room', 'Room number']]
 
 /** Residents screen: summary tiles, search/filter/sort toolbar, and the expandable resident list. */
-export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loadState, onRetry, onAdd, onInvite, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, onBack }: { residents: Resident[]; /** From Settings; shown against dues in move-out notices. */ securityDeposit: number | null; /** Settings → Smart lock. */ doorKeysEnabled: boolean; onChanged: () => void; onNotice: (message: string) => void; loadState: ResidentsLoadState; onRetry: () => void; onAdd: () => void; /** Opens "Send registration link", for a new resident to fill in their own details. */ onInvite: () => void; onEdit: (resident: Resident) => void; onClone: (resident: Resident) => void; onDelete: (resident: Resident) => void; onVerify: (resident: Resident, decision: AadharDecision) => Promise<string | null>; onRecordRent: (resident: Resident, month: string) => Promise<string | null>; onUndoRent: (resident: Resident, paymentId: string) => Promise<string | null>; onBack: () => void }) {
+export function ResidentsView({ residents, securityDeposit, doorKeysEnabled, loadState, focus, onRetry, onAdd, onInvite, onEdit, onClone, onDelete, onVerify, onRecordRent, onUndoRent, onChanged, onNotice, onBack }: { residents: Resident[]; /** From Settings; shown against dues in move-out notices. */ securityDeposit: number | null; /** Settings → Smart lock. */ doorKeysEnabled: boolean; /** A resident to jump to (from a notification); `key` changes on every request, so the same one can be asked for twice. */ focus?: { residentId: string; key: number } | null; onChanged: () => void; onNotice: (message: string) => void; loadState: ResidentsLoadState; onRetry: () => void; onAdd: () => void; /** Opens "Send registration link", for a new resident to fill in their own details. */ onInvite: () => void; onEdit: (resident: Resident) => void; onClone: (resident: Resident) => void; onDelete: (resident: Resident) => void; onVerify: (resident: Resident, decision: AadharDecision) => Promise<string | null>; onRecordRent: (resident: Resident, month: string) => Promise<string | null>; onUndoRent: (resident: Resident, paymentId: string) => Promise<string | null>; onBack: () => void }) {
   const [query, setQuery] = useState<ResidentQuery>(defaultResidentQuery)
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set())
+
+  // Jumping to a resident: search for them (so they are on page 1 whatever the filters were) and open their row,
+  // once per request. Done while rendering, React's pattern for state that follows a prop; the scroll waits for
+  // the row to be on screen. Waits for the residents list when it is still loading.
+  const [handledFocusKey, setHandledFocusKey] = useState<number | null>(null)
+  const focusResident = focus && focus.key !== handledFocusKey ? residents.find((item) => item.id === focus.residentId) : undefined
+  if (focus && focusResident) {
+    setHandledFocusKey(focus.key)
+    setQuery({ ...defaultResidentQuery, search: focusResident.phone ?? focusResident.name })
+    setExpandedIds(new Set([focusResident.id]))
+  }
+  useEffect(() => {
+    if (!focus || handledFocusKey !== focus.key) return
+    const frame = window.requestAnimationFrame(() => document.querySelector(`[data-resident-id="${focus.residentId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [focus, handledFocusKey])
   const visibleResidents = useMemo(() => applyResidentQuery(residents, query), [residents, query])
   // A new search, filter or sort starts again at page 1.
   const pager = usePagination(visibleResidents, listPageSize, JSON.stringify(query))

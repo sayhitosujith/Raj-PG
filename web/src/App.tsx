@@ -47,7 +47,7 @@ import { MySubscriptionView, SubscriptionBanner } from './MySubscription'
 import { useMySubscription, useReceptionistSubscriptions } from './useSubscriptions'
 import { mySubscriptionNotices, receptionistSubscriptionNotices } from './subscriptions'
 import { DeletedRecordsView } from './DeletedRecordsView'
-import { NotificationBell } from './NotificationBell'
+import { NotificationBell, type Notice, type NoticeKind } from './NotificationBell'
 import { buildOwnerNotices, staffActivityNotices, useOwnerRepairs, useStaffActivity } from './ownerNotices'
 import type { HousekeepingStatus, OwnerHousekeepingRequest } from './housekeeping'
 import { MealTimingFields } from './MealTimings'
@@ -234,6 +234,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   // null = closed; undefined resident = add mode.
   // prefill/onCreated are set when a booking request is being converted into a resident.
   const [isInvitingResident, setIsInvitingResident] = useState(false)
+  // The resident a staff notification was about, for the Residents page to open.
+  const [residentFocus, setResidentFocus] = useState<{ residentId: string; key: number } | null>(null)
   const [residentForm, setResidentForm] = useState<{ resident?: Resident; prefill?: ResidentPrefill; onCreated?: (residentId: string) => void } | null>(null)
   const [notice, setNotice] = useState('')
   const [selectedImage, setSelectedImage] = useState('')
@@ -429,6 +431,15 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setResidentForm(null)
   }
 
+  // A clicked staff notification goes to what it is about: a resident's request opens that resident on Residents;
+  // housekeeping, repairs, team activity and subscriptions open their own pages.
+  function openOwnerNotice(notice: Notice) {
+    if (notice.residentId) { setResidentFocus({ residentId: notice.residentId, key: Date.now() }); handleNavigation('Residents'); return }
+    const views: Partial<Record<NoticeKind, string>> = { Housekeeping: 'Staff management', Repair: 'Maintenance', Team: 'Audit logs', Subscription: isOwner ? 'Subscriptions' : 'My subscription' }
+    const view = views[notice.kind]
+    if (view) handleNavigation(view)
+  }
+
   async function markLockTaskDone(task: DoorLockTask) {
     const error = await doorLocks.markDone(task)
     showNotice(error ?? `${task.action === 'ADD' ? 'Added' : 'Deleted'} ${task.holderName}'s PIN${task.lockName ? ` on ${task.lockName}` : ''}: marked done.`)
@@ -547,7 +558,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         <header className="topbar">
           <button className="icon-button menu-trigger" aria-label="Open navigation" onClick={() => setIsSidebarOpen(true)}><Menu size={21} /></button>
           <div className="topbar-heading"><span className="home-title">{isOwner ? 'Super Admin' : 'Receptionist'}</span><div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div></div>
-          <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwner ? 'Super admin' : 'Receptionist'}</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
+          <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} onOpen={openOwnerNotice} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwner ? 'Super admin' : 'Receptionist'}</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Dashboard' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
@@ -555,7 +566,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {!isOwner && <SubscriptionBanner subscription={mySubscription} onOpen={() => handleNavigation('My subscription')} />}
           {activeView === 'Subscriptions' && isOwner && <SubscriptionsView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
           {activeView === 'My subscription' && !isOwner && <MySubscriptionView subscription={mySubscription} onBack={() => handleNavigation('Dashboard')} />}
-          {activeView === 'Residents' && <ResidentsView residents={residents} securityDeposit={settings?.securityDeposit ?? null} doorKeysEnabled={settings?.doorKeysEnabled ?? true} loadState={residentsLoadState} onRetry={retryResidents} onAdd={() => setResidentForm({})} onInvite={() => setIsInvitingResident(true)} onEdit={(resident) => setResidentForm({ resident })} onClone={(resident) => setResidentForm({ prefill: clonePrefill(resident) })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined); doorLocks.reload() }} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
+          {activeView === 'Residents' && <ResidentsView residents={residents} securityDeposit={settings?.securityDeposit ?? null} doorKeysEnabled={settings?.doorKeysEnabled ?? true} loadState={residentsLoadState} onRetry={retryResidents} focus={residentFocus} onAdd={() => setResidentForm({})} onInvite={() => setIsInvitingResident(true)} onEdit={(resident) => setResidentForm({ resident })} onClone={(resident) => setResidentForm({ prefill: clonePrefill(resident) })} onDelete={deleteResident} onVerify={verifyResident} onRecordRent={recordRent} onUndoRent={undoRent} onChanged={() => { fetchResidents().then(showResidents, () => undefined); doorLocks.reload() }} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Properties' && isOwner && <PropertiesView canManage={isOwner} properties={properties} stats={stats} onAdd={() => setIsPropertyModalOpen(true)} onEdit={(property) => setEditingProperty(property)} onRooms={(property) => setRoomsProperty(property)} onPhotos={(property) => setPhotosProperty(property)} onDelete={deleteProperty} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Payments' && <PaymentsView showFinance={isOwner} properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} residents={residents} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
           {activeView === 'Referral Requests' && <BookingRequestsView properties={bookableProperties} refreshSignal={refreshSignal} onConvert={convertBooking} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
