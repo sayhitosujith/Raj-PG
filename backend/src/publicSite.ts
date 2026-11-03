@@ -18,7 +18,8 @@ export const publicSiteRouter = Router()
 
 // Uploaded covers are data URLs, served by their own route with a content hash so browsers cache them;
 // a cover given as a web address is used as it is.
-const coverUrl = (propertyId: string, imageUrl: string) => imageUrl.startsWith('data:') ? `/api/public/properties/${propertyId}/cover?v=${contentVersion(imageUrl)}` : imageUrl
+/** A property's cover image as a public URL: uploaded images through /public/properties/:id/cover, links as they are. */
+export const coverUrl = (propertyId: string, imageUrl: string) => imageUrl.startsWith('data:') ? `/api/public/properties/${propertyId}/cover?v=${contentVersion(imageUrl)}` : imageUrl
 
 const siteProperty = {
   id: true, name: true, location: true, city: true, websiteUrl: true, ownerPhone: true, tenantType: true, amenities: true, totalRooms: true, noticePeriodDays: true, imageUrl: true, checkInTime: true, checkOutTime: true, gateClosingTime: true,

@@ -2857,7 +2857,12 @@ a.faq-card { text-decoration: none; }
 .team-roles { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .team-roles b { color: var(--ink); font-weight: 700; }
 /* A new resident's registration page (/register/<token>): the booking card, wide enough for the resident form's two columns. */
-.registration-card { width: min(760px, 100%); }
+.registration-card { width: min(880px, 100%); }
+/* The form borrows the resident form's field styles (.profile-modal .resident-modal) but sits on the page's card,
+   so the dialog's own frame, height limit and scrolling are taken off. Background and shadow need !important: the
+   generated dark-mode and brand-colour rules for .profile-modal (:root[data-theme=dark] …) outrank any class here. */
+.profile-modal.registration-form { width: 100%; max-height: none; overflow: visible; margin-top: 6px; padding: 0; border: 0; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+.registration-intro h1 { margin-bottom: 6px; }
 .registration-intro, .registration-done, .registration-form .resident-photo-field { grid-column: 1 / -1; }
 .registration-done { display: grid; justify-items: center; gap: 8px; padding: 12px 0; color: var(--teal); text-align: center; }
 .registration-form label small { color: var(--muted); font-size: 10px; font-weight: 500; }
@@ -2865,3 +2870,7 @@ a.faq-card { text-decoration: none; }
 .registration-link-copy { margin: 4px 0 8px; }
 .registration-link-share { display: grid; gap: 8px; grid-column: 1 / -1; margin: 6px 0; }
 .registration-link-share > .primary-button { display: inline-flex; justify-self: start; align-items: center; gap: 6px; text-decoration: none; }
+/* The invited property's image and name at the top of the registration page. */
+.registration-property { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.registration-property img { width: 64px; height: 64px; flex: none; border-radius: 12px; object-fit: cover; background: #e6ece8; }
+.registration-property strong { color: var(--ink); font: 700 18px/1.2 Manrope, sans-serif; }

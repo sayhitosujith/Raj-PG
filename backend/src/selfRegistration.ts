@@ -6,6 +6,7 @@ import { prisma } from './db.js'
 import { findDuplicate } from './duplicates.js'
 import { findExpiredDocument, hasCompleteIdentity, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityInput } from './identityDocuments.js'
 import { findProfilePhotoProblem } from './photo.js'
+import { coverUrl } from './publicSite.js'
 import { findInvalidField, pickTextFields, textFields, toResidentWrite, type TextField } from './residentFields.js'
 import { getSettings } from './settings.js'
 import { parseStudentIdCard, studentIdCardWrite } from './studentId.js'
@@ -37,7 +38,7 @@ async function findInvited(token: string) {
   if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null
   return prisma.resident.findFirst({
     where: { registrationTokenHash: hashToken(token), registrationExpiresAt: { gt: new Date() }, deletedAt: null },
-    select: { id: true, name: true, phone: true, bedNumber: true, room: { select: { number: true, property: { select: { name: true } } } } },
+    select: { id: true, name: true, phone: true, bedNumber: true, room: { select: { number: true, property: { select: { id: true, name: true, imageUrl: true } } } } },
   })
 }
 
@@ -46,13 +47,14 @@ const goneMessage = 'This registration link has expired or was already used. Ask
 /** Public routes for the link itself; mounted before the sign-in checks, since the resident has no account yet. */
 export const selfRegistrationRouter = Router()
 
-// What the registration page shows before the form: who it is for and the bed reserved for them.
+// What the registration page shows before the form: who it is for, the bed reserved for them and the property's image.
 selfRegistrationRouter.get('/registration/:token', async (request, response) => {
   try {
     const resident = await findInvited(request.params.token)
     if (!resident) { response.status(410).json({ error: goneMessage }); return }
     const settings = await getSettings()
-    response.json({ name: resident.name, phone: resident.phone, property: resident.room?.property.name ?? null, room: resident.room?.number ?? null, bed: resident.bedNumber, businessName: settings.businessName, defaultNationality: indianNationality })
+    const property = resident.room?.property
+    response.json({ name: resident.name, phone: resident.phone, property: property?.name ?? null, propertyImage: property?.imageUrl ? coverUrl(property.id, property.imageUrl) : null, room: resident.room?.number ?? null, bed: resident.bedNumber, businessName: settings.businessName, defaultNationality: indianNationality })
   } catch (error) {
     console.error('Registration link lookup failed:', error)
     response.status(503).json({ error: 'Registration is temporarily unavailable.' })

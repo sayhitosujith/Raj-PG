@@ -11,7 +11,7 @@ import { readApiError } from './superAdmin'
 import { VehicleFields, vehicleFields } from './VehicleFields'
 
 /** Who the link is for and the bed reserved for them; mirrors GET /api/registration/:token. */
-type Invite = { name: string; phone: string | null; property: string | null; room: string | null; bed: number | null; businessName: string; defaultNationality: string }
+type Invite = { name: string; phone: string | null; property: string | null; /** The property's cover image; null when it has none, and the workspace logo shows instead. */ propertyImage: string | null; room: string | null; bed: number | null; businessName: string; defaultNationality: string }
 
 const minimumPasswordLength = 10
 
@@ -65,11 +65,14 @@ export function RegistrationPage({ token }: { token: string }) {
   return (
     <main className="booking-page">
       <div className="booking-card registration-card">
-        <div className="brand-row booking-brand"><BrandMark /></div>
+        {/* The property the resident is joining, rather than the workspace's brand, once the link is known to be theirs. */}
+        {invite?.propertyImage
+          ? <div className="registration-property"><img src={invite.propertyImage} alt={invite.property ?? 'Property'} /><strong>{invite.property}</strong></div>
+          : <div className="brand-row booking-brand"><BrandMark /></div>}
         {loadError ? <><h1>Link not available</h1><p className="booking-intro">{loadError}</p></>
           : !invite ? <InlineLoader />
           : isDone ? <div className="registration-done"><BadgeCheck size={36} /><h1>Registration sent</h1><p className="booking-intro">Thank you, {name.split(' ')[0]}. {invite.businessName} will check your details and ID. Once they approve, sign in with your phone number ({invite.phone}) and the password you chose.</p></div>
-          : <form className="resident-modal registration-form" onSubmit={submit}>
+          : <form className="profile-modal resident-modal registration-form" onSubmit={submit}>
               <div className="registration-intro"><h1>Complete your registration</h1><p className="booking-intro">{invite.businessName} has reserved your bed{place ? `: ${place}` : ''}. Fill in your details below; they are checked before your account is opened.</p></div>
               <ResidentPhotoField name={name} currentUrl={null} change={photo} onChange={setPhoto} isRequired />
               <label>Full name<input name="name" required value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
