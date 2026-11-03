@@ -8,6 +8,7 @@ import { InlineLoader } from './Loader'
 import { OccupationFields } from './OccupationFields'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
 import { readApiError } from './superAdmin'
+import { useTransparentLogo } from './transparentLogo'
 import { VehicleFields, vehicleFields } from './VehicleFields'
 
 /** Who the link is for and the bed reserved for them; mirrors GET /api/registration/:token. */
@@ -31,6 +32,7 @@ export function RegistrationPage({ token }: { token: string }) {
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isDone, setIsDone] = useState(false)
+  const propertyImage = useTransparentLogo(invite?.propertyImage ?? null)
 
   useEffect(() => {
     fetch(`/api/registration/${token}`)
@@ -66,8 +68,8 @@ export function RegistrationPage({ token }: { token: string }) {
     <main className="booking-page">
       <div className="booking-card registration-card">
         {/* The property the resident is joining, rather than the workspace's brand, once the link is known to be theirs. */}
-        {invite?.propertyImage
-          ? <div className="registration-property"><img src={invite.propertyImage} alt={invite.property ?? 'Property'} /><strong>{invite.property}</strong></div>
+        {invite && propertyImage
+          ? <div className="registration-property"><img src={propertyImage} alt={invite.property ?? 'Property'} /><strong>{invite.property}</strong></div>
           : <div className="brand-row booking-brand"><BrandMark /></div>}
         {loadError ? <><h1>Link not available</h1><p className="booking-intro">{loadError}</p></>
           : !invite ? <InlineLoader />

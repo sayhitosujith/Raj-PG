@@ -777,7 +777,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    rounded corners and a soft shadow make it read as a deliberate badge. drop-shadow (not box-shadow)
    follows what is drawn, so a transparent logo gets no shadowed rectangle around it, and its corners
    are empty anyway, so the rounding changes nothing for it. */
-.sidebar .brand-logo { border-radius: 16px; filter: drop-shadow(0 6px 14px rgb(8 40 60 / .25)); }
+.sidebar .brand-logo { filter: drop-shadow(0 6px 14px rgb(8 40 60 / .25)); }
 /* The portal header grows (from 76px) to fit a larger logo, with a little room above and below. */
 .portal-topbar { height: auto; min-height: 76px; padding-block: 8px; }
 .portal-topbar .brand-logo { max-height: 84px; }
@@ -2872,5 +2872,11 @@ a.faq-card { text-decoration: none; }
 .registration-link-share > .primary-button { display: inline-flex; justify-self: start; align-items: center; gap: 6px; text-decoration: none; }
 /* The invited property's image and name at the top of the registration page. */
 .registration-property { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.registration-property img { width: 64px; height: 64px; flex: none; border-radius: 12px; object-fit: cover; background: #e6ece8; }
+.registration-property img { width: 72px; height: 72px; flex: none; object-fit: contain; }
 .registration-property strong { color: var(--ink); font: 700 18px/1.2 Manrope, sans-serif; }
+/* A receptionist's property in the sidebar's brand spot: its image, then its name. */
+.staff-property-mark { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.staff-property-mark img { width: 140px; height: 90px; object-fit: contain; object-position: left center; filter: drop-shadow(0 4px 10px rgb(8 40 60 / .25)); }
+.staff-property-initial { width: 80px; height: 80px; border-radius: 12px; }
+.staff-property-initial { display: grid; place-items: center; color: #fff; background: rgb(255 255 255 / .18); font: 700 32px/1 Manrope, sans-serif; }
+.staff-property-mark strong { max-width: 100%; overflow: hidden; color: inherit; font: 700 15px/1.2 Manrope, sans-serif; text-overflow: ellipsis; white-space: nowrap; }

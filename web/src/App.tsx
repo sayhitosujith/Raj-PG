@@ -63,6 +63,7 @@ import { StaffPanel } from './StaffPanel'
 import { FreeRooms, type RoomOccupancy } from './FreeRooms'
 import { DoorLocksView } from './DoorLocksView'
 import { InviteResidentModal } from './InviteResidentModal'
+import { StaffPropertyMark } from './StaffPropertyMark'
 import { LockTasksView } from './LockTasksView'
 import { useDoorLockTasks, type DoorLockTask } from './doorLocks'
 import type { Worker } from './workers'
@@ -505,7 +506,8 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     <div className="app-shell">
       <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-row">
-          <BrandMark />
+          {/* Receptionists see the property they work at; owners see the workspace logo. */}
+          {isOwner ? <BrandMark /> : <StaffPropertyMark property={properties.find((property) => property.id)} />}
           <button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)}><X size={18} /></button>
         </div>
         {isOwner && <WorkspaceMenu businessName={businessName} contactPhone={settings?.contactPhone} contactEmail={settings?.contactEmail} onOpenSettings={openSettingsSection} />}

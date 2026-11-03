@@ -63,10 +63,11 @@ export type StaffRoleInput = { staffRole: StaffRole; propertyIds: string[] }
 
 /**
  * Reads the role and assigned property from a request body. A receptionist manages exactly one existing
- * property (still stored as a one-item list, so access checks stay unchanged); super admins reach
- * everything, so any list sent for them is dropped. Absent role = no change.
+ * property (still stored as a one-item list, so access checks stay unchanged), and a property has at most one
+ * receptionist: one receptionist per PG. `selfId` is the account being edited, which may keep its own property.
+ * Super admins reach everything, so any list sent for them is dropped. Absent role = no change.
  */
-export async function parseStaffRole(body: { staffRole?: unknown; propertyIds?: unknown }): Promise<{ ok: true; value: StaffRoleInput | null } | { ok: false; error: string }> {
+export async function parseStaffRole(body: { staffRole?: unknown; propertyIds?: unknown }, selfId?: string): Promise<{ ok: true; value: StaffRoleInput | null } | { ok: false; error: string }> {
   if (body.staffRole === undefined) return { ok: true, value: null }
   if (body.staffRole !== StaffRole.SUPER_ADMIN && body.staffRole !== StaffRole.RECEPTIONIST) return { ok: false, error: 'Role must be Super admin or Receptionist.' }
   if (body.staffRole === StaffRole.SUPER_ADMIN) return { ok: true, value: { staffRole: StaffRole.SUPER_ADMIN, propertyIds: [] } }
@@ -75,6 +76,8 @@ export async function parseStaffRole(body: { staffRole?: unknown; propertyIds?: 
   if (ids.length > 1) return { ok: false, error: 'A receptionist can manage only one property. Choose one.' }
   const found = await prisma.property.count({ where: { id: { in: ids } } })
   if (found !== ids.length) return { ok: false, error: 'The chosen property no longer exists.' }
+  const taken = await prisma.superAdmin.findFirst({ where: { staffRole: StaffRole.RECEPTIONIST, propertyIds: { hasSome: ids }, ...(selfId ? { id: { not: selfId } } : {}) }, select: { name: true } })
+  if (taken) return { ok: false, error: `${taken.name} is already the receptionist for that property. A property has one receptionist; change theirs first.` }
   return { ok: true, value: { staffRole: StaffRole.RECEPTIONIST, propertyIds: ids } }
 }
 
@@ -151,7 +154,7 @@ superAdminRouter.patch('/super-admins/:id', async (request, response) => {
   const parsed = parseSuperAdminIdentity(body)
   if (!parsed.ok) { response.status(400).json({ error: parsed.error }); return }
   try {
-    const role = await parseStaffRole(body)
+    const role = await parseStaffRole(body, request.params.id)
     if (!role.ok) { response.status(400).json({ error: role.error }); return }
     if (request.params.id === userId) {
       const self = await prisma.superAdmin.findUniqueOrThrow({ where: { id: userId }, select: { email: true, staffRole: true } })
