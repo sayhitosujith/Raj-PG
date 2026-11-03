@@ -58,11 +58,14 @@ const toView = ({ date, meal, resident, ...request }: Prisma.LateMealRequestGetP
  */
 export const lateMealAdminRouter = Router()
 
-// Requests for today onwards: pending first (soonest meal first), then the decided ones.
+// No food plan, no meals: a request from someone since taken off the plan (or moved out) is not shown or served.
+const stillOnFoodPlan = { resident: { active: true, foodOpted: true } }
+
+// Requests for today onwards from residents still on the food plan: pending first (soonest meal first), then the decided ones.
 lateMealAdminRouter.get('/properties/:id/late-meal-requests', async (request, response) => {
   try {
     const today = parseDateOnly(propertyNow().date) as Date
-    const rows = await withDatabaseRetry(() => prisma.lateMealRequest.findMany({ where: { propertyId: request.params.id, date: { gte: today } }, orderBy: [{ date: 'asc' }, { meal: 'asc' }, { createdAt: 'asc' }], select: requestSelect }))
+    const rows = await withDatabaseRetry(() => prisma.lateMealRequest.findMany({ where: { propertyId: request.params.id, date: { gte: today }, ...stillOnFoodPlan }, orderBy: [{ date: 'asc' }, { meal: 'asc' }, { createdAt: 'asc' }], select: requestSelect }))
     const views = rows.map(toView)
     response.json([...views.filter((item) => item.status === LateMealStatus.PENDING), ...views.filter((item) => item.status !== LateMealStatus.PENDING)])
   } catch (error) {
@@ -84,8 +87,9 @@ lateMealAdminRouter.post('/properties/:id/late-meal-requests/:requestId/decision
   const { id: propertyId, requestId } = request.params
   const target = approve ? LateMealStatus.APPROVED : LateMealStatus.DECLINED
   try {
-    const current = await prisma.lateMealRequest.findFirst({ where: { id: requestId, propertyId }, select: { status: true, date: true, meal: true } })
+    const current = await prisma.lateMealRequest.findFirst({ where: { id: requestId, propertyId }, select: { status: true, date: true, meal: true, resident: { select: { active: true, foodOpted: true } } } })
     if (!current) { response.status(404).json({ error: 'That request was not found.' }); return }
+    if (approve && !(current.resident.active && current.resident.foodOpted)) { response.status(409).json({ error: 'This resident is no longer on the food plan, so no meal can be served to them.' }); return }
     if (current.status === target) { response.status(409).json({ error: `This request is already ${approve ? 'approved' : 'declined'}.` }); return }
     if (current.status !== LateMealStatus.PENDING) {
       const times = await mealTimesOf(propertyId)
@@ -96,7 +100,7 @@ lateMealAdminRouter.post('/properties/:id/late-meal-requests/:requestId/decision
     // the limit check; the loser gets P2034 and is asked to try again.
     const decided = await prisma.$transaction(async (transaction) => {
       if (approve) {
-        const approved = await transaction.lateMealRequest.count({ where: { propertyId, date: current.date, meal: current.meal, status: LateMealStatus.APPROVED } })
+        const approved = await transaction.lateMealRequest.count({ where: { propertyId, date: current.date, meal: current.meal, status: LateMealStatus.APPROVED, ...stillOnFoodPlan } })
         if (approved >= settings.lateMealLimit) return { limitReached: approved } as const
       }
       // Conditional on the status read above, so two staff deciding at once cannot both win.
