@@ -86,6 +86,7 @@ import { RolePreviewBanner, RoleSwitcher, type ViewRole } from './RoleSwitcher'
 import { ActingAsResidentBanner, ResidentPicker } from './ActAsResident'
 import { startActingAs, stopActingAs, type ActingResident } from './actAs'
 import { ResidentPortal } from './ResidentPortal'
+import { IsActingAsResidentProvider } from './actingContext'
 import { RefreshButton } from './RefreshButton'
 import { slowRefreshIntervalMs, useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
@@ -547,7 +548,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const holidaysPanel = <section className="panel holidays-panel"><div className="panel-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India from Google's calendar; plan meals, housekeeping and staff around them</p></div></div><HolidayList holidays={holidays} limit={6} /></section>
 
   // The portal's own Sign out also comes back here: the super admin's session must stay signed in.
-  if (actingResident) return <><ActingAsResidentBanner name={actingResident.name} onExit={stopActingAsResident} /><ResidentPortal key={actingResident.id} onSignOut={stopActingAsResident} /></>
+  if (actingResident) return <><ActingAsResidentBanner name={actingResident.name} onExit={stopActingAsResident} /><IsActingAsResidentProvider value={true}><ResidentPortal key={actingResident.id} onSignOut={stopActingAsResident} /></IsActingAsResidentProvider></>
 
   return (
     <IsSuperAdminProvider value={isOwner}>

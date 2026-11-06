@@ -8,6 +8,7 @@ import { InlineLoader } from './Loader'
 import { propertyMinutesIntoDay } from './propertyTime'
 import { ModalLayer } from './ModalLayer'
 import { LateMealAction } from './LateMealAction'
+import { useIsActingAsResident } from './actingContext'
 
 async function fetchFood() {
   const response = await fetch('/api/resident-portal/food')
@@ -199,18 +200,22 @@ export function useTodayMenu(refreshSignal: number, enabled: boolean) {
  * Asks for tomorrow's breakfast, lunch and dinner while any is unanswered before the 11:59 pm cutoff, as a
  * window that cannot be closed until every meal has an answer: the kitchen cooks only for residents
  * who said they are eating, so an answer is required. "Eating all three" answers in one tap.
+ * A super admin acting as the resident may close it instead, so they never have to invent the
+ * resident's choices; it stays closed for that day until the portal is reopened.
  */
 export function MealChoiceGate({ refreshSignal, onNotice }: { refreshSignal: number; onNotice: (message: string) => void }) {
   const [food, setFood] = useState<ResidentFood | null>(null)
   const [picked, setPicked] = useState<Partial<Record<Meal, boolean>>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const canClose = useIsActingAsResident()
+  const [closedForDate, setClosedForDate] = useState<string | null>(null)
 
   useEffect(() => { fetchFood().then(setFood, () => undefined) }, [])
   useRefreshSignal(refreshSignal, () => { fetchFood().then(setFood, () => undefined) })
 
   const day = food?.answerDue ? food.days.find((item) => item.date === food.answerDue) : undefined
-  if (!food || !day) return null
+  if (!food || !day || day.date === closedForDate) return null
   const open = day.meals.filter((meal) => meal.canChange)
   // What the resident sees ticked: this window's picks, else what they already saved.
   const answerOf = (meal: ResidentMeal) => picked[meal.meal] ?? meal.answer
@@ -232,7 +237,7 @@ export function MealChoiceGate({ refreshSignal, onNotice }: { refreshSignal: num
   return (
     <ModalLayer><div className="modal-backdrop" role="presentation">
       <div className="profile-modal meal-choice-modal" role="dialog" aria-modal="true" aria-labelledby="meal-choice-title">
-        <div className="modal-heading"><div><p className="eyebrow">Food · required</p><h2 id="meal-choice-title">Your meals {dayLabel}</h2></div></div>
+        <div className="modal-heading"><div><p className="eyebrow">Food · required</p><h2 id="meal-choice-title">Your meals {dayLabel}</h2></div>{canClose && <button type="button" className="icon-button" aria-label="Close without answering" onClick={() => setClosedForDate(day.date)}><X size={18} /></button>}</div>
         <p className="menu-modal-hint">Tell the kitchen by 11:59 pm today. A meal you do not answer counts as not eating.</p>
         <ul className="menu-meals">
           {open.map((meal) => {
