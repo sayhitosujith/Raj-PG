@@ -1327,7 +1327,7 @@
     color: #6a6a6a
 }
 .portal-shell .role-switcher-options button.is-active {
-    box-shadow: 0 1px 3px #2b2b2b1f
+    box-shadow: 0 2px 6px #49494933
 }
 :root[data-theme="dark"] .portal-shell .role-switcher {
     border-color: rgb(255 255 255 / .1)
@@ -1339,8 +1339,8 @@
     color: rgb(205 205 205)
 }
 :root[data-theme="dark"] .portal-shell .role-switcher-options button.is-active {
-    color: rgb(187 187 187);
-    background: rgb(255 255 255 / .12);
+    color: #fff;
+    background: var(--teal);
     box-shadow: none
 }
 :root[data-theme="dark"] .portal-shell .role-preview-banner {
