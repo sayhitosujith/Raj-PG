@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { nextThemeSwitch } from './theme'
 
 /**
@@ -8,8 +8,9 @@ import { nextThemeSwitch } from './theme'
  */
 export function useThemeClock(onSwitch: () => void, enabled = true) {
   // The latest callback, so the timer never runs a stale one and is not reset on every render.
+  // Synced in a layout effect, not during render, so a render React discards cannot leak its callback.
   const callback = useRef(onSwitch)
-  callback.current = onSwitch
+  useLayoutEffect(() => { callback.current = onSwitch })
 
   useEffect(() => {
     if (!enabled) return
