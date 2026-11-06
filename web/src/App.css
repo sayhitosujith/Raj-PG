@@ -2835,11 +2835,15 @@ a.faq-card { text-decoration: none; }
 .role-preview-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 18px; padding: 12px 16px; border: 1px solid #b9cdea; border-radius: 12px; color: #24406b; background: #eef4fc; }
 .role-preview-banner > svg { flex: none; color: var(--blue); }
 .role-preview-banner p { flex: 1 1 260px; margin: 0; font-size: 13px; }
+.role-preview-exit { flex: none; padding: 8px 12px; border: 1px solid #9db8e0; border-radius: 7px; color: #24406b; background: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.role-preview-exit:hover { border-color: var(--blue); background: #e3edfa; }
 :root[data-theme="dark"] .role-switcher { border-color: rgb(255 255 255 / .1); }
 :root[data-theme="dark"] .role-switcher-options { background: rgb(255 255 255 / .06); }
 :root[data-theme="dark"] .role-switcher-options button { color: rgb(200 210 206); }
 :root[data-theme="dark"] .role-switcher-options button.is-active { color: rgb(134 239 172); background: rgb(255 255 255 / .12); box-shadow: none; }
 :root[data-theme="dark"] .role-preview-banner { border-color: rgb(96 165 250 / .35); color: rgb(191 219 254); background: rgb(23 37 64 / .6); }
+:root[data-theme="dark"] .role-preview-exit { border-color: rgb(96 165 250 / .5); color: rgb(219 234 254); background: rgb(30 58 138 / .45); }
+:root[data-theme="dark"] .role-preview-exit:hover { background: rgb(30 58 138 / .7); }
 :root[data-theme="dark"] .subscription-history li { border-color: rgb(255 255 255 / .1); background: rgb(255 255 255 / .03); }
 :root[data-theme="dark"] .secondary-button.subscription-end { border-color: rgb(248 113 113 / .4); color: rgb(252 165 165); }
 @media (max-width: 560px) { .subscription-dates { grid-template-columns: 1fr; } }

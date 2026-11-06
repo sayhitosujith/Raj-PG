@@ -30,7 +30,7 @@ export function RolePreviewBanner({ role, onExit }: { role: StaffRole; onExit: (
     <div className="role-preview-banner" role="status">
       <Eye size={18} aria-hidden="true" />
       <p><strong>Previewing as {roleLabels[role].toLowerCase()}.</strong> You see their menus and pages, but the data and permissions are still yours, and changes you make are real.</p>
-      <button type="button" className="outline-button" onClick={onExit}>Back to super admin</button>
+      <button type="button" className="role-preview-exit" onClick={onExit}>Back to super admin</button>
     </div>
   )
 }
