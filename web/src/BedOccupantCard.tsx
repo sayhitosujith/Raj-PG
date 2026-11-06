@@ -1,4 +1,5 @@
 import { Avatar } from './Avatar'
+import { residentPhotoUrl } from './resident'
 import { displayName } from './displayName'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import { ModalLayer } from './ModalLayer'
@@ -37,7 +38,7 @@ export function BedOccupantCard({ occupant, roomNumber, anchor }: { occupant: Be
   return (
     <ModalLayer>
       <div className="bed-occupant-card" role="tooltip" style={{ ...style, width: cardWidth }}>
-        <Avatar name={occupant.name} photoUrl={occupant.photoVersion ? `/api/residents/${occupant.id}/photo?v=${occupant.photoVersion}` : null} className="bed-occupant-photo" />
+        <Avatar name={occupant.name} photoUrl={residentPhotoUrl(occupant)} className="bed-occupant-photo" />
         <div className="bed-occupant-text">
           <strong>{displayName(occupant.name)}</strong>
           <small>Room {roomNumber} · Bed {occupant.bed}</small>

@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { BellRing, CalendarCheck, CheckCircle2, MessageSquare, RotateCw, Sparkles, XCircle } from 'lucide-react'
 import { Avatar } from './Avatar'
+import { residentPhotoUrl } from './resident'
 import { describeVisit, formatTime, isOpenRequest, statusDetails, type HousekeepingStatus, type OwnerHousekeepingRequest } from './housekeeping'
 import { todayDateInputValue } from './joinDate'
 import type { ResidentsLoadState } from './ResidentsView'
@@ -52,7 +53,7 @@ function HousekeepingRow({ request, index, onUpdate }: { request: OwnerHousekeep
   return (
     <article className="housekeeping-item" style={{ '--stagger': Math.min(index, 10) } as React.CSSProperties}>
       <div className="housekeeping-item-main">
-        <Avatar name={request.resident.name} photoUrl={request.resident.photoVersion ? `/api/residents/${request.resident.id}/photo?v=${request.resident.photoVersion}` : null} className="resident-avatar" />
+        <Avatar name={request.resident.name} photoUrl={residentPhotoUrl(request.resident)} className="resident-avatar" />
         <div className="resident-info"><strong>{request.resident.name}{request.hasOpenReminder && <span className="resident-badge coral"><BellRing size={9} /> Reminder{request.reminderCount > 1 ? ` ×${request.reminderCount}` : ''}{request.lastReminderAt ? ` · ${formatTime(request.lastReminderAt)}` : ''}</span>}{request.isOverdue && <span className="resident-badge coral">Overdue</span>}{isDueToday && isOpenRequest(request) && !request.isOverdue && <span className="resident-badge gold">Today</span>}</strong><small>{request.resident.property} · Room {request.resident.room}</small></div>
         <div className="housekeeping-when"><strong>{describeVisit(request)}</strong>{request.note && <small>“{request.note}”</small>}</div>
         <span className={`status-pill ${statusDetails[request.status].tone}`}>{statusDetails[request.status].label}</span>

@@ -5,7 +5,7 @@ import { readIdentityFields, type DocumentUploads } from './identity'
 import { IdentityDocumentFields } from './IdentityDocumentFields'
 import { OccupationFields } from './OccupationFields'
 import { todayDateInputValue } from './joinDate'
-import type { Resident } from './resident'
+import { residentPhotoUrl, type Resident } from './resident'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
 import { PhoneField } from './PhoneField'
 import { EmergencyContactFields, emergencyContactFields } from './EmergencyContact'
@@ -139,7 +139,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <form className="profile-modal resident-modal" onSubmit={save}>
         <div className="modal-heading"><div><p className="eyebrow">Residents</p><h2>{isEdit ? 'Edit resident' : 'Add resident'}</h2></div><button type="button" className="icon-button" aria-label="Close resident form" onClick={onClose}><X size={18} /></button></div>
-        <ResidentPhotoField name={previewName} currentUrl={resident?.photoVersion ? `/api/residents/${resident.id}/photo?v=${resident.photoVersion}` : null} change={photoChange} onChange={setPhotoChange} />
+        <ResidentPhotoField name={previewName} currentUrl={resident ? residentPhotoUrl(resident) : null} change={photoChange} onChange={setPhotoChange} />
         {/* In pairs on wide screens (see .resident-modal in App.css): name and phone, email and occupation, property and room. */}
         <label>Resident name<input name="name" required onChange={(event) => setPreviewName(event.target.value)} defaultValue={resident?.name ?? prefill?.name} placeholder="e.g. Ananya Sharma" /></label>
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />

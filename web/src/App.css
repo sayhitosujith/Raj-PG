@@ -2856,8 +2856,9 @@ a.faq-card { text-decoration: none; }
 .resident-picker-list { display: grid; gap: 2px; max-height: min(50dvh, 360px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .resident-picker-list button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 8px; border: 0; border-radius: 7px; color: var(--ink); background: transparent; text-align: left; cursor: pointer; }
 .resident-picker-list button:hover, .resident-picker-list button:focus-visible { background: #eef4fc; }
-.resident-picker-list button > svg { flex: none; color: var(--blue); }
-.resident-picker-list span { display: grid; gap: 2px; min-width: 0; }
+.resident-picker-avatar { flex: none; display: grid; place-items: center; width: 36px; height: 36px; overflow: hidden; border-radius: 50%; color: #9d6848; background: #f1ddcc; font-size: 11px; font-weight: 700; }
+.resident-picker-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.resident-picker-list span { flex: 1; display: grid; gap: 2px; min-width: 0; }
 .resident-picker-list strong { font-size: 13px; }
 .resident-picker-list small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .resident-picker-empty { padding: 12px 8px; color: var(--muted); font-size: 12px; }

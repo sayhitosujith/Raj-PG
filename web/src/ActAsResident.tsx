@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Search, UserRound, X } from 'lucide-react'
 import { ModalLayer } from './ModalLayer'
-import type { Resident } from './resident'
+import { Avatar } from './Avatar'
+import { residentPhotoUrl, type Resident } from './resident'
 
 /**
  * Chooses which resident to act as. Only current residents who can sign in are offered: moved-out
@@ -22,7 +23,7 @@ export function ResidentPicker({ residents, onPick, onClose }: { residents: Resi
         <label className="resident-picker-search"><Search size={15} aria-hidden="true" /><input type="search" placeholder="Search by name, property or room" aria-label="Search residents" value={query} onChange={(event) => setQuery(event.target.value)} autoFocus /></label>
         <ul className="resident-picker-list">
           {choices.map((resident) => (
-            <li key={resident.id}><button type="button" onClick={() => onPick(resident)}><UserRound size={16} aria-hidden="true" /><span><strong>{resident.name}</strong><small>{resident.property} · room {resident.room}</small></span></button></li>
+            <li key={resident.id}><button type="button" onClick={() => onPick(resident)}><Avatar name={resident.name} photoUrl={residentPhotoUrl(resident)} className="resident-picker-avatar" /><span><strong>{resident.name}</strong><small>{resident.property} · room {resident.room}</small></span></button></li>
           ))}
           {!choices.length && <li className="resident-picker-empty">{words ? 'No resident matches that search.' : 'No current residents to show.'}</li>}
         </ul>
