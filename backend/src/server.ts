@@ -3,6 +3,7 @@ import 'dotenv/config'
 import express from 'express'
 import { Prisma, UserRole } from '@prisma/client'
 import { authRouter, requireRole } from './auth.js'
+import { actAsRouter } from './actAs.js'
 import { bookingAdminRouter, bookingPublicRouter } from './bookings.js'
 import { publicSiteRouter } from './publicSite.js'
 import { notifyAnnouncement, notifyInBackground } from './notifications.js'
@@ -105,6 +106,7 @@ app.use('/api', staffGuard)
 // Receptionists' changes are recorded for the super admins' notifications (see staffActivity.ts).
 app.use('/api', recordStaffActivity)
 app.use('/api', staffActivityRouter)
+app.use('/api', actAsRouter)
 app.use('/api', superAdminRouter)
 app.use('/api', subscriptionRouter)
 app.use('/api', residentRouter)

@@ -1,19 +1,21 @@
 import { Eye } from 'lucide-react'
 import type { StaffRole } from './superAdmin'
 
-const roleLabels: Record<StaffRole, string> = { SUPER_ADMIN: 'Super admin', RECEPTIONIST: 'Receptionist' }
+/** The roles a super admin can view the app as: the two staff dashboards, or a resident's portal. */
+export type ViewRole = StaffRole | 'RESIDENT'
+
+const roleLabels: Record<ViewRole, string> = { SUPER_ADMIN: 'Super admin', RECEPTIONIST: 'Receptionist', RESIDENT: 'Resident' }
 
 /**
- * Lets a super admin flip the dashboard between the super admin and receptionist layouts, to check what
- * receptionists can see. Only the layout changes: requests still go out with the super admin's own
- * session, so the data and permissions stay the owner's (every property, every action).
+ * Lets a super admin view the app as another role. Receptionist only changes the dashboard's layout
+ * (requests still go out as the owner); Resident opens a chosen resident's real portal (ActAsResident.tsx).
  */
-export function RoleSwitcher({ role, onChange }: { role: StaffRole; onChange: (role: StaffRole) => void }) {
+export function RoleSwitcher({ role, onChange }: { role: ViewRole; onChange: (role: ViewRole) => void }) {
   return (
-    <div className="role-switcher" role="radiogroup" aria-label="View dashboard as">
+    <div className="role-switcher" role="radiogroup" aria-label="View as">
       <span className="role-switcher-label">View as</span>
       <div className="role-switcher-options">
-        {(Object.keys(roleLabels) as StaffRole[]).map((option) => (
+        {(Object.keys(roleLabels) as ViewRole[]).map((option) => (
           <button key={option} type="button" role="radio" aria-checked={role === option} className={role === option ? 'is-active' : undefined} onClick={() => onChange(option)}>{roleLabels[option]}</button>
         ))}
       </div>
@@ -22,14 +24,14 @@ export function RoleSwitcher({ role, onChange }: { role: StaffRole; onChange: (r
 }
 
 /**
- * Always visible while a super admin previews another role. Buttons that are still shown work as normal
- * with the owner's rights, so the banner says that plainly and gives a one-click way back.
+ * Always visible while a super admin previews the receptionist layout. Buttons that are still shown
+ * work as normal with the owner's rights, so the banner says that plainly and gives a one-click way back.
  */
-export function RolePreviewBanner({ role, onExit }: { role: StaffRole; onExit: () => void }) {
+export function RolePreviewBanner({ onExit }: { onExit: () => void }) {
   return (
     <div className="role-preview-banner" role="status">
       <Eye size={18} aria-hidden="true" />
-      <p><strong>Previewing as {roleLabels[role].toLowerCase()}.</strong> You see their menus and pages, but the data and permissions are still yours, and changes you make are real.</p>
+      <p><strong>Previewing as receptionist.</strong> You see their menus and pages, but the data and permissions are still yours, and changes you make are real.</p>
       <button type="button" className="role-preview-exit" onClick={onExit}>Back to super admin</button>
     </div>
   )

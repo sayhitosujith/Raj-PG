@@ -82,7 +82,10 @@ import { HolidayList, useHolidays } from './holidays'
 import { FireAlarmOverlay, useFireAlerts, type FireAlert } from './FireAlarm'
 import { EmergencyButton } from './EmergencyCall'
 import { readApiError, type StaffRole, type SuperAdmin, isSuperAdmin } from './superAdmin'
-import { RolePreviewBanner, RoleSwitcher } from './RoleSwitcher'
+import { RolePreviewBanner, RoleSwitcher, type ViewRole } from './RoleSwitcher'
+import { ActingAsResidentBanner, ResidentPicker } from './ActAsResident'
+import { startActingAs, stopActingAs, type ActingResident } from './actAs'
+import { ResidentPortal } from './ResidentPortal'
 import { RefreshButton } from './RefreshButton'
 import { slowRefreshIntervalMs, useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
@@ -199,6 +202,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   // previewed role; the server still answers as the owner, so only the layout changes.
   const [previewRole, setPreviewRole] = useState<StaffRole>('SUPER_ADMIN')
   const isOwner = isOwnerAccount && previewRole === 'SUPER_ADMIN'
+  // Acting as a resident replaces the dashboard with that resident's real portal (ActAsResident.tsx).
+  const [isPickingResident, setIsPickingResident] = useState(false)
+  const [actingResident, setActingResident] = useState<ActingResident | null>(null)
   // A receptionist whose subscription ends mid-session goes back to sign-in, told why.
   const endSession = useCallback((reason: string) => { void onSignOut(reason) }, [onSignOut])
   useAdminBrand(settings)
@@ -368,11 +374,27 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
     setIsSidebarOpen(false)
   }
 
-  // Back to the dashboard on every switch: the open page may not exist for the other role.
-  function switchPreviewRole(role: StaffRole) {
-    setPreviewRole(role)
+  // Back to the dashboard on every switch: the open page may not exist for the other role. Resident
+  // first asks which resident; the portal opens once the server has agreed (startActingAs).
+  function switchPreviewRole(role: ViewRole) {
     setIsProfileOpen(false)
+    if (role === 'RESIDENT') { setIsPickingResident(true); return }
+    setPreviewRole(role)
     handleNavigation('Dashboard')
+  }
+
+  async function actAsResident(resident: Resident) {
+    const result = await startActingAs(resident.id)
+    if (typeof result === 'string') { showNotice(result); return }
+    setIsPickingResident(false)
+    setActingResident(result)
+  }
+
+  // Back to the super admin dashboard, which stayed mounted state-wise while the portal was shown.
+  async function stopActingAsResident() {
+    await stopActingAs()
+    setActingResident(null)
+    switchPreviewRole('SUPER_ADMIN')
   }
 
   // From the workspace menu: open Settings, then scroll to the section once it has rendered.
@@ -524,6 +546,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   // in place of the Your properties list beside Recent activity.
   const holidaysPanel = <section className="panel holidays-panel"><div className="panel-heading"><div><h2>Upcoming holidays</h2><p>Public holidays in India from Google's calendar; plan meals, housekeeping and staff around them</p></div></div><HolidayList holidays={holidays} limit={6} /></section>
 
+  // The portal's own Sign out also comes back here: the super admin's session must stay signed in.
+  if (actingResident) return <><ActingAsResidentBanner name={actingResident.name} onExit={stopActingAsResident} /><ResidentPortal key={actingResident.id} onSignOut={stopActingAsResident} /></>
+
   return (
     <IsSuperAdminProvider value={isOwner}>
     <div className="app-shell">
@@ -573,7 +598,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} onOpen={openOwnerNotice} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwnerAccount ? 'Super admin' : 'Receptionist'}</small></div></div>{isOwnerAccount && <RoleSwitcher role={previewRole} onChange={switchPreviewRole} />}<button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
-          {isOwnerAccount && !isOwner && <RolePreviewBanner role={previewRole} onExit={() => switchPreviewRole('SUPER_ADMIN')} />}
+          {isOwnerAccount && !isOwner && <RolePreviewBanner onExit={() => switchPreviewRole('SUPER_ADMIN')} />}
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Dashboard' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
 
           {!isOwner && <SubscriptionBanner subscription={mySubscription} onOpen={() => handleNavigation('My subscription')} />}
@@ -620,6 +645,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         {photosProperty?.id && <PropertyPhotosManager propertyId={photosProperty.id} propertyName={photosProperty.name} onClose={() => setPhotosProperty(null)} onNotice={showNotice} />}
         {roomsProperty?.id && <RoomsManager propertyId={roomsProperty.id} propertyName={roomsProperty.name} onClose={() => setRoomsProperty(null)} onNotice={showNotice} />}
         <FireAlarmOverlay alerts={fire.alerts} onClear={clearFireAlert} />
+        {isPickingResident && <ResidentPicker residents={residents} onPick={actAsResident} onClose={() => setIsPickingResident(false)} />}
         {welcomePrompt && <WelcomeWhatsAppPrompt resident={welcomePrompt.resident} accessKey={welcomePrompt.accessKey} onClose={() => setWelcomePrompt(null)} />}
         {isInvitingResident && <InviteResidentModal properties={properties} onClose={() => setIsInvitingResident(false)} onInvited={() => { fetchResidents().then(showResidents, () => undefined) }} onNotice={showNotice} />}
         {residentForm && <ResidentFormModal resident={residentForm.resident} prefill={residentForm.prefill} properties={properties} onClose={() => setResidentForm(null)} onSaved={saveResident} onNotice={showNotice} />}

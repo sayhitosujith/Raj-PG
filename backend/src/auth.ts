@@ -10,6 +10,7 @@ import { newAccessKeyMessage } from './rentLock.js'
 import { findAccessBlock } from './accessBlocks.js'
 import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type IdentityInput } from './superAdmins.js'
 import type { StaffAccess } from './staffAccess.js'
+import { canActAsResident, clearActAs, readActingResidentId, recordActingWrite } from './actAs.js'
 import { latestSubscriptionSelect, subscriptionBlock, subscriptionEndedCode } from './subscriptions.js'
 
 const sessionCookieName = 'raj_pg_session'
@@ -19,7 +20,7 @@ const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000
  * The authenticated caller, exposed on `response.locals.auth` by {@link requireRole}. Staff sessions
  * also carry what they may reach (see staffAccess.ts): super admins everything, admins their properties.
  */
-export type AuthContext = { role: UserRole; userId: string; sessionId: string; staff?: StaffAccess }
+export type AuthContext = { role: UserRole; userId: string; sessionId: string; staff?: StaffAccess; /** Set when a super admin is acting as the resident in userId (see actAs.ts). */ actingStaffId?: string }
 
 // Session tokens are 256 random bits, so an unsalted SHA-256 is enough to make a leaked
 // sessions table useless without the slow hashing that passwords need.
@@ -88,6 +89,19 @@ async function rejectEndedSubscription(superAdminId: string, message: string, re
   response.status(401).json({ error: message, code: subscriptionEndedCode })
 }
 
+/**
+ * Lets a super admin's session through a resident route as the resident they chose to act as (see
+ * actAs.ts). Skips the resident's access block on purpose: that check signs the resident out
+ * everywhere, which acting must never do. Returns false when not acting, so normal checks apply.
+ */
+async function actAsResident(request: Request, response: Response, sessionId: string, superAdminId: string) {
+  const residentId = readActingResidentId(request)
+  if (!residentId || !await withDatabaseRetry(() => canActAsResident(superAdminId))) return false
+  response.locals.auth = { role: UserRole.RESIDENT, userId: residentId, sessionId, actingStaffId: superAdminId } satisfies AuthContext
+  recordActingWrite(request, response, superAdminId, residentId)
+  return true
+}
+
 /** Rejects the request unless it carries a live session of the given user type. */
 export function requireRole(role: UserRole) {
   return async (request: Request, response: Response, next: NextFunction) => {
@@ -95,6 +109,7 @@ export function requireRole(role: UserRole) {
     try {
       const session = await findLiveSession(request)
       if (!session) { response.status(401).json({ error: 'Sign in required.' }); return }
+      if (role === UserRole.RESIDENT && session.superAdminId && await actAsResident(request, response, session.id, session.superAdminId)) { next(); return }
       if (session.role !== role) { response.status(403).json({ error: 'You do not have access to this resource.' }); return }
       const auth: AuthContext = { role, userId: session.superAdminId ?? session.residentId ?? '', sessionId: session.id }
       if (session.superAdminId) {
@@ -158,6 +173,7 @@ authRouter.post('/auth/logout', async (request, response) => {
   const token = readSessionToken(request)
   if (token && process.env.DATABASE_URL) await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } }).catch(() => undefined)
   response.clearCookie(sessionCookieName, { path: '/' })
+  clearActAs(response)
   response.status(204).send()
 })
 
