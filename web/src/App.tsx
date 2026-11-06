@@ -81,7 +81,8 @@ import { WorkspaceMenu } from './WorkspaceMenu'
 import { HolidayList, useHolidays } from './holidays'
 import { FireAlarmOverlay, useFireAlerts, type FireAlert } from './FireAlarm'
 import { EmergencyButton } from './EmergencyCall'
-import { readApiError, type SuperAdmin, isSuperAdmin } from './superAdmin'
+import { readApiError, type StaffRole, type SuperAdmin, isSuperAdmin } from './superAdmin'
+import { RolePreviewBanner, RoleSwitcher } from './RoleSwitcher'
 import { RefreshButton } from './RefreshButton'
 import { slowRefreshIntervalMs, useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
 import { useGreeting } from './useGreeting'
@@ -193,7 +194,11 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   const profileName = currentAdmin.name
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null)
   // Receptionists (not super admins) get day-to-day pages for their properties only; the server enforces it too.
-  const isOwner = isSuperAdmin(currentAdmin)
+  const isOwnerAccount = isSuperAdmin(currentAdmin)
+  // A super admin can preview the receptionist layout. Everything role-dependent below follows the
+  // previewed role; the server still answers as the owner, so only the layout changes.
+  const [previewRole, setPreviewRole] = useState<StaffRole>('SUPER_ADMIN')
+  const isOwner = isOwnerAccount && previewRole === 'SUPER_ADMIN'
   // A receptionist whose subscription ends mid-session goes back to sign-in, told why.
   const endSession = useCallback((reason: string) => { void onSignOut(reason) }, [onSignOut])
   useAdminBrand(settings)
@@ -361,6 +366,13 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
   function handleNavigation(label: string) {
     setActiveView(label)
     setIsSidebarOpen(false)
+  }
+
+  // Back to the dashboard on every switch: the open page may not exist for the other role.
+  function switchPreviewRole(role: StaffRole) {
+    setPreviewRole(role)
+    setIsProfileOpen(false)
+    handleNavigation('Dashboard')
   }
 
   // From the workspace menu: open Settings, then scroll to the section once it has rendered.
@@ -558,9 +570,10 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         <header className="topbar">
           <button className="icon-button menu-trigger" aria-label="Open navigation" onClick={() => setIsSidebarOpen(true)}><Menu size={21} /></button>
           <div className="topbar-heading"><span className="home-title">{isOwner ? 'Super Admin' : 'Receptionist'}</span><div className="breadcrumbs"><span>Workspace</span><span className="crumb-slash">/</span><strong>{activeView}</strong></div></div>
-          <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} onOpen={openOwnerNotice} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwner ? 'Super admin' : 'Receptionist'}</small></div></div><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
+          <div className="topbar-actions"><EmergencyButton /><ThemeToggle /><RefreshButton onRefresh={refreshWorkspace} lastUpdated={lastRefreshedAt} /><NotificationBell ownerId={currentAdmin.id} notices={ownerNotices} onOpen={openOwnerNotice} /><button className="profile" aria-expanded={isProfileOpen} onClick={() => setIsProfileOpen((open) => !open)}><span className="avatar">{profileInitials}</span><span>{profileName}</span><ChevronDown size={15} /></button>{isProfileOpen && <div className="profile-popover"><div className="profile-popover-header"><span className="avatar">{profileInitials}</span><div><strong>{profileName}</strong><small>{isOwnerAccount ? 'Super admin' : 'Receptionist'}</small></div></div>{isOwnerAccount && <RoleSwitcher role={previewRole} onChange={switchPreviewRole} />}<button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Profile details <span>↗</span></button><button onClick={() => { setIsProfileOpen(false); handleNavigation('Settings') }}>Workspace settings <Settings size={14} /></button><button className="profile-signout" onClick={() => { setIsProfileOpen(false); setIsSignOutModalOpen(true) }}>Sign out</button></div>}</div>
         </header>
         <div className="page-content">
+          {isOwnerAccount && !isOwner && <RolePreviewBanner role={previewRole} onExit={() => switchPreviewRole('SUPER_ADMIN')} />}
           <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Dashboard' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
 
           {!isOwner && <SubscriptionBanner subscription={mySubscription} onOpen={() => handleNavigation('My subscription')} />}
