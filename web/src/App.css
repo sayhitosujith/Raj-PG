@@ -2832,7 +2832,9 @@ a.faq-card { text-decoration: none; }
 .profile-popover:has(.role-switcher) { width: 260px; }
 .role-switcher-options { display: grid; grid-template-columns: repeat(3, auto); gap: 2px; padding: 2px; border-radius: 7px; background: #f0f5f1; }
 .role-switcher-options button { padding: 7px 8px; border: 0; border-radius: 5px; color: #62716c; background: transparent; font-size: 11px; font-weight: 600; white-space: nowrap; cursor: pointer; }
-.role-switcher-options button.is-active { color: var(--teal); background: #fff; box-shadow: 0 1px 3px #193c2b1f; }
+/* Teal like .primary-button, so the brand theme plugin recolours it to the owner's theme colour. */
+.role-switcher-options button:not(.is-active):hover { color: var(--teal); }
+.role-switcher-options button.is-active { color: #fff; background: var(--teal); box-shadow: 0 2px 6px #167c7033; }
 .role-preview-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 18px; padding: 12px 16px; border: 1px solid #b9cdea; border-radius: 12px; color: #24406b; background: #eef4fc; }
 .role-preview-banner > svg { flex: none; color: var(--blue); }
 .role-preview-banner p { flex: 1 1 260px; margin: 0; font-size: 13px; }
@@ -2841,7 +2843,7 @@ a.faq-card { text-decoration: none; }
 :root[data-theme="dark"] .role-switcher { border-color: rgb(255 255 255 / .1); }
 :root[data-theme="dark"] .role-switcher-options { background: rgb(255 255 255 / .06); }
 :root[data-theme="dark"] .role-switcher-options button { color: rgb(200 210 206); }
-:root[data-theme="dark"] .role-switcher-options button.is-active { color: rgb(134 239 172); background: rgb(255 255 255 / .12); box-shadow: none; }
+:root[data-theme="dark"] .role-switcher-options button.is-active { color: #fff; background: var(--teal); box-shadow: none; }
 :root[data-theme="dark"] .role-preview-banner { border-color: rgb(96 165 250 / .35); color: rgb(191 219 254); background: rgb(23 37 64 / .6); }
 .acting-banner { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; border-bottom: 1px solid #b9cdea; color: #24406b; background: #eef4fc; }
 .acting-banner > svg { flex: none; color: var(--blue); }
