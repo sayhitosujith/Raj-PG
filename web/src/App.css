@@ -2637,6 +2637,11 @@ a.faq-card { text-decoration: none; }
 :root[data-brand][data-theme] .sidebar .workspace-switcher { border-color: color-mix(in srgb, var(--brand-on, #fff) 30%, transparent); color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 14%, transparent); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher :is(strong, svg) { color: var(--brand-on, #fff); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher small { color: color-mix(in srgb, var(--brand-on, #fff) 75%, transparent); }
+/* Filled buttons match the left menu: the exact theme colour with the chosen button text colour, rather
+   than the generated shade at the original green's lightness. The owner picks the text colour against
+   the theme colour in Views, so contrast is theirs to set, as it already is for the menu. */
+:root[data-brand][data-theme] :is(.primary-button, .filter-tabs button.is-active, .pagination-button.is-current, .role-switcher-options button.is-active) { color: var(--brand-on, #fff); background: var(--brand); box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 25%, transparent); }
+:root[data-brand][data-theme] .primary-button:not(:disabled):hover { background: color-mix(in srgb, var(--brand) 85%, #000); }
 /* Team page: the properties an admin manages, as a list of ticks. */
 .staff-properties { display: grid; gap: 6px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .staff-properties legend { padding: 0 4px; color: var(--ink); font-size: 12px; font-weight: 700; }
