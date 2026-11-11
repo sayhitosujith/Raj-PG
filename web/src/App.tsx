@@ -552,7 +552,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
       <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-row">
           {/* Receptionists see the property they work at; owners see the workspace logo. */}
-          {isOwner ? <BrandMark /> : <StaffPropertyMark property={properties.find((property) => property.id)} />}
+          {isOwner ? <BrandMark onCard /> :<StaffPropertyMark property={properties.find((property) => property.id)} />}
           <button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)}><X size={18} /></button>
         </div>
         {isOwner && <WorkspaceMenu businessName={businessName} contactPhone={settings?.contactPhone} contactEmail={settings?.contactEmail} onOpenSettings={openSettingsSection} />}

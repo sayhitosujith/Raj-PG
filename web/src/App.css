@@ -772,11 +772,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    screens. Square logos are limited by height, wide ones by width. */
 .brand-logo { display: block; width: auto; max-width: 100%; max-height: 140px; object-fit: contain; }
 .login-card .brand-logo, .booking-brand .brand-logo { max-width: 340px; max-height: 150px; }
-/* In the sidebar a logo uploaded with its own light background shows as a square block on the blue;
-   rounded corners and a soft shadow make it read as a deliberate badge. drop-shadow (not box-shadow)
-   follows what is drawn, so a transparent logo gets no shadowed rectangle around it, and its corners
-   are empty anyway, so the rounding changes nothing for it. */
-.sidebar .brand-logo { filter: drop-shadow(0 6px 14px rgb(8 40 60 / .25)); }
+/* In the sidebar the logo sits on a white card (BrandMark onCard): cut out onto the theme colour, a
+   logo's dark text and fine detail all but disappear. rgb() rather than a hex or "white" keeps the card
+   white in dark mode too, since the dark theme plugin only rewrites those. */
+.brand-logo.is-on-card { box-sizing: border-box; padding: 8px; border-radius: 14px; background: rgb(255 255 255); box-shadow: 0 6px 14px rgb(8 40 60 / .25); }
 /* The portal header grows (from 76px) to fit a larger logo, with a little room above and below. */
 .portal-topbar { height: auto; min-height: 76px; padding-block: 8px; }
 .portal-topbar .brand-logo { max-height: 84px; }
@@ -788,6 +787,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    text readable while the background stays transparent (a solid panel showed as a white box).
    The Settings preview gets the same treatment so it shows what residents will see. */
 :root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .logo-field:not(.is-tall) .logo-preview img { filter: drop-shadow(0 0 1px rgb(255 255 255 / .85)) drop-shadow(0 0 5px rgb(255 255 255 / .28)); }
+/* On its white card the logo already reads in dark mode; the outline would only blur its edges. */
+:root[data-theme="dark"] .brand-logo.is-on-card { filter: none; }
 :root[data-theme="dark"] .logo-preview { background: rgb(255 255 255 / .06); }
 .logo-field { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed #cddbd4; border-radius: 10px; background: white; }
 .logo-preview { display: grid; flex: 0 0 auto; place-items: center; width: 96px; height: 56px; overflow: hidden; border-radius: 8px; background: #f4f8f5; }
