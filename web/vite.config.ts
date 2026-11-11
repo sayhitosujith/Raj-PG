@@ -16,6 +16,8 @@ export default defineConfig({
     assetsInlineLimit: (file) => (file.includes('flag-icons') ? false : undefined),
   },
   server: {
+    // Fail instead of drifting to 5174+: a silent port change left a stale dev server on 5173 serving old code.
+    strictPort: true,
     proxy: {
       '/api': 'http://localhost:4000',
     },

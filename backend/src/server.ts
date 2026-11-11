@@ -1,3 +1,4 @@
+import compression from 'compression'
 import cors from 'cors'
 import 'dotenv/config'
 import express from 'express'
@@ -59,6 +60,10 @@ const app = express()
 const port = Number(process.env.PORT ?? 4000)
 
 app.use(cors())
+// Gzip for JSON answers: lists such as residents and the dashboard shrink to roughly a fifth, which is
+// most of the wait on a 2G or weak 3G link. The live-updates stream sets `Cache-Control: no-transform`,
+// which this middleware honours, so its events are never held back in a compression buffer.
+app.use(compression())
 // Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.
 app.post('/api/razorpay/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
 // A resident form can carry a profile photo and two ID documents (2 MB each, about 2.7 MB as base64).
@@ -377,7 +382,13 @@ app.get('/api/dashboard', async (_request, response) => {
   }
 })
 
-app.listen(port, () => {
+// Express 5 hands a bind failure (e.g. EADDRINUSE) to this callback instead of throwing. Ignoring it
+// printed "listening" while an older server kept the port and answered every request, so exit loudly.
+app.listen(port, (error?: Error) => {
+  if (error) {
+    console.error(`Raj-PG API could not start on port ${port}: ${error.message}. Is another copy of the backend already running?`)
+    process.exit(1)
+  }
   console.log(`Raj-PG API listening on http://localhost:${port}`)
   logIntegrations()
 })

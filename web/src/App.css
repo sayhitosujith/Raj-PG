@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 
 :root { --ink: #202e35; --muted: #7d898b; --line: #e5e9e6; --paper: #fbfcf9; --teal: #167c70; --teal-soft: #e6f2ee; --coral: #ee7b5e; --gold: #c28a35; --blue: #5f8fd2; }
 * { box-sizing: border-box; }
@@ -1016,6 +1015,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    starts a beat after the last, so they ripple left to right. */
 .page-loader { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 18px; color: var(--muted); background: var(--paper); font-size: 12px; font-weight: 600; letter-spacing: .02em; animation: fade-in .3s ease both; }
 .page-loader p { margin: 0; }
+.page-loader-hint { max-width: 260px; text-align: center; font-weight: 500; }.connection-problem { color: var(--ink); text-align: center; font-size: 13px; }.connection-problem svg { color: var(--muted); }.connection-problem .primary-button { margin-top: 4px; }.connection-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 8px 16px; color: #5c3b12; background: #fbecd2; border-bottom: 1px solid #efd6aa; font-size: 12px; font-weight: 600; line-height: 1.35; text-align: center; }.connection-banner.is-slow { color: #1f3f5c; background: #e3edf8; border-bottom-color: #c7d9ee; }.connection-banner svg { flex: none; }
 .loader-dots { display: inline-flex; align-items: center; gap: var(--dot-gap); --dot: 14px; --dot-gap: 10px; }
 .loader-dots.is-small { --dot: 6px; --dot-gap: 4px; }
 .loader-dots i { width: var(--dot); height: var(--dot); border-radius: 50%; animation: loader-bounce 1.1s ease-in-out infinite; }

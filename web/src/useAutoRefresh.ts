@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react'
+import { isOffline, isSlowConnection } from './networkStatus'
 
 /** How often open views re-fetch their data, so new requests and changes show within seconds. */
 export const autoRefreshIntervalMs = 10_000
+
+/**
+ * On 2G or Data Saver every poll is stretched by this factor: a 10-second poll there competes with the
+ * screen the person is actually opening and burns their data. Live updates still refresh at once.
+ */
+const slowConnectionFactor = 3
 
 /** For payloads too heavy to poll every few seconds, such as the owner dashboard with its property photos. */
 export const slowRefreshIntervalMs = 60_000
@@ -51,6 +58,9 @@ function subscribeToLiveUpdates(listener: () => void) {
  * querying the database for a screen nobody sees); if a refresh was missed, it runs as soon as
  * the tab is shown again. The initial load stays with the caller's own effect.
  *
+ * On a weak connection polls are spread out (see slowConnectionFactor); while offline they are skipped,
+ * and the view refreshes the moment the connection comes back.
+ *
  * `refresh` should be silent: background updates must not flash loading states or error toasts.
  */
 export function useAutoRefresh(refresh: () => void, intervalMs = autoRefreshIntervalMs) {
@@ -60,16 +70,23 @@ export function useAutoRefresh(refresh: () => void, intervalMs = autoRefreshInte
 
   useEffect(() => {
     let lastRun = Date.now()
+    // Read on every tick, not once, so switching Wi-Fi to 2G (or turning on Data Saver) takes effect at once.
+    const dueEvery = () => intervalMs * (isSlowConnection() ? slowConnectionFactor : 1)
+    const canRun = () => document.visibilityState === 'visible' && !isOffline()
     const run = () => { lastRun = Date.now(); refreshRef.current() }
-    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') run() }, intervalMs)
-    const onVisibilityChange = () => { if (document.visibilityState === 'visible' && Date.now() - lastRun >= intervalMs) run() }
+    // The timer ticks at the normal rate; on a slow connection most ticks find the refresh not yet due.
+    // The 50 ms slack stops timer jitter from skipping a tick that is due.
+    const timer = window.setInterval(() => { if (canRun() && Date.now() - lastRun >= dueEvery() - 50) run() }, intervalMs)
+    const onVisibilityChange = () => { if (canRun() && Date.now() - lastRun >= dueEvery()) run() }
     // Clicking back into the window (e.g. two windows side by side) refreshes at once rather than on
     // the next tick; a short gap stops a burst of focus events from fetching twice.
-    const onFocus = () => { if (Date.now() - lastRun >= 2_000) run() }
+    const onFocus = () => { if (canRun() && Date.now() - lastRun >= 2_000) run() }
+    const onOnline = () => { if (document.visibilityState === 'visible') run() }
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
     // A change announced by the server refreshes straight away while the tab is on screen.
     const unsubscribe = subscribeToLiveUpdates(run)
-    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisibilityChange); window.removeEventListener('focus', onFocus); unsubscribe() }
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisibilityChange); window.removeEventListener('focus', onFocus); window.removeEventListener('online', onOnline); unsubscribe() }
   }, [intervalMs])
 }

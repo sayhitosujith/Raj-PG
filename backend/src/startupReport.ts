@@ -10,7 +10,8 @@ import { isWhatsAppEnabled } from './whatsappClient.js'
  */
 export function logIntegrations() {
   const line = (name: string, isOn: boolean, onText: string, offText: string) => console.log(`[config] ${name}: ${isOn ? onText : offText}`)
-  line('Email', isEmailEnabled(), `connected (sending as ${emailFrom()}${process.env.EMAIL_FROM ? '' : ', Resend test sender'})`, 'off, RESEND_API_KEY not set')
+  line('Database', Boolean(process.env.DATABASE_URL), 'DATABASE_URL set', 'off, DATABASE_URL not set (is .env in backend/, not backend/src/?)')
+  line('Email',isEmailEnabled(), `connected (sending as ${emailFrom()}${process.env.EMAIL_FROM ? '' : ', Resend test sender'})`, 'off, RESEND_API_KEY not set')
   line('WhatsApp', isWhatsAppEnabled(), 'connected', 'off, WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID not set')
   line('Daily reminders', Boolean(process.env.CRON_SECRET), 'CRON_SECRET set', 'off, CRON_SECRET not set')
   line('Razorpay', isOnlinePaymentEnabled(), 'connected', 'off, RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set')

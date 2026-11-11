@@ -51,7 +51,14 @@ npm install
 npm run dev
 ```
 
-For live PostgreSQL data, copy `backend/.env.example` to `backend/.env`, set `DATABASE_URL`, then run `npm run prisma:generate` and `npm run prisma:migrate -- --name init` from `backend/`.
+Requires Node 20 or later. Ports 4000 (API) and 5173 (web) must be free; both servers stop with an error if another copy is already running rather than moving to a different port.
+
+For live PostgreSQL data, copy `backend/.env.example` to `backend/.env` (it must sit in `backend/`, not `backend/src/`) and set `DATABASE_URL`. `.env` is git-ignored, so create it again on every new machine. The API's start-up log shows `[config] Database: DATABASE_URL set` once it is picked up. Then, from `backend/`:
+
+- **Existing database** (e.g. the shared Neon one): nothing more to run. Never run `npm run prisma:migrate` against it: `prisma migrate dev` offers to reset the database, deleting all data, whenever it detects drift.
+- **New, empty database**: `npm run migrate:deploy` to apply the migrations, then `npm run create-super-admin` to create the first login.
+
+If `npm run dev` reports that `@prisma/client` did not initialise, run `npm run prisma:generate`.
 
 ## WhatsApp messages to residents
 

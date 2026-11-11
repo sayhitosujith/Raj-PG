@@ -17,6 +17,7 @@
   "dependencies": {
     "@prisma/client": "^6.16.2",
     "@simplewebauthn/server": "^13.3.3",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
@@ -24,6 +25,7 @@
     "pdfkit": "^0.17.2"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",

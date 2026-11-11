@@ -1,0 +1,10 @@
+# Netlify response headers.
+
+# Vite names every built file by its content hash, so a copy never goes stale. By default Netlify makes
+# browsers re-check each file on every visit, one round trip per file, which on 2G adds seconds.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker must always be re-checked, or a fix to it could take a day to reach people.
+/sw.js
+  Cache-Control: no-cache
