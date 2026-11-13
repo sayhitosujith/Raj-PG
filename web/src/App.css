@@ -2342,6 +2342,10 @@ a.faq-card { text-decoration: none; }
 .info-line > span { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 5px; min-width: 0; color: var(--muted); }
 .info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
 .info-line .icon-button { padding: 4px; color: var(--teal); }
+.info-line .icon-button:disabled { opacity: 0.45; cursor: default; }
+.connection-speed .is-spinning { animation: speed-spin 1s linear infinite; }
+@keyframes speed-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .connection-speed .is-spinning { animation: none; } }
 .info-secret { font-variant-numeric: tabular-nums; letter-spacing: .5px; }
 /* The pill never shrinks below its label (it would spill out); a long address instead wraps inside it
    and the row wraps so the pill drops onto its own line under "Location" (see .info-line). */

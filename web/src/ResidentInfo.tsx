@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Building2, ChevronDown, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, Globe, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
+import { ConnectionSpeed } from './ConnectionSpeed'
 import { LocationLink } from './LocationLink'
 import { ModalLayer } from './ModalLayer'
 import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
@@ -33,6 +34,7 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
       {wifi.password && <div className="info-line"><span>Password</span><strong className="info-secret">{isShown ? wifi.password : '••••••••'}</strong>
         <button type="button" className="icon-button" aria-label={isShown ? 'Hide password' : 'Show password'} onClick={() => setIsShown((shown) => !shown)}>{isShown ? <EyeOff size={14} /> : <Eye size={14} />}</button>
         <button type="button" className="icon-button" aria-label="Copy password" onClick={() => copyWithNotice(wifi.password ?? '', 'Wi-Fi password', onNotice)}><Copy size={14} /></button></div>}
+      <ConnectionSpeed />
     </div>
   )
 }
