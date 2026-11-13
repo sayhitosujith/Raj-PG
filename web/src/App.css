@@ -2620,6 +2620,11 @@ a.faq-card { text-decoration: none; }
 .faq-list summary { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
 .faq-list summary::-webkit-details-marker { display: none; }
 .faq-list summary svg { flex: none; margin-top: 2px; color: var(--teal); }
+.faq-list .faq-question { flex: 1; min-width: 0; }
+/* The chevron is the only cue that a question opens; it turns to point up while the answer shows. */
+.faq-list .faq-toggle { transition: transform 0.2s ease; }
+.faq-list details[open] .faq-toggle { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .faq-list .faq-toggle { transition: none; } }
 .faq-list details p { margin: 8px 0 0 23px; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-line; }
 /* Owner admin, once a theme colour is chosen: the whole left menu in the theme colour, top to bottom a
    little deeper, with labels, icons and counts in the button text colour and the selected item on a

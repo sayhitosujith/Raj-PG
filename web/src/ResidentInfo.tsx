@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Building2, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, Globe, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
+import { Building2, ChevronDown, ChevronRight, Clock, Copy, DoorOpen, Eye, EyeOff, Globe, HelpCircle, MapPin, Phone, Wifi, X } from 'lucide-react'
 import { copyWithNotice } from './clipboard'
 import { LocationLink } from './LocationLink'
 import { ModalLayer } from './ModalLayer'
@@ -93,7 +93,7 @@ export function ResidentFaqs({ faqs }: { faqs: ResidentInfoData['faqs'] }) {
         <div className="profile-modal faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-title">
           <div className="modal-heading"><div><p className="eyebrow">Help</p><h2 id="faq-title">FAQs</h2></div><button type="button" className="icon-button" aria-label="Close FAQs" onClick={() => setIsOpen(false)}><X size={18} /></button></div>
           <div className="faq-list">
-            {faqs.map((faq) => <details key={faq.question}><summary><HelpCircle size={15} aria-hidden="true" />{faq.question}</summary>{faq.answer && <p>{faq.answer}</p>}</details>)}
+            {faqs.map((faq) => <details key={faq.question}><summary><HelpCircle size={15} aria-hidden="true" /><span className="faq-question">{faq.question}</span>{faq.answer && <ChevronDown className="faq-toggle" size={16} aria-hidden="true" />}</summary>{faq.answer && <p>{faq.answer}</p>}</details>)}
           </div>
         </div>
       </div></ModalLayer>}
