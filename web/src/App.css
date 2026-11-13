@@ -1571,6 +1571,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    17px at 320px, 22px from 400px) so it stays on one line beside the two buttons; a long name wraps. */
 .portal-shell .portal-topbar .portal-greeting { min-width: 0; margin: 0; color: var(--ink); font: italic 800 clamp(17px, calc(4vw + 4px), 22px)/1.2 Manrope, sans-serif; letter-spacing: -.03em; overflow-wrap: anywhere; }
 :root[data-theme="dark"] .portal-shell .portal-topbar .portal-greeting { color: var(--brand-on, rgb(255 255 255)); }
+/* Phones and tablets (the bottom-tab layout) drop "Good afternoon," and show just the name, so the
+   heading fits on one line beside the bell and sign-out. */
+@media (max-width: 1024px) { .portal-shell .portal-topbar .portal-greeting-time { display: none; } }
 /* Occupation and diet as tags under the cardholder's name on the member card, the way profile cards
    show a role: the occupation a frosted pill, the diet keeping its veg / non-veg colours on a white
    pill, where they still read on the blue. */
@@ -2121,35 +2124,38 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @container (max-width: 640px) { .portal-shell .portal-property-photo { height: auto; max-height: 200px; aspect-ratio: 16 / 9; object-fit: contain; } }
 
 /* Phone and tablet tabs (up to 1024px): a fixed bottom bar; only the active tab's sections show. Hidden on wider screens. */
-.portal-tabs { display: none; }
+.portal-tabs, .portal-profile-button { display: none; }
+/* The photo and greeting share the top bar's start; long names wrap rather than push the bell off screen. */
+.portal-identity { min-width: 0; }
+:root[data-theme="dark"] .portal-shell .portal-profile-button { color: var(--brand-on, rgb(255 255 255)); }
 div.portal-panel { display: contents; }
 @media (max-width: 1024px) {
-  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
+  .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
   .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(60 66 76 / .1); }
-  /* The Profile tab is the resident's photo (or initials) alone: a 44px circle in a thin ring of the tab's
-     text colour, with the tab's name kept for screen readers. It floats over the bar's top edge like a raised
-     button, with a soft shadow where it overlaps the page. Negative margins keep its layout box at 30px (what
-     the other tabs' icon and label take) and the lift is a transform, so the bar keeps its height and the other
-     tabs do not move. The ring is its own element because the initials set their own text
-     colour, and it thickens while Profile is open. */
-  .portal-tabs button:has(.portal-tab-avatar-ring) { align-content: center; }
-  .portal-tab-avatar-ring { display: grid; margin: -7px 0; border-radius: 50%; box-shadow: 0 0 0 1.5px currentColor, 0 4px 12px rgb(0 0 0 / .28); transform: translateY(-18px); }
-  .portal-tabs button.is-active .portal-tab-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 4px 12px rgb(0 0 0 / .28); }
-  .portal-tab-avatar { display: grid; place-items: center; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; color: #774e39; background: #e2c4ae; font: 700 16px/1 Manrope, sans-serif; }
-  .portal-tab-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  /* A slowly turning colour ring around the photo (like a story ring), so the Profile tab reads as tappable;
-     it turns faster while Profile is open, and a soft pulse spreads out from it. */
-  .portal-tab-avatar-ring { position: relative; isolation: isolate; }
-  .portal-tab-avatar-ring::before, .portal-tab-avatar-ring::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; pointer-events: none; }
-  .portal-tab-avatar-ring::before { z-index: -1; background: conic-gradient(from 0deg, #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
-  .portal-tab-avatar-ring::after { z-index: -2; background: rgb(255 255 255 / .4); animation: avatar-ring-pulse 2.4s ease-out infinite; }
-  .portal-tabs button.is-active .portal-tab-avatar-ring::before { animation-duration: 2.5s; }
-  .portal-tab-avatar { transition: transform .18s ease; }
-  .portal-tabs button:active .portal-tab-avatar { transform: scale(.9); }
+  /* Profile opens from the resident's photo (or initials) at the start of the top bar, before their name:
+     a 48px square with rounded corners in a thin ring of the theme colour that thickens while Profile is open.
+     The ring is its own element because the initials set their own text colour. Each layer's radius grows by
+     its offset so the corners stay parallel. */
+  .portal-identity { display: flex; align-items: center; gap: 12px; }
+  .portal-profile-button { display: grid; flex: none; padding: 0; border: 0; border-radius: 13px; color: var(--brand-deep, var(--teal)); background: transparent; cursor: pointer; }
+  .portal-avatar-ring { display: grid; border-radius: 13px; box-shadow: 0 0 0 1.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
+  .portal-profile-button.is-active .portal-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
+  .portal-avatar { display: grid; place-items: center; width: 48px; height: 48px; overflow: hidden; border-radius: 13px; color: #774e39; background: #e2c4ae; font: 700 18px/1 Manrope, sans-serif; }
+  .portal-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* A colour ring around the photo (like a story ring), so it reads as tappable; its colours travel round
+     (faster while Profile is open) and a soft pulse spreads out from it. The gradient's angle turns rather
+     than the ring itself, which on a square would visibly tumble. */
+  .portal-avatar-ring { position: relative; isolation: isolate; }
+  .portal-avatar-ring::before, .portal-avatar-ring::after { content: ''; position: absolute; inset: -3px; border-radius: 16px; pointer-events: none; }
+  .portal-avatar-ring::before { z-index: -1; background: conic-gradient(from var(--ring-angle), #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
+  .portal-avatar-ring::after { z-index: -2; background: color-mix(in srgb, var(--brand, var(--teal)) 25%, transparent); animation: avatar-ring-pulse 2.4s ease-out infinite; }
+  .portal-profile-button.is-active .portal-avatar-ring::before { animation-duration: 2.5s; }
+  .portal-avatar { transition: transform .18s ease; }
+  .portal-profile-button:active .portal-avatar { transform: scale(.9); }
   @media (prefers-reduced-motion: reduce) {
-    .portal-tab-avatar-ring::before { animation: none; }
-    .portal-tab-avatar-ring::after { display: none; }
+    .portal-avatar-ring::before { animation: none; }
+    .portal-avatar-ring::after { display: none; }
   }
   :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
@@ -2898,7 +2904,9 @@ a.faq-card { text-decoration: none; }
 /* Notification targets land below the sticky top bar rather than under it. */
 #portal-payments, #portal-repairs, .portal-services-exit, .portal-details-heading, .portal-info-meals, .home-notification-prefs { scroll-margin-top: 90px; }
 .announcement-message { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
-@keyframes avatar-ring-spin { to { transform: rotate(1turn); } }
+/* Registered so the profile ring's gradient angle can animate; browsers without @property show a still ring. */
+@property --ring-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes avatar-ring-spin { to { --ring-angle: 1turn; } }
 @keyframes avatar-ring-pulse { from { transform: scale(1); opacity: .8; } to { transform: scale(1.45); opacity: 0; } }
 /* Accepted UPI apps on the pay panel: one row of equal square icons, brand logos and app icons (they keep
    their colours in dark mode too). Paytm's logo is a wordmark, so it is drawn wider. */

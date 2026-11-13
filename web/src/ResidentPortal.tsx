@@ -38,7 +38,7 @@ import { MyDetailsEditor } from './MyDetailsEditor'
 import { ResidentDoorAccess } from './ResidentDoorAccess'
 import { LateMealAction } from './LateMealAction'
 import { CricketScore } from './CricketScore'
-import { PortalTabs, type PortalTab } from './PortalTabs'
+import { PortalTabs, ProfileButton, type PortalTab } from './PortalTabs'
 import { ResidentMaintenance } from './ResidentMaintenance'
 import { ResidentFaqs, ResidentInfo, type ResidentInfoData } from './ResidentInfo'
 import { ExitPg, type ExitNotice } from './ExitPg'
@@ -253,12 +253,12 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <PortalScenery />
       <PortalAnimals />
       <header ref={topbar} className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
-        {/* The greeting heads every tab ("Good evening, Sujith"), beside the bell and sign-out. */}
-        <h1 className="portal-greeting">{greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}, {displayName(profile.name)} <span className="wave">✦</span></h1>
+        {/* The greeting heads every tab ("Good evening, Sujith"), beside the bell and sign-out; phones show only the name (App.css), after the photo that opens Profile. */}
+        <div className="portal-identity"><ProfileButton active={tab} onChange={setTab} name={profile.name} photoVersion={profile.photoVersion} /><h1 className="portal-greeting"><span className="portal-greeting-time">{greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}, </span>{displayName(profile.name)} <span className="wave">✦</span></h1></div>
         <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} onOpen={openNotice} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
-        <PortalTabs active={tab} onChange={setTab} name={profile.name} photoVersion={profile.photoVersion} />
+        <PortalTabs active={tab} onChange={setTab} />
         <div className="portal-panel" data-panel="home">
         <RentBanner rent={profile.rent} action={payAction} />
         {profile.foodOpted && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
