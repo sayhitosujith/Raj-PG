@@ -13,8 +13,15 @@ async function findCandidateIds(identifier: string) {
   // Normalising makes "+91 98765 43210", "09876543210" and "9876543210" the same number; a
   // foreign number must be typed with its country code.
   const phone = normalizePhone(identifier)
-  if (!phone) return []
-  const [digits, legacyDigits] = phoneDigitVariants(phone)
+  return phone ? activeResidentIdsByPhone(phone) : []
+}
+
+/**
+ * Active residents whose stored phone is this E.164 number, matching rows saved before E.164
+ * storage too. Several may share a number, so callers decide what to do with more than one.
+ */
+export async function activeResidentIdsByPhone(e164: string) {
+  const [digits, legacyDigits] = phoneDigitVariants(e164)
   const byPhone = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT "id" FROM "Resident"
     WHERE "active" AND regexp_replace(coalesce("phone", ''), '\\D', '', 'g') IN (${digits}, ${legacyDigits})

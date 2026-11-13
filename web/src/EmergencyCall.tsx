@@ -1,4 +1,6 @@
 import { Ambulance, Flame, Phone, ShieldAlert, Siren, type LucideIcon } from 'lucide-react'
+import { whatsappLink } from './siteData'
+import { WhatsAppIcon } from './WhatsAppIcon'
 
 // Plain tel: links, so they dial straight away on a phone and hand off to a calling app elsewhere.
 
@@ -31,4 +33,13 @@ export function EmergencyNumbers() {
 export function CallOwnerButton({ ownerName, ownerPhone }: { ownerName: string; ownerPhone: string | null }) {
   if (!ownerPhone) return null
   return <a className="emergency-button call-owner" href={`tel:${ownerPhone}`} aria-label={`Call the receptionist at ${ownerName} on ${ownerPhone}`}><Phone size={14} /> Receptionist</a>
+}
+
+/**
+ * Opens a WhatsApp chat with the receptionist bot (rent, Wi-Fi, FAQs, repairs), with "Hi" typed so
+ * one tap on send brings up its menu. Renders nothing while the bot is off.
+ */
+export function WhatsAppReceptionButton({ businessName, botNumber }: { businessName: string; botNumber: string | null | undefined }) {
+  if (!botNumber) return null
+  return <a className="emergency-button call-owner" href={whatsappLink(botNumber, 'Hi')} target="_blank" rel="noopener noreferrer" aria-label={`Chat with the ${businessName} receptionist on WhatsApp`}><WhatsAppIcon size={14} /> WhatsApp</a>
 }

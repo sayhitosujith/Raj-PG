@@ -26,6 +26,7 @@ import { doorLockTasksRouter } from './doorLockTasks.js'
 import { doorLocksRouter } from './doorLocks.js'
 import { bedReservationsRouter } from './bedReservations.js'
 import { razorpayResidentRouter, razorpayWebhook } from './razorpay.js'
+import { whatsappWebhook, whatsappWebhookVerify } from './whatsappWebhook.js'
 import { paymentsAdminRouter } from './payments.js'
 import { activeConcessions, rentAdminRouter } from './rent.js'
 import { brandingRouter, settingsRouter } from './settings.js'
@@ -66,6 +67,9 @@ app.use(cors())
 app.use(compression())
 // Before the JSON parser: Razorpay signs the raw bytes, so this route needs them unparsed.
 app.post('/api/razorpay/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
+// Same for Meta: incoming WhatsApp messages for the receptionist bot are signed over the raw bytes.
+app.get('/api/whatsapp/webhook', whatsappWebhookVerify)
+app.post('/api/whatsapp/webhook', express.raw({ type: 'application/json', limit: '1mb' }), whatsappWebhook)
 // A resident form can carry a profile photo and two ID documents (2 MB each, about 2.7 MB as base64).
 app.use(express.json({ limit: '10mb' }))
 // API answers are live data (notifications, rent, requests): never let the browser or Netlify's edge

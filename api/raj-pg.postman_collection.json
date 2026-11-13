@@ -5033,6 +5033,44 @@
               }
             }
           }
+        },
+        {
+          "name": "GET /whatsapp/webhook",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "webhook"
+              ]
+            },
+            "description": "Same for Meta: incoming WhatsApp messages for the receptionist bot are signed over the raw bytes.\n\nSource: backend/src/server.ts"
+          }
+        },
+        {
+          "name": "POST /whatsapp/webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "webhook"
+              ]
+            },
+            "description": "Source: backend/src/server.ts"
+          }
         }
       ]
     }

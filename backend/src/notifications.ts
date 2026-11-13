@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { HousekeepingStatus, type HousekeepingSlot } from '@prisma/client'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
+import { rupees } from './money.js'
 import { isEmailAddress, isEmailEnabled, sendEmail } from './emailClient.js'
 import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminderEmail, residentWelcomeEmail, fireAlertEmail, fireReportedEmail, exitRequestedEmail, exitDecisionEmail, exitDateChangedEmail, exitCancelledEmail, maintenanceRaisedEmail, maintenanceUpdatedEmail } from './emailTemplates.js'
 import { displayName } from './names.js'
@@ -24,9 +25,8 @@ type DeliveryResult = 'sent' | 'failed' | 'skipped'
 type Recipient = { id: string; name: string; phone: string | null; email: string | null; whatsappOptIn: boolean; emailOptIn: boolean }
 export const recipientSelect = { id: true, name: true, phone: true, email: true, whatsappOptIn: true, emailOptIn: true } as const
 
-const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN')}`
-/** Where links in emails point; the web app's public address. */
-const appUrl = () => (process.env.APP_URL || 'https://raj-pg.netlify.app').replace(/\/$/, '')
+/** Where links in emails and WhatsApp replies point; the web app's public address. */
+export const appUrl = () => (process.env.APP_URL || 'https://raj-pg.netlify.app').replace(/\/$/, '')
 
 /**
  * Sends one message unless it was already sent under `dedupeKey`, and logs the outcome. WhatsApp

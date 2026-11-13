@@ -18,6 +18,26 @@ const viewSelect = { id: true, title: true, category: true, details: true, statu
 type Row = { id: string; title: string; category: string; details: string; status: string; ownerNote: string | null; createdAt: Date; updatedAt: Date; resolvedAt: Date | null; photoUrl: string | null }
 const toView = ({ photoUrl, ...row }: Row) => ({ ...row, hasPhoto: Boolean(photoUrl) })
 
+export type MaintenanceCategory = (typeof maintenanceCategories)[number]
+/** Whether `value` is one of the categories residents may choose. */
+export const isMaintenanceCategory = (value: unknown): value is MaintenanceCategory => typeof value === 'string' && (maintenanceCategories as readonly string[]).includes(value)
+
+/**
+ * Files a resident's repair request at their property and tells the staff. Shared by the portal and
+ * the WhatsApp bot so both create the same record and the same alert. Returns null when the
+ * resident no longer has a room (moved out). Inputs must already be validated.
+ */
+export async function createMaintenanceRequest(residentId: string, input: { title: string; category: MaintenanceCategory; details: string; photoUrl?: string | null }) {
+  const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { room: { select: { propertyId: true } } } })
+  if (!resident.room) return null
+  const created = await prisma.maintenanceRequest.create({ data: { title: input.title, category: input.category, details: input.details, photoUrl: input.photoUrl || null, propertyId: resident.room.propertyId, residentId }, select: viewSelect })
+  notifyInBackground(() => notifyMaintenanceRaised(created.id))
+  return created
+}
+
+/** Longest title and details a repair request may have, so every entry point trims to the same limits. */
+export const maintenanceLimits = { title: maxTitleLength, details: maxDetailsLength } as const
+
 /** Resident routes: report a problem in their room or building, and follow it. Mounted with the portal. */
 export function residentMaintenanceRoutes(router: Router, guards: RequestHandler[], residentOf: (locals: Record<string, unknown>) => string) {
   router.get('/resident-portal/maintenance', ...guards, async (_request, response) => {
@@ -30,15 +50,13 @@ export function residentMaintenanceRoutes(router: Router, guards: RequestHandler
     const { title, category, details, photo } = request.body as { title?: unknown; category?: unknown; details?: unknown; photo?: unknown }
     if (typeof title !== 'string' || !title.trim()) { response.status(400).json({ error: 'Say briefly what the problem is.' }); return }
     if (title.trim().length > maxTitleLength) { response.status(400).json({ error: `Keep the title under ${maxTitleLength} characters.` }); return }
-    if (typeof category !== 'string' || !(maintenanceCategories as readonly string[]).includes(category)) { response.status(400).json({ error: 'Choose what kind of problem it is.' }); return }
+    if (!isMaintenanceCategory(category)) { response.status(400).json({ error: 'Choose what kind of problem it is.' }); return }
     if (details !== undefined && (typeof details !== 'string' || details.length > maxDetailsLength)) { response.status(400).json({ error: `Keep the details under ${maxDetailsLength} characters.` }); return }
     const photoProblem = photo ? findMaintenancePhotoProblem(photo) : null
     if (photoProblem) { response.status(400).json({ error: photoProblem }); return }
     try {
-      const resident = await prisma.resident.findUniqueOrThrow({ where: { id: residentId }, select: { room: { select: { propertyId: true } } } })
-      if (!resident.room) { response.status(409).json({ error: 'You have moved out of the property.' }); return }
-      const created = await prisma.maintenanceRequest.create({ data: { title: title.trim(), category, details: (details as string | undefined)?.trim() ?? '', photoUrl: (photo as string | undefined) || null, propertyId: resident.room.propertyId, residentId }, select: viewSelect })
-      notifyInBackground(() => notifyMaintenanceRaised(created.id))
+      const created = await createMaintenanceRequest(residentId, { title: title.trim(), category, details: (details as string | undefined)?.trim() ?? '', photoUrl: photo as string | undefined })
+      if (!created) { response.status(409).json({ error: 'You have moved out of the property.' }); return }
       response.status(201).json(toView(created))
     } catch (error) {
       console.error('Maintenance request failed:', error)

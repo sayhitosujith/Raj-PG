@@ -1,12 +1,12 @@
 import { formatMonthLabel, propertyNow, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
+import { rupees } from './money.js'
 import { bedCounts } from './occupancy.js'
 import { photoVersion } from './photo.js'
 import { nextRentDue, rentStatus, type MonthConcession } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
 import { propertyIdWhere, residentOwnedWhere, residentWhere, type StaffAccess } from './staffAccess.js'
 
-const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN')}`
 const shortRupees = (amount: number) => (amount >= 1_00_000 ? `₹${(amount / 1_00_000).toFixed(2)}L` : rupees(amount))
 
 /** One row of the Overview's "Recent activity". `icon` picks wallet, door or clipboard on the web side. */

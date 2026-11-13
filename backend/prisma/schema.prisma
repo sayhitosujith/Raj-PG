@@ -872,6 +872,20 @@ model OutboundMessage {
   @@index([channel, createdAt])
 }
 
+// The WhatsApp receptionist bot's memory of one chat, keyed by the sender's number (digits, no "+").
+// `step` is set only mid-conversation ("repair": waiting for the problem description, with
+// repairCategory chosen); it is ignored once stepAt is older than 30 minutes (whatsappBotStore.ts).
+// stepAt is separate from updatedAt because recording lastMessageId, which drops Meta's webhook
+// retries of a message already answered, touches the row on every message.
+model WhatsAppChat {
+  phone          String    @id
+  step           String?
+  repairCategory String?
+  stepAt         DateTime?
+  lastMessageId  String?
+  updatedAt      DateTime  @updatedAt
+}
+
 // Money the owner spends running the PGs, for the Payments page's monthly profit/loss. Whole
 // rupees. date is a calendar day (UTC midnight, like joining dates); propertyId is optional, since
 // some costs (e.g. an accountant) are shared across properties.

@@ -118,6 +118,9 @@
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner { flex: none; align-self: flex-start; border-color: var(--brand-pale, var(--line)); color: var(--brand-deep, var(--teal)); background: transparent; box-shadow: none; }
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner:is(:hover, :focus-visible) { border-color: var(--brand, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner svg { color: inherit; }
+/* Receptionist call and WhatsApp buttons, stacked beside the heading so both fit at phone width. */
+.portal-shell .resident-info .info-actions { display: flex; flex: none; flex-direction: column; gap: 6px; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner { align-self: stretch; justify-content: center; }
 :root[data-theme="dark"] .portal-shell .resident-info .emergency-button.call-owner { color: var(--brand-border, var(--teal)); }
 /* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
    Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */

@@ -31,6 +31,8 @@ import { passkeyLoginRoutes, residentPasskeyRoutes } from './passkeys.js'
 import { ensureMembershipId } from './membership.js'
 import { ensureReferralCode } from './referrals.js'
 import { workersQuery } from './workers.js'
+import { whatsappBusinessNumber } from './whatsappClient.js'
+import { isWhatsAppBotEnabled } from './whatsappWebhook.js'
 
 const requireResident = requireRole(UserRole.RESIDENT)
 
@@ -54,7 +56,7 @@ export async function requirePortalAccess(_request: Request, response: Response,
   }
 }
 
-/** Workspace details a resident needs: contacts, house rules, housekeeping slots and limit, and the policies. */
+/** Workspace details a resident needs: contacts, the receptionist bot's WhatsApp number (null while the bot is off), house rules, housekeeping slots and limit, and the policies. */
 /**
  * How residents can pay the owner directly: a UPI ID, an uploaded QR image, or both; null hides
  * the panel. The QR image is served by its own route, referenced by version.
@@ -73,7 +75,7 @@ function residentLaundryShop(settings: WorkspaceSettings) {
 async function residentWorkspace() {
   const settings = await getSettings()
   // The Door access card (Settings → Smart lock); its details are left out when door keys are switched off.
-  return { doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: residentLaundryShop(settings), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
+  return { whatsappBotNumber: isWhatsAppBotEnabled() ? await whatsappBusinessNumber() : null, doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: residentLaundryShop(settings), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */

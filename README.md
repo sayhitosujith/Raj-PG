@@ -104,7 +104,30 @@ what you post; keep notices operational (maintenance, rules, timings).
 (default `en`), and `CRON_SECRET` (any long random string). Then Settings -> WhatsApp messages
 shows "Connected"; **Send test** sends Meta's built-in `hello_world` template.
 
-### 4. Daily rent reminders
+### 4. Receptionist bot (residents message you)
+
+Residents who message the business's WhatsApp number get an automatic receptionist: a tappable
+menu (or typed words such as "rent" or "wifi") for **rent due**, **Wi-Fi details**, **FAQs**,
+**report a repair** (filed exactly like one from the portal, staff are alerted) and **talk to
+receptionist** (replies with the property's manager number, else Settings' contact phone). The
+portal's Property info shows a **WhatsApp** button beside **Receptionist** once the bot is on.
+
+The sender is identified by their WhatsApp number, which must match exactly one active resident
+who would be let into the portal (approved, ID verified, has a room). Unknown or shared numbers,
+and residents locked out over overdue rent, get only the reception number; no rent, Wi-Fi or
+repairs. Replies are free text inside WhatsApp's 24-hour window, so no extra templates are needed.
+
+1. Render -> Environment: add `WHATSAPP_VERIFY_TOKEN` (any long random string) and
+   `WHATSAPP_APP_SECRET` (developers.facebook.com -> your app -> App settings -> Basic -> App
+   secret). The start-up log shows `[config] WhatsApp bot: receiving at /api/whatsapp/webhook`.
+2. developers.facebook.com -> your app -> WhatsApp -> Configuration -> Webhook -> Edit: callback
+   URL `https://raj-pg-api.onrender.com/api/whatsapp/webhook`, verify token the same
+   `WHATSAPP_VERIFY_TOKEN`. Then under Webhook fields, **Subscribe** to `messages`.
+3. Send "Hi" to the business number from a resident's registered phone.
+
+Render's free plan sleeps: the first message after a quiet spell may take up to a minute to answer.
+
+### 5. Daily rent reminders
 
 Render's free plan sleeps, so an external scheduler starts the run. At cron-job.org (free),
 create a job: URL `https://raj-pg-api.onrender.com/api/cron/rent-reminders`, method GET, every
