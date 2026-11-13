@@ -1569,7 +1569,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* The greeting at the left of the top bar ("Good evening, Sujith ✦"): bold italic, dark on the light header
    and in the button text colour on the dark view's theme-colour header. It shrinks with the screen (about
    17px at 320px, 22px from 400px) so it stays on one line beside the two buttons; a long name wraps. */
-.portal-shell .portal-topbar .portal-greeting { min-width: 0; margin: 0; color: var(--ink); font: italic 700 clamp(17px, calc(4vw + 4px), 22px)/1.2 Manrope, sans-serif; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.portal-shell .portal-topbar .portal-greeting { min-width: 0; margin: 0; color: var(--ink); font: italic 800 clamp(17px, calc(4vw + 4px), 22px)/1.2 Manrope, sans-serif; letter-spacing: -.03em; overflow-wrap: anywhere; }
 :root[data-theme="dark"] .portal-shell .portal-topbar .portal-greeting { color: var(--brand-on, rgb(255 255 255)); }
 /* Occupation and diet as tags under the cardholder's name on the member card, the way profile cards
    show a role: the occupation a frosted pill, the diet keeping its veg / non-veg colours on a white
