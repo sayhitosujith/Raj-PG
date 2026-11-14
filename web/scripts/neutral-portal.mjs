@@ -61,9 +61,9 @@ function scope(selector) {
 }
 
 // Cards that keep their own colours in the portal: the notification settings (WhatsApp green, email
-// blue, green switches), Face ID sign-in, and the brand-coloured refer-a-friend icons. Their rules
-// are not copied, so App.css applies as is.
-const keepsColour = /\.(switch\b|whatsapp-|notification-preferences|passkey-|referral-)/
+// blue, green switches), Face ID sign-in, the brand-coloured refer-a-friend icons and the green "Online"
+// dot under the name (green is what reads as online). Their rules are not copied, so App.css applies as is.
+const keepsColour = /\.(switch\b|whatsapp-|notification-preferences|passkey-|referral-|portal-online\b)/
 
 const input = postcss.parse(readFileSync(source, 'utf8'))
 const output = postcss.root()

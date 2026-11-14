@@ -134,18 +134,18 @@ function listPasskeys(residentId: string) {
 }
 
 /**
- * Public sign-in routes: a challenge for the phone to sign, then the check that signs the resident
+ * Public sign-in routes (behind `guards`, e.g. the Face ID feature switch): a challenge for the phone to sign, then the check that signs the resident
  * in. The same access rules as a password sign-in apply (closed account, ended stay, overdue rent).
  */
-export function passkeyLoginRoutes(router: Router) {
-  router.post('/resident-portal/passkey-login/options', async (request, response) => {
+export function passkeyLoginRoutes(router: Router, guards: RequestHandler[] = []) {
+  router.post('/resident-portal/passkey-login/options', ...guards, async (request, response) => {
     const party = relyingParty(request)
     if (!party) { response.status(400).json({ error: wrongSite }); return }
     const options = await generateAuthenticationOptions({ rpID: party.rpID, userVerification: 'required' })
     response.json({ options, challengeId: saveChallenge(options.challenge) })
   })
 
-  router.post('/resident-portal/passkey-login', async (request: Request, response: Response) => {
+  router.post('/resident-portal/passkey-login', ...guards, async (request: Request, response: Response) => {
     const party = relyingParty(request)
     if (!party) { response.status(400).json({ error: wrongSite }); return }
     const { challengeId, credential } = request.body as { challengeId?: unknown; credential?: AuthenticationResponseJSON }

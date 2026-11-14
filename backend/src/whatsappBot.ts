@@ -11,7 +11,7 @@ export type IncomingMessage = { from: string; text?: string; choice?: string }
 export type Reply = { kind: 'text'; body: string } | { kind: 'list'; body: string; button: string; rows: ListRow[] }
 
 /** A resident the bot may help: matched by phone and allowed into the portal (see whatsappBotStore.ts). */
-export type BotResident = { id: string; firstName: string; businessName: string; receptionPhone: string | null; portalUrl: string; lockMessage: string | null }
+export type BotResident = { id: string; firstName: string; businessName: string; receptionPhone: string | null; portalUrl: string; lockMessage: string | null; /** Settings > Resident features: switched-off topics are left out of the menu and refused. */ features: { faqs: boolean; repairs: boolean; wifi: boolean; payments: boolean } }
 
 /**
  * Who wrote in. Unknown and shared numbers, and residents whose account is not approved or ID-verified
@@ -70,9 +70,19 @@ function menu(resident: BotResident, opening: string): Reply {
       { id: 'faqs', title: 'FAQs', description: `Common questions answered by ${resident.businessName}` },
       { id: 'repair', title: 'Report a repair', description: 'Plumbing, electrical, Wi-Fi and more' },
       { id: 'receptionist', title: 'Talk to receptionist', description: 'Their number, to call or chat' },
-    ],
+    ].filter((row) => isTopicOn(row.id as Topic, resident)),
   }
 }
+
+/** FAQs, repairs and Wi-Fi follow their switches in Settings > Resident features; the other topics are always on. */
+function isTopicOn(topic: Topic, resident: BotResident) {
+  if (topic === 'faqs') return resident.features.faqs
+  if (topic === 'repair') return resident.features.repairs
+  if (topic === 'wifi') return resident.features.wifi
+  return true
+}
+
+const topicOff = (resident: BotResident) => text(`That isn't available here. ${receptionLine(resident.receptionPhone)}`)
 
 const monthList = (months: string[]) => months.map(formatMonthLabel).join(', ')
 const dayLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
@@ -80,7 +90,8 @@ const dayLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateStr
 /** Rent in a sentence or two, from the same status the portal shows. */
 export function rentText({ status, next }: RentView, resident: BotResident) {
   if (status.state === 'NOT_TRACKED' || !next) return `Your rent isn't tracked in the app yet. ${receptionLine(resident.receptionPhone)}`
-  const pay = `Pay in the portal: ${resident.portalUrl}`
+  // Online payment can be switched off in Settings > Resident features; residents then pay the owner directly.
+  const pay = resident.features.payments ? `Pay in the portal: ${resident.portalUrl}` : `Please pay ${resident.businessName} directly.`
   if (next.state === 'OVERDUE') {
     const fees = status.overdueMonths.length * status.lateFee
     return `⚠️ ${rupees(next.amount)} is overdue for ${monthList(status.outstandingMonths)}${fees ? `, including ${rupees(fees)} in late fees` : ''}. It was due on ${dayLabel(next.dueDate)}.\n${pay}`
@@ -110,6 +121,7 @@ function splitRepair(description: string) {
 }
 
 async function answerTopic(topic: Topic, resident: BotResident, store: BotStore): Promise<Reply[]> {
+  if (!isTopicOn(topic, resident)) return [topicOff(resident)]
   switch (topic) {
     case 'rent': return [text(rentText(await store.rentOf(resident.id), resident))]
     case 'wifi': return [text(wifiText(await store.infoOf(resident.id), resident))]
@@ -121,6 +133,8 @@ async function answerTopic(topic: Topic, resident: BotResident, store: BotStore)
 }
 
 async function answerChoice(choice: string, resident: BotResident, phone: string, store: BotStore): Promise<Reply[]> {
+  // A list tapped before a switch went off still sends its old choice ids.
+  if ((choice.startsWith('faq:') && !resident.features.faqs) || (choice.startsWith('repair:') && !resident.features.repairs)) return [topicOff(resident)]
   if (choice.startsWith('faq:')) {
     const faq = (await store.infoOf(resident.id)).faqs[Number(choice.slice(4))]
     return [text(faq ? `*${faq.question}*\n${faq.answer || 'No answer has been added yet.'}` : 'That question is no longer listed.')]
@@ -160,6 +174,7 @@ export async function respond(message: IncomingMessage, store: BotStore): Promis
   const step = await store.loadStep(message.from)
   if (step?.step === 'repair') {
     await store.saveStep(message.from, null)
+    if (!resident.features.repairs) return [topicOff(resident)]
     if (cancelWords.test(lower)) return [menu(resident, 'Okay, cancelled. Anything else?')]
     if (!typed) return [text('I can only read text for now. Please describe the problem in words, or use the portal to add a photo.')]
     const { title, details } = splitRepair(typed)

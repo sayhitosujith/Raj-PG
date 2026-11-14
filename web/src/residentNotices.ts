@@ -47,11 +47,11 @@ export function buildResidentNotices({ announcements, rent, exit, deletionDeclin
   return notices
 }
 
-/** The resident's repair requests for their notifications, refreshed with the rest of the portal; null until loaded or if it fails. */
-export function useRepairRequests(refreshSignal: number) {
+/** The resident's repair requests for their notifications, refreshed with the rest of the portal; null until loaded, if it fails, or while repairs are switched off (`enabled` false, nothing is fetched). */
+export function useRepairRequests(refreshSignal: number, enabled = true) {
   const [repairs, setRepairs] = useState<MaintenanceRequest[] | null>(null)
-  const load = () => fetch('/api/resident-portal/maintenance').then((response) => response.ok ? response.json() as Promise<MaintenanceRequest[]> : null).then((list) => { if (list) setRepairs(list) }, () => undefined)
-  useEffect(() => { void load() }, [])
+  const load = () => !enabled ? Promise.resolve() : fetch('/api/resident-portal/maintenance').then((response) => response.ok ? response.json() as Promise<MaintenanceRequest[]> : null).then((list) => { if (list) setRepairs(list) }, () => undefined)
+  useEffect(() => { void load() }, [enabled]) // eslint-disable-line react-hooks/exhaustive-deps -- refetch only when repairs are switched on or off
   useRefreshSignal(refreshSignal, () => { void load() })
-  return repairs
+  return enabled ? repairs : null
 }

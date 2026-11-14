@@ -4,6 +4,7 @@ import { requireRole } from './auth.js'
 import { prisma } from './db.js'
 import { findPropertyPhotoProblem, sendPropertyPhoto } from './photo.js'
 import { requirePortalAccess } from './residentPortal.js'
+import { requireResidentFeature } from './residentFeatureGate.js'
 
 /**
  * A property's photo gallery: the owner adds up to 12 photos (each with an optional caption) and the
@@ -104,7 +105,7 @@ export const propertyPhotoResidentRouter = Router()
 const requireResident = requireRole(UserRole.RESIDENT)
 const residentBase = '/api/resident-portal/photos'
 
-propertyPhotoResidentRouter.get('/resident-portal/photos', requireResident, requirePortalAccess, async (_request, response) => {
+propertyPhotoResidentRouter.get('/resident-portal/photos', requireResident, requirePortalAccess, requireResidentFeature('photos'), async (_request, response) => {
   try {
     response.json({ photos: await photoList(response.locals.propertyId as string, residentBase) })
   } catch (error) {
@@ -113,7 +114,7 @@ propertyPhotoResidentRouter.get('/resident-portal/photos', requireResident, requ
   }
 })
 
-propertyPhotoResidentRouter.get('/resident-portal/photos/:photoId/image', requireResident, requirePortalAccess, async (request, response) => {
+propertyPhotoResidentRouter.get('/resident-portal/photos/:photoId/image', requireResident, requirePortalAccess, requireResidentFeature('photos'), async (request, response) => {
   try {
     await sendPhoto(response, { id: String(request.params.photoId), propertyId: response.locals.propertyId as string })
   } catch (error) {

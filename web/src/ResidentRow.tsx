@@ -26,6 +26,7 @@ import { AccountDeletionReview, deletionBadge } from './AccountDeletionReview'
 import { useIsSuperAdmin } from './staffContext'
 import { dietLabels } from './diet'
 import { DietMark } from './DietToggle'
+import { memberTierLabels } from './memberTier'
 import { isStudent } from './occupations'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
@@ -222,6 +223,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             {/* After the ID cells, so it fills the first row's free space on wide screens instead of a row of its own. */}
             <div><dt>Emergency contact</dt><dd><EmergencyContactText contact={resident} /></dd></div>
             <div><dt>Vehicle</dt><dd>{vehicleText(resident)}</dd></div>
+            <div><dt>Member tier</dt><dd>{memberTierLabels[resident.memberTier ?? 'SILVER']}</dd></div>
             <div><dt>Occupation</dt><dd>{resident.occupation || '—'}</dd></div>
             {isStudent(resident.occupation) && <div><dt>Student ID card</dt><dd>{resident.hasStudentIdCard ? <a href={`/api/residents/${resident.id}/student-id-card`} target="_blank" rel="noopener noreferrer">View student ID <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>}
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>

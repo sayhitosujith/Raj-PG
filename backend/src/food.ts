@@ -7,6 +7,7 @@ import { mealColumnsSelect, meals, toMealTimes } from './meals.js'
 import { renderFeedbackPdf, renderHeadcountPdf, renderResidentsPdf, type ReportHeader } from './foodReports.js'
 import { requirePortalAccess } from './residentPortal.js'
 import { getSettings } from './settings.js'
+import { featureOffError, isFeatureOn } from './residentFeatureGate.js'
 
 /**
  * Food menu: a repeating weekly menu per property, residents answering eat or skip for every meal by
@@ -76,6 +77,8 @@ export async function requireFoodPlan(_request: Request, response: Response, nex
   const { userId } = response.locals.auth as AuthContext
   const resident = await prisma.resident.findUnique({ where: { id: userId }, select: { foodOpted: true } })
   if (!resident?.foodOpted) { response.status(403).json({ error: 'Your plan does not include food.', code: 'NO_FOOD_PLAN' }); return }
+  // Settings > Resident features: Meals off closes the menu, choices, feedback and late requests for everyone.
+  if (!await isFeatureOn('meals')) { response.status(403).json(featureOffError); return }
   next()
 }
 

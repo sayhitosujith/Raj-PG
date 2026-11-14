@@ -17,6 +17,7 @@ import { sharingLabel } from './rooms'
 import { ModalLayer } from './ModalLayer'
 import type { Diet } from './diet'
 import { DietToggle } from './DietToggle'
+import { memberTierLabels, memberTiers } from './memberTier'
 import type { NewResidentResult } from './residentWelcome'
 
 const minimumPasswordLength = 10
@@ -119,7 +120,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
     const form = new FormData(event.currentTarget)
     const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'bedNumber', 'phone', 'email', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
-    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, diet, whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
+    const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, diet, memberTier: String(form.get('memberTier') ?? 'SILVER'), whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
     setError('')
     try {
@@ -151,6 +152,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <EmergencyContactFields contact={resident} />
         <VehicleFields vehicle={resident} />
         <IdentityDocumentFields details={resident} defaultNationality={prefill?.nationality} currentDocumentUrls={resident && { aadharCard: `/api/residents/${resident.id}/aadhar-card`, passportScan: `/api/residents/${resident.id}/passport-scan` }} required={!isEdit} onUpload={(chosen) => setUploads((current) => ({ ...current, ...chosen }))} onError={setError} />
+        <label>Member tier<select name="memberTier" defaultValue={resident?.memberTier ?? 'SILVER'}>{memberTiers.map((tier) => <option key={tier} value={tier}>{memberTierLabels[tier]}</option>)}</select></label>
         <fieldset className="food-plan">
           <legend>Food plan</legend>
           <div className="food-plan-options">

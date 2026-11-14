@@ -6,6 +6,7 @@ import { appUrl } from './notifications.js'
 import { nextRentDue, rentStatus, activeConcessions } from './rent.js'
 import { activeResidentIdsByPhone } from './residentCredentials.js'
 import { residentInfoOf } from './residentInfo.js'
+import { isResidentFeatureOn } from './residentFeatures.js'
 import { findRentLockMessage } from './rentLock.js'
 import { getSettings, rentRulesOf } from './settings.js'
 import { normalizePhone } from './validation.js'
@@ -38,6 +39,7 @@ async function findSender(phone: string): Promise<Sender> {
       receptionPhone: resident.room.property.ownerPhone ?? settings.contactPhone,
       portalUrl: appUrl(),
       lockMessage: await findRentLockMessage(resident.id),
+      features: { faqs: isResidentFeatureOn(settings.residentFeatures, 'faqs'), repairs: isResidentFeatureOn(settings.residentFeatures, 'repairs'), wifi: isResidentFeatureOn(settings.residentFeatures, 'wifi'), payments: isResidentFeatureOn(settings.residentFeatures, 'payments') },
     },
   }
 }

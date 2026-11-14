@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { Router } from 'express'
 import { prisma } from './db.js'
 import { rentSummary } from './rent.js'
+import { isFeatureOn } from './residentFeatureGate.js'
 
 /**
  * Referral rewards. Each resident's "Refer a friend" link carries their referral code; a booking made
@@ -38,9 +39,14 @@ export async function ensureReferralCode(residentId: string) {
   throw new Error('Could not make a unique referral code.')
 }
 
-/** The active resident a referral code belongs to, or null (unknown codes are ignored, not errors). */
+/**
+ * The active resident a referral code belongs to, or null (unknown codes are ignored, not errors). Also
+ * null while Refer a friend is switched off, so links shared earlier earn nothing new; friends already
+ * referred still bring their reward once they pay.
+ */
 export async function referrerForCode(code: unknown) {
   if (typeof code !== 'string' || !/^[A-Z0-9]{4,16}$/i.test(code.trim())) return null
+  if (!await isFeatureOn('referral')) return null
   const resident = await prisma.resident.findFirst({ where: { referralCode: code.trim().toUpperCase(), active: true, deletedAt: null }, select: { id: true } })
   return resident?.id ?? null
 }

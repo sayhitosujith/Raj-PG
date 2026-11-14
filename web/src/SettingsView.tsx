@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Building2, CalendarClock, Check, FileText, Hand, House, ImageUp, LockKeyhole, QrCode, Palette, Shirt, Sparkles, SunMoon, Tag, Trash2, UserRound, WalletCards } from 'lucide-react'
+import { Building2, CalendarClock, Check, FileText, Hand, House, ImageUp, LockKeyhole, QrCode, Palette, Shirt, Sparkles, SunMoon, Tag, ToggleRight, Trash2, UserRound, WalletCards } from 'lucide-react'
 import { logoUrl } from './branding'
 import { ListFormattingTextarea } from './ListFormattingTextarea'
 import { resizeLogo, resizeUpiQr } from './imageResize'
@@ -12,6 +12,7 @@ import type { ResidentTheme, WorkspaceSettings } from './workspaceSettings'
 import { InlineLoader } from './Loader'
 import { PortalColourFields } from './PortalColourFields'
 import { featureBadgeFeatures, featureBadgeLabels, type FeatureBadgeKind } from './FeatureBadges'
+import { isFeatureOn, residentFeatures } from './residentFeatures'
 
 type SaveResult = Promise<string | null>
 /** Image settings saved through PUT/DELETE /api/settings/<kind>. */
@@ -205,6 +206,19 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
           {page === 'settings' && <>
           <WhatsAppSettings onNotice={onNotice} />
           <EmailSettings onNotice={onNotice} />
+
+          <SettingsSection icon={<ToggleRight size={18} />} title="Resident features" description="Switch features off for every resident. A switched-off feature disappears from the portal and its requests are refused; anything already saved is kept for when you switch it back on." onSubmit={(form) => { const doorAccess = form.get('feature-doorAccess') === 'on'; return onSaveSettings({ residentFeatures: Object.fromEntries(residentFeatures.map(({ key }) => [key, form.get(`feature-${key}`) === 'on'])), ...(doorAccess !== settings.doorKeysEnabled ? { doorKeysEnabled: doorAccess } : {}) }) }}>
+            <div className="resident-feature-fields">
+              {residentFeatures.map(({ key, label, detail }) => (
+                <label key={key}><input type="checkbox" name={`feature-${key}`} defaultChecked={isFeatureOn(settings.residentFeatures, key)} /><span>{label}<small>{detail}</small></span></label>
+              ))}
+              {/* For PGs without smart locks. It is the Smart lock section's door keys switch, not a second one, so the
+                  server still refuses to turn it off while a PIN is live on a lock. It is only sent when changed, so
+                  saving the other switches never runs into that refusal unless Door access was unticked too. */}
+              <label><input type="checkbox" name="feature-doorAccess" defaultChecked={settings.doorKeysEnabled} /><span>Door access<small>Door PINs, for staff and residents (same as Smart lock). Remove every PIN before switching off.</small></span></label>
+            </div>
+            <p className="settings-hint">Deleting an account always stays available to residents, who have a right to ask for their data to be erased.</p>
+          </SettingsSection>
 
           <SettingsSection icon={<CalendarClock size={18} />} title="Rent rules" description="When rent is due each month and when the three reminders appear. After the due day, unpaid residents are locked out of the app until you record the payment." onSubmit={(form) => onSaveSettings({ rentDueDay: Number(value(form, 'rentDueDay')), rentReminderOneDay: Number(value(form, 'rentReminderOneDay')), rentReminderTwoDay: Number(value(form, 'rentReminderTwoDay')), rentReminderThreeDay: Number(value(form, 'rentReminderThreeDay')), lateFee: optionalNumber(form, 'lateFee') ?? 0 })}>
             <div className="settings-trio settings-quad">

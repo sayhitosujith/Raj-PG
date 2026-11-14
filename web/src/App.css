@@ -656,6 +656,22 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-wrap: wrap; }
 }
+/* Amenities three to a row everywhere in the portal; a long custom name is cut with an ellipsis (full name on hover). */
+.portal-shell .resident-amenity-list { display: grid; grid-template-columns: repeat(3, minmax(0, 170px)); }
+.portal-shell .resident-amenity { min-width: 0; }
+.portal-shell .resident-amenity svg { flex: none; }
+.resident-amenity-label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Phones and tablets: three chips need the full width, so the weather moves up beside the Amenities heading.
+   display: contents lifts the heading, the chips and any festival greeting into the row's own grid. */
+@media (max-width: 1024px) {
+  .portal-shell .welcome-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "festival festival" "heading weather" "chips chips"; align-items: end; gap: 0 12px; }
+  .portal-shell .welcome-row > .welcome-intro, .portal-shell .welcome-row .resident-amenities { display: contents; }
+  /* Margins, not row gaps: a gap would leave space above the heading on days without a festival. */
+  .portal-shell .welcome-row .festival-greeting { grid-area: festival; margin-bottom: 10px; }
+  .portal-shell .welcome-row .resident-amenities .eyebrow { grid-area: heading; }
+  .portal-shell .welcome-row .welcome-weather { grid-area: weather; }
+  .portal-shell .welcome-row .resident-amenity-list { grid-area: chips; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 8px; }
+}
 
 /* Rent: owner's panel in resident details, resident's reminder banner. */
 .rent-panel { display: grid; gap: 8px; margin-top: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #f8faf8; color: #55635f; font-size: 11px; }
@@ -1574,6 +1590,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Phones and tablets (the bottom-tab layout) drop "Good afternoon," and show just the name, so the
    heading fits on one line beside the bell and sign-out. */
 @media (max-width: 1024px) { .portal-shell .portal-topbar .portal-greeting-time { display: none; } }
+/* Tier and connection under the name: small capitals, so the name stays the loudest thing in the bar. */
+.portal-identity-text { min-width: 0; }
+.portal-member-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 3px 0 0; font: 800 10px/1.3 Manrope, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.portal-member-tier.is-silver { color: #6b7a86; }
+.portal-member-tier.is-gold { color: #b7791f; }
+.portal-member-tier.is-pearl { color: var(--brand, var(--teal)); }
+.portal-online { display: inline-flex; align-items: center; gap: 5px; color: #16a34a; }
+.portal-online::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent); }
+.portal-online.is-offline { color: #94a3b8; }
+:root[data-theme="dark"] .portal-member-tier.is-silver { color: #c3ccd4; }
+:root[data-theme="dark"] .portal-member-tier.is-gold { color: #f2c46d; }
+:root[data-theme="dark"] .portal-member-tier.is-pearl { color: var(--brand-on, rgb(255 255 255)); }
 /* Occupation and diet as tags under the cardholder's name on the member card, the way profile cards
    show a role: the occupation a frosted pill, the diet keeping its veg / non-veg colours on a white
    pill, where they still read on the blue. */
@@ -2616,6 +2644,12 @@ a.faq-card { text-decoration: none; }
 .new-ribbon.is-beta { background: linear-gradient(135deg, color-mix(in srgb, var(--badge-beta, #ce2c2c) 80%, #fff), var(--badge-beta, #ce2c2c)); box-shadow: 0 2px 6px color-mix(in srgb, var(--badge-beta, #ce2c2c) 35%, transparent); }
 /* Settings > Feature banners: one select per feature, two to a row where there is room. */
 .feature-badge-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; }
+/* Settings > Resident features: a checkbox per feature with what switching it off hides, two to a row where there is room. */
+.resident-feature-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 14px; }
+.resident-feature-fields label { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+.resident-feature-fields input { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--teal); }
+.resident-feature-fields span { display: grid; gap: 2px; font-weight: 700; }
+.resident-feature-fields small { color: var(--muted); font-weight: 400; }
 @keyframes new-ribbon-pulse { 50% { filter: brightness(1.15); } }
 @media (prefers-reduced-motion: reduce) { .new-ribbon, .portal-shell .portal-panel > .new-ribbon { animation: none; } }
 .faq-card { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 18px; border: 0; color: var(--ink); background: transparent; font: inherit; text-align: left; cursor: pointer; }

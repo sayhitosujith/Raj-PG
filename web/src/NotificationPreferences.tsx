@@ -22,9 +22,10 @@ function PreferenceRow({ feature, icon, iconClass, title, detail, isOn, isSaving
 
 /**
  * The resident's switches for WhatsApp and email updates (rent reminders, notices), both on by
- * default. Payment receipts are always emailed, since they are records, so the email row says so.
+ * default. Payment receipts are always emailed, since they are records, so the email row says so. A
+ * channel switched off in Settings loses its row, and the card goes when both are off.
  */
-export function NotificationPreferences({ whatsappOptIn, emailOptIn, hasEmail, onChanged, onNotice }: { whatsappOptIn: boolean; emailOptIn: boolean; hasEmail: boolean; onChanged: () => Promise<void>; onNotice: (message: string) => void }) {
+export function NotificationPreferences({ whatsappOptIn, emailOptIn, hasEmail, showWhatsApp = true, showEmail = true, onChanged, onNotice }: { whatsappOptIn: boolean; emailOptIn: boolean; hasEmail: boolean; /** False while that channel is switched off in Settings > Resident features. */ showWhatsApp?: boolean; showEmail?: boolean; onChanged: () => Promise<void>; onNotice: (message: string) => void }) {
   const [saving, setSaving] = useState<Channel | null>(null)
 
   async function toggle(channel: Channel, next: boolean, label: string) {
@@ -36,10 +37,11 @@ export function NotificationPreferences({ whatsappOptIn, emailOptIn, hasEmail, o
     await onChanged()
   }
 
+  if (!showWhatsApp && !showEmail) return null
   return (
     <div className="notification-preferences">
-      <PreferenceRow feature="whatsapp" icon={<WhatsAppIcon size={18} />} iconClass="" title="WhatsApp updates" detail="Rent reminders, payment receipts and notices from your property owner." isOn={whatsappOptIn} isSaving={saving === 'whatsappOptIn'} onToggle={() => void toggle('whatsappOptIn', !whatsappOptIn, 'WhatsApp')} />
-      <PreferenceRow feature="email" icon={<Mail size={17} />} iconClass="is-email" title="Email updates" detail={hasEmail ? 'Rent reminders and notices by email. Payment receipts are always emailed.' : 'Ask your property owner to add your email address to get these.'} isOn={emailOptIn} isSaving={saving === 'emailOptIn'} onToggle={() => void toggle('emailOptIn', !emailOptIn, 'Email')} />
+      {showWhatsApp && <PreferenceRow feature="whatsapp" icon={<WhatsAppIcon size={18} />} iconClass="" title="WhatsApp updates" detail="Rent reminders, payment receipts and notices from your property owner." isOn={whatsappOptIn} isSaving={saving === 'whatsappOptIn'} onToggle={() => void toggle('whatsappOptIn', !whatsappOptIn, 'WhatsApp')} />}
+      {showEmail && <PreferenceRow feature="email" icon={<Mail size={17} />} iconClass="is-email" title="Email updates" detail={hasEmail ? 'Rent reminders and notices by email. Payment receipts are always emailed.' : 'Ask your property owner to add your email address to get these.'} isOn={emailOptIn} isSaving={saving === 'emailOptIn'} onToggle={() => void toggle('emailOptIn', !emailOptIn, 'Email')} />}
     </div>
   )
 }

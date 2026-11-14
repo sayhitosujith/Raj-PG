@@ -1,3 +1,4 @@
+import { isResidentFeatureOn, type ResidentFeature } from './residentFeatures.js'
 /**
  * The resident portal's Info tab: per-property Wi-Fi, important contacts, website and check-in / check-out /
  * gate times, plus the owner's own house rules and FAQs from Settings. Stored as plain text so the
@@ -66,19 +67,34 @@ function parseFaqs(text: string) {
   })
 }
 
+// FAQs that describe how the app itself works, so they live with the code that does it rather than in
+// the owner's text: they stay true when the behaviour changes. Shown after the owner's own questions.
+// Keep the tier answer in step with how Resident.memberTier is set (residents.ts, staff form only).
+// Each is tied to the feature it explains and left out while that feature is switched off.
+const builtInFaqs: Array<{ feature: ResidentFeature; question: string; answer: string }> = [
+  { feature: 'tier', question: 'How is my member tier decided?', answer: 'Your tier (Silver, Gold or Pearl) is shown under your name. Everyone starts as Silver, and the PG staff choose the tier for each resident, so ask at reception if you think yours should change. It does not change your rent or anything else in the app.' },
+]
+
+/** The owner's FAQs then the built-in ones, or none at all while FAQs are switched off. */
+function faqsOf(settings: { faqs: string; residentFeatures: unknown }) {
+  if (!isResidentFeatureOn(settings.residentFeatures, 'faqs')) return []
+  const builtIn = builtInFaqs.filter(({ feature }) => isResidentFeatureOn(settings.residentFeatures, feature)).map(({ question, answer }) => ({ question, answer }))
+  return [...parseFaqs(settings.faqs), ...builtIn]
+}
+
 type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; websiteUrl: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
 
 /** Everything the Info tab shows, for the resident's property and the business. */
-export function residentInfoOf(property: PropertyInfo | null | undefined, settings: { extraHouseRules: string; faqs: string }) {
+export function residentInfoOf(property: PropertyInfo | null | undefined, settings: { extraHouseRules: string; faqs: string; residentFeatures: unknown }) {
   return {
-    wifi: property?.wifiName ? { name: property.wifiName, password: property.wifiPassword } : null,
+    wifi: property?.wifiName && isResidentFeatureOn(settings.residentFeatures, 'wifi') ? { name: property.wifiName, password: property.wifiPassword } : null,
     contacts: parseContacts(property?.contacts ?? null),
     website: property?.websiteUrl ?? null,
     times: { checkIn: property?.checkInTime ?? null, checkOut: property?.checkOutTime ?? null, gateClosing: property?.gateClosingTime ?? null },
     property: property?.name ?? '',
     location: property?.location ?? '',
     city: property?.city ?? '',
-    rules: settings.extraHouseRules.split('\n').map((line) => line.replace(/^[\s•\-–*\d.)]+/, '').trim()).filter(Boolean),
-    faqs: parseFaqs(settings.faqs),
+    rules: !isResidentFeatureOn(settings.residentFeatures, 'houseRules') ? [] : settings.extraHouseRules.split('\n').map((line) => line.replace(/^[\s•\-–*\d.)]+/, '').trim()).filter(Boolean),
+    faqs: faqsOf(settings),
   }
 }

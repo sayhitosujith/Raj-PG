@@ -8,6 +8,7 @@ import { photoVersion } from './photo.js'
 import { isRentLockDue } from './rent.js'
 import { requirePortalAccess } from './residentPortal.js'
 import { getSettings, slotDetails } from './settings.js'
+import { requireResidentFeature } from './residentFeatureGate.js'
 import type { WorkspaceSettings } from '@prisma/client'
 import { residentOwnedWhere, staffAccess } from './staffAccess.js'
 
@@ -84,7 +85,7 @@ function respondToError(response: Response, error: unknown, fallback: string) {
 export const housekeepingResidentRouter = Router()
 const requireResident = requireRole(UserRole.RESIDENT)
 
-housekeepingResidentRouter.get('/resident-portal/housekeeping', requireResident, requirePortalAccess, async (_request, response) => {
+housekeepingResidentRouter.get('/resident-portal/housekeeping', requireResident, requirePortalAccess, requireResidentFeature('housekeeping'), async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
     const requests = await prisma.housekeepingRequest.findMany({ where: { residentId: userId }, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], take: 30, select: requestFields })
@@ -108,7 +109,7 @@ async function fullWeekLimit(residentId: string, date: Date) {
   return booked >= limit ? limit : null
 }
 
-housekeepingResidentRouter.post('/resident-portal/housekeeping', requireResident, requirePortalAccess, async (request, response) => {
+housekeepingResidentRouter.post('/resident-portal/housekeeping', requireResident, requirePortalAccess, requireResidentFeature('housekeeping'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { date: rawDate, slot, note: rawNote } = request.body as { date?: string; slot?: unknown; note?: unknown }
   const date = parseDateOnly(rawDate)
@@ -135,7 +136,7 @@ async function findOwnRequest(id: string, residentId: string) {
   return prisma.housekeepingRequest.findFirst({ where: { id, residentId }, select: requestFields })
 }
 
-housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/cancel', requireResident, requirePortalAccess, async (request, response) => {
+housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/cancel', requireResident, requirePortalAccess, requireResidentFeature('housekeeping'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   // Typed explicitly: the guards in front of this handler hide the route's param types.
   const { id } = request.params as { id: string }
@@ -150,7 +151,7 @@ housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/cancel', requ
 })
 
 // "The cleaner did not turn up": allowed once the slot has started, then at most once an hour.
-housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/remind', requireResident, requirePortalAccess, async (request, response) => {
+housekeepingResidentRouter.post('/resident-portal/housekeeping/:id/remind', requireResident, requirePortalAccess, requireResidentFeature('housekeeping'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { id } = request.params as { id: string }
   try {

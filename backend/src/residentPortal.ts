@@ -15,6 +15,8 @@ import { rentSummary } from './rent.js'
 import { pendingPolicyConsent, policiesOf } from './policies.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { getSettings, houseRulesOf, slotOptionsOf } from './settings.js'
+import { featureOffError, requireResidentFeature } from './residentFeatureGate.js'
+import { isResidentFeatureOn, residentFeatureSwitches } from './residentFeatures.js'
 import { findResidentByCredentials, isAwaitingNewAccessKey } from './residentCredentials.js'
 import { rentItemsToPay } from './rentOrders.js'
 import { normalizeUtr, pendingUpiClaim } from './upiClaims.js'
@@ -75,7 +77,7 @@ function residentLaundryShop(settings: WorkspaceSettings) {
 async function residentWorkspace() {
   const settings = await getSettings()
   // The Door access card (Settings → Smart lock); its details are left out when door keys are switched off.
-  return { whatsappBotNumber: isWhatsAppBotEnabled() ? await whatsappBusinessNumber() : null, doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: residentLaundryShop(settings), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: residentUpiPayee(settings), ...policiesOf(settings) }
+  return { whatsappBotNumber: isWhatsAppBotEnabled() ? await whatsappBusinessNumber() : null, doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: isResidentFeatureOn(settings.residentFeatures, 'laundry') ? residentLaundryShop(settings) : null, residentFeatures: residentFeatureSwitches(settings.residentFeatures), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: isResidentFeatureOn(settings.residentFeatures, 'payments') ? residentUpiPayee(settings) : null, ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */
@@ -125,7 +127,7 @@ residentPortalRouter.get('/resident-portal/me', requireResident, async (_request
     const [settings, rent, upiClaim, dues] = await withDatabaseRetry(() => Promise.all([getSettings(), rentSummary(id), pendingUpiClaim(id), resident.exitDate ? exitDues(id) : null]))
     const noticeDays = noticeDaysOf(room.property, settings)
     // The resident's own ID number in full, for their own view only (the owner already sees it).
-    response.json({ doorAccessKey, doorNames: room.property.doorLocks.map((lock) => lock.name), referralCode: resident.referralCode ?? await ensureReferralCode(id), membershipId: await ensureMembershipId(resident, room.property.name), hasStudentIdCard: Boolean(resident.studentIdCardUrl), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, bedNumber: resident.bedNumber, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: room.property.amenities, housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled(), foodOpted, diet: resident.diet, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
+    response.json({ doorAccessKey, doorNames: room.property.doorLocks.map((lock) => lock.name), referralCode: isResidentFeatureOn(settings.residentFeatures, 'referral') ? resident.referralCode ?? await ensureReferralCode(id) : null, membershipId: await ensureMembershipId(resident, room.property.name), hasStudentIdCard: Boolean(resident.studentIdCardUrl), deletionRequestedAt: resident.deletionRequestedAt, deletionDeclinedAt: resident.deletionDeclinedAt, deletionDeclineReason: resident.deletionDeclineReason, foodDecidedAt: resident.foodDecidedAt, foodApproved: resident.foodApproved, menuUpdatedAt: resident.foodOpted ? resident.room.property.menuUpdatedAt : null, menuChanges: resident.foodOpted ? resident.room.property.menuChanges : null, emailOptIn, id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, addressVerified, createdAt, joinedAt, info: residentInfoOf(room?.property, settings), exit: { status: resident.exitStatus, date: resident.exitDate, reason: resident.exitReason, noticeDays, earliestDate: earliestExitDate(noticeDays), dues }, room: room.number, roomBeds: room.beds, bedNumber: resident.bedNumber, property: room.property.name, location: room.property.location, city: room.property.city, mealTimes: toMealTimes(room.property), amenities: isResidentFeatureOn(settings.residentFeatures, 'amenities') ? room.property.amenities : [], housekeepingStaff: room.property.workers.map((worker) => worker.name), propertyImage: propertyImageUrl(room.property.imageUrl), ownerPhone: room.property.ownerPhone, rent, onlinePayment: isOnlinePaymentEnabled() && isResidentFeatureOn(settings.residentFeatures, 'payments'), foodOpted, diet: resident.diet, memberTier: isResidentFeatureOn(settings.residentFeatures, 'tier') ? resident.memberTier : null, foodRequestedAt, foodPlanRent: room.property.rentWithFood, policyConsent: pendingPolicyConsent(settings, policiesAcceptedVersion), workspace: await residentWorkspace(), mustSetPassword: !passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, whatsappOptIn, pendingUpiClaim: upiClaim, photoVersion: photoVersion(profilePhotoUpdatedAt) })
   } catch (error) {
     console.error('Resident profile failed:', error)
     response.status(503).json({ error: 'Resident portal is temporarily unavailable.' })
@@ -193,7 +195,7 @@ function readCoordinates(query: Request['query']) {
 // in their property's city; 204 when there is none to show (no city set, or the lookup failed), so
 // the portal just leaves it out.
 // "Exit PG": give notice to move out (checked against the notice period), or withdraw it before approval.
-residentPortalRouter.post('/resident-portal/exit', requireResident, requirePortalAccess, async (request, response) => {
+residentPortalRouter.post('/resident-portal/exit', requireResident, requirePortalAccess, requireResidentFeature('exitPg'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
     const result = await requestExit(userId, request.body as { moveOutDate?: unknown; reason?: unknown })
@@ -205,7 +207,7 @@ residentPortalRouter.post('/resident-portal/exit', requireResident, requirePorta
   }
 })
 
-residentPortalRouter.delete('/resident-portal/exit', requireResident, requirePortalAccess, async (_request, response) => {
+residentPortalRouter.delete('/resident-portal/exit', requireResident, requirePortalAccess, requireResidentFeature('exitPg'), async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   if (!await cancelExit(userId)) { response.status(409).json({ error: 'There is no open move-out request to cancel.' }); return }
   response.status(204).send()
@@ -235,11 +237,11 @@ residentPortalRouter.delete('/resident-portal/deletion-request', requireResident
 })
 
 // Complaints and repairs: list, report (with an optional photo) and view the photo of one's own requests.
-residentMaintenanceRoutes(residentPortalRouter, [requireResident, requirePortalAccess], (locals) => (locals.auth as AuthContext).userId)
+residentMaintenanceRoutes(residentPortalRouter, [requireResident, requirePortalAccess, requireResidentFeature('repairs')], (locals) => (locals.auth as AuthContext).userId)
 
 // Face ID / fingerprint sign-in: saving and managing passkeys needs a full session; signing in with one is public.
-residentPasskeyRoutes(residentPortalRouter, [requireResident, requirePortalAccess])
-passkeyLoginRoutes(residentPortalRouter)
+residentPasskeyRoutes(residentPortalRouter, [requireResident, requirePortalAccess, requireResidentFeature('passkeys')])
+passkeyLoginRoutes(residentPortalRouter, [requireResidentFeature('passkeys')])
 
 // The resident's property's active fire alarm (or null), polled every few seconds. Only a session is
 // required, not full portal access, so residents still awaiting ID approval hear the alarm too.
@@ -412,7 +414,7 @@ residentPortalRouter.post('/resident-portal/policies/accept', requireResident, r
 
 // A resident without food asks to join the food plan. The owner decides (plan and rent only change
 // on approval), so this just records the request; asking again keeps the original date.
-residentPortalRouter.post('/resident-portal/food-request', requireResident, requirePortalAccess, async (_request, response) => {
+residentPortalRouter.post('/resident-portal/food-request', requireResident, requirePortalAccess, requireResidentFeature('meals'), async (_request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
     const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { foodOpted: true, foodRequestedAt: true } })
@@ -434,7 +436,7 @@ const maxReportedAmount = 10_00_000
  * up it takes the amount the resident typed, with no months. The owner confirms it against their
  * bank app. One open report at a time, so a double tap cannot file two.
  */
-residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, requirePortalAccess, async (request, response) => {
+residentPortalRouter.post('/resident-portal/rent/upi-claim', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   // The UTR is optional (it helps the owner match the transfer), but one that is given must be valid.
   const rawReference = (request.body as { reference?: unknown }).reference
@@ -470,7 +472,7 @@ residentPortalRouter.get('/resident-portal/property-image', requireResident, req
 })
 
 // The owner's uploaded UPI QR image, shown in the resident's pay panel.
-residentPortalRouter.get('/resident-portal/upi-qr', requireResident, requirePortalAccess, async (_request, response) => {
+residentPortalRouter.get('/resident-portal/upi-qr', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (_request, response) => {
   try {
     sendUpiQr(response, (await getSettings()).upiQrUrl)
   } catch (error) {
@@ -499,6 +501,9 @@ residentPortalRouter.put('/resident-portal/preferences', requireResident, async 
   const { whatsappOptIn, emailOptIn } = request.body as { whatsappOptIn?: unknown; emailOptIn?: unknown }
   if ((whatsappOptIn !== undefined && typeof whatsappOptIn !== 'boolean') || (emailOptIn !== undefined && typeof emailOptIn !== 'boolean') || (whatsappOptIn === undefined && emailOptIn === undefined)) { response.status(400).json({ error: 'Choose on or off.' }); return }
   try {
+    // A switched-off channel's preference is hidden in the portal, so it cannot be changed through the API either.
+    const { residentFeatures } = await getSettings()
+    if ((whatsappOptIn !== undefined && !isResidentFeatureOn(residentFeatures, 'whatsapp')) || (emailOptIn !== undefined && !isResidentFeatureOn(residentFeatures, 'email'))) { response.status(403).json(featureOffError); return }
     const saved = await prisma.resident.update({ where: { id: userId }, data: { ...(whatsappOptIn !== undefined ? { whatsappOptIn } : {}), ...(emailOptIn !== undefined ? { emailOptIn } : {}) }, select: { whatsappOptIn: true, emailOptIn: true } })
     response.json(saved)
   } catch (error) {

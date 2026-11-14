@@ -1,4 +1,5 @@
 import type { FeatureBadgeKind } from './FeatureBadges'
+import type { ResidentFeature } from './residentFeatures'
 
 /** Owner-editable workspace settings, as returned by GET /api/settings. */
 export type WorkspaceSettings = {
@@ -74,6 +75,8 @@ export type WorkspaceSettings = {
   portalChildCardColor: string | null
   /** Which banner each resident feature shows (Settings > Feature banners); a feature left out shows none. */
   featureBadges: Partial<Record<string, FeatureBadgeKind>>
+  /** Settings > Resident features: only the switched-off features, as false; a missing one is on. */
+  residentFeatures?: Partial<Record<ResidentFeature, boolean>>
   /** Plain-text resident policies, linked from the resident portal; empty hides the link. */
   termsAndConditions: string
   privacyPolicy: string
@@ -97,4 +100,4 @@ export type HouseRules = { visitingHours: string; quietHours: string; noticePeri
 export type LaundryShop = { name: string | null; url: string | null; hours: string | null }
 
 export type UpiPayee = { id: string | null; payeeName: string; qrVersion: number | null }
-export type ResidentWorkspace = { /** The receptionist bot's WhatsApp number (E.164); null while the bot is off. */ whatsappBotNumber?: string | null; /** Settings → Smart lock, for the Door access card; the details are null when unset or door keys are off. */ doorKeysEnabled?: boolean; doorUnlockInstructions?: string | null; lockLocation?: string | null; businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; /** Null while the owner has set no laundry shop; absent from an older backend. */ laundryShop?: LaundryShop | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }
+export type ResidentWorkspace = { /** The receptionist bot's WhatsApp number (E.164); null while the bot is off. */ whatsappBotNumber?: string | null; /** Settings → Smart lock, for the Door access card; the details are null when unset or door keys are off. */ doorKeysEnabled?: boolean; doorUnlockInstructions?: string | null; lockLocation?: string | null; businessName: string; contactPhone: string | null; contactEmail: string | null; upi: UpiPayee | null; slots: SlotOption[]; housekeepingWeeklyLimit: number | null; /** Null while the owner has set no laundry shop; absent from an older backend. */ laundryShop?: LaundryShop | null; residentTheme: ResidentTheme; portalThemeColor?: string | null; portalButtonTextColor?: string | null; portalErrorColor?: string | null; portalTextColor?: string | null; portalPlaceholderColor?: string | null; portalNewBadgeColor?: string | null; portalSoonBadgeColor?: string | null; portalBetaBadgeColor?: string | null; portalBackgroundColor?: string | null; portalCardColor?: string | null; portalChildCardColor?: string | null; featureBadges?: Partial<Record<string, FeatureBadgeKind>>; /** Every resident feature's on/off switch (Settings > Resident features). */ residentFeatures?: Partial<Record<ResidentFeature, boolean>>; houseRules: HouseRules; termsAndConditions: string; privacyPolicy: string }

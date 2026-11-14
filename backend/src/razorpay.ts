@@ -8,6 +8,7 @@ import { razorpayRequest } from './razorpayClient.js'
 import { isOnlinePaymentEnabled, razorpayKeyId as keyId, razorpayKeySecret as keySecret } from './razorpayConfig.js'
 import { fulfilOrder, outstandingRentItems } from './rentOrders.js'
 import { requirePortalAccess } from './residentPortal.js'
+import { requireResidentFeature } from './residentFeatureGate.js'
 import { createUpiQr, refreshQrPayment, settleQr, toQrView } from './upiQr.js'
 
 /**
@@ -34,7 +35,7 @@ export const razorpayResidentRouter = Router()
 const requireResident = requireRole(UserRole.RESIDENT)
 
 // Starts a payment for everything currently owed (all outstanding months, late fees included).
-razorpayResidentRouter.post('/resident-portal/rent/order', requireResident, requirePortalAccess, async (_request, response) => {
+razorpayResidentRouter.post('/resident-portal/rent/order', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (_request, response) => {
   if (!isOnlinePaymentEnabled()) { response.status(503).json({ error: 'Online payment is not set up yet. Please pay your property owner directly.' }); return }
   const { userId } = response.locals.auth as AuthContext
   try {
@@ -54,7 +55,7 @@ razorpayResidentRouter.post('/resident-portal/rent/order', requireResident, requ
 })
 
 // Checkout's success callback: verify the signature, then record the payment.
-razorpayResidentRouter.post('/resident-portal/rent/verify', requireResident, requirePortalAccess, async (request, response) => {
+razorpayResidentRouter.post('/resident-portal/rent/verify', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = request.body as Record<string, unknown>
   if (typeof orderId !== 'string' || typeof paymentId !== 'string' || !keySecret()) { response.status(400).json({ error: 'Payment details are missing.' }); return }
@@ -75,7 +76,7 @@ razorpayResidentRouter.post('/resident-portal/rent/verify', requireResident, req
  * id, plus a pending Payment so the owner's Payments list shows it; an open code for the same
  * amount is reused, so refreshing the page does not pile up pending rows.
  */
-razorpayResidentRouter.post('/resident-portal/rent/upi-qr', requireResident, requirePortalAccess, async (_request, response) => {
+razorpayResidentRouter.post('/resident-portal/rent/upi-qr', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (_request, response) => {
   if (!isOnlinePaymentEnabled()) { response.status(503).json({ error: 'Online payment is not set up yet. Please pay your property owner directly.' }); return }
   const { userId } = response.locals.auth as AuthContext
   try {
@@ -99,7 +100,7 @@ razorpayResidentRouter.post('/resident-portal/rent/upi-qr', requireResident, req
 })
 
 // Polled by the QR screen until the code is paid or expires.
-razorpayResidentRouter.get('/resident-portal/rent/upi-qr/:paymentId', requireResident, requirePortalAccess, async (request, response) => {
+razorpayResidentRouter.get('/resident-portal/rent/upi-qr/:paymentId', requireResident, requirePortalAccess, requireResidentFeature('payments'), async (request, response) => {
   const { userId } = response.locals.auth as AuthContext
   try {
     const payment = await prisma.payment.findUnique({ where: { id: (request.params as { paymentId: string }).paymentId } })

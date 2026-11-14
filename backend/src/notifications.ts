@@ -8,6 +8,7 @@ import { announcementEmail, bookingAlertEmail, paymentReceivedEmail, rentReminde
 import { displayName } from './names.js'
 import { loadRentReceipt, renderRentReceipt } from './receipts.js'
 import { getSettings, slotDetails } from './settings.js'
+import { isFeatureOn } from './residentFeatureGate.js'
 import { isWhatsAppEnabled, sendTemplate, uploadPdf, whatsappNumber } from './whatsappClient.js'
 
 /**
@@ -48,15 +49,25 @@ async function deliver(channel: Channel, residentId: string | null, to: string, 
   }
 }
 
-function toWhatsApp(resident: Recipient, template: string, params: string[], key: string, attachment?: () => Promise<{ id: string; filename: string }>): Promise<DeliveryResult> {
-  if (!isWhatsAppEnabled() || !resident.whatsappOptIn || !resident.phone) return Promise.resolve('skipped')
+/**
+ * Whether the resident takes this channel's optional updates: their own opt-in, and the channel's switch
+ * in Settings > Resident features (off works as if every resident had opted out). `ignoreOptOut` sends
+ * that must arrive regardless skip both.
+ */
+async function wantsUpdates(optedIn: boolean, channel: 'whatsapp' | 'email', ignoreOptOut = false) {
+  return ignoreOptOut || (optedIn && await isFeatureOn(channel))
+}
+
+async function toWhatsApp(resident: Recipient, template: string, params: string[], key: string, options: { ignoreOptOut?: boolean; attachment?: () => Promise<{ id: string; filename: string }> } = {}): Promise<DeliveryResult> {
+  if (!isWhatsAppEnabled() || !resident.phone || !await wantsUpdates(resident.whatsappOptIn, 'whatsapp', options.ignoreOptOut)) return 'skipped'
   const to = whatsappNumber(resident.phone)
-  if (!to) return Promise.resolve('skipped')
+  if (!to) return 'skipped'
+  const { attachment } = options
   return deliver('whatsapp', resident.id, to, template, key, async () => sendTemplate(to, template, params, attachment ? await attachment() : undefined))
 }
 
-function toEmail(resident: Recipient, kind: string, message: { subject: string; html: string; text: string }, key: string, options: { ignoreOptOut?: boolean; attachments?: () => Promise<Array<{ filename: string; content: Buffer }>> } = {}): Promise<DeliveryResult> {
-  if (!isEmailEnabled() || !isEmailAddress(resident.email) || (!resident.emailOptIn && !options.ignoreOptOut)) return Promise.resolve('skipped')
+async function toEmail(resident: Recipient, kind: string, message: { subject: string; html: string; text: string }, key: string, options: { ignoreOptOut?: boolean; attachments?: () => Promise<Array<{ filename: string; content: Buffer }>> } = {}): Promise<DeliveryResult> {
+  if (!isEmailEnabled() || !isEmailAddress(resident.email) || !await wantsUpdates(resident.emailOptIn, 'email', options.ignoreOptOut)) return 'skipped'
   const to = resident.email
   return deliver('email', resident.id, to, kind, key, async () => sendEmail({ to, ...message, attachments: options.attachments ? await options.attachments() : undefined }))
 }
@@ -85,10 +96,10 @@ export async function notifyRentRecorded(residentId: string, months: string[]) {
     }))
     const name = displayName(resident.name)
     const month = formatMonthLabel(payment.month)
-    await toWhatsApp(resident, templates.paymentReceived, [name, businessName, rupees(payment.amount), month, resident.room?.property.name ?? ''], `payment:${payment.id}`, async () => {
+    await toWhatsApp(resident, templates.paymentReceived, [name, businessName, rupees(payment.amount), month, resident.room?.property.name ?? ''], `payment:${payment.id}`, { attachment: async () => {
       const { filename, content } = await receiptPdf()
       return { id: await uploadPdf(content, filename), filename }
-    })
+    } })
     await toEmail(resident, 'payment_received', paymentReceivedEmail({ business: businessName, name, amount: rupees(payment.amount), month, property: resident.room?.property.name ?? '' }), `payment:${payment.id}`, { ignoreOptOut: true, attachments: async () => [await receiptPdf()] })
   }
 }
@@ -130,7 +141,7 @@ export async function notifyRegistrationLink(residentId: string, link: string, s
   const { businessName } = await getSettings()
   const place = resident.room ? `${resident.room.property.name}, room ${resident.room.number}${resident.bedNumber ? ` bed ${resident.bedNumber}` : ''}` : ''
   // Unique per link, so "Resend link" always sends again while a retry of the same link does not.
-  return toWhatsApp({ ...resident, whatsappOptIn: true }, templates.registrationLink, [displayName(resident.name), businessName, place, link], `registration:${resident.id}:${sentAt.getTime()}`)
+  return toWhatsApp(resident, templates.registrationLink, [displayName(resident.name), businessName, place, link], `registration:${resident.id}:${sentAt.getTime()}`, { ignoreOptOut: true })
 }
 
 /**

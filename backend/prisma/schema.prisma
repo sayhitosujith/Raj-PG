@@ -222,6 +222,9 @@ model Resident {
   // Veg or non-veg, for the kitchen's headcount split; null until someone chooses ("Not set"), so
   // nobody is counted as either by default.
   diet                     Diet?
+  // Membership tier any staff member sets, shown under the resident's name in their portal. A label
+  // only for now; perks may hang off it later.
+  memberTier               MemberTier               @default(SILVER)
   // Set when a resident without food asks to join the food plan; cleared when the owner decides.
   foodRequestedAt          DateTime?
   // The owner's last decision on a food request, so the resident is told: when, and approved or not.
@@ -382,6 +385,13 @@ model FireAlert {
 enum Diet {
   VEG
   NON_VEG
+}
+
+/// A resident's membership tier, lowest first; everyone starts on SILVER.
+enum MemberTier {
+  SILVER
+  GOLD
+  PEARL
 }
 
 enum ExitStatus {
@@ -761,6 +771,9 @@ model WorkspaceSettings {
   siteBannerUrl           String?
   siteBannerUpdatedAt     DateTime?
   featureBadges           Json          @default("{\"faqs\":\"NEW\",\"passkeys\":\"NEW\",\"whatsapp\":\"BETA\",\"email\":\"BETA\"}")
+  // Settings > Resident features: { feature: false } switches a resident feature off (residentFeatures.ts).
+  // Only switched-off features are stored, so a missing key, including a feature added later, is on.
+  residentFeatures        Json          @default("{}")
   updatedAt               DateTime      @updatedAt
 }
 
