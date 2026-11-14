@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import indiaFlag from 'flag-icons/flags/4x3/in.svg'
+import { logoUrl, useBranding } from './branding'
 import { ReferralShare } from './ReferralShare'
 import { PolicyDialog, type Policy } from './PolicyDialog'
 
 /**
  * The resident portal's footer: links to the resident policies, each opening in a modal,
- * refer-a-friend share icons, and a "Made in India" mark on its own line at the bottom. A policy the
- * owner cleared in Settings is left out; the mark stays even when both are cleared. The flag is an
- * SVG because emoji flags show as letters on Windows.
+ * refer-a-friend share icons, and an "In association with" line naming the workspace with its logo,
+ * on its own line at the bottom. A policy the owner cleared in Settings is left out; the line stays
+ * even when both are cleared, and shows just the name until a logo is uploaded.
  */
 export function PortalFooter({ businessName, termsAndConditions, privacyPolicy, referralCode, showReferral = true, onNotice }: { businessName: string; termsAndConditions: string; privacyPolicy: string; referralCode?: string | null; /** False while Refer a friend is switched off in Settings. */ showReferral?: boolean; onNotice: (message: string) => void }) {
   const [open, setOpen] = useState<Policy | null>(null)
+  const { logoVersion } = useBranding()
   const policies = [{ title: 'Terms and conditions', text: termsAndConditions }, { title: 'Privacy policy', text: privacyPolicy }].filter((policy) => policy.text)
   return (
     <>
@@ -19,7 +20,8 @@ export function PortalFooter({ businessName, termsAndConditions, privacyPolicy, 
           {policies.map((policy, index) => <span key={policy.title}>{index > 0 && ' and '}<button type="button" className="text-link" onClick={() => setOpen(policy)}>{policy.title}</button></span>)}
         </span>}
         {showReferral && <ReferralShare businessName={businessName} referralCode={referralCode} onNotice={onNotice} />}
-        <span className="made-in-india">Made in India <img src={indiaFlag} alt="" width={18} height={13} /></span>
+        {/* The logo stays on its white card (as uploaded): a cut-out logo loses its contrast on the coloured footer. */}
+        <span className="portal-association">In association with <strong>{businessName}</strong>{logoVersion && <img className="portal-association-logo" src={logoUrl(logoVersion)} alt="" />}</span>
       </footer>
       {open && <PolicyDialog businessName={businessName} policy={open} onClose={() => setOpen(null)} />}
     </>
