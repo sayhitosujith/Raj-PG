@@ -659,19 +659,23 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Every amenity on show: chips as wide as their names, wrapping onto as many lines as they need. */
 .portal-shell .resident-amenity { flex: none; padding-inline: 10px; white-space: nowrap; }
 /* Phones and tablets: the chips get the full width, and the weather sits on the Amenities heading's line as
-   one compact row (the chip, then the city over "Tap for your location"), so it leaves no gap above the
+   a small right-aligned stack (the temperature chip over the city), so it leaves little gap above the
    heading. display: contents lifts the heading, the chips and any festival greeting into the row's own grid. */
 @media (max-width: 1024px) {
-  .portal-shell .welcome-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "festival festival" "heading weather" "chips chips"; align-items: center; gap: 0 12px; }
-  .portal-shell .welcome-row .welcome-weather { grid-template-columns: auto auto; column-gap: 6px; row-gap: 1px; justify-items: start; align-items: center; }
-  .portal-shell .welcome-row .welcome-weather > .weather-chip { grid-row: 1 / span 2; }
+  .portal-shell .welcome-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "festival festival" "heading weather" "chips chips"; align-items: start; gap: 0 12px; }
+  .portal-shell .welcome-row .welcome-weather { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+  /* The hint does not fit beside the chip on a phone; the button still says so to screen readers and on tap. */
+  .portal-shell .welcome-row .welcome-weather-hint { display: none; }
+  .portal-shell .welcome-row .welcome-weather:disabled .welcome-weather-hint { display: block; }
   .portal-shell .welcome-row .welcome-weather-city { display: block; }
   .portal-shell .welcome-row > .welcome-intro, .portal-shell .welcome-row .resident-amenities { display: contents; }
   /* Margins, not row gaps: a gap would leave space above the heading on days without a festival. */
   .portal-shell .welcome-row .festival-greeting { grid-area: festival; margin-bottom: 10px; }
-  .portal-shell .welcome-row .resident-amenities .eyebrow { grid-area: heading; }
+  /* The heading takes the temperature chip's height (34px) as its line, so the two share a centre line and the
+     city hangs below the chip on its own instead of pushing the heading down. */
+  .portal-shell .welcome-row .resident-amenities .eyebrow { grid-area: heading; line-height: 34px; }
   .portal-shell .welcome-row .welcome-weather { grid-area: weather; }
-  .portal-shell .welcome-row .resident-amenity-list { grid-area: chips; margin-top: 8px; }
+  .portal-shell .welcome-row .resident-amenity-list { grid-area: chips; margin-top: 10px; }
 }
 
 /* Rent: owner's panel in resident details, resident's reminder banner. */
@@ -1437,6 +1441,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-door-access-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 10px; color: var(--teal); background: var(--teal-soft); }
 .resident-door-access-key { margin-top: 16px; }
 .resident-door-access-key .door-key-line code { font-size: 16px; }
+/* The PIN and its label in the theme colour, the PIN bold and spaced so each digit is easy to read at the door. */
+.portal-shell .door-key-line :is(.door-key-pin, .my-details-id-label) { color: var(--brand-deep, var(--teal)); }
+.portal-shell .door-key-pin { font-weight: 800; letter-spacing: .12em; }
+:root[data-theme="dark"] .portal-shell .door-key-line :is(.door-key-pin, .my-details-id-label) { color: var(--brand-pale, var(--brand)); }
 .resident-door-access-steps { display: grid; gap: 4px; margin-top: 14px; padding-left: 12px; border-left: 3px solid var(--teal); }
 .resident-door-access-steps strong { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
 .resident-door-access-steps p { margin: 0; color: var(--ink); font-size: 12px; line-height: 1.5; white-space: pre-line; }
@@ -1820,6 +1828,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 }
 @media (max-width: 480px) {
   .portal-shell .page-content { padding-inline: 12px; }
+  /* Less space under the top bar on a phone, so Home starts right below it. */
+  .portal-shell .page-content { padding-top: 16px; }
   .portal-shell .workspace-view { padding: 18px 14px; }
   .portal-shell .workspace-view-heading { padding-bottom: 14px; }
   .portal-shell .workspace-view-heading h2 { font-size: 20px; }

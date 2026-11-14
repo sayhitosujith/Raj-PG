@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, KeyRound, Trash2 } from 'lucide-react'
+import { KeyRound, Trash2 } from 'lucide-react'
 import { CopyButton } from './CopyButton'
 import { readApiError } from './superAdmin'
 import { useIsSuperAdmin } from './staffContext'
@@ -47,13 +47,14 @@ export function DoorKeyManager({ keyUrl, holderName, doorAccessKey, revokedAt, o
   )
 }
 
-/** The resident's own door PIN on their Door access card: hidden until tapped, since phones are read over shoulders. */
+/**
+ * The resident's own door PIN on their Door access card, always shown in the theme colour (the owner's choice:
+ * residents read it at the door, so a tap to reveal got in the way), with a copy button.
+ */
 export function DoorKeyLine({ doorAccessKey, onNotice }: { doorAccessKey: string; onNotice: (message: string) => void }) {
-  const [isShown, setIsShown] = useState(false)
   return (
     <span className="my-details-id door-key-line">
-      <strong className="my-details-id-label">Door access key</strong>: <code>{isShown ? doorAccessKey : '••••••'}</code>
-      <button type="button" className="icon-button" aria-label={isShown ? 'Hide door access key' : 'Show door access key'} title={isShown ? 'Hide door access key' : 'Show door access key'} onClick={() => setIsShown((shown) => !shown)}>{isShown ? <EyeOff size={12} /> : <Eye size={12} />}</button>
+      <strong className="my-details-id-label">Door access key</strong>: <code className="door-key-pin">{doorAccessKey}</code>
       <CopyButton value={doorAccessKey} label="Door access key" onNotice={onNotice} />
     </span>
   )
