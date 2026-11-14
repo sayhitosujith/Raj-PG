@@ -656,12 +656,15 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-wrap: wrap; }
 }
-/* Amenities on one line that swipes sideways, so they take a single row however many there are. The padding
-   keeps the chips' shadow and hover lift inside the scroll box (which clips), and the negative margin cancels
-   it; the right edge fades to show there is more, with room after the last chip so it can scroll clear. */
-.portal-shell .resident-amenity-list { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; margin-block: -6px; padding: 6px 28px 8px 2px; mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+/* Amenities on one line that swipes sideways, exactly three across the row at a time; the rest are a swipe
+   away, and a swipe settles on a whole chip. The block padding keeps the chips' shadow and hover lift inside
+   the scroll box (which clips), and the negative margin cancels it. A long custom name ends in "…" (the
+   chip's title shows it in full). */
+.portal-shell .resident-amenity-list { --amenity-gap: 8px; max-width: 540px; gap: var(--amenity-gap); flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; margin-block: -6px; padding-block: 6px 8px; }
 .portal-shell .resident-amenity-list::-webkit-scrollbar { display: none; }
-.portal-shell .resident-amenity { flex: none; scroll-snap-align: start; white-space: nowrap; }
+.portal-shell .resident-amenity { flex: 0 0 calc((100% - 2 * var(--amenity-gap)) / 3); min-width: 0; justify-content: center; scroll-snap-align: start; }
+.portal-shell .resident-amenity svg { flex: none; }
+.resident-amenity-label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 /* Phones and tablets: the row needs the full width, so the weather moves up beside the Amenities heading.
    display: contents lifts the heading, the chips and any festival greeting into the row's own grid. */
 @media (max-width: 1024px) {
