@@ -656,23 +656,22 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-wrap: wrap; }
 }
-/* Amenities on one line that swipes sideways: each chip as wide as its name, as many as fit, the rest a swipe
-   away. The block padding keeps the chips' shadow and hover lift inside the scroll box (which clips), and the
-   negative margin cancels it; the right edge fades to show there is more, with room after the last chip so it
-   can scroll clear of the fade. */
-.portal-shell .resident-amenity-list { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; margin-block: -6px; padding: 6px 24px 8px 0; mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
-.portal-shell .resident-amenity-list::-webkit-scrollbar { display: none; }
-.portal-shell .resident-amenity { flex: none; padding-inline: 10px; white-space: nowrap; scroll-snap-align: start; }
-/* Phones and tablets: the row needs the full width, so the weather moves up beside the Amenities heading.
-   display: contents lifts the heading, the chips and any festival greeting into the row's own grid. */
+/* Every amenity on show: chips as wide as their names, wrapping onto as many lines as they need. */
+.portal-shell .resident-amenity { flex: none; padding-inline: 10px; white-space: nowrap; }
+/* Phones and tablets: the chips get the full width, and the weather sits on the Amenities heading's line as
+   one compact row (the chip, then the city over "Tap for your location"), so it leaves no gap above the
+   heading. display: contents lifts the heading, the chips and any festival greeting into the row's own grid. */
 @media (max-width: 1024px) {
-  .portal-shell .welcome-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "festival festival" "heading weather" "chips chips"; align-items: end; gap: 0 12px; }
+  .portal-shell .welcome-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "festival festival" "heading weather" "chips chips"; align-items: center; gap: 0 12px; }
+  .portal-shell .welcome-row .welcome-weather { grid-template-columns: auto auto; column-gap: 6px; row-gap: 1px; justify-items: start; align-items: center; }
+  .portal-shell .welcome-row .welcome-weather > .weather-chip { grid-row: 1 / span 2; }
+  .portal-shell .welcome-row .welcome-weather-city { display: block; }
   .portal-shell .welcome-row > .welcome-intro, .portal-shell .welcome-row .resident-amenities { display: contents; }
   /* Margins, not row gaps: a gap would leave space above the heading on days without a festival. */
   .portal-shell .welcome-row .festival-greeting { grid-area: festival; margin-bottom: 10px; }
   .portal-shell .welcome-row .resident-amenities .eyebrow { grid-area: heading; }
   .portal-shell .welcome-row .welcome-weather { grid-area: weather; }
-  .portal-shell .welcome-row .resident-amenity-list { grid-area: chips; margin-top: 2px; }
+  .portal-shell .welcome-row .resident-amenity-list { grid-area: chips; margin-top: 8px; }
 }
 
 /* Rent: owner's panel in resident details, resident's reminder banner. */
@@ -2542,6 +2541,10 @@ a.faq-card { text-decoration: none; }
 .portal-shell .resident-amenity:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgb(20 30 40 / .1); }
 .portal-shell .resident-amenity:hover svg { animation: amenity-wiggle .5s ease; }
 .portal-shell .workspace-view-heading h2 { position: relative; padding-bottom: 6px; }
+/* Resident portal section titles in a display serif (DM Serif Display, standing in for Audela). It has one
+   weight, so 400 avoids the browser faking a bold; the slightly larger size matches the old bold's presence. */
+.portal-shell .workspace-view-heading h2 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 26px; letter-spacing: 0; }
+@media (max-width: 1024px) { .portal-shell .workspace-view-heading h2 { font-size: 23px; } }
 .portal-shell .workspace-view-heading h2::after { position: absolute; bottom: 0; left: 0; width: 44px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--brand), var(--brand-pale)); content: ''; transform-origin: left; animation: title-underline .7s cubic-bezier(.2, .7, .3, 1) .2s both; }
 .portal-shell .info-card h3 svg { animation: info-icon-bob 3.6s ease-in-out infinite; }
 .portal-shell .info-card.is-wifi h3 svg { animation: wifi-pulse 2.4s ease-in-out infinite; }
