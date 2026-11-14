@@ -86,7 +86,7 @@ export type WorkspaceSettings = {
 export type ResidentTheme = 'AUTO' | 'LIGHT' | 'DARK'
 
 /** Used until settings load (and for the sidebar before sign-in data arrives); matches server defaults. */
-export const defaultBusinessName = 'Raj Properties'
+export const defaultBusinessName = 'StayPilot'
 
 /** A housekeeping slot as the resident's form shows it, with hours from Settings. */
 export type SlotOption = { value: 'MORNING' | 'AFTERNOON' | 'EVENING'; label: string; hours: string }

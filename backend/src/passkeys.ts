@@ -67,7 +67,7 @@ function deviceLabel(userAgent = '') {
   return 'This device'
 }
 
-const wrongSite = 'Face ID and fingerprint sign-in only work on the StayNest site itself.'
+const wrongSite = 'Face ID and fingerprint sign-in only work on the StayPilot site itself.'
 
 /**
  * The signed-in resident's passkey routes, mounted on the portal router behind `guards` (a session
@@ -81,7 +81,7 @@ export function residentPasskeyRoutes(router: Router, guards: RequestHandler[]) 
     try {
       const resident = await prisma.resident.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true, phone: true, passkeys: { select: { credentialId: true, transports: true } } } })
       const options = await generateRegistrationOptions({
-        rpName: (await getSettings()).businessName || 'StayNest', rpID: party.rpID,
+        rpName: (await getSettings()).businessName || 'StayPilot', rpID: party.rpID,
         userName: resident.email || resident.phone || resident.name, userDisplayName: resident.name, userID: new TextEncoder().encode(userId),
         attestationType: 'none',
         // A key on this phone already? The phone says so instead of saving a second one.

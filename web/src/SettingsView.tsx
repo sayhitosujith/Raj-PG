@@ -152,7 +152,7 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
         {settings ? <>
           {page === 'settings' && <>
           <SettingsSection icon={<Building2 size={18} />} title="Workspace details" description="Your business name appears in the sidebar; contact details are shown to residents." onSubmit={(form) => onSaveSettings({ businessName: value(form, 'businessName'), contactPhone: value(form, 'contactPhone'), contactEmail: value(form, 'contactEmail') })}>
-            <ImageField noun="logo" title="Logo" hint="Replaces the raj.pg mark in the sidebar, the resident portal and the sign-in page. PNG with a transparent background works best." previewUrl={settings.logoVersion ? logoUrl(settings.logoVersion) : null} emptyIcon={<Building2 size={22} />} removeQuestion="Remove the logo and show the raj.pg mark again?" resize={resizeLogo} onSave={(image) => onSaveImage('logo', image)} />
+            <ImageField noun="logo" title="Logo" hint="Replaces the StayPilot mark in the sidebar, the resident portal and the sign-in page. PNG with a transparent background works best." previewUrl={settings.logoVersion ? logoUrl(settings.logoVersion) : null} emptyIcon={<Building2 size={22} />} removeQuestion="Remove the logo and show the raj.pg mark again?" resize={resizeLogo} onSave={(image) => onSaveImage('logo', image)} />
             <label>Business name<input name="businessName" required maxLength={60} defaultValue={settings.businessName} /></label>
             <div className="settings-pair">
               <label>Contact phone<input name="contactPhone" type="tel" defaultValue={settings.contactPhone ?? ''} placeholder="e.g. +91 98765 43210" /></label>

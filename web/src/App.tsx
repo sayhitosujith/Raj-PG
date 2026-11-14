@@ -71,7 +71,7 @@ import type { AadharDecision } from './ResidentRow'
 import { identityDocumentName } from './identity'
 import { SettingsView, type SettingImage } from './SettingsView'
 import { BrandMark } from './BrandMark'
-import { refreshBranding } from './branding'
+import { refreshBranding, useBranding } from './branding'
 import { ThemeToggle } from './ThemeToggle'
 import { useAdminBrand } from './useAdminBrand'
 import { defaultBusinessName, type WorkspaceSettings } from './workspaceSettings'
@@ -84,6 +84,7 @@ import { RolePreviewBanner, RoleSwitcher, type ViewRole } from './RoleSwitcher'
 import { ActingAsResidentBanner, ResidentPicker } from './ActAsResident'
 import { startActingAs, stopActingAs, type ActingResident } from './actAs'
 import { ResidentPortal } from './ResidentPortal'
+import { usePageTitle } from './pageTitle'
 import { IsActingAsResidentProvider } from './actingContext'
 import { RefreshButton } from './RefreshButton'
 import { slowRefreshIntervalMs, useAutoRefresh, useRefreshSignal } from './useAutoRefresh'
@@ -184,6 +185,8 @@ async function fetchResidents() {
 
 /** Owner dashboard, rendered only for a signed-in super admin (see AuthGate). */
 function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAdmin; onSignOut: (reason?: string) => Promise<void>; onAdminChange: (admin: SuperAdmin) => void }) {
+  // Staff (super admins and receptionists) see the business name in the browser tab.
+  usePageTitle(useBranding().businessName)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [propertyFilter, setPropertyFilter] = useState('All properties')
   const [activeView, setActiveView] = useState('Dashboard')

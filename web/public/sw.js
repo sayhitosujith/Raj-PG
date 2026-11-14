@@ -1,5 +1,5 @@
 /*
- * StayNest service worker: keeps the app usable on a weak or missing connection.
+ * StayPilot service worker: keeps the app usable on a weak or missing connection.
  *
  * - Pages (navigations): network first; if the network fails or takes longer than SLOW_NETWORK_MS,
  *   the last saved app shell (index.html) opens instead, so the app starts with no signal.

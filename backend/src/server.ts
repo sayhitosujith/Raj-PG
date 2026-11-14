@@ -392,9 +392,9 @@ app.get('/api/dashboard', async (_request, response) => {
 // printed "listening" while an older server kept the port and answered every request, so exit loudly.
 app.listen(port, (error?: Error) => {
   if (error) {
-    console.error(`Raj-PG API could not start on port ${port}: ${error.message}. Is another copy of the backend already running?`)
+    console.error(`StayPilot API could not start on port ${port}: ${error.message}. Is another copy of the backend already running?`)
     process.exit(1)
   }
-  console.log(`Raj-PG API listening on http://localhost:${port}`)
+  console.log(`StayPilot API listening on http://localhost:${port}`)
   logIntegrations()
 })

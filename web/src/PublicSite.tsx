@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LogIn, Menu, X } from 'lucide-react'
+import { usePageTitle } from './pageTitle'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { BrandMark } from './BrandMark'
 import { useBranding, useBrandingAutoRefresh } from './branding'
@@ -41,12 +42,7 @@ export function PublicSite({ path }: { path: string }) {
   useEffect(() => { fetchSite().then(setSite, () => setHasFailed(true)) }, [])
 
   // The business name in the browser tab while the site is open; the app's own title comes back after.
-  useEffect(() => {
-    if (!site) return
-    const previous = document.title
-    document.title = `${site.businessName} · PG accommodation`
-    return () => { document.title = previous }
-  }, [site])
+  usePageTitle(site && `${site.businessName} · PG accommodation`)
 
   // A link to a section on another page ("/#locations" from a PG's page) lands before that page has its
   // data, so the section is scrolled to once the page has rendered.

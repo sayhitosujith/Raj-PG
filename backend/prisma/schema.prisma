@@ -668,7 +668,7 @@ model RentOrder {
 // Single row (id "workspace") of owner-editable settings; defaults match the original fixed behaviour.
 model WorkspaceSettings {
   id                      String        @id @default("workspace")
-  businessName            String        @default("Raj Properties")
+  businessName            String        @default("StayPilot")
   contactPhone            String?
   contactEmail            String?
   // The owner's own UPI ID (VPA) shown to residents with rent due, plus the name UPI apps display.

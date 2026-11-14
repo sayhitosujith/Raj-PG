@@ -3,7 +3,7 @@ import { logoFavicon } from './logoFavicon'
 import type { PageColours } from './useAdminBrand'
 
 /**
- * Public branding: the business name, logo version (null = no logo, show the raj.pg mark) and the
+ * Public branding: the business name, logo version (null = no logo, show the StayPilot mark) and the
  * colours chosen under Views (each null = the default), so the sign-in page matches the app.
  */
 export type Branding = { businessName: string | null; logoVersion: number | null; colours: PageColours | null }

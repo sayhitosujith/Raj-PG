@@ -147,5 +147,5 @@ most once per event.
 2. Domains -> Add domain (e.g. `rajpg.in`), add the DNS records it shows at your domain registrar,
    and wait for "Verified". Without a verified domain Resend only delivers to your own address.
 3. On Render -> Environment add `RESEND_API_KEY`, `EMAIL_FROM` (e.g.
-   `Raj Properties <noreply@rajpg.in>`) and optionally `APP_URL`.
+   `StayPilot <noreply@rajpg.in>`) and optionally `APP_URL`.
 4. Settings -> Email shows "Connected"; **Send test** sends a test email.

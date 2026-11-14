@@ -1,7 +1,7 @@
 /**
  * Email through Resend's HTTPS API (https://resend.com/docs/api-reference/emails/send-email), which
  * works on Render's free plan where outbound SMTP may be blocked. Configured by RESEND_API_KEY and
- * EMAIL_FROM (e.g. "Raj Properties <noreply@rajpg.in>" on a domain verified in Resend); without a
+ * EMAIL_FROM (e.g. "StayPilot <noreply@rajpg.in>" on a domain verified in Resend); without a
  * key email is switched off. Resend's test sender (onboarding@resend.dev) only delivers to the
  * Resend account's own address, so residents need a verified domain.
  */

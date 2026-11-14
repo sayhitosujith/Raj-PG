@@ -1,6 +1,6 @@
 {
-  "name": "StayNest",
-  "short_name": "StayNest",
+  "name": "StayPilot",
+  "short_name": "StayPilot",
   "description": "PG living: rent, meals, housekeeping and repairs in one app.",
   "start_url": "/",
   "scope": "/",

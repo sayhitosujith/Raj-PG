@@ -132,7 +132,7 @@ paymentsAdminRouter.post('/payments/:id/upi-qr', async (request, response) => {
     if (payment.status === 'paid') { response.status(409).json({ error: 'This payment is already paid.' }); return }
     // A resident's report is money already sent to your UPI ID; a Razorpay code would charge twice.
     if (isUpiClaim(payment)) { response.status(409).json({ error: 'The resident reported paying your UPI ID directly. Check the reference and mark it paid instead.' }); return }
-    const withQr = await ensurePaymentQr(payment, `${payment.payerName} - Raj PG`)
+    const withQr = await ensurePaymentQr(payment, `${payment.payerName} - StayPilot`)
     response.json(toPaymentSummary(await prisma.payment.findUniqueOrThrow({ where: { id: withQr.id }, ...withProperty })))
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) { respondToError(response, error, 'Payment could not be loaded.'); return }
