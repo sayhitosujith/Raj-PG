@@ -21,6 +21,7 @@ export const residentFeatures = [
   { key: 'exitPg', label: 'Exit PG', detail: 'Giving move-out notice in the app' },
   { key: 'houseRules', label: 'House rules', detail: 'The House rules card in Help' },
   { key: 'payments', label: 'Online payment', detail: 'Paying rent in the app; what is owed and receipts still show' },
+  { key: 'weather', label: 'Weather', detail: 'The weather on Home; the phone’s location is not asked for' },
 ] as const
 
 export type ResidentFeature = (typeof residentFeatures)[number]['key']

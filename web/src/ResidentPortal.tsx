@@ -171,14 +171,14 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)
   const pendingConsent = profile.policyConsent && profile.policyConsent.version !== acceptedVersion ? profile.policyConsent : null
   const [notice, setNotice] = useState('')
-  const { weather, locate, isLocating, hasChecked: hasCheckedWeather } = useWeather(refreshSignal)
-  // The sign-in page shows this property's photo next time on this device.
-  useEffect(() => { void rememberProperty(profile.property, profile.propertyImage) }, [profile.property, profile.propertyImage])
-  // The top bar's notifications: announcements, rent, the owner's decisions and repair progress.
   // Settings > Resident features: a switched-off feature is not rendered or fetched (the API refuses it too).
   const featureOn = (feature: ResidentFeature) => isFeatureOn(profile.workspace.residentFeatures, feature)
+  const { weather, locate, isLocating, hasChecked: hasCheckedWeather } = useWeather(refreshSignal, featureOn('weather'))
+  // The sign-in page shows this property's photo next time on this device.
+  useEffect(() => { void rememberProperty(profile.property, profile.propertyImage) }, [profile.property, profile.propertyImage])
   // Meals need both the resident's food plan and the Meals switch.
   const eatsHere = profile.foodOpted && featureOn('meals')
+  // The top bar's notifications: announcements, rent, the owner's decisions and repair progress.
   const repairs = useRepairRequests(refreshSignal, featureOn('repairs'))
   const notices = buildResidentNotices({ announcements, rent: profile.rent, exit: profile.exit, deletionDeclinedAt: profile.deletionDeclinedAt, deletionDeclineReason: profile.deletionDeclineReason, foodDecidedAt: profile.foodDecidedAt, foodApproved: profile.foodApproved, menuUpdatedAt: profile.menuUpdatedAt, menuChanges: profile.menuChanges, repairs })
   const holidays = useHolidays('/api/resident-portal/holidays')
@@ -270,7 +270,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <RentBanner rent={profile.rent} action={payAction} />
         {eatsHere && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
         {eatsHere && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}
-        <section className="welcome-row"><div className="welcome-intro">{festival && <FestivalGreeting festival={festival} />}{featureOn('amenities') && <ResidentAmenities amenities={profile.amenities} />}</div><GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} /></section>
+        <section className="welcome-row"><div className="welcome-intro">{festival && <FestivalGreeting festival={festival} />}{featureOn('amenities') && <ResidentAmenities amenities={profile.amenities} />}</div>{featureOn('weather') && <GreetingWeather weather={weather} isLocating={isLocating} hasChecked={hasCheckedWeather} onLocate={locate} onNotice={showNotice} />}</section>
         <section className="workspace-view">
           <div className="workspace-view-heading portal-details-heading"><div className="portal-details-identity"><div className="portal-details-body"><MemberCard property={profile.property} membershipId={profile.membershipId} name={displayName(profile.name)} room={profile.room} bed={profile.bedNumber} roomBeds={profile.roomBeds} rent={profile.rent} tags={identityTags} /></div><div className="portal-emergency-actions"><div className="portal-emergency-buttons"><ReportFireButton onRaised={onFireRaised} onNotice={showNotice} /></div>{exitPg}</div></div><div className="details-heading-actions"><div className="meals-row">{eatsHere && <WeeklyMenuButton refreshSignal={refreshSignal} onNotice={showNotice} />}<CricketScore />{eatsHere && <MealTimings times={profile.mealTimes} minutesIntoDay={minutesIntoDay} />}</div>{featureOn('meals') && !profile.foodOpted && <FoodOptIn foodRequestedAt={profile.foodRequestedAt} foodPlanRent={profile.foodPlanRent} onChanged={onRefresh} onNotice={showNotice} />}</div></div>
           <RentHighlight rent={profile.rent} room={`Room ${profile.room}${profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}`} /><div className="portal-profile-anchor" id="your-profile"><h3>Your profile</h3><RemovePhotoButton photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /></div><div className="portal-details-row"><img className="portal-property-photo" src={profile.propertyImage} alt={profile.property} loading="lazy" />{detailsList}</div>

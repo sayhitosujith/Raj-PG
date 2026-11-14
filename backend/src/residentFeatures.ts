@@ -2,7 +2,7 @@
  * Resident features a super admin can switch off in Settings > Resident features (the same keys as
  * web/src/residentFeatures.ts). Nine of them (faqs to laundry) are also the Feature banners keys.
  */
-export const residentFeatureKeys = ['tier', 'faqs', 'passkeys', 'whatsapp', 'email', 'photos', 'housekeeping', 'repairs', 'referral', 'laundry', 'amenities', 'meals', 'wifi', 'holidays', 'footer', 'exitPg', 'houseRules', 'payments'] as const
+export const residentFeatureKeys = ['tier', 'faqs', 'passkeys', 'whatsapp', 'email', 'photos', 'housekeeping', 'repairs', 'referral', 'laundry', 'amenities', 'meals', 'wifi', 'holidays', 'footer', 'exitPg', 'houseRules', 'payments', 'weather'] as const
 export type ResidentFeature = (typeof residentFeatureKeys)[number]
 export type ResidentFeatureSwitches = Record<ResidentFeature, boolean>
 

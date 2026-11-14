@@ -276,7 +276,7 @@ residentPortalRouter.get('/resident-portal/holidays', requireResident, requirePo
   response.json({ holidays: await upcomingHolidays() })
 })
 
-residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, async (request, response) => {
+residentPortalRouter.get('/resident-portal/weather', requireResident, requirePortalAccess, requireResidentFeature('weather'), async (request, response) => {
   try {
     const coordinates = readCoordinates(request.query)
     // The device's position first; if that lookup fails, the property's city, so a shared location

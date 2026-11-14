@@ -114,15 +114,17 @@ function requestPosition(): Promise<{ position: Coordinates | null; denied: bool
  * The request made on page load is often never shown: browsers quietly block location prompts that
  * no tap asked for, so the resident sees the property's city with no way to change it. `locate` is for
  * a tap, the request browsers do show; it asks afresh rather than reusing an earlier fix, and resolves
- * to what happened (see LocateResult).
+ * to what happened (see LocateResult). With `enabled` false (Weather switched off in Settings) nothing is
+ * fetched and the location is never asked for.
  */
-export function useWeather(refreshSignal: number) {
+export function useWeather(refreshSignal: number, enabled = true) {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [isLocating, setIsLocating] = useState(false)
   // Once the first lookup (by the property's city) has answered: from then on "no weather" means there
   // is none for the city, not that it is still loading, so the page can offer the device's location.
   const [hasChecked, setHasChecked] = useState(false)
   useEffect(() => {
+    if (!enabled) return
     let isCurrent = true
     let isLocated = false
     fetchWeather(null).then((next) => { if (isCurrent && !isLocated) setWeather(next) }, () => undefined).finally(() => { if (isCurrent) setHasChecked(true) })
@@ -131,9 +133,9 @@ export function useWeather(refreshSignal: number) {
       if (near && isCurrent) { isLocated = true; setWeather(near) }
     }).catch(() => undefined)
     return () => { isCurrent = false }
-  }, [])
+  }, [enabled])
   // By refresh time the resident has answered, so one request with (or without) the position is enough.
-  useRefreshSignal(refreshSignal, () => { findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
+  useRefreshSignal(refreshSignal, () => { if (enabled) findPosition().then(fetchWeather).then((next) => { if (next) setWeather(next) }, () => undefined) })
   // Must be called straight from the tap: requestPosition starts the browser's request before the
   // first await, which is what lets the browser treat it as the resident's own request.
   const locate = useCallback(async (): Promise<{ result: LocateResult; reason?: string }> => {
@@ -155,7 +157,7 @@ export function useWeather(refreshSignal: number) {
       setIsLocating(false)
     }
   }, [])
-  return { weather, locate, isLocating, hasChecked }
+  return { weather: enabled ? weather : null, locate, isLocating, hasChecked }
 }
 
 /**
