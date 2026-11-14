@@ -3,6 +3,8 @@ export const fallbackDashboard = {
     properties: '03',
     residents: '101',
     collected: '₹6.42L',
+    collectedToday: '₹18,500',
+    collectedOverall: '₹48.6L',
     openRequests: '12',
   },
   properties: [

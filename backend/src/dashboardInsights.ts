@@ -45,6 +45,11 @@ function rentDueOf(resident: GridResident, rules: RentRules) {
 type ActivityRow ={ title: string; description: string; amount: string; time: string; tone: string; icon: 'wallet' | 'door' | 'clipboard'; at: number }
 
 // Start of a property-local (IST) month as an instant; `offset` months from the current one.
+/** Midnight today in property time, as a UTC instant, for "collected today". */
+function todayStart() {
+  return new Date(Date.parse(`${propertyNow().date}T00:00:00Z`) - propertyUtcOffsetMs)
+}
+
 function monthStart(offset: number) {
   const [year, month] = propertyNow().date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1 + offset, 1) - propertyUtcOffsetMs)
@@ -81,11 +86,14 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
   // no percentage: a resident paying months ahead would put it far past 100%. Months are "YYYY-MM".
   const monthNow = propertyNow().date.slice(0, 7)
   const receivedThisMonth = { paidAt: { gte: thisMonth }, ...rentOf }
-  const [collected, collectedLast, forThisMonth, ahead, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
+  const [collected, collectedLast, forThisMonth, ahead, collectedToday, collectedEver, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: receivedThisMonth }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth }, ...rentOf } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: monthNow } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: { gt: monthNow } } }),
+    // Received since midnight (property time), and everything ever recorded, for the two extra rent cards.
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, where: { paidAt: { gte: todayStart() }, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, _min: { paidAt: true }, where: rentOf }),
     prisma.resident.count({ where: { joinedAt: { gte: thisMonth }, ...residents_ } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...byProperty } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, createdAt: { gte: weekAgo }, ...byProperty } }),
@@ -116,9 +124,18 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
     ...exits.flatMap((resident) => resident.exitRequestedAt ? [{ title: 'Move-out notice', description: `${resident.name}${resident.exitDate ? ` · leaving ${resident.exitDate.toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' })}` : ''}`, amount: '', time: relativeTime(resident.exitRequestedAt), tone: 'coral', icon: 'door' as const, at: resident.exitRequestedAt.getTime() }] : []),
   ]
 
+  const todayAmount = collectedToday._sum.amount ?? 0
+  const everAmount = collectedEver._sum.amount ?? 0
+  const firstPayment = collectedEver._min.paidAt
+  const paymentsLabel = (count: number) => `${count} ${count === 1 ? 'payment' : 'payments'}`
+
   return {
     collected: shortRupees(collectedNow),
+    collectedToday: shortRupees(todayAmount),
+    collectedOverall: shortRupees(everAmount),
     details: {
+      collectedToday: todayAmount ? paymentsLabel(collectedToday._count) : 'Nothing received yet today',
+      collectedOverall: firstPayment ? `${paymentsLabel(collectedEver._count)} since ${firstPayment.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', year: 'numeric' })}` : 'No rent recorded yet',
       properties: freeBeds ? `${freeBeds} ${freeBeds === 1 ? 'bed' : 'beds'} free` : totalBeds ? 'All beds full' : 'No rooms set up yet',
       residents: joinedThisMonth ? `${joinedThisMonth} joined this month` : 'No new residents this month',
       collected: collectedNow ? [`${shortRupees(thisMonthsRent)} for ${monthName}`, paidAhead ? `${shortRupees(paidAhead)} paid in advance` : '', lateRent ? `${shortRupees(lateRent)} late rent` : ''].filter(Boolean).join(' · ') : 'Nothing received yet this month',

@@ -342,6 +342,8 @@ app.get('/api/dashboard', async (_request, response) => {
         properties: String(properties.length).padStart(2, '0'),
         residents: String(residents),
         collected: insights.collected,
+        collectedToday: insights.collectedToday,
+        collectedOverall: insights.collectedOverall,
         openRequests: String(openRequests),
         // Drives the Bookings badge in the sidebar: requests still waiting for a decision.
         pendingBookings,

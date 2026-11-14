@@ -247,6 +247,11 @@
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar { border-bottom: 1px solid var(--line); background: var(--app-bg, #ffffff); box-shadow: none; }
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button) { border-color: color-mix(in srgb, var(--brand, var(--teal)) 35%, transparent); color: var(--brand-deep, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button):is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brand, var(--teal)) 16%, transparent); }
+/* Sign out in red in both themes, so it reads as the leave action rather than another theme-coloured button. */
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-power-button.portal-power-button { border-color: rgb(220 38 38 / .35); color: rgb(220 38 38); background: rgb(220 38 38 / .08); }
+:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-power-button.portal-power-button:is(:hover, :focus-visible) { background: rgb(220 38 38 / .16); }
+:root[data-theme="dark"] .portal-shell .portal-topbar .portal-power-button.portal-power-button { border-color: rgb(248 113 113 / .4); color: rgb(248 113 113); background: rgb(248 113 113 / .12); }
+:root[data-theme="dark"] .portal-shell .portal-topbar .portal-power-button.portal-power-button:is(:hover, :focus-visible) { background: rgb(248 113 113 / .22); }
 /* The greeting in the theme colour, matching the bell and sign-out beside it. The deep shade keeps it
    readable on the light header, where the plain theme colour is too pale for text. */
 :root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-greeting { color: var(--brand-deep, var(--teal)); }

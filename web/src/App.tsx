@@ -7,7 +7,9 @@ import {
   Wrench,
   Building2,
   ChevronDown,
+  CalendarCheck,
   CircleDollarSign,
+  PiggyBank,
   ClipboardList,
   DoorOpen,
   Home,
@@ -144,12 +146,12 @@ const propertyCardsPerPage = 12
 
 type Activity = { title: string; description: string; amount: string; time: string; tone: string; icon: string }
 /** The Dashboard's computed text: stat-card detail lines, monthly insight and quick tip (absent in the offline fallback). */
-type DashboardInsights = { details: { properties: string; residents: string; collected: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string; /** The emptiest property, whose rooms the grid shows. */ propertyId?: string; /** Beds at the emptiest property, for the free-rooms chart. */ beds?: { taken: number; total: number }; /** Its set-up rooms in number order, for the room grid. */ rooms?: RoomOccupancy[]; /** Declared rooms not set up yet (free, but no number). */ roomsNotSetUp?: number } }
-type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
+type DashboardInsights = { details: { properties: string; residents: string; collected: string; collectedToday?: string; collectedOverall?: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string; /** The emptiest property, whose rooms the grid shows. */ propertyId?: string; /** Beds at the emptiest property, for the free-rooms chart. */ beds?: { taken: number; total: number }; /** Its set-up rooms in number order, for the room grid. */ rooms?: RoomOccupancy[]; /** Declared rooms not set up yet (free, but no number). */ roomsNotSetUp?: number } }
+type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; collectedToday?: string; collectedOverall?: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
 
 const initialDashboard: DashboardData = {
   source: 'fallback',
-  stats: { properties: '03', residents: '101', collected: '₹6.42L', openRequests: '12' },
+  stats: { properties: '03', residents: '101', collected: '₹6.42L', collectedToday: '₹18,500', collectedOverall: '₹48.6L', openRequests: '12' },
   properties: [
     { name: 'The Fern House', location: 'Koramangala, Bengaluru', occupancy: '92%', beds: '46 / 50', status: 'Healthy', tone: 'sage', image: 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80' },
     { name: 'North Star Living', location: 'Hitech City, Hyderabad', occupancy: '78%', beds: '31 / 40', status: 'Watch', tone: 'gold', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80' },
@@ -623,7 +625,9 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />
             <StatCard icon={Users} label="Active residents" value={stats.residents} detail={details?.residents ?? 'Sample data'} accent="coral" />
+            <StatCard icon={CalendarCheck} label="Rent collected today" value={stats.collectedToday ?? '₹0'} detail={details?.collectedToday ?? 'Sample data'} accent="blue" />
             <StatCard icon={CircleDollarSign} label="Rent collected this month" value={stats.collected} detail={details?.collected ?? 'Sample data'} accent="blue" />
+            <StatCard icon={PiggyBank} label="Overall rent collected" value={stats.collectedOverall ?? '₹0'} detail={details?.collectedOverall ?? 'Sample data'} accent="blue" />
             <StatCard icon={ClipboardList} label="Open requests" value={stats.openRequests} detail={details?.openRequests ?? 'Sample data'} accent="gold" />
           </section>
 

@@ -3,7 +3,7 @@ import { LazyCountryLabel } from './CountryField'
 import { LaundryShopCard } from './LaundryShopCard'
 import { MemberCard } from './MemberCard'
 import { isStudent } from './occupations'
-import { Briefcase, Building2, CalendarDays, DoorOpen, ExternalLink, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, Power, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
+import { Briefcase, Building2, CalendarDays, DoorOpen, ExternalLink, Globe, Hourglass, House, IdCard, KeyRound, Mail, Phone, Plane, LogOut, Siren, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
@@ -262,7 +262,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       <header ref={topbar} className="topbar portal-topbar" inert={Boolean(pendingConsent)}>
         {/* The greeting heads every tab ("Good evening, Sujith"), beside the bell and sign-out; phones show only the name (App.css), after the photo that opens Profile. */}
         <div className="portal-identity"><ProfileButton active={tab} onChange={setTab} name={profile.name} photoVersion={profile.photoVersion} /><div className="portal-identity-text"><h1 className="portal-greeting"><span className="portal-greeting-time">{greeting.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}, </span>{displayName(profile.name)} <span className="wave">✦</span></h1><MemberStatus tier={profile.memberTier === null ? null : profile.memberTier ?? 'SILVER'} /></div></div>
-        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} onOpen={openNotice} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><Power size={16} /></button></div>
+        <div className="view-actions"><NotificationBell ownerId={profile.id} notices={notices} onOpen={openNotice} /><button className="secondary-button topbar-change-password" aria-label="Change password" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /><span className="button-label">Change password</span></button><button type="button" className="portal-power-button" aria-label="Sign out" title="Sign out" onClick={() => setIsConfirmingSignOut(true)}><LogOut size={16} /></button></div>
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />
