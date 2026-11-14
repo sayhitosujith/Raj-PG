@@ -3,8 +3,8 @@ import { useEffect, type RefObject } from 'react'
 const transparent = 'rgba(0, 0, 0, 0)'
 
 /**
- * The colour the header shows at the top, as "rgb(…)": its plain background (light view, the app
- * background colour), or for the gradient header (dark view) its starting colour, var(--brand).
+ * The colour the header shows at the top, as "rgb(…)": its plain background if it has one, or for the
+ * gradient (theme-colour) header its starting colour, var(--brand).
  */
 function headerColour(header: HTMLElement) {
   const background = getComputedStyle(header).backgroundColor
@@ -21,8 +21,8 @@ function headerColour(header: HTMLElement) {
 
 /**
  * Colours the phone's status bar (and the browser bar on Android) like the resident portal's header,
- * instead of the app's default teal from index.html: the app background colour in light view, the
- * theme colour in dark view. Follows the owner's colours and light/dark switches while mounted; puts
+ * instead of the app's default teal from index.html: the theme colour, in light and dark view alike.
+ * Follows the owner's colours and light/dark switches while mounted; puts
  * the default back on unmount.
  */
 export function useStatusBarColor(header: RefObject<HTMLElement | null>) {

@@ -240,21 +240,19 @@
 /* The bell matches the weather pill beside it: see-through on the brand colour, white icon. */
 :root .portal-shell .portal-topbar .notification-bell-button.secondary-button { border-color: rgb(255 255 255 / .35); color: rgb(255 255 255); background: rgb(255 255 255 / .16); }
 :root .portal-shell .portal-topbar .notification-bell-button.secondary-button:hover { background: rgb(255 255 255 / .26); }
-/* Light view: the header takes the app background colour (Settings > Views), so it and the phone's status
-   bar (useStatusBarColor) read as one plain strip with the page; a hairline keeps it apart from content
-   scrolling under it. On the plain background the bell and sign-out buttons are outlined in the theme
-   colour. Dark view keeps the theme-colour header above. */
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar { border-bottom: 1px solid var(--line); background: var(--app-bg, #ffffff); box-shadow: none; }
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button) { border-color: color-mix(in srgb, var(--brand, var(--teal)) 35%, transparent); color: var(--brand-deep, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar :is(.notification-bell-button.secondary-button, .portal-power-button):is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brand, var(--teal)) 16%, transparent); }
-/* Sign out in red in both themes, so it reads as the leave action rather than another theme-coloured button. */
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-power-button.portal-power-button { border-color: rgb(220 38 38 / .35); color: rgb(220 38 38); background: rgb(220 38 38 / .08); }
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-power-button.portal-power-button:is(:hover, :focus-visible) { background: rgb(220 38 38 / .16); }
-:root[data-theme="dark"] .portal-shell .portal-topbar .portal-power-button.portal-power-button { border-color: rgb(248 113 113 / .4); color: rgb(248 113 113); background: rgb(248 113 113 / .12); }
-:root[data-theme="dark"] .portal-shell .portal-topbar .portal-power-button.portal-power-button:is(:hover, :focus-visible) { background: rgb(248 113 113 / .22); }
-/* The greeting in the theme colour, matching the bell and sign-out beside it. The deep shade keeps it
-   readable on the light header, where the plain theme colour is too pale for text. */
-:root:not([data-theme="dark"]) .portal-shell .portal-topbar .portal-greeting { color: var(--brand-deep, var(--teal)); }
+/* The theme-colour header applies in light and dark view alike, and the phone's status bar follows it
+   (useStatusBarColor reads the gradient's starting colour). */
+/* Sign out stays red so it reads as the leave action: a red icon on a white button, which keeps its contrast
+   on any theme colour (a red tint would vanish on an orange or red theme). */
+:root .portal-shell .portal-topbar .portal-power-button.portal-power-button { border-color: rgb(255 255 255 / .6); color: rgb(220 38 38); background: rgb(255 255 255 / .94); }
+:root .portal-shell .portal-topbar .portal-power-button.portal-power-button:is(:hover, :focus-visible) { background: rgb(255 255 255); }
+/* On the coloured header the text matches the tab bar on the same gradient: the name in white like the active
+   tab, the tier line in the soft theme tint like the other tabs. Not the button text colour (--brand-on): that
+   is chosen for the white buttons and can be dark. The tier keeps its weight but not its own colour, which
+   would clash with the theme. The online dot stays green, ringed in white so it shows on a green theme too. */
+:root .portal-shell .portal-topbar .portal-greeting { color: #fff; }
+:root .portal-shell .portal-topbar .portal-member-tier.portal-member-tier { color: var(--brand-soft, rgb(255 255 255 / .85)); }
+:root .portal-shell .portal-topbar .portal-online::before { box-shadow: 0 0 0 2px rgb(255 255 255 / .85); }
 /* The footer in the theme colour too, matching the header and tab bar: its text and the Terms and
    Privacy links in the button text colour; the share icons keep their white circles and brand colours.
    (:is with a tab-bar selector lifts these over the older footer text rule in dark view.) */
