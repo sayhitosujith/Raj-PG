@@ -24,6 +24,11 @@ export function propertyNow(now = new Date()) {
   return { date: local.toISOString().slice(0, 10), minutes: local.getUTCHours() * 60 + local.getUTCMinutes() }
 }
 
+/** Midnight at the start of today in property time, as an exact instant (for "today" totals and day-long holds). */
+export function propertyDayStart(now = new Date()) {
+  return new Date(Date.parse(`${propertyNow(now).date}T00:00:00Z`) - propertyUtcOffsetMs)
+}
+
 /** "October 2026" from a "YYYY-MM" month key, as receipts and messages write it. */
 export function formatMonthLabel(key: string) {
   const [year, month] = key.split('-').map(Number)

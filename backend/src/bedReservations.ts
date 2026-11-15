@@ -1,12 +1,13 @@
 import { Prisma } from '@prisma/client'
 import { Router } from 'express'
 import type { AuthContext } from './auth.js'
-import { lockRoom } from './beds.js'
+import { lockRoom, releaseLapsedReservations } from './beds.js'
 import { prisma } from './db.js'
 
 /**
  * Bed reservations: staff hold free beds back (for someone expected, say) by selecting them on the
- * Overview's room grid, and release them by hand. A held bed is neither offered in the resident form nor
+ * Overview's room grid. A hold lasts for the day it is made (releaseLapsedReservations) or until released by
+ * hand. A held bed is neither offered in the resident form nor
  * given to a new resident (beds.ts and claimRoom skip it). Under /properties/:id, so staffGuard keeps
  * receptionists to their own property; super admins and receptionists may both reserve and release.
  */
@@ -44,6 +45,7 @@ bedReservationsRouter.post('/properties/:id/bed-reservations', async (request, r
   try {
     const staff = await prisma.superAdmin.findUnique({ where: { id: userId }, select: { name: true } })
     const count = await prisma.$transaction(async (transaction) => {
+      await releaseLapsedReservations(transaction)
       const roomNumbers = [...new Set(parsed.beds.map((choice) => choice.roomNumber))]
       const rooms = await transaction.room.findMany({ where: { propertyId, number: { in: roomNumbers } }, select: { id: true, number: true, beds: true } })
       const roomByNumber = new Map(rooms.map((room) => [room.number, room]))

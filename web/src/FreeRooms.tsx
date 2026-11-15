@@ -98,10 +98,10 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
         {free > 0 && <span className="is-free" style={{ width: share(free) }} />}
       </div>
       <div className="free-chart-bar">
-        <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked · rent paid</li><li><i className="is-taken is-owed is-due" />Rent due</li><li><i className="is-taken is-owed is-overdue" />Rent overdue</li><li><i className="is-held" />Reserved</li></ul>
+        <ul className="free-legend" aria-hidden="true"><li><i className="is-free" />Free bed</li><li><i className="is-taken" />Booked · rent paid</li><li><i className="is-taken is-owed is-due" />Rent due</li><li><i className="is-taken is-owed is-overdue" />Rent overdue</li><li><i className="is-held" />Reserved today</li></ul>
         {shown.length > 0 && (selecting
           ? <div className="reserve-bar" role="group" aria-label="Reserve selected beds">
-              <span>{selected.size ? `${plural(selected.size, 'bed')} selected` : 'Tap free beds to select them'}</span>
+              <span>{selected.size ? `${plural(selected.size, 'bed')} selected · held until midnight` : 'Tap free beds to hold them for today'}</span>
               <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={120} placeholder="Note (optional)" aria-label="Reservation note" />
               <button type="button" className="primary-button" disabled={!selected.size || isSaving} onClick={() => void reserve()}>{isSaving ? 'Reserving…' : 'Reserve'}</button>
               <button type="button" className="secondary-button" onClick={stopSelecting}>Cancel</button>
@@ -115,7 +115,7 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
             <span className="room-tile-beds">{Array.from({ length: room.beds }, (_, index) => {
               const bed = index + 1
               const hold = room.reservations.find((item) => item.bed === bed)
-              if (hold) return <button key={bed} type="button" className="is-held" aria-label={`Bed ${bed}, reserved${hold.note ? `: ${hold.note}` : ''}. Release it`} title={`Reserved${hold.reservedByName ? ` by ${hold.reservedByName}` : ''}${hold.note ? ` · ${hold.note}` : ''} · click to release`} onClick={() => void release(room.number, hold)}><span><BedIcon /></span></button>
+              if (hold) return <button key={bed} type="button" className="is-held" aria-label={`Bed ${bed}, reserved${hold.note ? `: ${hold.note}` : ''}. Release it`} title={`Reserved${hold.reservedByName ? ` by ${hold.reservedByName}` : ''}${hold.note ? ` · ${hold.note}` : ''} · until midnight · click to release`} onClick={() => void release(room.number, hold)}><span><BedIcon /></span></button>
               if (!freeBeds.includes(bed)) return <BookedBed key={bed} bed={bed} occupant={room.occupants.find((occupant) => occupant.bed === bed)} onShow={(occupant, anchor) => setShownOccupant({ occupant, roomNumber: room.number, anchor })} onHide={() => setShownOccupant(null)} />
               if (selecting) {
                 const isPicked = selected.has(bedKey(room.number, bed))

@@ -1,4 +1,4 @@
-import { formatMonthLabel, propertyNow, propertyUtcOffsetMs } from './dates.js'
+import { formatMonthLabel, propertyDayStart, propertyNow, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
 import { rupees } from './money.js'
 import { bedCounts } from './occupancy.js'
@@ -45,11 +45,6 @@ function rentDueOf(resident: GridResident, rules: RentRules) {
 type ActivityRow ={ title: string; description: string; amount: string; time: string; tone: string; icon: 'wallet' | 'door' | 'clipboard'; at: number }
 
 // Start of a property-local (IST) month as an instant; `offset` months from the current one.
-/** Midnight today in property time, as a UTC instant, for "collected today". */
-function todayStart() {
-  return new Date(Date.parse(`${propertyNow().date}T00:00:00Z`) - propertyUtcOffsetMs)
-}
-
 function monthStart(offset: number) {
   const [year, month] = propertyNow().date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1 + offset, 1) - propertyUtcOffsetMs)
@@ -92,7 +87,7 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: monthNow } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: { gt: monthNow } } }),
     // Received since midnight (property time), and everything ever recorded, for the two extra rent cards.
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, where: { paidAt: { gte: todayStart() }, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, where: { paidAt: { gte: propertyDayStart() }, ...rentOf } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, _min: { paidAt: true }, where: rentOf }),
     prisma.resident.count({ where: { joinedAt: { gte: thisMonth }, ...residents_ } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...byProperty } }),

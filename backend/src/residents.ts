@@ -16,7 +16,7 @@ import { isLockedOut, isRentLocked } from './rentLock.js'
 import { closeAccount } from './accountDeletion.js'
 import type { AuthContext } from './auth.js'
 import { createUniqueDoorPin, syncDoorAccess } from './doorAccess.js'
-import { BedUnavailableError, claimBed, lockRoom, parseBedNumber } from './beds.js'
+import { BedUnavailableError, claimBed, lockRoom, parseBedNumber, releaseLapsedReservations } from './beds.js'
 import { computeExitDues, dailyRatesOf, type DailyRates } from './exits.js'
 import { notifyRegistrationLink, notifyResidentCredentials } from './notifications.js'
 import { newRegistrationLink, registrationUrl } from './selfRegistration.js'
@@ -104,7 +104,8 @@ function parseResidentIdentity(body: ResidentBody): { fields: IdentityFields } |
  * defines them under Properties, so a typo can never invent a room.
  */
 async function claimRoom(transaction: Prisma.TransactionClient, propertyId: string, roomNumber?: string) {
-  // Reserved beds are not free: a room whose only free beds are reserved counts as full.
+  // Reserved beds are not free: a room whose only free beds are reserved (today) counts as full.
+  await releaseLapsedReservations(transaction)
   const rooms = await transaction.room.findMany({ where: { propertyId, ...(roomNumber ? { number: roomNumber } : {}) }, select: { id: true, number: true, beds: true, _count: { select: { residents: true, reservations: true } } }, orderBy: { number: 'asc' } })
   const freeRoom = rooms.find((room) => room._count.residents + room._count.reservations < room.beds)
   if (freeRoom) {

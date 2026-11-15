@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { prisma } from './db.js'
 import { maxBeds } from './occupancy.js'
+import { releaseLapsedReservations } from './beds.js'
 import { syncPropertyRents } from './propertyRent.js'
 
 /**
@@ -78,6 +79,7 @@ roomsAdminRouter.patch('/properties/:id/rooms/:roomId', async (request, response
   const beds = parseBeds((request.body as { beds?: unknown }).beds)
   if (beds === null) { response.status(400).json({ error: bedsError }); return }
   try {
+    await releaseLapsedReservations()
     const room = await prisma.room.findFirst({ where: { id: roomId, propertyId: id }, select: { number: true, residents: { select: { name: true, bedNumber: true } }, reservations: { select: { bedNumber: true } } } })
     if (!room) { response.status(404).json({ error: 'Room was not found.' }); return }
     const living = room.residents.length

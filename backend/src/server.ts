@@ -36,6 +36,7 @@ import { residentRouter } from './residents.js'
 import { selfRegistrationRouter } from './selfRegistration.js'
 import { roomsAdminRouter } from './rooms.js'
 import { bedCounts, roomBedsSelect } from './occupancy.js'
+import { releaseLapsedReservations } from './beds.js'
 import { holidaysAdminRouter } from './holidays.js'
 import { fireAlertAdminRouter } from './fireAlerts.js'
 import { exitAdminRouter } from './exits.js'
@@ -326,6 +327,8 @@ app.get('/api/dashboard', async (_request, response) => {
   }
 
   try {
+    // Yesterday's bed holds lapse first, so the room grid and free-bed counts show them as free again.
+    await withDatabaseRetry(() => releaseLapsedReservations())
     // Retried, like the residents list and the Kitchen: Neon's pooled endpoint drops an idle connection now
     // and then, and the Overview is the first page everyone opens.
     const [properties, residents, openRequests, pendingBookings] = await withDatabaseRetry(() => prisma.$transaction([

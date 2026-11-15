@@ -1,4 +1,6 @@
 import type { Prisma } from '@prisma/client'
+import { propertyDayStart } from './dates.js'
+import { prisma } from './db.js'
 
 /** A bed request that cannot be met: not a bed in the room, or already someone's. */
 export class BedUnavailableError extends Error {}
@@ -23,6 +25,7 @@ export function parseBedNumber(value: unknown): { bed: number | null } | { error
  * bed out of "taken", for an edit that keeps or changes their bed in the same room.
  */
 export async function claimBed(transaction: Prisma.TransactionClient, room: { id: string; number: string; beds: number }, requested: number | null, residentId?: string) {
+  await releaseLapsedReservations(transaction)
   const [others, holds] = await Promise.all([
     transaction.resident.findMany({ where: { roomId: room.id, bedNumber: { not: null }, ...(residentId ? { id: { not: residentId } } : {}) }, select: { bedNumber: true } }),
     transaction.bedReservation.findMany({ where: { roomId: room.id }, select: { bedNumber: true } }),
@@ -37,6 +40,15 @@ export async function claimBed(transaction: Prisma.TransactionClient, room: { id
   }
   for (let bed = 1; bed <= room.beds; bed += 1) if (!taken.has(bed)) return bed
   throw new BedUnavailableError(`Every bed in room ${room.number} is taken.`)
+}
+
+/**
+ * Deletes bed reservations made before today (property time): a hold lasts only for the day it was made. Run
+ * before anything reads or claims beds, rather than filtering by date, because the unique (roomId, bedNumber)
+ * index would otherwise stop a lapsed hold's bed being reserved again. The table is small, so it clears every property.
+ */
+export async function releaseLapsedReservations(db: Prisma.TransactionClient | typeof prisma = prisma) {
+  await db.bedReservation.deleteMany({ where: { createdAt: { lt: propertyDayStart() } } })
 }
 
 /** Locks a room's row for the rest of the transaction, so its beds cannot change under a bed choice. */
