@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BedDouble } from 'lucide-react'
+import { Bed, BedDouble } from 'lucide-react'
 import { BedOccupantCard, type BedOccupant } from './BedOccupantCard'
 import { readApiError } from './superAdmin'
 
@@ -115,13 +115,13 @@ export function FreeRooms({ propertyId, beds, rooms, notSetUp, onAddResident, on
             <span className="room-tile-beds">{Array.from({ length: room.beds }, (_, index) => {
               const bed = index + 1
               const hold = room.reservations.find((item) => item.bed === bed)
-              if (hold) return <button key={bed} type="button" className="is-held" aria-label={`Bed ${bed}, reserved${hold.note ? `: ${hold.note}` : ''}. Release it`} title={`Reserved${hold.reservedByName ? ` by ${hold.reservedByName}` : ''}${hold.note ? ` · ${hold.note}` : ''} · click to release`} onClick={() => void release(room.number, hold)}><span>{bed}</span></button>
+              if (hold) return <button key={bed} type="button" className="is-held" aria-label={`Bed ${bed}, reserved${hold.note ? `: ${hold.note}` : ''}. Release it`} title={`Reserved${hold.reservedByName ? ` by ${hold.reservedByName}` : ''}${hold.note ? ` · ${hold.note}` : ''} · click to release`} onClick={() => void release(room.number, hold)}><span><BedIcon /></span></button>
               if (!freeBeds.includes(bed)) return <BookedBed key={bed} bed={bed} occupant={room.occupants.find((occupant) => occupant.bed === bed)} onShow={(occupant, anchor) => setShownOccupant({ occupant, roomNumber: room.number, anchor })} onHide={() => setShownOccupant(null)} />
               if (selecting) {
                 const isPicked = selected.has(bedKey(room.number, bed))
-                return <button key={bed} type="button" className={`is-free${isPicked ? ' is-picked' : ''}`} aria-pressed={isPicked} aria-label={`Bed ${bed}, free: ${isPicked ? 'selected' : 'select'} for reserving`} onClick={() => toggle(room.number, bed)}>{bed}</button>
+                return <button key={bed} type="button" className={`is-free${isPicked ? ' is-picked' : ''}`} aria-pressed={isPicked} aria-label={`Bed ${bed}, free: ${isPicked ? 'selected' : 'select'} for reserving`} title={`Bed ${bed}`} onClick={() => toggle(room.number, bed)}><BedIcon /></button>
               }
-              return <button key={bed} type="button" className="is-free" aria-label={`Bed ${bed}, free: add a resident`} title={`Add a resident to room ${room.number}, bed ${bed}`} onClick={() => onAddResident(room.number, bed)}>{bed}</button>
+              return <button key={bed} type="button" className="is-free" aria-label={`Bed ${bed}, free: add a resident`} title={`Add a resident to room ${room.number}, bed ${bed}`} onClick={() => onAddResident(room.number, bed)}><BedIcon /></button>
             })}</span>
           </li>
         ))}
@@ -148,8 +148,13 @@ const rentMarks = { OVERDUE: { className: ' is-owed is-overdue', label: ', rent 
  * plain neutral marker.
  */
 function BookedBed({ bed, occupant, onShow, onHide }: { bed: number; occupant: BedOccupant | undefined; onShow: (occupant: BedOccupant, anchor: DOMRect) => void; onHide: () => void }) {
-  if (!occupant) return <i className="is-taken" role="img" aria-label={`Bed ${bed}, booked`}>{bed}</i>
+  if (!occupant) return <i className="is-taken" role="img" aria-label={`Bed ${bed}, booked`} title={`Bed ${bed}, booked`}><BedIcon /></i>
   const mark = occupant.rent?.state === 'OVERDUE' || occupant.rent?.state === 'DUE' ? rentMarks[occupant.rent.state] : null
   const show = (target: Element) => onShow(occupant, target.getBoundingClientRect())
-  return <i className={`is-taken is-occupied${mark?.className ?? ''}`} role="img" tabIndex={0} aria-label={`Bed ${bed}, booked by ${occupant.name}${mark?.label ?? ''}`} onMouseEnter={(event) => show(event.currentTarget)} onFocus={(event) => show(event.currentTarget)} onMouseLeave={onHide} onBlur={onHide}>{bed}</i>
+  return <i className={`is-taken is-occupied${mark?.className ?? ''}`} role="img" tabIndex={0} aria-label={`Bed ${bed}, booked by ${occupant.name}${mark?.label ?? ''}`} onMouseEnter={(event) => show(event.currentTarget)} onFocus={(event) => show(event.currentTarget)} onMouseLeave={onHide} onBlur={onHide}><BedIcon /></i>
+}
+
+/** The mark inside each bed marker: a bed, in the marker's text colour. The bed number is in its label and title. */
+function BedIcon() {
+  return <Bed size={11} strokeWidth={2.4} aria-hidden="true" />
 }
