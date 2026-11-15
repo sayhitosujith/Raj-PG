@@ -347,6 +347,8 @@ app.get('/api/dashboard', async (_request, response) => {
         collected: insights.collected,
         collectedToday: insights.collectedToday,
         collectedOverall: insights.collectedOverall,
+        // When the rent cards were last reset (Dashboard > Reset), or null; the button shows it.
+        rentCountersResetAt: insights.rentCountersResetAt,
         openRequests: String(openRequests),
         // Drives the Bookings badge in the sidebar: requests still waiting for a decision.
         pendingBookings,

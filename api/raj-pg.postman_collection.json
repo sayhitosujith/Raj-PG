@@ -4413,7 +4413,7 @@
             "description": "Source: backend/src/settings.ts",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"residentFeatures\": \"\",\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"laundryShopName\": \"\",\n  \"laundryShopUrl\": \"\",\n  \"laundryShopHours\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"lateMealLimit\": \"\",\n  \"image\": \"\"\n}",
+              "raw": "{\n  \"residentFeatures\": \"\",\n  \"upiId\": \"\",\n  \"upiPayeeName\": \"\",\n  \"termsAndConditions\": \"\",\n  \"privacyPolicy\": \"\",\n  \"businessName\": \"\",\n  \"contactPhone\": \"\",\n  \"contactEmail\": \"\",\n  \"rentDueDay\": \"\",\n  \"rentReminderOneDay\": \"\",\n  \"rentReminderTwoDay\": \"\",\n  \"rentReminderThreeDay\": \"\",\n  \"lateFee\": \"\",\n  \"securityDeposit\": \"\",\n  \"noticePeriodDays\": \"\",\n  \"extraHouseRules\": \"\",\n  \"faqs\": \"\",\n  \"dailyRateWithFood\": \"\",\n  \"dailyRateWithoutFood\": \"\",\n  \"housekeepingWeeklyLimit\": \"\",\n  \"laundryShopName\": \"\",\n  \"laundryShopUrl\": \"\",\n  \"laundryShopHours\": \"\",\n  \"residentTheme\": \"\",\n  \"portalThemeColor\": \"\",\n  \"portalButtonTextColor\": \"\",\n  \"portalErrorColor\": \"\",\n  \"portalTextColor\": \"\",\n  \"portalPlaceholderColor\": \"\",\n  \"portalNewBadgeColor\": \"\",\n  \"portalSoonBadgeColor\": \"\",\n  \"portalBetaBadgeColor\": \"\",\n  \"portalBackgroundColor\": \"\",\n  \"portalCardColor\": \"\",\n  \"portalChildCardColor\": \"\",\n  \"featureBadges\": \"\",\n  \"doorKeysEnabled\": \"\",\n  \"lockModel\": \"\",\n  \"lockLocation\": \"\",\n  \"doorPinLength\": \"\",\n  \"doorUnlockInstructions\": \"\",\n  \"lateMealLimit\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4466,6 +4466,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"image\": \"data:image/png;base64,…\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /settings/rent-counters/reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/rent-counters/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "rent-counters",
+                "reset"
+              ]
+            },
+            "description": "Dashboard > Reset: the rent cards count from now on. Only the start time is stored; no payment is touched. Super admins only (staffGuard keeps receptionists off /settings/…). Answers the new reset time.\n\nSource: backend/src/settings.ts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

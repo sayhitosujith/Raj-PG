@@ -75,20 +75,27 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
   const lastMonth = monthStart(-1)
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   // Cached after the first read (see settings.ts), so this costs no extra query on most loads.
-  const rentRules = rentRulesOf(await getSettings())
+  const settings = await getSettings()
+  const rentRules = rentRulesOf(settings)
+  // Dashboard > Reset: each rent card starts from its own period start (midnight, the 1st, ever) or the last
+  // reset, whichever is later, so a reset zeroes all three until the day or month rolls past it.
+  const resetAt = settings.rentCountersResetAt
+  const countFrom = (start: Date) => (resetAt && resetAt > start ? resetAt : start)
+  const isResetIn = (start: Date) => Boolean(resetAt && resetAt > start)
+  const sinceReset = resetAt ? `since ${resetAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}` : ''
   // Rent collected = money received from the 1st to the end of this month (property time), whatever month it
   // pays for; the detail line splits it into this month's rent, rent paid in advance and late rent. There is
   // no percentage: a resident paying months ahead would put it far past 100%. Months are "YYYY-MM".
   const monthNow = propertyNow().date.slice(0, 7)
-  const receivedThisMonth = { paidAt: { gte: thisMonth }, ...rentOf }
+  const receivedThisMonth = { paidAt: { gte: countFrom(thisMonth) }, ...rentOf }
   const [collected, collectedLast, forThisMonth, ahead, collectedToday, collectedEver, joinedThisMonth, openRequests, newRequests, payments, residents, bookings, requests, exits] = await Promise.all([
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: receivedThisMonth }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: lastMonth, lt: thisMonth }, ...rentOf } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: monthNow } }),
     prisma.rentPayment.aggregate({ _sum: { amount: true }, where: { ...receivedThisMonth, month: { gt: monthNow } } }),
     // Received since midnight (property time), and everything ever recorded, for the two extra rent cards.
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, where: { paidAt: { gte: propertyDayStart() }, ...rentOf } }),
-    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, _min: { paidAt: true }, where: rentOf }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, where: { paidAt: { gte: countFrom(propertyDayStart()) }, ...rentOf } }),
+    prisma.rentPayment.aggregate({ _sum: { amount: true }, _count: true, _min: { paidAt: true }, where: { ...rentOf, ...(resetAt ? { paidAt: { gte: resetAt } } : {}) } }),
     prisma.resident.count({ where: { joinedAt: { gte: thisMonth }, ...residents_ } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, ...byProperty } }),
     prisma.maintenanceRequest.count({ where: { status: { not: 'resolved' }, createdAt: { gte: weekAgo }, ...byProperty } }),
@@ -128,15 +135,23 @@ export async function dashboardInsights(properties: Array<{ id: string; name: st
     collected: shortRupees(collectedNow),
     collectedToday: shortRupees(todayAmount),
     collectedOverall: shortRupees(everAmount),
+    rentCountersResetAt: resetAt,
     details: {
-      collectedToday: todayAmount ? paymentsLabel(collectedToday._count) : 'Nothing received yet today',
-      collectedOverall: firstPayment ? `${paymentsLabel(collectedEver._count)} since ${firstPayment.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', year: 'numeric' })}` : 'No rent recorded yet',
+      collectedToday: isResetIn(propertyDayStart())
+        ? (todayAmount ? `${paymentsLabel(collectedToday._count)} ${sinceReset}` : `Nothing received ${sinceReset}`)
+        : (todayAmount ? paymentsLabel(collectedToday._count) : 'Nothing received yet today'),
+      collectedOverall: resetAt
+        ? (everAmount ? `${paymentsLabel(collectedEver._count)} ${sinceReset}` : `Nothing received ${sinceReset}`)
+        : (firstPayment ? `${paymentsLabel(collectedEver._count)} since ${firstPayment.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', year: 'numeric' })}` : 'No rent recorded yet'),
       properties: freeBeds ? `${freeBeds} ${freeBeds === 1 ? 'bed' : 'beds'} free` : totalBeds ? 'All beds full' : 'No rooms set up yet',
       residents: joinedThisMonth ? `${joinedThisMonth} joined this month` : 'No new residents this month',
-      collected: collectedNow ? [`${shortRupees(thisMonthsRent)} for ${monthName}`, paidAhead ? `${shortRupees(paidAhead)} paid in advance` : '', lateRent ? `${shortRupees(lateRent)} late rent` : ''].filter(Boolean).join(' · ') : 'Nothing received yet this month',
+      collected: isResetIn(thisMonth) && !collectedNow ? `Nothing received ${sinceReset}` : collectedNow ? [isResetIn(thisMonth) ? sinceReset.replace(/^s/, 'S') : '', `${shortRupees(thisMonthsRent)} for ${monthName}`, paidAhead ? `${shortRupees(paidAhead)} paid in advance` : '', lateRent ? `${shortRupees(lateRent)} late rent` : ''].filter(Boolean).join(' · ') : 'Nothing received yet this month',
       openRequests: openRequests ? (newRequests ? `${newRequests} new this week` : 'Waiting for you') : 'All clear',
     },
-    insight: change === null
+    // After a reset this month the figure no longer covers the whole month, so it is not compared with last month.
+    insight: isResetIn(thisMonth)
+      ? { headline: `Collected ${shortRupees(collectedNow)} ${sinceReset}`, emphasis: '', note: 'The figures were reset this month; the comparison with last month returns next month.' }
+      : change === null
       ? { headline: `Collected ${shortRupees(collectedNow)} so far`, emphasis: '', note: 'Nothing was recorded last month to compare with.' }
       : { headline: `Rent collection is ${change >= 0 ? 'up' : 'down'}`, emphasis: `${Math.abs(change)}%`, note: `${shortRupees(collectedNow)} received so far this month, against ${shortRupees(collectedBefore)} last month.` },
     tip: emptiest && emptiest.free > 0

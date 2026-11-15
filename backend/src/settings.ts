@@ -286,6 +286,19 @@ settingsRouter.put('/settings', async (request, response) => {
   }
 })
 
+// Dashboard > Reset: the rent cards count from now on. Only the start time is stored; no payment is touched.
+// Super admins only (staffGuard keeps receptionists off /settings/…). Answers the new reset time.
+settingsRouter.post('/settings/rent-counters/reset', async (_request, response) => {
+  try {
+    cached = await prisma.workspaceSettings.update({ where: { id: settingsId }, data: { rentCountersResetAt: new Date() } })
+    response.json({ rentCountersResetAt: cached.rentCountersResetAt })
+  } catch (error) {
+    cached = null
+    console.error('Rent counters reset failed:', error)
+    response.status(503).json({ error: 'The rent figures could not be reset.' })
+  }
+})
+
 /**
  * PUT (upload, body `{ image }`) and DELETE (remove) for an image kept on the settings row as a
  * data URL plus an updated-at that versions its URL. Shared by the logo and the UPI QR image.

@@ -84,6 +84,7 @@ import { RolePreviewBanner, RoleSwitcher, type ViewRole } from './RoleSwitcher'
 import { ActingAsResidentBanner, ResidentPicker } from './ActAsResident'
 import { startActingAs, stopActingAs, type ActingResident } from './actAs'
 import { ResidentPortal } from './ResidentPortal'
+import { ResetRentFigures } from './ResetRentFigures'
 import { usePageTitle } from './pageTitle'
 import { IsActingAsResidentProvider } from './actingContext'
 import { RefreshButton } from './RefreshButton'
@@ -148,7 +149,7 @@ const propertyCardsPerPage = 12
 type Activity = { title: string; description: string; amount: string; time: string; tone: string; icon: string }
 /** The Dashboard's computed text: stat-card detail lines, monthly insight and quick tip (absent in the offline fallback). */
 type DashboardInsights = { details: { properties: string; residents: string; collected: string; collectedToday?: string; collectedOverall?: string; openRequests: string }; insight: { headline: string; emphasis: string; note: string }; tip: { title: string; text: string; /** The emptiest property, whose rooms the grid shows. */ propertyId?: string; /** Beds at the emptiest property, for the free-rooms chart. */ beds?: { taken: number; total: number }; /** Its set-up rooms in number order, for the room grid. */ rooms?: RoomOccupancy[]; /** Declared rooms not set up yet (free, but no number). */ roomsNotSetUp?: number } }
-type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; collectedToday?: string; collectedOverall?: string; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
+type DashboardData = { source: 'fallback' | 'postgresql'; stats: { properties: string; residents: string; collected: string; collectedToday?: string; collectedOverall?: string; /** Dashboard > Reset: when the rent cards last restarted (ISO), or null. */ rentCountersResetAt?: string | null; openRequests: string; pendingBookings?: number }; properties: Property[]; activity: Activity[] } & Partial<DashboardInsights>
 
 const initialDashboard: DashboardData = {
   source: 'fallback',
@@ -601,7 +602,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
         </header>
         <div className="page-content">
           {isOwnerAccount && !isOwner && <RolePreviewBanner onExit={() => switchPreviewRole('SUPER_ADMIN')} />}
-          <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Dashboard' && isOwner && <button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button>}</section>
+          <section className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>{greeting}, {displayName(profileName)} <span className="wave">✦</span></h1><p className="subtitle">Here is what is happening across your properties today.</p></div>{activeView === 'Dashboard' && isOwner && <div className="view-actions"><ResetRentFigures resetAt={stats.rentCountersResetAt} onReset={() => fetchDashboard().then(setDashboard)} onNotice={showNotice} /><button className="primary-button" onClick={() => setIsPropertyModalOpen(true)}><Plus size={18} /> Add property</button></div>}</section>
 
           {!isOwner && <SubscriptionBanner subscription={mySubscription} onOpen={() => handleNavigation('My subscription')} />}
           {activeView === 'Subscriptions' && isOwner && <SubscriptionsView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}

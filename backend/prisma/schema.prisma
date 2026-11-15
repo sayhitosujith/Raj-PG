@@ -774,6 +774,9 @@ model WorkspaceSettings {
   // Settings > Resident features: { feature: false } switches a resident feature off (residentFeatures.ts).
   // Only switched-off features are stored, so a missing key, including a feature added later, is on.
   residentFeatures        Json          @default("{}")
+  // Dashboard > Reset: the rent cards (today, this month, overall) count only payments received after this.
+  // Payments themselves are untouched; null counts everything.
+  rentCountersResetAt     DateTime?
   updatedAt               DateTime      @updatedAt
 }
 
