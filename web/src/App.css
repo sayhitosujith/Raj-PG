@@ -3015,3 +3015,9 @@ a.faq-card { text-decoration: none; }
   .room-tile { padding: 5px; }
   .room-tile-beds :is(i, button) { width: 16px; height: 16px; font-size: 8px; }
 }
+/* Dashboard > Reset rent figures: solid red with white text, like the other actions that cannot be undone.
+   :is() with the doubled class outranks the owner's-colour .secondary-button rules. */
+:is(:root, :root[data-brand][data-theme]) .reset-rent-button.reset-rent-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }
+:is(:root, :root[data-brand][data-theme]) .reset-rent-button.reset-rent-button:is(:hover, :focus-visible) { border-color: rgb(185 28 28); background: rgb(185 28 28); }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .reset-rent-button.reset-rent-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .reset-rent-button.reset-rent-button:is(:hover, :focus-visible) { border-color: rgb(185 28 28); background: rgb(185 28 28); }

@@ -30,12 +30,12 @@ export function ResetRentFigures({ resetAt, onReset, onNotice }: { /** The last 
 
   return (
     <>
-      <button type="button" className="secondary-button" disabled={isBusy} title={last ? `Last reset ${last}` : 'Count rent collected again from now'} onClick={() => setIsAsking(true)}>
-        <RotateCcw size={16} /> Reset rent figures
+      <button type="button" className="secondary-button reset-rent-button" disabled={isBusy} title={last ? `Last reset ${last}` : 'Count rent collected again from now'} onClick={() => setIsAsking(true)}>
+        <RotateCcw size={16} /> Reset Rent Figures
       </button>
       {isAsking && <ConfirmDialog
         icon={<RotateCcw size={22} />}
-        title="Reset the rent figures?"
+        title="Reset the Rent Figures?"
         detail={`Rent collected today, this month and overall will count again from now.${last ? ` Last reset: ${last}.` : ''} No payment is deleted: they all stay under Payments.`}
         confirmLabel={isBusy ? 'Resetting…' : 'Reset'}
         isBusy={isBusy}
