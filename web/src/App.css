@@ -1585,7 +1585,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Rent owed: a white pill with red text, which reads on the blue where red text alone would not. */
 .member-card-field > strong.member-card-due { padding: 1px 8px; border-radius: 999px; color: #b42318; background: rgb(255 255 255); }
 /* Top-aligned: the cardholder's tags make that side taller, and "Unit" stays level with "Cardholder". */
-.member-card-foot { align-items: flex-start; padding-top: 10px; border-top: 1px solid rgb(255 255 255 / .22); }
+/* Age between the cardholder and the unit, centred under its label; it never shrinks, since it is only a number. */
+.member-card-age { flex: none; justify-items: center; text-align: center; }
+.member-card-foot {align-items: flex-start; padding-top: 10px; border-top: 1px solid rgb(255 255 255 / .22); }
 
 /* The resident's top bar holds only the bell and sign-out (their name is in the greeting, their photo on the
    Profile tab), so the buttons are pushed to the right edge on their own. */
