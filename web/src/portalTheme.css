@@ -118,9 +118,18 @@
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner { flex: none; align-self: flex-start; border-color: var(--brand-pale, var(--line)); color: var(--brand-deep, var(--teal)); background: transparent; box-shadow: none; }
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner:is(:hover, :focus-visible) { border-color: var(--brand, var(--teal)); background: color-mix(in srgb, var(--brand, var(--teal)) 8%, transparent); }
 :is(:root, :root[data-theme]) .portal-shell .resident-info .emergency-button.call-owner svg { color: inherit; }
-/* Receptionist call and WhatsApp buttons, stacked beside the heading so both fit at phone width. */
-.portal-shell .resident-info .info-actions { display: flex; flex: none; flex-direction: column; gap: 6px; }
-:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner { align-self: stretch; justify-content: center; }
+/* Round icon buttons beside the heading: call the receptionist, then WhatsApp on its right. */
+.portal-shell .resident-info .info-actions { display: flex; flex: none; align-items: center; gap: 6px; }
+/* A fixed height for both, so the icon button is an exact circle: sizing it from the row (aspect-ratio on a
+   stretched item) left it a squashed oval in mobile Safari. */
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner { align-self: auto; justify-content: center; height: 34px; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only { flex: none; width: 34px; padding: 0; }
+/* WhatsApp's own green (#25D366) with a white glyph, in both views, so it reads as WhatsApp at a glance. */
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.whatsapp { border-color: #25d366; color: #fff; background: #25d366; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.whatsapp:is(:hover, :focus-visible) { border-color: #1da851; background: #1da851; }
+/* Gmail's colours need a white disc to read, in dark view too. */
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.gmail { border-color: #dadce0; background: #fff; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.gmail:is(:hover, :focus-visible) { border-color: #ea4335; background: #fff; }
 :root[data-theme="dark"] .portal-shell .resident-info .emergency-button.call-owner { color: var(--brand-border, var(--teal)); }
 /* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
    Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */

@@ -1,4 +1,5 @@
 import { Ambulance, Flame, Phone, ShieldAlert, Siren, type LucideIcon } from 'lucide-react'
+import { GmailIcon } from './GmailIcon'
 import { whatsappLink } from './siteData'
 import { WhatsAppIcon } from './WhatsAppIcon'
 
@@ -32,14 +33,25 @@ export function EmergencyNumbers() {
 /** Tap-to-call for the receptionist (the property's manager number); renders nothing when no number is set. */
 export function CallOwnerButton({ ownerName, ownerPhone }: { ownerName: string; ownerPhone: string | null }) {
   if (!ownerPhone) return null
-  return <a className="emergency-button call-owner" href={`tel:${ownerPhone}`} aria-label={`Call the receptionist at ${ownerName} on ${ownerPhone}`}><Phone size={14} /> Receptionist</a>
+  return <a className="emergency-button call-owner icon-only" href={`tel:${ownerPhone}`} aria-label={`Call the receptionist at ${ownerName} on ${ownerPhone}`} title="Call receptionist"><Phone size={16} /></a>
 }
 
 /**
- * Opens a WhatsApp chat with the receptionist bot (rent, Wi-Fi, FAQs, repairs), with "Hi" typed so
- * one tap on send brings up its menu. Renders nothing while the bot is off.
+ * Opens a WhatsApp chat with the receptionist, with "Hi" typed. The bot (rent, Wi-Fi, FAQs, repairs) wins when
+ * it is on, since "Hi" brings up its menu; until then it is the receptionist's own number, the one Receptionist
+ * calls, so residents can message the desk from day one. Renders nothing when neither exists.
  */
-export function WhatsAppReceptionButton({ businessName, botNumber }: { businessName: string; botNumber: string | null | undefined }) {
-  if (!botNumber) return null
-  return <a className="emergency-button call-owner" href={whatsappLink(botNumber, 'Hi')} target="_blank" rel="noopener noreferrer" aria-label={`Chat with the ${businessName} receptionist on WhatsApp`}><WhatsAppIcon size={14} /> WhatsApp</a>
+export function WhatsAppReceptionButton({ businessName, botNumber, receptionistPhone }: { businessName: string; botNumber: string | null | undefined; receptionistPhone: string | null }) {
+  const number = botNumber || receptionistPhone
+  if (!number) return null
+  return <a className="emergency-button call-owner icon-only whatsapp" href={whatsappLink(number, 'Hi')} target="_blank" rel="noopener noreferrer" aria-label={`Chat with the ${businessName} receptionist on WhatsApp`} title="WhatsApp"><WhatsAppIcon size={17} /></a>
+}
+
+/**
+ * Opens the resident's email app to the receptionist (of their property, else Settings' contact email), with a subject naming who is
+ * writing and from which room, so the desk can tell residents apart without asking. Nothing when no email is set.
+ */
+export function EmailReceptionButton({ businessName, email, subject }: { businessName: string; email: string | null; subject: string }) {
+  if (!email) return null
+  return <a className="emergency-button call-owner icon-only gmail" href={`mailto:${email}?subject=${encodeURIComponent(subject)}`} aria-label={`Email the ${businessName} receptionist at ${email}`} title="Email receptionist"><GmailIcon size={18} /></a>
 }

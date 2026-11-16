@@ -110,7 +110,9 @@ Residents who message the business's WhatsApp number get an automatic receptioni
 menu (or typed words such as "rent" or "wifi") for **rent due**, **Wi-Fi details**, **FAQs**,
 **report a repair** (filed exactly like one from the portal, staff are alerted) and **talk to
 receptionist** (replies with the property's manager number, else Settings' contact phone). The
-portal's Property info shows a **WhatsApp** button beside **Receptionist** once the bot is on.
+portal's Property info has a **WhatsApp** button beside **Receptionist**: it opens the bot once the bot is
+on, and until then a chat with the receptionist's own number (the property's manager phone, else
+Settings' contact phone).
 
 The sender is identified by their WhatsApp number, which must match exactly one active resident
 who would be let into the portal (approved, ID verified, has a room). Unknown or shared numbers,
