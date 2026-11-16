@@ -2,6 +2,7 @@ import { Suspense, useState, type CSSProperties } from 'react'
 import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, Send, ShieldX, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
+import { formatDateOfBirth } from './dateOfBirth'
 import { residentPhotoUrl, type AadharStatus, type Resident } from './resident'
 import { rentBadges, rentChip } from './rent'
 import { RentPanel } from './RentPanel'
@@ -207,6 +208,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
           <dl className="resident-details">
             <div><dt>Phone</dt><dd>{resident.phone ? <a href={`tel:${resident.phone}`}><PhoneText value={resident.phone} /></a> : '—'}</dd></div>
             <div><dt>Email</dt><dd>{resident.email ? <a href={`mailto:${resident.email}`}>{resident.email}</a> : '—'}</dd></div>
+            <div><dt>Date of birth</dt><dd>{formatDateOfBirth(resident.dateOfBirth)}</dd></div>
             <div><dt>Nationality</dt><dd><Suspense fallback={resident.nationality}><LazyCountryLabel code={resident.nationality} /></Suspense></dd></div>
             {isIndian(resident.nationality)
               ? <>

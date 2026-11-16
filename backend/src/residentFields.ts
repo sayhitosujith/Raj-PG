@@ -1,4 +1,5 @@
 import { isValidEmail, normalizePhone, phoneRequirement } from './validation.js'
+import { parseDateOnly, propertyNow } from './dates.js'
 
 /**
  * The resident's plain contact fields, shared by the owner's resident form and the resident's own
@@ -69,4 +70,20 @@ export function toResidentWrite(data: Partial<Record<TextField, string>>) {
   const write: Omit<typeof data, OptionalField> & Partial<Record<OptionalField, string | null>> = { ...data }
   for (const field of optionalFields) if (write[field] === '') write[field] = null
   return write
+}
+
+/**
+ * The date of birth from either resident form: absent leaves it as it is, blank clears it. A date in the future or
+ * more than 120 years ago is a typo (often the year), so it is refused rather than stored.
+ */
+export function parseDateOfBirth(value: unknown): { data: { dateOfBirth?: Date | null } } | { error: string } {
+  if (value === undefined) return { data: {} }
+  if (value === '') return { data: { dateOfBirth: null } }
+  const date = typeof value === 'string' ? parseDateOnly(value) : null
+  // Today in India as a calendar day, stored like the date itself (UTC midnight), so the two compare as days.
+  const today = new Date(`${propertyNow().date}T00:00:00Z`)
+  const earliest = new Date(today)
+  earliest.setUTCFullYear(today.getUTCFullYear() - 120)
+  if (!date || date > today || date < earliest) return { error: 'Date of birth must be a real date in the past.' }
+  return { data: { dateOfBirth: date } }
 }

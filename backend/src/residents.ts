@@ -11,7 +11,7 @@ import { findProfilePhotoProblem, photoVersion, sendProfilePhoto } from './photo
 import { rentFor, residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
-import { findInvalidField, pickTextFields, toResidentWrite, type TextField } from './residentFields.js'
+import { findInvalidField, parseDateOfBirth, pickTextFields, toResidentWrite, type TextField } from './residentFields.js'
 import { isLockedOut, isRentLocked } from './rentLock.js'
 import { closeAccount } from './accountDeletion.js'
 import type { AuthContext } from './auth.js'
@@ -146,22 +146,6 @@ function parseDiet(value: unknown): { data: { diet?: Diet | null } } | { error: 
   if (value === undefined) return { data: {} }
   if (value === null || value === '') return { data: { diet: null } }
   return value === Diet.VEG || value === Diet.NON_VEG ? { data: { diet: value } } : { error: 'Diet must be veg or non-veg.' }
-}
-
-/**
- * The date of birth sent with a resident: absent leaves it as it is, blank clears it. A date in the future or more
- * than 120 years ago is a typo (often the year), so it is refused rather than stored.
- */
-function parseDateOfBirth(value: string | undefined): { data: { dateOfBirth?: Date | null } } | { error: string } {
-  if (value === undefined) return { data: {} }
-  if (value === '') return { data: { dateOfBirth: null } }
-  const date = parseDateOnly(value)
-  // Today in India as a calendar day, stored like the date itself (UTC midnight), so the two compare as days.
-  const today = new Date(`${propertyNow().date}T00:00:00Z`)
-  const earliest = new Date(today)
-  earliest.setUTCFullYear(today.getUTCFullYear() - 120)
-  if (!date || date > today || date < earliest) return { error: 'Date of birth must be a real date in the past.' }
-  return { data: { dateOfBirth: date } }
 }
 
 /** The membership tier sent with a resident; absent leaves it as it is (create then uses the default). */
