@@ -36,8 +36,9 @@ import { ensureReferralCode } from './referrals.js'
 import { workersQuery } from './workers.js'
 import { whatsappBusinessNumber } from './whatsappClient.js'
 import { isWhatsAppBotEnabled } from './whatsappWebhook.js'
+import { isAssistantConfigured } from './assistantConfig.js'
 
-const requireResident = requireRole(UserRole.RESIDENT)
+export const requireResident = requireRole(UserRole.RESIDENT)
 
 // Portal data stays locked until the resident has (1) replaced the handed-over access key with
 // their own password and (2) had their identity documents approved by the owner. Enforced here rather
@@ -80,7 +81,7 @@ function residentLaundryShop(settings: WorkspaceSettings) {
  * one, skipping any whose subscription has ended (they can no longer sign in to read it). Null when the property
  * has none, and the portal then falls back to Settings' contact email.
  */
-async function receptionistEmailFor(propertyId: string) {
+export async function receptionistEmailFor(propertyId: string) {
   const receptionists = await prisma.superAdmin.findMany({ where: { staffRole: StaffRole.RECEPTIONIST, propertyIds: { has: propertyId } }, select: { email: true, staffRole: true, ...latestSubscriptionSelect }, orderBy: { createdAt: 'asc' } })
   return receptionists.find((staff) => !subscriptionBlock(staff))?.email ?? null
 }
@@ -88,7 +89,7 @@ async function receptionistEmailFor(propertyId: string) {
 async function residentWorkspace() {
   const settings = await getSettings()
   // The Door access card (Settings → Smart lock); its details are left out when door keys are switched off.
-  return { whatsappBotNumber: isWhatsAppBotEnabled() ? await whatsappBusinessNumber() : null, doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: isResidentFeatureOn(settings.residentFeatures, 'laundry') ? residentLaundryShop(settings) : null, residentFeatures: residentFeatureSwitches(settings.residentFeatures), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: isResidentFeatureOn(settings.residentFeatures, 'payments') ? residentUpiPayee(settings) : null, ...policiesOf(settings) }
+  return { whatsappBotNumber: isWhatsAppBotEnabled() ? await whatsappBusinessNumber() : null, assistantEnabled: isAssistantConfigured() && isResidentFeatureOn(settings.residentFeatures, 'assistant'), doorKeysEnabled: settings.doorKeysEnabled, doorUnlockInstructions: settings.doorKeysEnabled ? settings.doorUnlockInstructions : null, lockLocation: settings.doorKeysEnabled ? settings.lockLocation : null, businessName: settings.businessName, contactPhone: settings.contactPhone, contactEmail: settings.contactEmail, slots: slotOptionsOf(settings), housekeepingWeeklyLimit: settings.housekeepingWeeklyLimit, laundryShop: isResidentFeatureOn(settings.residentFeatures, 'laundry') ? residentLaundryShop(settings) : null, residentFeatures: residentFeatureSwitches(settings.residentFeatures), residentTheme: settings.residentTheme, portalThemeColor: settings.portalThemeColor, portalButtonTextColor: settings.portalButtonTextColor, portalErrorColor: settings.portalErrorColor, portalTextColor: settings.portalTextColor, portalPlaceholderColor: settings.portalPlaceholderColor, portalNewBadgeColor: settings.portalNewBadgeColor, portalSoonBadgeColor: settings.portalSoonBadgeColor, portalBetaBadgeColor: settings.portalBetaBadgeColor, portalBackgroundColor: settings.portalBackgroundColor, portalCardColor: settings.portalCardColor, portalChildCardColor: settings.portalChildCardColor, featureBadges: settings.featureBadges, houseRules: houseRulesOf(settings), upi: isResidentFeatureOn(settings.residentFeatures, 'payments') ? residentUpiPayee(settings) : null, ...policiesOf(settings) }
 }
 
 /** Resident-facing routes; each route applies its own guard so unmatched paths fall through. */

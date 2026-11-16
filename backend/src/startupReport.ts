@@ -1,3 +1,4 @@
+import { isAssistantConfigured } from './assistantConfig.js'
 import { emailFrom, isEmailEnabled } from './emailClient.js'
 import { isOnlinePaymentEnabled } from './razorpayConfig.js'
 import { isWeatherEnabled } from './weather.js'
@@ -16,6 +17,7 @@ export function logIntegrations() {
   line('WhatsApp', isWhatsAppEnabled(), 'connected', 'off, WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID not set')
   line('WhatsApp bot', isWhatsAppBotEnabled(), 'receiving at /api/whatsapp/webhook', 'off, needs WhatsApp plus WHATSAPP_VERIFY_TOKEN / WHATSAPP_APP_SECRET')
   line('Daily reminders', Boolean(process.env.CRON_SECRET), 'CRON_SECRET set', 'off, CRON_SECRET not set')
+  line('AI assistant', isAssistantConfigured(), 'ANTHROPIC_API_KEY set', 'off, ANTHROPIC_API_KEY not set')
   line('Razorpay', isOnlinePaymentEnabled(), 'connected', 'off, RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set')
   line('Weather', isWeatherEnabled(), 'Open-Meteo (no key needed)', 'off')
   line('Cricket', isCricketEnabled(), `CricketData.org, refreshing every ${Number(process.env.CRICKET_REFRESH_MINUTES) || 15} min`, 'off, CRICKET_API_KEY not set')

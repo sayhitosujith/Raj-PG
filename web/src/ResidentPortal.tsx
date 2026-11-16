@@ -8,6 +8,7 @@ import { BrandMark } from './BrandMark'
 import { refreshBranding } from './branding'
 import { daysStayedLabel, formatJoinDate, todayDateInputValue } from './joinDate'
 import { ageFrom, formatDateOfBirth } from './dateOfBirth'
+import { ResidentAssistant } from './ResidentAssistant'
 import type { AadharStatus } from './resident'
 import { ResidentIdVerification } from './ResidentIdVerification'
 import { isIndian, visaText } from './identity'
@@ -273,6 +274,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
       </header>
       <main className="page-content" data-tab={tab} inert={Boolean(pendingConsent)}>
         <PortalTabs active={tab} onChange={setTab} />
+        {profile.workspace.assistantEnabled && <ResidentAssistant />}
         <div className="portal-panel" data-panel="home">
         <RentBanner rent={profile.rent} action={payAction} />
         {eatsHere && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}

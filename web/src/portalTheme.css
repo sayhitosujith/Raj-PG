@@ -281,3 +281,37 @@
    inner cards in the theme colour's light tint. */
 :root:not([data-theme="dark"]) .portal-shell :is(.workspace-view) { background: var(--card-bg, #fff); }
 :root:not([data-theme="dark"]) .portal-shell :is(.portal-details > .detail-card, .rent-highlight, .house-rules li, .upi-direct, .crud-row, .holiday-list li, .meal-tile:not(.is-serving), .info-card, .faq-list details) { background: var(--child-card-bg, var(--brand-tint)); }
+
+/* Resident AI assistant (ResidentAssistant.tsx): a round button bottom-right, above the tab bar on phones, opening a
+   chat panel in the same place. Theme colours come from the portal's brand variables. */
+.portal-shell .assistant-fab { position: fixed; z-index: 45; right: 20px; bottom: 24px; display: grid; place-items: center; width: 52px; height: 52px; border: 0; border-radius: 50%; color: var(--brand-on, #fff); background: linear-gradient(135deg, var(--brand, #167c70), var(--brand-deep, #0f5f55)); box-shadow: 0 8px 22px color-mix(in srgb, var(--brand-deep, #0f5f55) 40%, transparent); cursor: pointer; }
+.portal-shell .assistant-fab:is(:hover, :focus-visible) { filter: brightness(1.08); }
+.portal-shell .assistant-panel { position: fixed; z-index: 45; right: 20px; bottom: 24px; display: grid; grid-template-rows: auto 1fr auto; width: min(380px, calc(100vw - 32px)); height: min(540px, calc(100dvh - 140px)); overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--paper, #fff); box-shadow: 0 18px 48px rgb(0 0 0 / .22); }
+.portal-shell .assistant-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 14px; color: var(--brand-on, #fff); background: linear-gradient(135deg, var(--brand, #167c70), var(--brand-deep, #0f5f55)); }
+.portal-shell .assistant-head > div { display: grid; flex: 1; min-width: 0; }
+.portal-shell .assistant-head strong { font-size: 14px; }
+.portal-shell .assistant-head small { font-size: 11px; opacity: .85; }
+.portal-shell .assistant-head-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgb(255 255 255 / .2); }
+.portal-shell .assistant-head .icon-button { color: inherit; background: transparent; border-color: rgb(255 255 255 / .4); }
+.portal-shell .assistant-log { display: flex; flex-direction: column; gap: 8px; padding: 14px; overflow-y: auto; }
+.portal-shell .assistant-empty p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.portal-shell .assistant-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.portal-shell .assistant-suggestions button { padding: 6px 10px; border: 1px solid var(--brand-pale, var(--line)); border-radius: 999px; color: var(--brand-deep, var(--teal)); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.portal-shell .assistant-bubble { max-width: 85%; margin: 0; padding: 8px 12px; border-radius: 14px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.portal-shell .assistant-bubble.is-user { align-self: flex-end; border-bottom-right-radius: 4px; color: var(--brand-on, #fff); background: var(--brand, #167c70); }
+.portal-shell .assistant-bubble.is-assistant { align-self: flex-start; border-bottom-left-radius: 4px; color: var(--ink); background: var(--brand-pale, rgb(0 0 0 / .06)); }
+.portal-shell .assistant-bubble.is-thinking { display: flex; gap: 4px; }
+.portal-shell .assistant-bubble.is-thinking span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; animation: assistant-dot 1s infinite ease-in-out; }
+.portal-shell .assistant-bubble.is-thinking span:nth-child(2) { animation-delay: .15s; }
+.portal-shell .assistant-bubble.is-thinking span:nth-child(3) { animation-delay: .3s; }
+@keyframes assistant-dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: .9; } }
+.portal-shell .assistant-error { margin: 0; color: var(--error, #b42318); font-size: 12px; }
+.portal-shell .assistant-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
+.portal-shell .assistant-form input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: transparent; font: inherit; font-size: 13px; }
+.portal-shell .assistant-send { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; color: var(--brand-on, #fff); background: var(--brand, #167c70); cursor: pointer; }
+.portal-shell .assistant-send:disabled { opacity: .45; cursor: default; }
+@media (max-width: 1024px) {
+  /* Above the fixed bottom tab bar. */
+  .portal-shell :is(.assistant-fab, .assistant-panel) { right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { .portal-shell .assistant-bubble.is-thinking span { animation: none; } }
