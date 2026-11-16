@@ -29,7 +29,7 @@ const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCar
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasStudentIdCardWhere = { AND: [{ studentIdCardUrl: { not: null } }, { studentIdCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const noCredentialsWhere = { passwordHash: null, accessKeyHash: null } satisfies Prisma.ResidentWhereInput
-type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil', string>> & IdentityInput & { studentIdCardUrl?: unknown; bedNumber?: unknown; sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; memberTier?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
+type ResidentBody = Partial<Record<TextField | 'propertyId' | 'roomNumber' | 'accessKey' | 'joinedAt' | 'rentAccessUntil' | 'dateOfBirth', string>> & IdentityInput & { studentIdCardUrl?: unknown; bedNumber?: unknown; sendCredentials?: boolean; active?: boolean; profilePhoto?: string | null; monthlyRent?: unknown; foodOpted?: unknown; diet?: unknown; memberTier?: unknown; whatsappOptIn?: unknown; emailOptIn?: unknown }
 
 /**
  * Sends the sign-in details and returns the channels that delivered. A messaging outage must never
@@ -59,7 +59,7 @@ function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSu
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, registration: registrationSentAt ? { status: registrationTokenHash ? 'INVITED' : 'SUBMITTED', sentAt: registrationSentAt, expiresAt: registrationExpiresAt, submittedAt: registrationSubmittedAt } : null, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, memberTier, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, vehicleType, vehicleNumber, occupation, dateOfBirth: resident.dateOfBirth, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, registration: registrationSentAt ? { status: registrationTokenHash ? 'INVITED' : 'SUBMITTED', sentAt: registrationSentAt, expiresAt: registrationExpiresAt, submittedAt: registrationSubmittedAt } : null, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, memberTier, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     // Their bed in the room (1 to its beds); null only before a room is set or after moving out.
@@ -146,6 +146,22 @@ function parseDiet(value: unknown): { data: { diet?: Diet | null } } | { error: 
   if (value === undefined) return { data: {} }
   if (value === null || value === '') return { data: { diet: null } }
   return value === Diet.VEG || value === Diet.NON_VEG ? { data: { diet: value } } : { error: 'Diet must be veg or non-veg.' }
+}
+
+/**
+ * The date of birth sent with a resident: absent leaves it as it is, blank clears it. A date in the future or more
+ * than 120 years ago is a typo (often the year), so it is refused rather than stored.
+ */
+function parseDateOfBirth(value: string | undefined): { data: { dateOfBirth?: Date | null } } | { error: string } {
+  if (value === undefined) return { data: {} }
+  if (value === '') return { data: { dateOfBirth: null } }
+  const date = parseDateOnly(value)
+  // Today in India as a calendar day, stored like the date itself (UTC midnight), so the two compare as days.
+  const today = new Date(`${propertyNow().date}T00:00:00Z`)
+  const earliest = new Date(today)
+  earliest.setUTCFullYear(today.getUTCFullYear() - 120)
+  if (!date || date > today || date < earliest) return { error: 'Date of birth must be a real date in the past.' }
+  return { data: { dateOfBirth: date } }
 }
 
 /** The membership tier sent with a resident; absent leaves it as it is (create then uses the default). */
@@ -283,6 +299,8 @@ residentRouter.post('/residents', async (request, response) => {
   if ('error' in diet) { response.status(400).json({ error: diet.error }); return }
   const memberTier = parseMemberTier(body.memberTier)
   if ('error' in memberTier) { response.status(400).json({ error: memberTier.error }); return }
+  const dateOfBirth = parseDateOfBirth(body.dateOfBirth)
+  if ('error' in dateOfBirth) { response.status(400).json({ error: dateOfBirth.error }); return }
   if (body.whatsappOptIn !== undefined && typeof body.whatsappOptIn !== 'boolean') { response.status(400).json({ error: 'WhatsApp updates must be true or false.' }); return }
   if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const foodOpted = body.foodOpted ?? true
@@ -305,7 +323,7 @@ residentRouter.post('/residents', async (request, response) => {
       const rent = await residentRentWrite(transaction, { roomId: room.id, foodOpted, trackedFrom: null, typedRent: body.monthlyRent })
       if ('error' in rent) throw new InputError(rent.error)
       const readyForReview = hasCompleteIdentity({ ...identity.fields, nationality, hasAadharCard: Boolean(identity.fields.aadharCardUrl), hasPassportScan: Boolean(identity.fields.passportScanUrl) })
-      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), ...studentId.data, nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, ...memberTier.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id, bedNumber } })
+      const resident = await transaction.resident.create({ data: { approvalPending: !staffAccess(response).isOwner, ...toResidentWrite(data), ...studentId.data, nationality, ...identityWrite(nationality, identity.fields), ...photo.data, ...rent.data, ...diet.data, ...memberTier.data, ...dateOfBirth.data, foodOpted, name, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(joinedAt ? { joinedAt } : {}), ...(readyForReview ? queueForReview() : {}), accessKeyHash: hashAccessKey(accessKey), roomId: room.id, bedNumber } })
       return resident.id
     })
     response.status(201).json({ ...await findResidentSummary(residentId), accessKey, ...(body.sendCredentials === true ? { credentialsSent: await sendCredentials(residentId, accessKey) } : {}) })
@@ -332,6 +350,8 @@ residentRouter.put('/residents/:id', async (request, response) => {
   if ('error' in diet) { response.status(400).json({ error: diet.error }); return }
   const memberTier = parseMemberTier(body.memberTier)
   if ('error' in memberTier) { response.status(400).json({ error: memberTier.error }); return }
+  const dateOfBirth = parseDateOfBirth(body.dateOfBirth)
+  if ('error' in dateOfBirth) { response.status(400).json({ error: dateOfBirth.error }); return }
   if (body.whatsappOptIn !== undefined && typeof body.whatsappOptIn !== 'boolean') { response.status(400).json({ error: 'WhatsApp updates must be true or false.' }); return }
   if (body.emailOptIn !== undefined && typeof body.emailOptIn !== 'boolean') { response.status(400).json({ error: 'Email updates must be true or false.' }); return }
   const joinedAt = parseDateOnly(body.joinedAt)
@@ -391,7 +411,7 @@ residentRouter.put('/residents/:id', async (request, response) => {
       const verification = isUnsubmitted && isComplete ? { ...resetVerification, ...queueForReview() } : isNationalityChange ? resetVerification : {}
       // An address the owner types is theirs to vouch for, so it is shown as verified again.
       const addressCheck = data.permanentAddress !== undefined && data.permanentAddress !== (current.permanentAddress ?? '') ? { addressVerified: true } : {}
-      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...studentId.data, ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, ...memberTier.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
+      await transaction.resident.update({ where: { id }, data: { ...toResidentWrite(data), ...studentId.data, ...addressCheck, ...returnedHome, ...(rentAccessUntil !== undefined ? { rentAccessUntil } : {}), nationality, ...identityWrite(nationality, identity.fields), ...verification, ...photo.data, ...rent.data, ...diet.data, ...memberTier.data, ...dateOfBirth.data, foodOpted, ...(typeof body.whatsappOptIn === 'boolean' ? { whatsappOptIn: body.whatsappOptIn } : {}), ...(typeof body.emailOptIn === 'boolean' ? { emailOptIn: body.emailOptIn } : {}), ...(foodOpted ? { foodRequestedAt: null } : {}), ...(foodOpted && current.foodRequestedAt && !current.foodOpted ? { foodDecidedAt: new Date(), foodApproved: true } : {}), ...(body.active !== undefined ? { active: body.active } : {}), ...(joinedAt ? { joinedAt } : {}), roomId, bedNumber } })
       // A deactivated resident must lose app access immediately, not when their session expires.
       if (body.active === false) await transaction.session.deleteMany({ where: { residentId: id } })
       // A door PIN follows the resident to another property's locks; a move within the property changes nothing.

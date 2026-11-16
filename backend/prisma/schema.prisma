@@ -138,6 +138,8 @@ model Resident {
   // What the resident does: "Student", "Working professional", "Business", or their own words for anything
   // else (studentId.ts). Required by the forms; null only for residents saved before it was.
   occupation               String?
+  // Optional; null for residents saved before it was asked, or when staff leave it blank.
+  dateOfBirth              DateTime?                @db.Date
   // A student's college or school ID card, as a data URL like aadharCardUrl. Required while the occupation is
   // Student, and cleared when it no longer is, so the image is not kept without need.
   studentIdCardUrl         String?
