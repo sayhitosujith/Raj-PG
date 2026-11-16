@@ -31,7 +31,7 @@ export function MemberCard({ property, membershipId, name, age, room, bed, roomB
       </div>
       <div className="member-card-row member-card-foot">
         <div className="member-card-field"><span>Cardholder</span><strong>{name}</strong>{tags}</div>
-        {age !== null && age !== undefined ? <p className="member-card-field member-card-age"><span>Age</span><strong>{age}</strong></p> : null}
+        {age !== null && age !== undefined ? <div className="member-card-field member-card-age"><span>Age</span><strong>{age} {age === 1 ? 'yr' : 'yrs'}</strong></div> : null}
         <p className="member-card-field is-end"><span>Unit</span><strong>Room {room}</strong>{bed ? <strong>Bed {bed}</strong> : null}</p>
       </div>
     </div>
