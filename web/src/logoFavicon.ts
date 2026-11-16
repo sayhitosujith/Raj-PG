@@ -6,9 +6,10 @@ const iconSide = 64
 const isInk = (data: Uint8ClampedArray, index: number) => data[index + 3] > 40 && data[index] + data[index + 1] + data[index + 2] < 690
 
 /**
- * Builds a square tab icon from the uploaded logo. A logo is usually a symbol stacked above the
- * business name, which is unreadable at tab size, so this keeps only the top block (everything
- * above the first clear horizontal gap), trims its margins and fills the square with it.
+ * Builds a square tab icon from the uploaded logo. A logo is usually a symbol above or beside the
+ * business name, which is unreadable at tab size, so this keeps only the symbol: the top block
+ * (everything above the first clear horizontal gap), then its leftmost part (up to the first clear
+ * vertical gap), trims its margins and fills the square with it.
  */
 export async function logoFavicon(source: string): Promise<string> {
   const image = new Image()
@@ -39,13 +40,27 @@ export async function logoFavicon(source: string): Promise<string> {
     if (rowHasInk(y)) { bottom = y; emptyRun = 0 } else if (++emptyRun >= minGap) break
   }
 
-  let left = width
-  let right = 0
-  for (let y = top; y <= bottom; y++) {
-    for (let x = 0; x < width; x++) {
-      if (isInk(data, (y * width + x) * 4)) { left = Math.min(left, x); right = Math.max(right, x) }
-    }
+  const columnHasInk = (x: number) => {
+    for (let y = top; y <= bottom; y++) if (isInk(data, (y * width + x) * 4)) return true
+    return false
   }
+  // Within that band, the symbol may also sit beside the name ("[house] StayPilot") rather than above it, so
+  // the band is cut at its first clear vertical gap the same way, keeping the leftmost block.
+  let left = 0
+  while (left < width && !columnHasInk(left)) left++
+  // Narrower than the row gap: a symbol usually sits close to the name, but letters are closer still.
+  const minGapX = Math.max(3, Math.round(width * 0.012))
+  let right = left
+  for (let x = left, emptyRun = 0; x < width; x++) {
+    if (columnHasInk(x)) { right = x; emptyRun = 0 } else if (++emptyRun >= minGapX) break
+  }
+  // The rows were found across the full width; trim them to the kept block, which can be shorter than the text.
+  const rowHasInkInBlock = (y: number) => {
+    for (let x = left; x <= right; x++) if (isInk(data, (y * width + x) * 4)) return true
+    return false
+  }
+  while (top < bottom && !rowHasInkInBlock(top)) top++
+  while (bottom > top && !rowHasInkInBlock(bottom)) bottom--
 
   const blockWidth = right - left + 1
   const blockHeight = bottom - top + 1
