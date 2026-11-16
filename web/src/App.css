@@ -1585,8 +1585,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Rent owed: a white pill with red text, which reads on the blue where red text alone would not. */
 .member-card-field > strong.member-card-due { padding: 1px 8px; border-radius: 999px; color: #b42318; background: rgb(255 255 255); }
 /* Top-aligned: the cardholder's tags make that side taller, and "Unit" stays level with "Cardholder". */
-/* Age between the cardholder and the unit, centred under its label; it never shrinks, since it is only a number. */
-.member-card-age { flex: none; justify-items: center; text-align: center; }
+/* With an age, the row becomes three columns with equal outer sides, so Age sits at the card's true centre however
+   wide the cardholder (with its tags) or the unit is; space-between centred it between them instead. */
+.member-card-foot:has(.member-card-age) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.member-card-age { justify-items: center; text-align: center; }
 .member-card-foot {align-items: flex-start; padding-top: 10px; border-top: 1px solid rgb(255 255 255 / .22); }
 
 /* The resident's top bar holds only the bell and sign-out (their name is in the greeting, their photo on the
@@ -2028,10 +2030,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
    owner's review panel in the expanded resident row. */
 .exit-status-row { display: grid; justify-items: end; gap: 4px; }
 /* Red because moving out is a weighty, hard-to-undo step; outlined rather than solid so it does not read as Emergency. */
-.exit-pg-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: rgb(185 28 28); background: rgb(254 242 242); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-.exit-pg-button:hover, .exit-pg-button:focus-visible { color: rgb(255 255 255); background: rgb(220 38 38); }
-:root[data-theme="dark"] .exit-pg-button { border-color: rgb(220 38 38); color: rgb(252 165 165); background: rgb(69 10 10); }
-:root[data-theme="dark"] .exit-pg-button:hover, :root[data-theme="dark"] .exit-pg-button:focus-visible { color: rgb(255 255 255); background: rgb(220 38 38); }
+/* Solid red at rest, not only on hover: phones have no hover, so residents saw the pale version. Darker on press. */
+.exit-pg-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: rgb(255 255 255); background: rgb(220 38 38); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.exit-pg-button:hover, .exit-pg-button:focus-visible { border-color: rgb(185 28 28); color: rgb(255 255 255); background: rgb(185 28 28); }
+:root[data-theme="dark"] .exit-pg-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }
+:root[data-theme="dark"] .exit-pg-button:hover, :root[data-theme="dark"] .exit-pg-button:focus-visible { border-color: rgb(185 28 28); color: rgb(255 255 255); background: rgb(185 28 28); }
 .exit-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0; padding: 5px 10px; border-radius: 999px; color: #7b5a20; background: #fbf3e2; font-size: 11px; }
 .exit-status.is-approved { color: #b5523f; background: #fbe6e1; }
 .exit-status.is-declined { color: var(--muted); background: transparent; padding: 0; }
@@ -2303,12 +2306,13 @@ a.faq-card { text-decoration: none; }
 :root[data-theme="dark"] .passkey-list li { background: rgb(255 255 255 / .04); }
 .delete-account-result { display: flex; flex: 1 1 100%; align-items: center; gap: 6px; margin: 0; color: #b5523f; font-size: 12px; font-weight: 600; }
 .delete-account-result.is-ok { color: var(--teal); }
-.delete-account-button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: rgb(185 28 28); background: white; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-.delete-account-button:hover, .delete-account-button:focus-visible { color: white; background: rgb(220 38 38); }
+/* Solid red at rest like Exit PG (phones have no hover); darker on press. */
+.delete-account-button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid rgb(220 38 38); border-radius: 999px; color: white; background: rgb(220 38 38); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.delete-account-button:hover, .delete-account-button:focus-visible { border-color: rgb(185 28 28); color: white; background: rgb(185 28 28); }
 :root[data-theme="dark"] .delete-account { border-color: rgb(220 38 38 / .35); background: rgb(69 10 10 / .35); }
 :root[data-theme="dark"] .delete-account-copy strong { color: rgb(252 165 165); }
-:root[data-theme="dark"] .delete-account-button { color: rgb(252 165 165); background: rgb(69 10 10); }
-:root[data-theme="dark"] .delete-account-button:hover, :root[data-theme="dark"] .delete-account-button:focus-visible { color: white; background: rgb(220 38 38); }
+:root[data-theme="dark"] .delete-account-button { color: white; background: rgb(220 38 38); }
+:root[data-theme="dark"] .delete-account-button:hover, :root[data-theme="dark"] .delete-account-button:focus-visible { border-color: rgb(185 28 28); color: white; background: rgb(185 28 28); }
 @media (max-width: 1024px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
@@ -2663,7 +2667,17 @@ a.faq-card { text-decoration: none; }
 /* Settings > Resident features: a checkbox per feature with what switching it off hides, two to a row where there is room. */
 .resident-feature-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 14px; }
 .resident-feature-fields label { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
-.resident-feature-fields input { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--teal); }
+/* On/off switches rather than ticks: each one applies at once (it saves on change), which a switch says and a tick
+   box does not. Still a real checkbox (role="switch"), so keyboard, screen readers and the form work unchanged. */
+/* The :is(:root, …) prefix outranks the dark and brand variants the build generates for plain colour rules, which
+   would otherwise paint a dark knob and a grey track over the "on" colour. */
+:is(:root, :root[data-brand][data-theme]) .resident-feature-fields input[type="checkbox"] { position: relative; flex: none; width: 34px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 999px; background: #c9d1cf; box-shadow: none; cursor: pointer; transition: background .18s; appearance: none; -webkit-appearance: none; }
+:is(:root, :root[data-brand][data-theme]) .resident-feature-fields input[type="checkbox"]::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .18s; }
+:is(:root, :root[data-brand][data-theme]) .resident-feature-fields input[type="checkbox"]:checked { background: var(--teal); }
+:is(:root, :root[data-brand][data-theme]) .resident-feature-fields input[type="checkbox"]:checked::before { transform: translateX(14px); }
+:is(:root, :root[data-brand][data-theme]) .resident-feature-fields input[type="checkbox"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; box-shadow: none; }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .resident-feature-fields input[type="checkbox"]:not(:checked) { background: #4a5553; }
+@media (prefers-reduced-motion: reduce) { .resident-feature-fields input[type="checkbox"], .resident-feature-fields input[type="checkbox"]::before { transition: none; } }
 .resident-feature-fields span { display: grid; gap: 2px; font-weight: 700; }
 .resident-feature-fields small { color: var(--muted); font-weight: 400; }
 @keyframes new-ribbon-pulse { 50% { filter: brightness(1.15); } }

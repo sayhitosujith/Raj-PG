@@ -21,28 +21,32 @@ const policySections = [{ field: 'termsAndConditions', title: 'Terms and conditi
 const dayOptions = Array.from({ length: 28 }, (_, index) => index + 1)
 
 /** One Settings card with its own form, Save button and inline result, so sections save independently. */
-function SettingsSection({ icon, title, description, onSubmit, children, wide = false }: { icon: ReactNode; title: string; description: string; onSubmit: (form: FormData) => SaveResult; children: ReactNode; wide?: boolean }) {
+/**
+ * One Settings card with its own form and save. `saveOnChange` saves at every change instead of on a Save button, for
+ * sections of plain switches whose effect should be immediate (open portals pick the change up through live updates).
+ */
+function SettingsSection({ icon, title, description, onSubmit, children, wide = false, saveOnChange = false }: { icon: ReactNode; title: string; description: string; onSubmit: (form: FormData) => SaveResult; children: ReactNode; wide?: boolean; saveOnChange?: boolean }) {
   const [message, setMessage] = useState<{ tone: 'error' | 'saved'; text: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = event.currentTarget
+  async function save(form: HTMLFormElement) {
     setIsSaving(true)
     setMessage(null)
     const error = await onSubmit(new FormData(form))
     setIsSaving(false)
     setMessage(error ? { tone: 'error', text: error } : { tone: 'saved', text: 'Saved.' })
+    // A refused switch goes back to what is actually saved, rather than showing a state the server never accepted.
+    if (error && saveOnChange) form.reset()
   }
 
   return (
     // The id lets the sidebar's workspace menu jump straight to a section (see WorkspaceMenu).
-    <form id={`settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className={`settings-section${wide ? ' wide' : ''}`} onSubmit={submit}>
+    <form id={`settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className={`settings-section${wide ? ' wide' : ''}`} onSubmit={(event) => { event.preventDefault(); void save(event.currentTarget) }} onChange={saveOnChange ? (event) => void save(event.currentTarget) : undefined}>
       <div className="settings-section-head"><span className="settings-section-icon">{icon}</span><div><h3>{title}</h3><p>{description}</p></div></div>
       <div className="settings-fields">{children}</div>
       <div className="settings-actions">
         {message && <span className={`settings-message ${message.tone}`} role={message.tone === 'error' ? 'alert' : 'status'}>{message.tone === 'saved' && <Check size={13} />}{message.text}</span>}
-        <button type="submit" className="primary-button" disabled={isSaving}>{isSaving ? 'Saving…' : 'Save'}</button>
+        {saveOnChange ? (isSaving && <span className="settings-message" role="status">Saving…</span>) : <button type="submit" className="primary-button" disabled={isSaving}>{isSaving ? 'Saving…' : 'Save'}</button>}
       </div>
     </form>
   )
@@ -207,15 +211,15 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
           <WhatsAppSettings onNotice={onNotice} />
           <EmailSettings onNotice={onNotice} />
 
-          <SettingsSection icon={<ToggleRight size={18} />} title="Resident features" description="Switch features off for every resident. A switched-off feature disappears from the portal and its requests are refused; anything already saved is kept for when you switch it back on." onSubmit={(form) => { const doorAccess = form.get('feature-doorAccess') === 'on'; return onSaveSettings({ residentFeatures: Object.fromEntries(residentFeatures.map(({ key }) => [key, form.get(`feature-${key}`) === 'on'])), ...(doorAccess !== settings.doorKeysEnabled ? { doorKeysEnabled: doorAccess } : {}) }) }}>
+          <SettingsSection saveOnChange icon={<ToggleRight size={18} />} title="Resident features" description="Switch features off for every resident; each switch applies at once. A switched-off feature disappears from the portal and its requests are refused; anything already saved is kept for when you switch it back on." onSubmit={(form) => { const doorAccess = form.get('feature-doorAccess') === 'on'; return onSaveSettings({ residentFeatures: Object.fromEntries(residentFeatures.map(({ key }) => [key, form.get(`feature-${key}`) === 'on'])), ...(doorAccess !== settings.doorKeysEnabled ? { doorKeysEnabled: doorAccess } : {}) }) }}>
             <div className="resident-feature-fields">
               {residentFeatures.map(({ key, label, detail }) => (
-                <label key={key}><input type="checkbox" name={`feature-${key}`} defaultChecked={isFeatureOn(settings.residentFeatures, key)} /><span>{label}<small>{detail}</small></span></label>
+                <label key={key}><input type="checkbox" role="switch" name={`feature-${key}`} defaultChecked={isFeatureOn(settings.residentFeatures, key)} /><span>{label}<small>{detail}</small></span></label>
               ))}
               {/* For PGs without smart locks. It is the Smart lock section's door keys switch, not a second one, so the
                   server still refuses to turn it off while a PIN is live on a lock. It is only sent when changed, so
                   saving the other switches never runs into that refusal unless Door access was unticked too. */}
-              <label><input type="checkbox" name="feature-doorAccess" defaultChecked={settings.doorKeysEnabled} /><span>Door access<small>Door PINs, for staff and residents (same as Smart lock). Remove every PIN before switching off.</small></span></label>
+              <label><input type="checkbox" role="switch" name="feature-doorAccess" defaultChecked={settings.doorKeysEnabled} /><span>Door access<small>Door PINs, for staff and residents (same as Smart lock). Remove every PIN before switching off.</small></span></label>
             </div>
             <p className="settings-hint">Deleting an account always stays available to residents, who have a right to ask for their data to be erased.</p>
           </SettingsSection>

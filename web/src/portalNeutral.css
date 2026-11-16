@@ -966,12 +966,13 @@
 }
 :root[data-theme="dark"] .portal-shell .exit-pg-button {
     border-color: rgb(220 38 38);
-    color: rgb(252 165 165);
-    background: rgb(69 10 10)
-}
-:root[data-theme="dark"] .portal-shell .exit-pg-button:hover, :root[data-theme="dark"] .portal-shell .exit-pg-button:focus-visible {
     color: rgb(255 255 255);
     background: rgb(220 38 38)
+}
+:root[data-theme="dark"] .portal-shell .exit-pg-button:hover, :root[data-theme="dark"] .portal-shell .exit-pg-button:focus-visible {
+    border-color: rgb(185 28 28);
+    color: rgb(255 255 255);
+    background: rgb(185 28 28)
 }
 .portal-shell .exit-settlement .is-refund {
     border-color: #b8b8b8
@@ -1106,12 +1107,13 @@
     color: rgb(252 165 165)
 }
 :root[data-theme="dark"] .portal-shell .delete-account-button {
-    color: rgb(252 165 165);
-    background: rgb(69 10 10)
-}
-:root[data-theme="dark"] .portal-shell .delete-account-button:hover, :root[data-theme="dark"] .portal-shell .delete-account-button:focus-visible {
     color: white;
     background: rgb(220 38 38)
+}
+:root[data-theme="dark"] .portal-shell .delete-account-button:hover, :root[data-theme="dark"] .portal-shell .delete-account-button:focus-visible {
+    border-color: rgb(185 28 28);
+    color: white;
+    background: rgb(185 28 28)
 }
 .portal-shell .house-rules-extra li {
     color: #4d4d4d

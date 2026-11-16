@@ -13,6 +13,7 @@ export const residentFeatures = [
   { key: 'repairs', label: 'Complaints & repairs', detail: 'Reporting problems, in the portal and on WhatsApp' },
   { key: 'referral', label: 'Refer a friend', detail: 'Share links, and rewards for new referrals' },
   { key: 'laundry', label: 'Laundry', detail: 'The laundry shop card in Help' },
+  { key: 'contacts', label: 'Property info contacts', detail: 'Call, WhatsApp and email buttons beside Property info on Home' },
   { key: 'amenities', label: 'Amenities', detail: 'The amenity chips on Home' },
   { key: 'meals', label: 'Meals', detail: 'Menu, meal choices, ratings, late meals and joining the food plan' },
   { key: 'wifi', label: 'Wi-Fi details', detail: 'Network name and password, in the portal and on WhatsApp' },
