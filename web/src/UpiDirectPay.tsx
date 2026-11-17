@@ -42,8 +42,10 @@ export type UpiClaim = { amount: number; reference: string; rentMonths: Array<{ 
  * hand: URLSearchParams writes spaces as "+", which some UPI apps show literally in the payee name.
  */
 function upiPayQuery(payee: UpiPayee & { id: string }, amount: number | null, note: string) {
-  const params = { pa: payee.id, pn: payee.payeeName, ...(amount ? { am: amount.toFixed(2) } : {}), cu: 'INR', tn: note }
-  return Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')
+  // The UPI ID goes in as typed: encoding its "@" as "%40" makes several UPI apps reject the link as "invalid payment
+  // details". It is safe raw, since the server only accepts letters, digits, ".", "_", "-" and one "@" (isValidUpiId).
+  const encoded = { pn: payee.payeeName, ...(amount ? { am: amount.toFixed(2) } : {}), cu: 'INR', tn: note }
+  return [`pa=${payee.id}`, ...Object.entries(encoded).map(([key, value]) => `${key}=${encodeURIComponent(value)}`)].join('&')
 }
 
 // Loaded on first use so residents who never see this panel never download the QR encoder.
