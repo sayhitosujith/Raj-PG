@@ -2127,6 +2127,10 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 /* Bottom of the resident portal in green, edge to edge: the footer becomes a full-width band that
    meets the bottom of the page, and the tree strip behind it is tinted green to match. */
 .portal-shell .page-content { padding-bottom: 0; }
+/* The footer shows on the Profile page only; elsewhere (or with it switched off in Settings > Resident features)
+   nothing meets the bottom, so the page keeps its own gap. */
+.page-content:not([data-tab="profile"]) > .portal-terms { display: none; }
+.portal-shell .page-content:is(:not([data-tab="profile"]), :not(:has(> .portal-terms))) { padding-bottom: 32px; }
 .portal-terms { margin: 28px calc(50% - 50vw) 0; padding: 18px max(16px, calc(50vw - 50% + 16px)) 26px; border: 0; border-top: 1px solid rgb(214 218 224); border-radius: 0; }
 :root[data-theme="dark"] .portal-terms { border-top: 1px solid rgb(58 62 70); }
 @media (min-width: 900px) { .portal-terms { padding-right: calc(50vw - 50% + 300px); padding-left: calc(50vw - 50% + 300px); } .referral-share { right: calc(50vw - 50% + 16px); } }
@@ -2174,6 +2178,8 @@ div.portal-panel { display: contents; }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
   :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(200 206 214 / .14); }
   .portal-shell .portal-terms { padding-bottom: calc(26px + 64px + env(safe-area-inset-bottom)); }
+  /* The footer normally clears the fixed tab bar; without it the page must, or the bar covers the last section. */
+  .portal-shell .page-content:is(:not([data-tab="profile"]), :not(:has(> .portal-terms))) { padding-bottom: calc(16px + 64px + env(safe-area-inset-bottom)); }
   /* Messages sit above the tab bar; at the default bottom and z-index the bar covered them on phones. */
   .portal-shell .toast { z-index: 50; bottom: calc(16px + 64px + env(safe-area-inset-bottom)); }
   /* Pop-ups cover the tab bar (z-index 40); at the default 15 the bar was drawn over their lower part. */
@@ -2219,7 +2225,7 @@ a.faq-card { text-decoration: none; }
    same through their tab panels). Back to home is wide-only, since phones have the bottom tab bar for that. */
 .portal-profile-back { display: none; }
 @media (min-width: 1025px) {
-  .page-content[data-tab="profile"] > :not(.portal-profile) { display: none; }
+  .page-content[data-tab="profile"] > :not(.portal-profile, .portal-terms) { display: none; }
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
   .portal-profile-back { display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-bottom: 10px; }
 }
@@ -2229,7 +2235,7 @@ a.faq-card { text-decoration: none; }
 .portal-profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .portal-profile-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
 .portal-profile .portal-details { margin: 0 0 14px; }
-.portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; }
+.portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
 .portal-emergency-contact .portal-details { margin: 0 0 14px; }
 .portal-profile .portal-emergency-contact h3 { margin-top: 6px; }
 /* Exit PG in the header's top-right corner; once a move-out is underway its notes are wider than the
@@ -2309,7 +2315,6 @@ a.faq-card { text-decoration: none; }
   .portal-shell { display: flex; flex-direction: column; }
   .portal-shell .page-content { flex: 1; width: 100%; }
   .portal-shell .portal-terms { margin-top: auto; }
-  .page-content[data-tab="info"] .portal-terms { margin-top: 20px; }
 }
 /* Info tab on phones: House rules stacked one per row, with the settings cards below them. */
 @media (max-width: 1024px) {
