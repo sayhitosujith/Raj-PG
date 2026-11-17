@@ -130,6 +130,26 @@
 /* Gmail's colours need a white disc to read, in dark view too. */
 :is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.gmail { border-color: #dadce0; background: #fff; }
 :is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.gmail:is(:hover, :focus-visible) { border-color: #ea4335; background: #fff; }
+/* Motion for the three contact buttons: they pop in one after another, lift on hover and press in on tap, and each
+   sends a soft ring in its own colour every few seconds, staggered so they ripple in turn. The pop-in fills
+   "backwards" only, so once it ends it no longer holds the transform and the hover and press effects work. */
+@keyframes contact-pop { from { opacity: 0; transform: scale(.4); } 70% { transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
+@keyframes contact-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--ring) 0%, transparent); } }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only { position: relative; animation: contact-pop .45s cubic-bezier(.34, 1.56, .64, 1) backwards; transition: transform .18s ease, box-shadow .18s ease; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only:nth-child(2) { animation-delay: .08s; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only:nth-child(3) { animation-delay: .16s; }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only:is(:hover, :focus-visible) { transform: translateY(-2px) scale(1.06); box-shadow: 0 6px 14px rgb(0 0 0 / .16); }
+:is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only:active { transform: scale(.92); box-shadow: none; }
+.portal-shell .resident-info .info-actions .icon-only { --ring: var(--brand, #167c70); }
+.portal-shell .resident-info .info-actions .whatsapp { --ring: #25d366; }
+.portal-shell .resident-info .info-actions .gmail { --ring: #ea4335; }
+.portal-shell .resident-info .info-actions .icon-only::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none; animation: contact-ring 2.4s ease-out .8s infinite; }
+.portal-shell .resident-info .info-actions .icon-only:nth-child(2)::after { animation-delay: 1.2s; }
+.portal-shell .resident-info .info-actions .icon-only:nth-child(3)::after { animation-delay: 1.6s; }
+@media (prefers-reduced-motion: reduce) {
+  :is(:root, :root[data-theme]) .portal-shell .resident-info .info-actions .emergency-button.call-owner.icon-only { animation: none; transition: none; }
+  .portal-shell .resident-info .info-actions .icon-only::after { animation: none; }
+}
 :root[data-theme="dark"] .portal-shell .resident-info .emergency-button.call-owner { color: var(--brand-border, var(--teal)); }
 /* Amenity chips: each icon in the colour people associate with it (hot water red-orange, TV indigo,
    Wi-Fi blue, security amber, lift violet, AC cyan, food red, CCTV slate); lighter shades in dark view. */
