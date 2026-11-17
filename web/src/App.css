@@ -1191,14 +1191,11 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .upi-direct-amount { color: var(--ink); font: 700 24px Manrope; }
 .upi-direct-id { display: flex; align-items: center; gap: 6px; }
 .upi-direct-id code { overflow-wrap: anywhere; padding: 6px 10px; border: 1px dashed var(--teal); border-radius: 7px; color: var(--ink); background: white; font: 600 13px ui-monospace, monospace; }
-.upi-direct-open { display: none; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
 .upi-direct-report { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 4px; }
 .upi-direct-report label { display: grid; flex: 1 1 220px; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 600; }
 .upi-direct-report input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: white; font: inherit; font-size: 13px; letter-spacing: .5px; }
 .upi-direct-report input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px #167c7019; }
 .upi-direct-report .primary-button { width: auto; }
-/* A phone cannot scan its own screen, so there the tap-to-pay link leads and the QR shrinks. */
-@media (pointer: coarse) { .upi-direct-open { display: inline-flex; } }
 @container (max-width: 560px) {
   .upi-direct { flex-direction: column; align-items: stretch; }
   .upi-direct-qr { align-self: center; }
@@ -2980,13 +2977,6 @@ a.faq-card { text-decoration: none; }
 .upi-apps li.is-paytm svg { width: 36px; height: 36px; }
 .upi-apps li.is-mark img { display: block; width: 30px; height: auto; }
 .upi-apps li.is-image img { display: block; width: 28px; height: 28px; border-radius: 7px; object-fit: contain; }
-/* A tappable app icon fills its tile; it opens that app with the payment filled in (UpiDirectPay.tsx). */
-.upi-apps li:has(> .upi-app-button) { overflow: hidden; transition: transform .15s, box-shadow .15s, border-color .15s; }
-.upi-apps li:has(> .upi-app-button):is(:hover, :focus-within) { transform: translateY(-2px); border-color: var(--teal); box-shadow: 0 6px 14px rgb(0 0 0 / .12); }
-.upi-apps li:has(> .upi-app-button):active { transform: scale(.94); box-shadow: none; }
-.upi-app-button { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.upi-app-button:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
-.upi-apps li > span[role="img"] { display: grid; place-items: center; }
 .upi-apps li.is-any { width: auto; height: auto; padding: 0; border: 0; color: var(--muted); background: transparent; font-size: 11px; font-weight: 600; }
 /* The two dashboard roles, as a bulleted list under the Team management heading. */
 .team-roles { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
