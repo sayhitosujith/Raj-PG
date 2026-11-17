@@ -1136,25 +1136,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .room-select-empty p { margin: 6px 0 0; padding: 9px 11px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-weight: 400; line-height: 1.5; }
 @media (max-width: 560px) { .rooms-add, .rooms-add:last-of-type { grid-template-columns: 1fr 1fr; } .rooms-add span { grid-column: 1 / -1; } }
 
-/* Resident portal: property photo beside the details grid; stacks on narrow cards. */
-/* Desktop: "Your profile" heading above the details; it holds
-   "Remove photo" since the photo there changes it. Phones and tablets use the Profile tab instead. */
-.portal-profile-anchor { display: flex; align-items: baseline; gap: 14px; margin-top: 24px; scroll-margin-top: 16px; }
-.portal-profile-anchor h3 { margin: 0; color: var(--ink); font: 700 16px Manrope, sans-serif; }
-.portal-profile-anchor + .portal-details-row { margin-top: 10px; }
-@media (max-width: 1024px) { .portal-profile-anchor { display: none; } }
-.portal-details-row { display: flex; gap: 14px; align-items: stretch; margin-top: 20px; }
-.portal-details-row .portal-details { flex: 1; margin: 0; }
-/* Beside the photo the details have ~340px on tablets; narrower columns keep them two-up there. */
-.portal-details-row .portal-details { grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); }
-/* A fixed landscape box, not stretched to the row height: stretching a 160px-wide cover box
-   cropped landscape photos to a thin strip and upscaled it ~2×, which is what made them blurry. */
-.portal-property-photo { flex: none; align-self: center; width: 260px; aspect-ratio: 4 / 3; border-radius: 8px; object-fit: cover; background: #f7faf8; }
-@container (max-width: 640px) {
-  .portal-details-row { flex-direction: column; }
-  .portal-property-photo { width: 100%; aspect-ratio: 16 / 9; }
-}
-
 /* Payments: two-column add/edit form that collapses to one column on phones. */
 .payment-modal { width: min(100%, 540px); max-height: calc(100dvh - 24px); overflow-y: auto; }
 .payment-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
@@ -1817,8 +1798,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .portal-shell .meal-copy :is(.late-meal-button, .late-meal-status) { justify-self: center; }
   .portal-shell .late-meal-button { padding: 5px 7px; font-size: 10px; }
   .portal-shell .late-meal-status { border-radius: 8px; }
-  /* A short banner: a full-width 16:9 photo was the tallest block on the page. */
-  .portal-shell .portal-property-photo { height: 140px; aspect-ratio: auto; }
 }
 @container (max-width: 520px) {
   .portal-shell .house-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1998,22 +1977,18 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .report-fire-button:hover, .report-fire-button:focus-visible { color: rgb(255 255 255); background: rgb(234 88 12); }
 :root[data-theme="dark"] .report-fire-button { color: rgb(253 186 116); background: rgb(67 20 7); }
 
-/* Resident portal details: bold, darker labels and tighter rows. align-content keeps the rows at the
-   top instead of spreading them out to match the photo's height, which made the big gaps. */
-.portal-details-row .portal-details { align-content: start; gap: 8px 16px; padding: 12px 14px; }
+/* Resident portal details: bold, darker labels. */
 .portal-details dt { margin-bottom: 2px; color: #4c5a56; font-size: 10px; font-weight: 800; }
 .portal-details dd { font-size: 12px; line-height: 1.4; }
 :root[data-theme="dark"] .portal-details dt { color: rgb(190 204 200); }
 /* Each detail in its own bordered cell, label directly above its value: align-content: start stops a
    tall neighbour (a long property name) from pushing the label and value apart. */
-.portal-details-row .portal-details { gap: 8px; padding: 10px; }
 .portal-details > div { align-content: start; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .portal-details dt { margin-bottom: 0; }
 /* Profile details and settings as cards, in the style residents asked for: white, a thin
    light-purple border, rounded corners, an icon tile on the left, a bold title over a muted line,
    and an arrow on the right (not on the settings cards, whose right side holds their switch). */
 .portal-details { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 10px; }
-.portal-details-row .portal-details { grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); }
 .portal-details > .detail-card { display: grid; grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "icon label" "icon value"; align-items: center; gap: 2px 12px; padding: 12px 14px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; }
 .detail-card-icon { grid-area: icon; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--portal-icon, var(--ink)); background: #f5eff7; }
 .portal-details > .detail-card dt { grid-area: label; align-self: end; margin: 0; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
@@ -2160,43 +2135,41 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 :root[data-theme="dark"] .portal-shell .scenery-back { color: rgb(70 190 140 / .12); }
 :root[data-theme="dark"] .portal-shell .scenery-front { color: rgb(70 190 140 / .2); }
 
-/* Narrow cards: show the whole property image (a logo-style picture was being cropped to a strip). */
-@container (max-width: 640px) { .portal-shell .portal-property-photo { height: auto; max-height: 200px; aspect-ratio: 16 / 9; object-fit: contain; } }
-
 /* Phone and tablet tabs (up to 1024px): a fixed bottom bar; only the active tab's sections show. Hidden on wider screens. */
-.portal-tabs, .portal-profile-button { display: none; }
+.portal-tabs { display: none; }
 /* The photo and greeting share the top bar's start; long names wrap rather than push the bell off screen. */
 .portal-identity { min-width: 0; }
 :root[data-theme="dark"] .portal-shell .portal-profile-button { color: var(--brand-on, rgb(255 255 255)); }
 div.portal-panel { display: contents; }
+/* Profile opens from the resident's photo (or initials) at the start of the top bar, before their name, at every
+   width (wide screens show it as its own page, phones as a tab):
+   a 48px square with rounded corners in a thin ring of the theme colour that thickens while Profile is open.
+   The ring is its own element because the initials set their own text colour. Each layer's radius grows by
+   its offset so the corners stay parallel. */
+.portal-identity { display: flex; align-items: center; gap: 12px; }
+.portal-profile-button { display: grid; flex: none; padding: 0; border: 0; border-radius: 13px; color: var(--brand-deep, var(--teal)); background: transparent; cursor: pointer; }
+.portal-avatar-ring { display: grid; border-radius: 13px; box-shadow: 0 0 0 1.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
+.portal-profile-button.is-active .portal-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
+.portal-avatar { display: grid; place-items: center; width: 48px; height: 48px; overflow: hidden; border-radius: 13px; color: #774e39; background: #e2c4ae; font: 700 18px/1 Manrope, sans-serif; }
+.portal-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* A colour ring around the photo (like a story ring), so it reads as tappable; its colours travel round
+   (faster while Profile is open) and a soft pulse spreads out from it. The gradient's angle turns rather
+   than the ring itself, which on a square would visibly tumble. */
+.portal-avatar-ring { position: relative; isolation: isolate; }
+.portal-avatar-ring::before, .portal-avatar-ring::after { content: ''; position: absolute; inset: -3px; border-radius: 16px; pointer-events: none; }
+.portal-avatar-ring::before { z-index: -1; background: conic-gradient(from var(--ring-angle), #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
+.portal-avatar-ring::after { z-index: -2; background: color-mix(in srgb, var(--brand, var(--teal)) 25%, transparent); animation: avatar-ring-pulse 2.4s ease-out infinite; }
+.portal-profile-button.is-active .portal-avatar-ring::before { animation-duration: 2.5s; }
+.portal-avatar { transition: transform .18s ease; }
+.portal-profile-button:active .portal-avatar { transform: scale(.9); }
+@media (prefers-reduced-motion: reduce) {
+  .portal-avatar-ring::before { animation: none; }
+  .portal-avatar-ring::after { display: none; }
+}
 @media (max-width: 1024px) {
   .portal-tabs { position: fixed; z-index: 40; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(214 218 224); background: rgb(246 247 249 / .96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgb(20 70 50 / .1); }
   .portal-tabs button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; border: 0; border-radius: 10px; color: rgb(90 120 110); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
   .portal-tabs button.is-active { color: rgb(22 124 104); background: rgb(60 66 76 / .1); }
-  /* Profile opens from the resident's photo (or initials) at the start of the top bar, before their name:
-     a 48px square with rounded corners in a thin ring of the theme colour that thickens while Profile is open.
-     The ring is its own element because the initials set their own text colour. Each layer's radius grows by
-     its offset so the corners stay parallel. */
-  .portal-identity { display: flex; align-items: center; gap: 12px; }
-  .portal-profile-button { display: grid; flex: none; padding: 0; border: 0; border-radius: 13px; color: var(--brand-deep, var(--teal)); background: transparent; cursor: pointer; }
-  .portal-avatar-ring { display: grid; border-radius: 13px; box-shadow: 0 0 0 1.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
-  .portal-profile-button.is-active .portal-avatar-ring { box-shadow: 0 0 0 2.5px currentColor, 0 3px 8px rgb(0 0 0 / .2); }
-  .portal-avatar { display: grid; place-items: center; width: 48px; height: 48px; overflow: hidden; border-radius: 13px; color: #774e39; background: #e2c4ae; font: 700 18px/1 Manrope, sans-serif; }
-  .portal-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  /* A colour ring around the photo (like a story ring), so it reads as tappable; its colours travel round
-     (faster while Profile is open) and a soft pulse spreads out from it. The gradient's angle turns rather
-     than the ring itself, which on a square would visibly tumble. */
-  .portal-avatar-ring { position: relative; isolation: isolate; }
-  .portal-avatar-ring::before, .portal-avatar-ring::after { content: ''; position: absolute; inset: -3px; border-radius: 16px; pointer-events: none; }
-  .portal-avatar-ring::before { z-index: -1; background: conic-gradient(from var(--ring-angle), #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
-  .portal-avatar-ring::after { z-index: -2; background: color-mix(in srgb, var(--brand, var(--teal)) 25%, transparent); animation: avatar-ring-pulse 2.4s ease-out infinite; }
-  .portal-profile-button.is-active .portal-avatar-ring::before { animation-duration: 2.5s; }
-  .portal-avatar { transition: transform .18s ease; }
-  .portal-profile-button:active .portal-avatar { transform: scale(.9); }
-  @media (prefers-reduced-motion: reduce) {
-    .portal-avatar-ring::before { animation: none; }
-    .portal-avatar-ring::after { display: none; }
-  }
   :root[data-theme="dark"] .portal-tabs { border-top-color: rgb(58 62 70); background: rgb(20 22 26 / .96); }
   :root[data-theme="dark"] .portal-tabs button { color: rgb(150 196 178); }
   :root[data-theme="dark"] .portal-tabs button.is-active { color: rgb(200 245 225); background: rgb(200 206 214 / .14); }
@@ -2242,12 +2215,23 @@ a.faq-card { text-decoration: none; }
 /* Profile tab (phones and tablets): photo, details, move-out, notifications and password (sign out stays in the top bar). There those
    leave the Home card; on wide screens the Home card keeps them and this panel stays hidden. */
 .portal-profile { display: none; }
+/* Wide screens: the photo in the top bar opens Profile as its own page in place of everything else (phones get the
+   same through their tab panels). Back to home is wide-only, since phones have the bottom tab bar for that. */
+.portal-profile-back { display: none; }
+@media (min-width: 1025px) {
+  .page-content[data-tab="profile"] > :not(.portal-profile) { display: none; }
+  .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
+  .portal-profile-back { display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-bottom: 10px; }
+}
 .portal-profile-head { display: flex; align-items: center; gap: 14px; }
 .portal-profile-head h2 { margin: 0 0 4px; font: 700 22px Manrope; color: var(--ink); }
 .portal-profile-head p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; }
 .portal-profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .portal-profile-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
 .portal-profile .portal-details { margin: 0 0 14px; }
+.portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; }
+.portal-emergency-contact .portal-details { margin: 0 0 14px; }
+.portal-profile .portal-emergency-contact h3 { margin-top: 6px; }
 /* Exit PG in the header's top-right corner; once a move-out is underway its notes are wider than the
    space beside the name, so the block wraps onto its own full-width line under the header. */
 .portal-profile-head { flex-wrap: wrap; }
@@ -2312,7 +2296,7 @@ a.faq-card { text-decoration: none; }
 :root[data-theme="dark"] .delete-account-button:hover, :root[data-theme="dark"] .delete-account-button:focus-visible { border-color: rgb(185 28 28); color: white; background: rgb(185 28 28); }
 @media (max-width: 1024px) {
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
-  .page-content .portal-details-row, .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
+  .page-content .home-notification-prefs, .page-content .portal-emergency-actions .exit-status-row { display: none; }
   /* Report fire moves to the Profile tab (its Fire emergency card); Emergency stays on Home. */
   .page-content .portal-emergency-buttons { display: none; }
   /* Phones change their password from the Profile tab, so the top bar keeps only refresh, theme and sign out. */
@@ -2388,6 +2372,12 @@ a.faq-card { text-decoration: none; }
 .info-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; font-size: 12px; }
 .info-line > span { display: inline-flex; flex: 1 1 auto; align-items: center; gap: 5px; min-width: 0; color: var(--muted); }
 .info-line strong { overflow-wrap: anywhere; color: var(--ink); text-align: right; }
+/* Live gate status (gateStatus.ts): green while the gate is open, red while it is shut. */
+.info-line .gate-status { padding: 3px 9px; border-radius: 999px; font-size: 12px; }
+:is(:root, :root[data-brand][data-theme]) .info-line .gate-status.is-open { color: rgb(21 128 61); background: rgb(220 252 231); }
+:is(:root, :root[data-brand][data-theme]) .info-line .gate-status.is-closed { color: rgb(185 28 28); background: rgb(254 226 226); }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .info-line .gate-status.is-open { color: rgb(134 239 172); background: rgb(22 101 52 / .35); }
+:is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .info-line .gate-status.is-closed { color: rgb(252 165 165); background: rgb(127 29 29 / .4); }
 .info-line .icon-button { padding: 4px; color: var(--teal); }
 .info-line .icon-button:disabled { opacity: 0.45; cursor: default; }
 .connection-speed .is-spinning { animation: speed-spin 1s linear infinite; }

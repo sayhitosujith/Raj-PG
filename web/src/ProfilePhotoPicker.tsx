@@ -9,8 +9,7 @@ export const photoUrlFor = (photoVersion: number | null) => photoVersion ? `/api
 
 /**
  * Saving a change to the resident's photo: runs the request, then re-fetches the profile so the new
- * version URL is used, and reports the outcome through the toast. Shared by the photo itself and the
- * separate "Remove photo" link on desktop.
+ * version URL is used, and reports the outcome through the toast.
  */
 function usePhotoSave(onChanged: () => Promise<void>, onNotice: (message: string) => void) {
   const [isSaving, setIsSaving] = useState(false)
@@ -61,11 +60,4 @@ export function ProfilePhotoPicker({ name, photoVersion, onChanged, onNotice }: 
       {photoUrl && !isSaving && <button type="button" className="text-link profile-photo-remove" onClick={() => void remove()}>Remove photo</button>}
     </div>
   )
-}
-
-/** "Remove photo" on its own, for desktop's "Your profile" heading; hidden while there is no photo. */
-export function RemovePhotoButton({ photoVersion, onChanged, onNotice }: { photoVersion: number | null; onChanged: () => Promise<void>; onNotice: (message: string) => void }) {
-  const { isSaving, remove } = usePhotoSave(onChanged, onNotice)
-  if (!photoUrlFor(photoVersion)) return null
-  return <button type="button" className="text-link" disabled={isSaving} onClick={() => void remove()}>{isSaving ? 'Removing…' : 'Remove photo'}</button>
 }

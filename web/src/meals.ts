@@ -15,7 +15,8 @@ export const mealDetails: Array<{ meal: Meal; label: string; icon: typeof Coffee
   { meal: 'dinner', label: 'Dinner', icon: Moon },
 ]
 
-const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
+/** Minutes into the day for a stored "HH:MM" time. */
+export const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
 
 /** "7:30", or "7:30 pm" with the period, from a stored "19:30"; whole hours drop the minutes ("7 pm"). */
 export function formatClock(time: string, withPeriod: boolean) {

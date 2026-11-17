@@ -5,6 +5,7 @@ import { ConnectionSpeed } from './ConnectionSpeed'
 import { LocationLink } from './LocationLink'
 import { ModalLayer } from './ModalLayer'
 import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
+import { isGateOpen } from './gateStatus'
 
 /** The Info tab's data, as /resident-portal/me sends it (see the backend's residentInfo.ts). */
 export type ResidentInfoData = {
@@ -45,7 +46,8 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
  * owner has filled it in. FAQs are separate, on the Info tab (ResidentFaqs). `action` sits beside the
  * heading (the portal puts "Receptionist" there), and keeps the section showing even with no details.
  */
-export function ResidentInfo({ info, onNotice, action }: { info: ResidentInfoData; onNotice: (message: string) => void; action?: ReactNode }) {
+export function ResidentInfo({ info, onNotice, action, minutesIntoDay }: { info: ResidentInfoData; onNotice: (message: string) => void; action?: ReactNode; minutesIntoDay?: number }) {
+  const gateOpen = minutesIntoDay === undefined ? null : isGateOpen(info.times.gateOpening, info.times.gateClosing, minutesIntoDay)
   const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate opens', info.times.gateOpening], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
   const hasDetails = Boolean(info.city || info.location || info.website) || times.length > 0
   if (!info.wifi && !info.contacts.length && !hasDetails && !action) return null
@@ -63,6 +65,7 @@ export function ResidentInfo({ info, onNotice, action }: { info: ResidentInfoDat
           {info.city && <div className="info-line"><span><Building2 size={12} /> City</span><strong>{info.city}</strong></div>}
           {info.location && <div className="info-line"><span><MapPin size={12} /> Location</span><LocationLink className="info-call" property={info.property} location={info.location} /></div>}
           {info.website && <div className="info-line"><span><Globe size={12} /> Website</span><a className="info-call" href={info.website} target="_blank" rel="noopener noreferrer">Visit website</a></div>}
+          {gateOpen !== null && <div className="info-line"><span><DoorOpen size={12} /> Gate</span><strong className={`gate-status ${gateOpen ? 'is-open' : 'is-closed'}`} role="status">{gateOpen ? `Open now · closes ${clockLabel(info.times.gateClosing ?? '')}` : `Closed · opens ${clockLabel(info.times.gateOpening ?? '')}`}</strong></div>}
           {times.map(([label, time]) => <div className="info-line" key={label}><span><Clock size={12} /> {label}</span><strong>{clockLabel(time)}</strong></div>)}
         </div>}
       </div>

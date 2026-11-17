@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ThumbsDown, ThumbsUp, UtensilsCrossed, X } from 'lucide-react'
 import { relativeDayLabel, type ResidentFood, type ResidentMeal, type ResidentMenuDay } from './food'
-import { formatMealWindow, mealDetails, type Meal } from './meals'
+import { formatMealWindow, mealDetails, toMinutes, type Meal } from './meals'
 import { readApiError } from './superAdmin'
 import { useRefreshSignal } from './useAutoRefresh'
 import { InlineLoader } from './Loader'
@@ -269,7 +269,6 @@ export function MealChoiceGate({ refreshSignal, onNotice }: { refreshSignal: num
 const ratedPromptKey = 'raj-pg-meal-rating-prompted'
 function readPrompted(): string[] { try { return JSON.parse(window.localStorage.getItem(ratedPromptKey) ?? '[]') as string[] } catch { return [] } }
 function savePrompted(key: string) { try { window.localStorage.setItem(ratedPromptKey, JSON.stringify([...readPrompted(), key].slice(-30))) } catch { /* shows again */ } }
-const toMinutes = (time: string) => { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes }
 
 /**
  * Asks "How was lunch?" by itself once each of today's meals is over (its end time has passed), for a
