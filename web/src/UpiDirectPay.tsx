@@ -8,12 +8,30 @@ import { formatMonth, formatRupees, nextMonthToRecord, rentForMonth, type RentSu
 import { readApiError } from './superAdmin'
 import type { UpiPayee } from './workspaceSettings'
 
-// The best-known UPI apps, so residents recognise theirs at a glance. Google Pay's current mark is cropped from the
-// logo on Google's own Pay site (simple-icons only has the old flat wordmark); PhonePe and Paytm come from
-// simple-icons; super.money and CRED are the app icons they publish on their own sites. The QR works in any UPI app.
-const upiAppMarks = [{ name: 'Google Pay', src: googlePayMark }]
-const upiApps: SimpleIcon[] = [siPhonepe, siPaytm]
-const upiAppIcons = [{ name: 'super.money', src: superMoneyIcon }, { name: 'CRED', src: credIcon }]
+// The best-known UPI apps, so residents recognise theirs at a glance and can tap it to pay. Google Pay's current mark
+// is cropped from the logo on Google's own Pay site (simple-icons only has the old flat wordmark); PhonePe and Paytm
+// come from simple-icons; super.money and CRED are the app icons they publish on their own sites. Each also carries
+// how to open it directly: its Android package (an intent link pinned to it) and its iOS URL prefix, where iOS gives
+// no way to pick an app for a plain upi:// link. The QR and "Open UPI app" still work in any UPI app.
+type UpiApp = { name: string; android: string; ios: string; className: string; icon: { image: string } | { simple: SimpleIcon } }
+const upiAppList: UpiApp[] = [
+  { name: 'Google Pay', android: 'com.google.android.apps.nbu.paisa.user', ios: 'gpay://upi/pay?', className: 'is-mark', icon: { image: googlePayMark } },
+  { name: 'PhonePe', android: 'com.phonepe.app', ios: 'phonepe://pay?', className: 'is-phonepe', icon: { simple: siPhonepe } },
+  { name: 'Paytm', android: 'net.one97.paytm', ios: 'paytmmp://pay?', className: 'is-paytm', icon: { simple: siPaytm } },
+  { name: 'super.money', android: 'com.hsb.super', ios: 'super://pay?', className: 'is-image', icon: { image: superMoneyIcon } },
+  { name: 'CRED', android: 'com.dreamplug.androidapp', ios: 'credpay://upi/pay?', className: 'is-image', icon: { image: credIcon } },
+]
+
+const isAndroid = () => /Android/i.test(navigator.userAgent)
+// iPadOS reports itself as a Mac; a touch screen tells them apart.
+const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+
+/** A link that opens this UPI app with the payment filled in, or null on a computer (no UPI apps there). */
+function appPayLink(app: UpiApp, query: string) {
+  if (isAndroid()) return `intent://pay?${query}#Intent;scheme=upi;package=${app.android};end`
+  if (isIos()) return `${app.ios}${query}`
+  return null
+}
 
 /** A payment the resident reported that the owner has not confirmed yet. */
 export type UpiClaim = { amount: number; reference: string; rentMonths: Array<{ month: string; amount: number }> | null; createdAt: string }
@@ -23,9 +41,9 @@ export type UpiClaim = { amount: number; reference: string; rentMonths: Array<{ 
  * tapped link and as a scanned QR. Without an amount the payer's app asks for one. Encoded by
  * hand: URLSearchParams writes spaces as "+", which some UPI apps show literally in the payee name.
  */
-function upiPayLink(payee: UpiPayee & { id: string }, amount: number | null, note: string) {
+function upiPayQuery(payee: UpiPayee & { id: string }, amount: number | null, note: string) {
   const params = { pa: payee.id, pn: payee.payeeName, ...(amount ? { am: amount.toFixed(2) } : {}), cu: 'INR', tn: note }
-  return `upi://pay?${Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')}`
+  return Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')
 }
 
 // Loaded on first use so residents who never see this panel never download the QR encoder.
@@ -65,7 +83,8 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
   const [error, setError] = useState('')
   const [isSending, setIsSending] = useState(false)
   const { amount, caption } = payTarget(rent, monthlyRent)
-  const link = payee.id ? upiPayLink({ ...payee, id: payee.id }, amount, 'Rent') : null
+  const query = payee.id ? upiPayQuery({ ...payee, id: payee.id }, amount, 'Rent') : null
+  const link = query ? `upi://pay?${query}` : null
   // The owner's uploaded QR wins; otherwise one is drawn from the UPI link (with the amount in it).
   const uploadedQr = payee.qrVersion ? `/api/resident-portal/upi-qr?v=${payee.qrVersion}` : null
   const qrSrc = uploadedQr ?? qr
@@ -79,6 +98,15 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
   async function copyId() {
     if (!payee.id) return
     try { await navigator.clipboard.writeText(payee.id); onNotice('UPI ID copied.') } catch { onNotice(`UPI ID: ${payee.id}`) }
+  }
+
+  // Opens the chosen app with the UPI ID and amount filled in. A computer has no UPI apps; and iOS opens nothing for an
+  // app that isn't installed, so if the page is still showing shortly after, the resident is pointed to the QR.
+  function payWith(app: UpiApp) {
+    const appLink = query ? appPayLink(app, query) : null
+    if (!appLink) { onNotice(`Open this page on your phone to pay with ${app.name}, or scan the QR.`); return }
+    window.location.assign(appLink)
+    if (isIos()) window.setTimeout(() => { if (document.visibilityState === 'visible') onNotice(`Couldn't open ${app.name}. If it isn't installed, scan the QR or tap Open UPI app.`) }, 1500)
   }
 
   async function report(event: React.FormEvent<HTMLFormElement>) {
@@ -103,7 +131,11 @@ export function UpiDirectPay({ payee, rent, monthlyRent, pendingClaim, onReporte
       <div className="upi-direct-body">
         <p className="eyebrow">{caption}</p>
         {amount ? <strong className="upi-direct-amount">{formatRupees(amount)}</strong> : <strong className="upi-direct-amount">{payee.payeeName}</strong>}
-        <ul className="upi-apps" aria-label="Accepted UPI apps">{upiAppMarks.map((app) => <li key={app.name} title={app.name} className="is-mark"><img src={app.src} alt={app.name} /></li>)}{upiApps.map((app) => <li key={app.slug} title={app.title} className={`is-${app.slug}`}><svg viewBox="0 0 24 24" role="img" aria-label={app.title} fill={`#${app.hex}`}><path d={app.path} /></svg></li>)}{upiAppIcons.map((app) => <li key={app.name} title={app.name} className="is-image"><img src={app.src} alt={app.name} /></li>)}<li className="is-any">+ any UPI app</li></ul>
+        <ul className="upi-apps" aria-label={query ? 'Pay with a UPI app' : 'Accepted UPI apps'}>{upiAppList.map((app) => {
+          const icon = 'image' in app.icon ? <img src={app.icon.image} alt="" /> : <svg viewBox="0 0 24 24" aria-hidden="true" fill={`#${app.icon.simple.hex}`}><path d={app.icon.simple.path} /></svg>
+          // Tappable only with the owner's UPI ID set; without one there is nothing for the app to pay to.
+          return <li key={app.name} title={app.name} className={app.className}>{query ? <button type="button" className="upi-app-button" aria-label={`Pay ${amount ? `${formatRupees(amount)} ` : ''}with ${app.name}`} onClick={() => payWith(app)}>{icon}</button> : <span role="img" aria-label={app.name}>{icon}</span>}</li>
+        })}<li className="is-any">+ any UPI app</li></ul>
         <p>{scanHint(amount, payee.payeeName, Boolean(uploadedQr))}{payee.id ? ' Or pay to this UPI ID:' : ''}</p>
         {payee.id && <><div className="upi-direct-id"><code>{payee.id}</code><button type="button" className="icon-button" aria-label="Copy UPI ID" title="Copy UPI ID" onClick={copyId}><Copy size={15} /></button></div>
         <a className="secondary-button upi-direct-open" href={link ?? undefined}><Smartphone size={15} /> Open UPI app</a></>}
