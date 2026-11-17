@@ -37,6 +37,7 @@ export async function assistantFacts(residentId: string, receptionistEmail: stri
     on('payments') ? 'Rent can be paid in the app under Payments.' : 'Online payment is switched off; rent is paid to the reception.',
     info.wifi ? `Wi-Fi network: ${info.wifi.name}${info.wifi.password ? `, password: ${info.wifi.password}` : ''}` : 'Wi-Fi details: not available in the app.',
     `Visiting hours: ${rules.visitingHours ?? 'not set'}. Quiet hours: ${rules.quietHours ?? 'not set'}.`,
+    info.times.gateOpening ? `Gate opens at ${info.times.gateOpening}.` : '',
     info.times.gateClosing ? `Gate closes at ${info.times.gateClosing}.` : '',
     info.rules.length ? `House rules: ${info.rules.join('; ')}` : '',
     `Move-out notice: at least ${noticeDaysOf(property, settings)} days, given in the app under Services > Exit PG.`,

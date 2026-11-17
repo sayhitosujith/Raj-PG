@@ -46,6 +46,7 @@ model Property {
   contacts            String?
   checkInTime         String?
   checkOutTime        String?
+  gateOpeningTime     String?
   gateClosingTime     String?
   rooms               Room[]
   payments            Payment[]

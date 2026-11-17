@@ -18,6 +18,7 @@ export type SiteProperty = BookableProperty & {
   noticePeriodDays: number
   checkInTime: string | null
   checkOutTime: string | null
+  gateOpeningTime?: string | null
   gateClosingTime: string | null
   /** Cover photo URL, or null when none was set. */
   image: string | null

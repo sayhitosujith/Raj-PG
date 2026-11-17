@@ -5,7 +5,7 @@ import { checkPricePair, type SharingPrice } from './pricing'
 import { SharingPriceTable } from './SharingPriceTable'
 
 /** A property's resident-facing details: Wi-Fi, important contacts and times ("HH:MM"). */
-export type PropertyInfoValues = { wifiName?: string | null; wifiPassword?: string | null; contacts?: string | null; checkInTime?: string | null; checkOutTime?: string | null; gateClosingTime?: string | null }
+export type PropertyInfoValues = { wifiName?: string | null; wifiPassword?: string | null; contacts?: string | null; checkInTime?: string | null; checkOutTime?: string | null; gateOpeningTime?: string | null; gateClosingTime?: string | null }
 
 /**
  * Number of rooms, rent with/without food (standard, and by sharing type), "PG for" (required, one of three) and amenity
@@ -37,6 +37,7 @@ export function PropertyFeatureFields({ propertyId, totalRooms, tenantType, amen
         <div className="info-times">
           <label>Check-in<input name="checkInTime" type="time" defaultValue={info?.checkInTime ?? ''} /></label>
           <label>Check-out<input name="checkOutTime" type="time" defaultValue={info?.checkOutTime ?? ''} /></label>
+          <label>Gate opens<input name="gateOpeningTime" type="time" defaultValue={info?.gateOpeningTime ?? ''} /></label>
           <label>Gate closes<input name="gateClosingTime" type="time" defaultValue={info?.gateClosingTime ?? ''} /></label>
         </div>
         <label>Important contacts<textarea name="contacts" rows={4} maxLength={1500} defaultValue={info?.contacts ?? ''} placeholder={'One per line, name then number:\nWarden – Ravi: 98450 12345\nNearest hospital: 080 2222 3333'} /></label>

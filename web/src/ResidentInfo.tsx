@@ -10,7 +10,7 @@ import { FeatureRibbon, FeatureTag, useFeatureBadge } from './FeatureBadges'
 export type ResidentInfoData = {
   wifi: { name: string; password: string | null } | null
   contacts: Array<{ label: string; phone: string }>
-  times: { checkIn: string | null; checkOut: string | null; gateClosing: string | null }
+  times: { checkIn: string | null; checkOut: string | null; gateOpening?: string | null; gateClosing: string | null }
   /** Property name, so a typed area opens the right map search. */
   property: string
   location: string
@@ -46,7 +46,7 @@ function WifiCard({ wifi, onNotice }: { wifi: NonNullable<ResidentInfoData['wifi
  * heading (the portal puts "Receptionist" there), and keeps the section showing even with no details.
  */
 export function ResidentInfo({ info, onNotice, action }: { info: ResidentInfoData; onNotice: (message: string) => void; action?: ReactNode }) {
-  const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
+  const times = [['Check-in', info.times.checkIn], ['Check-out', info.times.checkOut], ['Gate opens', info.times.gateOpening], ['Gate closes', info.times.gateClosing]].filter((entry): entry is [string, string] => Boolean(entry[1]))
   const hasDetails = Boolean(info.city || info.location || info.website) || times.length > 0
   if (!info.wifi && !info.contacts.length && !hasDetails && !action) return null
   return (

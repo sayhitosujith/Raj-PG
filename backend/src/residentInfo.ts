@@ -11,7 +11,7 @@ const maxWifiLength = 64
 const maxWebsiteLength = 300
 
 /** The property fields this covers, as the add/edit property form sends them. */
-type PropertyInfoInput = Partial<Record<'wifiName' | 'wifiPassword' | 'contacts' | 'websiteUrl' | 'checkInTime' | 'checkOutTime' | 'gateClosingTime', unknown>>
+type PropertyInfoInput = Partial<Record<'wifiName' | 'wifiPassword' | 'contacts' | 'websiteUrl' | 'checkInTime' | 'checkOutTime' | 'gateOpeningTime' | 'gateClosingTime', unknown>>
 
 /**
  * Validates the Info fields of a property body. Blank clears a field; absent leaves it alone.
@@ -41,7 +41,7 @@ export function parsePropertyInfo(body: PropertyInfoInput): { data: Record<strin
     if (text && !/^https?:\/\/[^\s]+$/i.test(text)) return { error: 'Website must be a full web address starting with https://' }
     data.websiteUrl = text || null
   }
-  for (const [field, label] of [['checkInTime', 'Check-in time'], ['checkOutTime', 'Check-out time'], ['gateClosingTime', 'Gate closing time']] as const) {
+  for (const [field, label] of [['checkInTime', 'Check-in time'], ['checkOutTime', 'Check-out time'], ['gateOpeningTime', 'Gate opening time'], ['gateClosingTime', 'Gate closing time']] as const) {
     const value = body[field]
     if (value === undefined) continue
     if (value === null || value === '') { data[field] = null; continue }
@@ -82,7 +82,7 @@ function faqsOf(settings: { faqs: string; residentFeatures: unknown }) {
   return [...parseFaqs(settings.faqs), ...builtIn]
 }
 
-type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; websiteUrl: string | null; checkInTime: string | null; checkOutTime: string | null; gateClosingTime: string | null }
+type PropertyInfo = { name: string; location: string; city: string | null; wifiName: string | null; wifiPassword: string | null; contacts: string | null; websiteUrl: string | null; checkInTime: string | null; checkOutTime: string | null; gateOpeningTime: string | null; gateClosingTime: string | null }
 
 /** Everything the Info tab shows, for the resident's property and the business. */
 export function residentInfoOf(property: PropertyInfo | null | undefined, settings: { extraHouseRules: string; faqs: string; residentFeatures: unknown }) {
@@ -90,7 +90,7 @@ export function residentInfoOf(property: PropertyInfo | null | undefined, settin
     wifi: property?.wifiName && isResidentFeatureOn(settings.residentFeatures, 'wifi') ? { name: property.wifiName, password: property.wifiPassword } : null,
     contacts: parseContacts(property?.contacts ?? null),
     website: property?.websiteUrl ?? null,
-    times: { checkIn: property?.checkInTime ?? null, checkOut: property?.checkOutTime ?? null, gateClosing: property?.gateClosingTime ?? null },
+    times: { checkIn: property?.checkInTime ?? null, checkOut: property?.checkOutTime ?? null, gateOpening: property?.gateOpeningTime ?? null, gateClosing: property?.gateClosingTime ?? null },
     property: property?.name ?? '',
     location: property?.location ?? '',
     city: property?.city ?? '',

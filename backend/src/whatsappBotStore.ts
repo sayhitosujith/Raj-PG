@@ -15,7 +15,7 @@ import type { BotStore, ChatStep, Sender } from './whatsappBot.js'
 // A half-finished repair report is forgotten after this long, so a stray message days later is not filed.
 const stepLifetimeMs = 30 * 60 * 1000
 
-const propertyInfoSelect = { name: true, location: true, city: true, wifiName: true, wifiPassword: true, contacts: true, websiteUrl: true, checkInTime: true, checkOutTime: true, gateClosingTime: true } as const
+const propertyInfoSelect = { name: true, location: true, city: true, wifiName: true, wifiPassword: true, contacts: true, websiteUrl: true, checkInTime: true, checkOutTime: true, gateOpeningTime: true, gateClosingTime: true } as const
 
 /**
  * Identifies the sender with the same bar as the portal (requirePortalAccess): an active resident

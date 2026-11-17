@@ -373,6 +373,7 @@ app.get('/api/dashboard', async (_request, response) => {
           contacts: property.contacts,
           checkInTime: property.checkInTime,
           checkOutTime: property.checkOutTime,
+          gateOpeningTime: property.gateOpeningTime,
           gateClosingTime: property.gateClosingTime,
           ...occupancySummary(property),
           status: property.status,

@@ -22,7 +22,7 @@ export const publicSiteRouter = Router()
 export const coverUrl = (propertyId: string, imageUrl: string) => imageUrl.startsWith('data:') ? `/api/public/properties/${propertyId}/cover?v=${contentVersion(imageUrl)}` : imageUrl
 
 const siteProperty = {
-  id: true, name: true, location: true, city: true, websiteUrl: true, ownerPhone: true, tenantType: true, amenities: true, totalRooms: true, noticePeriodDays: true, imageUrl: true, checkInTime: true, checkOutTime: true, gateClosingTime: true,
+  id: true, name: true, location: true, city: true, websiteUrl: true, ownerPhone: true, tenantType: true, amenities: true, totalRooms: true, noticePeriodDays: true, imageUrl: true, checkInTime: true, checkOutTime: true, gateOpeningTime: true, gateClosingTime: true,
   ...pricingSelect, ...mealColumnsSelect,
   rooms: { select: roomBedsSelect },
   photos: { select: { id: true, caption: true }, orderBy: { createdAt: 'asc' } },
@@ -50,7 +50,7 @@ publicSiteRouter.get('/public/site', async (_request, response) => {
           rentWithFood: property.rentWithFood, rentWithoutFood: property.rentWithoutFood, sharingPrices: [...property.sharingPrices].sort((a, b) => a.beds - b.beds),
           freeBeds: Math.max(0, total - taken), totalBeds: total,
           noticePeriodDays: property.noticePeriodDays ?? houseRules.noticePeriodDays,
-          checkInTime: property.checkInTime, checkOutTime: property.checkOutTime, gateClosingTime: property.gateClosingTime,
+          checkInTime: property.checkInTime, checkOutTime: property.checkOutTime, gateOpeningTime: property.gateOpeningTime, gateClosingTime: property.gateClosingTime,
           image: property.imageUrl ? coverUrl(property.id, property.imageUrl) : null,
           photos: property.photos.map((photo) => ({ id: photo.id, caption: photo.caption, url: `/api/public/properties/${property.id}/photos/${photo.id}` })),
           mealTimes: toMealTimes(property),

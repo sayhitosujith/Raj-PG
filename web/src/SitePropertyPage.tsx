@@ -27,6 +27,7 @@ export function SitePropertyPage({ site, propertyId }: { site: SiteData; propert
   const timings = [
     property.checkInTime && { icon: LogIn, label: 'Check-in', value: formatClock(property.checkInTime, true) },
     property.checkOutTime && { icon: LogOut, label: 'Check-out', value: formatClock(property.checkOutTime, true) },
+    property.gateOpeningTime && { icon: DoorOpen, label: 'Gate opens', value: formatClock(property.gateOpeningTime, true) },
     property.gateClosingTime && { icon: DoorOpen, label: 'Gate closes', value: formatClock(property.gateClosingTime, true) },
     { icon: Users, label: 'Visiting hours', value: houseRules.visitingHours },
     { icon: MoonStar, label: 'Quiet hours', value: houseRules.quietHours },

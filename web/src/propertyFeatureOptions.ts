@@ -67,5 +67,5 @@ function readSharingPrices(form: FormData) {
 
 /** Reads the PropertyFeatureFields inputs back into the API shape. */
 export function readPropertyFeatures(form: FormData) {
-  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), sharingPrices: readSharingPrices(form), noticePeriodDays: form.get('noticePeriodDays'), wifiName: form.get('wifiName'), wifiPassword: form.get('wifiPassword'), contacts: form.get('contacts'), checkInTime: form.get('checkInTime'), checkOutTime: form.get('checkOutTime'), gateClosingTime: form.get('gateClosingTime') }
+  return { tenantType: form.get('tenantType'), amenities: form.getAll('amenities'), totalRooms: form.get('totalRooms'), rentWithFood: form.get('rentWithFood'), rentWithoutFood: form.get('rentWithoutFood'), sharingPrices: readSharingPrices(form), noticePeriodDays: form.get('noticePeriodDays'), wifiName: form.get('wifiName'), wifiPassword: form.get('wifiPassword'), contacts: form.get('contacts'), checkInTime: form.get('checkInTime'), checkOutTime: form.get('checkOutTime'), gateOpeningTime: form.get('gateOpeningTime'), gateClosingTime: form.get('gateClosingTime') }
 }
