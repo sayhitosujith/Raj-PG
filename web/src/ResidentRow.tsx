@@ -3,7 +3,7 @@ import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeO
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import { formatDateOfBirth } from './dateOfBirth'
-import { residentPhotoUrl, type AadharStatus, type Resident } from './resident'
+import { residentPhotoUrl, type AadharStatus, type Resident, type SignedInDevice } from './resident'
 import { rentBadges, rentChip } from './rent'
 import { RentPanel } from './RentPanel'
 import { isAwaitingSignIn } from './residentFilters'
@@ -117,14 +117,20 @@ function approvalText(resident: Resident, canDecide: boolean) {
 // A phone or tablet by its name ("iPhone · Safari"), for the icon beside it; everything else shows a screen.
 const isHandheld = (label: string) => /iPhone|iPad|Android/.test(label)
 
+// The muted second line under a device: "Device A3F9 · 49.37.12.8 · Mangaluru, KA, IN", leaving out what is unknown.
+function DeviceWhere({ device }: { device: SignedInDevice }) {
+  const where = [device.deviceId, device.ip, device.location].filter(Boolean).join(' · ')
+  return where ? <small className="resident-device-where" title={where}>{where}</small> : null
+}
+
 // Where the resident is signed in, view only: the three most recently active devices and how many more.
-function ResidentDevices({ devices }: { devices?: Array<{ label: string; lastActive: string }> }) {
+function ResidentDevices({ devices }: { devices?: SignedInDevice[] }) {
   if (!devices) return <div className="resident-devices" />
   if (!devices.length) return <div className="resident-devices is-empty">Not signed in on any device</div>
   return (
     <div className="resident-devices">
       <span className="resident-devices-title">Signed in on {devices.length} {devices.length === 1 ? 'device' : 'devices'}</span>
-      <ul>{devices.slice(0, 3).map((device, index) => <li key={`${device.label}-${index}`}>{isHandheld(device.label) ? <Smartphone size={12} aria-hidden="true" /> : <Monitor size={12} aria-hidden="true" />}<span>{device.label}</span><small>{device.lastActive}</small></li>)}</ul>
+      <ul>{devices.slice(0, 3).map((device, index) => <li key={`${device.label}-${index}`}><div className="resident-device-name">{isHandheld(device.label) ? <Smartphone size={12} aria-hidden="true" /> : <Monitor size={12} aria-hidden="true" />}<span title={device.label}>{device.label}</span><small>{device.lastActive}</small></div><DeviceWhere device={device} /></li>)}</ul>
       {devices.length > 3 && <small className="resident-devices-more">+{devices.length - 3} more</small>}
     </div>
   )

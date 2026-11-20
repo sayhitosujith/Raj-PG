@@ -12,6 +12,7 @@ import { normalizeEmail, parseSuperAdminIdentity, toPublicSuperAdmin, type Ident
 import type { StaffAccess } from './staffAccess.js'
 import { canActAsResident, clearActAs, readActingResidentId, recordActingWrite } from './actAs.js'
 import { latestSubscriptionSelect, subscriptionBlock, subscriptionEndedCode } from './subscriptions.js'
+import { deviceDetailsFrom, missingDeviceDetails } from './sessionDevice.js'
 
 const sessionCookieName = 'raj_pg_session'
 const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000
@@ -34,8 +35,8 @@ function hashToken(token: string) {
  */
 export async function startSession(response: Response, role: UserRole, subject: { superAdminId: string } | { residentId: string }) {
   const token = randomBytes(32).toString('base64url')
-  // The user agent names the device in the owner's list of a resident's sign-ins; capped, as it is the client's to send.
-  await prisma.session.create({ data: { tokenHash: hashToken(token), role, ...subject, expiresAt: new Date(Date.now() + sessionLifetimeMs), userAgent: response.req.get('user-agent')?.slice(0, 300) ?? null } })
+  // The device details name the device in the owner's list of a resident's sign-ins (sessionDevice.ts).
+  await prisma.session.create({ data: { tokenHash: hashToken(token), role, ...subject, expiresAt: new Date(Date.now() + sessionLifetimeMs), ...deviceDetailsFrom(response.req) } })
   response.cookie(sessionCookieName, token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: sessionLifetimeMs, path: '/' })
   return token
 }
@@ -62,10 +63,14 @@ async function findLiveSession(request: Request) {
   // answering "Sign-in is temporarily unavailable".
   const session = await withDatabaseRetry(() => prisma.session.findUnique({ where: { tokenHash: hashToken(token) } }))
   if (!session || session.expiresAt <= new Date()) return null
-  // "Last active" for the devices list. Written at most every few minutes per session, not on every request, and a
-  // failed write never fails the request it rides on.
-  if (!session.lastSeenAt || Date.now() - session.lastSeenAt.getTime() > lastSeenIntervalMs) {
-    await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined)
+  // "Last active" and where from, for the devices list. Written at most every few minutes per session, not on every
+  // request, and a failed write never fails the request it rides on. The IP address and area are refreshed, as they
+  // change while a phone moves between networks; device details the session lacks are filled in once, so a session
+  // signed in before they were recorded gets a real device name instead of none.
+  const device = deviceDetailsFrom(request)
+  const missing = missingDeviceDetails(session, device)
+  if (Object.keys(missing).length || !session.lastSeenAt || Date.now() - session.lastSeenAt.getTime() > lastSeenIntervalMs) {
+    await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date(), ...(device.ipAddress ? { ipAddress: device.ipAddress, location: device.location } : {}), ...missing } }).catch(() => undefined)
   }
   return session
 }

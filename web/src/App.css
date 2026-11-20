@@ -228,10 +228,13 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-devices { display: grid; align-content: start; gap: 3px; min-width: 0; font-size: 11px; }
 .resident-devices-title { color: var(--muted); font-size: 10px; font-weight: 700; }
 .resident-devices ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.resident-devices li { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--ink); }
-.resident-devices li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.resident-devices li small, .resident-devices-more { flex: none; color: var(--muted); font-size: 10px; }
-.resident-devices li svg { flex: none; color: var(--muted); }
+.resident-devices li { display: grid; min-width: 0; color: var(--ink); }
+.resident-device-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.resident-device-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resident-device-name small, .resident-devices-more { flex: none; color: var(--muted); font-size: 10px; }
+.resident-device-name svg { flex: none; color: var(--muted); }
+/* Device ID, IP and area under the name, lined up with its text; one line cut short on desktop (full text on hover). */
+.resident-device-where { overflow: hidden; padding-left: 17px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .resident-devices.is-empty { color: var(--muted); font-style: italic; }
 /* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
 /* One evenly spaced list: every line (with or without a copy icon) is the same height. */
@@ -324,6 +327,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar devices devices devices devices devices' 'avatar room status status status status'; }
   .resident-card .resident-devices { grid-area: devices; }
   .resident-card .resident-devices:empty { display: none; }
+  /* The card has the full width but a phone's is narrow: wrap the device details rather than hide most of them. */
+  .resident-card .resident-device-where { overflow-wrap: anywhere; white-space: normal; }
   .resident-card .row-toggle { grid-area: toggle; }
   .resident-card .resident-phone { grid-area: phone; }
   /* Only here, where the phone has its own named row; on desktop the empty cell keeps the columns aligned. */

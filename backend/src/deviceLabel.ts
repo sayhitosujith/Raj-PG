@@ -1,10 +1,12 @@
 /**
  * A readable name for the device behind a browser user agent ("iPhone · Safari", "Windows PC · Edge"), for the owner's
  * list of where a resident is signed in. A best guess from well-known markers, not fingerprinting: anything not
- * recognised reads "Unknown device", as do sessions started before user agents were recorded.
+ * recognised reads "Unknown device". A session with none recorded (signed in before devices were, and not used since)
+ * says so rather than guessing. The phone model, which some browsers report separately (sessionDevice.ts), is added
+ * when known ("Android phone · Chrome · Pixel 8").
  */
-export function deviceLabel(userAgent: string | null | undefined) {
-  if (!userAgent) return 'Unknown device'
+export function deviceLabel(userAgent: string | null | undefined, model?: string | null) {
+  if (!userAgent) return 'Earlier sign-in (device not recorded)'
   const device = /iPhone/.test(userAgent) ? 'iPhone'
     : /iPad/.test(userAgent) || (/Macintosh/.test(userAgent) && /Mobile/.test(userAgent)) ? 'iPad'
     : /Android/.test(userAgent) ? (/Mobile/.test(userAgent) ? 'Android phone' : 'Android tablet')
@@ -21,6 +23,6 @@ export function deviceLabel(userAgent: string | null | undefined) {
     : /Chrome|CriOS/.test(userAgent) ? 'Chrome'
     : /Safari/.test(userAgent) ? 'Safari'
     : null
-  if (!device) return browser ?? 'Unknown device'
-  return browser ? `${device} · ${browser}` : device
+  const name = !device ? browser ?? 'Unknown device' : browser ? `${device} · ${browser}` : device
+  return model ? `${name} · ${model}` : name
 }

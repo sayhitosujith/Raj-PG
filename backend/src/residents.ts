@@ -10,6 +10,7 @@ import { roomBedsSelect } from './occupancy.js'
 import { findProfilePhotoProblem, photoVersion, sendCoverPhoto, sendProfilePhoto } from './photo.js'
 import { toCoverPosition } from './coverPosition.js'
 import { deviceLabel } from './deviceLabel.js'
+import { displayIp, shortDeviceId } from './sessionDevice.js'
 import { rentFor, residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
@@ -26,7 +27,7 @@ import { residentWhere, staffAccess } from './staffAccess.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card, /passport-scan and /student-id-card instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, studentIdCardUrl: true, profilePhotoUrl: true }, include: { coverPhoto: { select: { updatedAt: true, positionX: true, positionY: true, zoom: true } }, sessions: { select: { userAgent: true, createdAt: true, lastSeenAt: true, expiresAt: true } }, room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, studentIdCardUrl: true, profilePhotoUrl: true }, include: { coverPhoto: { select: { updatedAt: true, positionX: true, positionY: true, zoom: true } }, sessions: { select: { userAgent: true, deviceId: true, deviceModel: true, ipAddress: true, location: true, createdAt: true, lastSeenAt: true, expiresAt: true } }, room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasStudentIdCardWhere = { AND: [{ studentIdCardUrl: { not: null } }, { studentIdCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
@@ -57,14 +58,16 @@ class InputError extends Error {}
 // separately because the summary query never loads the credential hashes.
 /**
  * Where the resident is signed in right now, most recently used first: one entry per live session, named from its
- * user agent, with when it was last used. View only; expired sessions are left out.
+ * user agent (and phone model), with when it was last used and from where. Two sessions from one browser share a
+ * short device ID, which is how the owner tells a repeat sign-in from a second device. View only; expired sessions
+ * are left out.
  */
-function signedInDevices(sessions: Array<{ userAgent: string | null; createdAt: Date; lastSeenAt: Date | null; expiresAt: Date }>) {
+function signedInDevices(sessions: Array<{ userAgent: string | null; deviceId: string | null; deviceModel: string | null; ipAddress: string | null; location: string | null; createdAt: Date; lastSeenAt: Date | null; expiresAt: Date }>) {
   const now = Date.now()
   return sessions.filter((session) => session.expiresAt.getTime() > now)
-    .map((session) => ({ label: deviceLabel(session.userAgent), lastActiveAt: session.lastSeenAt ?? session.createdAt }))
+    .map((session) => ({ session, lastActiveAt: session.lastSeenAt ?? session.createdAt }))
     .sort((a, b) => b.lastActiveAt.getTime() - a.lastActiveAt.getTime())
-    .map(({ label, lastActiveAt }) => ({ label, lastActive: relativeTime(lastActiveAt) }))
+    .map(({ session, lastActiveAt }) => ({ label: deviceLabel(session.userAgent, session.deviceModel), lastActive: relativeTime(lastActiveAt), deviceId: shortDeviceId(session.deviceId), ip: displayIp(session.ipAddress), location: session.location }))
 }
 
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean, rates: DailyRates) {

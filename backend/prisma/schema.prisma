@@ -589,6 +589,13 @@ model Session {
   userAgent    String?
   // Refreshed at most every few minutes while the session is used (auth.ts), so "last active" costs few writes.
   lastSeenAt   DateTime?
+  // The rest is for the same list (sessionDevice.ts): a random ID the browser keeps, so two sign-ins from one device
+  // can be told apart from two devices; the phone model where the browser offers it; and where the session was last
+  // used from, refreshed with lastSeenAt. The area comes from the hosting proxy's own lookup, never a third party.
+  deviceId     String?
+  deviceModel  String?
+  ipAddress    String?
+  location     String?
 }
 
 enum AadharVerificationStatus {

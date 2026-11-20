@@ -12,9 +12,12 @@ import './portalNeutral.css'
 import './portalTheme.css'
 import { applyTheme, currentTheme } from './theme'
 import { AppRoutes } from './AppRoutes.tsx'
+import { installDeviceHeaders } from './deviceHeaders'
 
 // Before the first render, so a dark-mode viewer never sees a flash of the light theme.
 applyTheme(currentTheme())
+// Before the first render too, so the first API call already names this device.
+installDeviceHeaders()
 
 // The offline/slow-network worker (public/sw.js). Production only: in development it would serve
 // stale modules underneath Vite's hot reload. Registered after load so that on a slow connection it

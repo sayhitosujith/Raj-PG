@@ -19,7 +19,7 @@ export const defaultPrivacyPolicy = `1. What we collect: your name, phone number
 2. Why we collect it: to manage your stay, verify your identity as required for accommodation, track rent, and handle housekeeping and other requests.
 3. Aadhaar: your Aadhaar details are used only for identity verification. Only the last four digits are shown in the portal.
 4. Who can see it: only the property management. We do not sell your information or share it with other residents. We may share it with authorities when the law requires it.
-5. Sign-in: your password is stored in encrypted (hashed) form and cannot be read by anyone, including the management. The portal uses a single cookie to keep you signed in.
+5. Sign-in: your password is stored in encrypted (hashed) form and cannot be read by anyone, including the management. The portal uses a single cookie to keep you signed in. Each sign-in records the type of device, a random device ID, the IP address and the approximate area it is used from, so the management can see where your account is signed in.
 6. How long we keep it: while you stay with us, and for a reasonable period afterwards for accounts and legal records.
 7. Your choices: you can ask the management to correct your details, or to delete them once you have moved out and no dues remain.
 8. Questions: contact the management using the details shown in your portal.
