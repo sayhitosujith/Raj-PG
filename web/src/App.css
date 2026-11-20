@@ -955,6 +955,19 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .food-residents a:hover { text-decoration: underline; }
 .food-residents-diet { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
 .food-residents-diet.is-unset { color: var(--muted); font-weight: 400; }
+/* Phones: the table is wider than the screen (the meal columns were cut off), so each resident becomes a card like the
+   owner app's other lists: the name on top, then labelled lines, with the meal chips free to wrap. */
+@media (max-width: 720px) {
+  .finance-table.food-residents thead { display: none; }
+  .finance-table.food-residents, .finance-table.food-residents tbody, .finance-table.food-residents tr, .finance-table.food-residents td { display: block; }
+  .finance-table.food-residents tbody { display: grid; gap: 10px; }
+  .finance-table.food-residents tr { padding: 12px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .04); }
+  .finance-table.food-residents td { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: start; gap: 8px; padding: 3px 0; border: 0; }
+  .finance-table.food-residents td:first-child { display: block; padding-bottom: 6px; font-size: 14px; }
+  .finance-table.food-residents td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: 11px; font-weight: 700; line-height: 22px; }
+  .finance-table.food-residents .food-today { display: flex; flex-wrap: wrap; gap: 4px; }
+  :root[data-theme="dark"] .finance-table.food-residents tr { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); box-shadow: none; }
+}
 /* What each resident opted for today. Colour plus an icon and the word in the tooltip, never colour alone. */
 .food-today { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .food-today-hint { color: var(--muted); font-weight: 400; text-transform: none; }

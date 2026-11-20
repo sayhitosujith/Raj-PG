@@ -10,6 +10,7 @@ import { useRefreshSignal } from './useAutoRefresh'
 import { Pagination } from './Pagination'
 import { listPageSize, usePagination } from './usePagination'
 import { InlineLoader } from './Loader'
+import { PhoneText } from './PhoneField'
 import { LateMealRequestsPanel } from './LateMealRequestsPanel'
 
 type PropertyOption = { id: string; name: string }
@@ -63,12 +64,13 @@ function ResidentsOnFood({ propertyId, residents, status }: { propertyId: string
           <thead><tr><th>Name</th><th>Phone</th><th>Room</th><th>Diet</th><th>Today</th><th>Tomorrow <span className="food-today-hint">(until 11:59 pm)</span></th></tr></thead>
           <tbody>{pager.pageItems.map((resident) => (
             <tr key={resident.id}>
+              {/* data-label names each cell when phones show a row as a card (App.css). */}
               <td><strong>{displayName(resident.name)}</strong></td>
-              <td>{resident.phone ? <a href={`tel:${resident.phone}`}>{resident.phone}</a> : '—'}</td>
-              <td>{resident.room || '—'}</td>
-              <td>{resident.diet ? <span className="food-residents-diet"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="food-residents-diet is-unset">Not set</span>}</td>
-              <td><MealChips statuses={resident.today} /></td>
-              <td><MealChips statuses={resident.tomorrow} /></td>
+              <td data-label="Phone">{resident.phone ? <a href={`tel:${resident.phone}`}><PhoneText value={resident.phone} /></a> : '—'}</td>
+              <td data-label="Room">{resident.room || '—'}</td>
+              <td data-label="Diet">{resident.diet ? <span className="food-residents-diet"><DietMark diet={resident.diet} /> {dietLabels[resident.diet]}</span> : <span className="food-residents-diet is-unset">Not set</span>}</td>
+              <td data-label="Today"><MealChips statuses={resident.today} /></td>
+              <td data-label="Tomorrow"><MealChips statuses={resident.tomorrow} /></td>
             </tr>
           ))}</tbody>
         </table>
