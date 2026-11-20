@@ -332,6 +332,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .resident-list .resident-card:has(> .resident-cover) { position: relative; overflow: hidden; }
   .resident-list .resident-cover { display: block; position: absolute; top: 0; right: 0; left: 0; width: 100%; height: 62px; object-fit: cover; pointer-events: none; }
   .resident-list .resident-card:has(> .resident-cover) .resident-row { position: relative; }
+  .resident-list .resident-cover.is-default { overflow: hidden; background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, #0f5c4d)); }
+  .resident-list .resident-cover.is-default img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .resident-list .resident-cover.is-default img.is-fill { object-fit: cover; filter: blur(12px) saturate(1.15); transform: scale(1.2); opacity: .85; }
   .resident-list .resident-card:has(> .resident-cover) .resident-avatar { box-shadow: 0 0 0 2px #fff, 0 2px 6px rgb(0 0 0 / .2); }
   .resident-list .resident-card:has(> .resident-cover) :is(.row-edit, .row-clone, .row-delete, .row-toggle) { border-radius: 50%; background: rgb(255 255 255 / .9); box-shadow: 0 1px 4px rgb(0 0 0 / .15); }
 }
