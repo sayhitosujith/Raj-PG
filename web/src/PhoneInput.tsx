@@ -58,7 +58,7 @@ export function PhoneInput({ name, label, hint, required = false, defaultValue }
 
   return (
     <div className="phone-field">
-      <label htmlFor={inputId}>{label}{hint && <span> {hint}</span>}</label>
+      <label htmlFor={inputId}>{label}{hint && <span> {hint}</span>}{required && <span className="required-mark" aria-hidden="true"> *</span>}</label>
       <div className="phone-input">
         <CountryCombobox options={dialCountries} selected={country} onSelect={selectCountry} label="Country code" optionDetail={dialDetail} selectedText={dialDetail} className="phone-country" />
         <input ref={inputRef} id={inputId} type="tel" inputMode={isIndia ? 'numeric' : 'tel'} autoComplete="tel-national" required={required} value={national} onChange={(event) => setNational(isIndia ? toIndianNational(event.target.value) : event.target.value)} placeholder={isIndia ? 'e.g. 9876543210' : 'Phone number'} />

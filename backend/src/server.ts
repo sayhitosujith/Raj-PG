@@ -45,6 +45,7 @@ import { exitAdminRouter } from './exits.js'
 import { accountDeletionAdminRouter } from './accountDeletion.js'
 import { concessionAdminRouter } from './referrals.js'
 import { maintenanceAdminRouter } from './maintenance.js'
+import { attendanceAdminRouter } from './attendance.js'
 import { superAdminRouter } from './superAdmins.js'
 import { subscriptionRouter } from './subscriptions.js'
 import { logIntegrations } from './startupReport.js'
@@ -146,6 +147,7 @@ app.use('/api', exitAdminRouter)
 app.use('/api', accountDeletionAdminRouter)
 app.use('/api', concessionAdminRouter)
 app.use('/api', maintenanceAdminRouter)
+app.use('/api', attendanceAdminRouter)
 app.use('/api', propertyPhotoAdminRouter)
 
 // Occupancy in beds (see bedCounts); older properties without a declared room count fall back to the

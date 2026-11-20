@@ -6,7 +6,7 @@ import { parseDateOnly, propertyNow } from './dates.js'
  * "My details" form so both trim, normalise and reject input the same way. The emergency contact and
  * vehicle are optional throughout (a blank value clears them); the occupation is required (studentId.ts).
  */
-export const textFields = ['name', 'phone', 'email', 'permanentAddress', 'emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'occupation', 'collegeName'] as const
+export const textFields = ['name', 'phone', 'email', 'permanentAddress', 'emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'emergencyContactEmail', 'vehicleType', 'vehicleNumber', 'occupation', 'collegeName'] as const
 
 /** The relationships the forms offer for the emergency contact (web/src/EmergencyContact.tsx lists the same). */
 export const emergencyContactRelations = ['Father', 'Mother', 'Spouse', 'Sister', 'Legal guardian'] as const
@@ -44,6 +44,9 @@ export function findInvalidField(data: Partial<Record<TextField, string>>) {
   if (data.phone === invalidPhone) return phoneRequirement
   if (data.email && !isValidEmail(data.email)) return 'Enter a valid email address.'
   if (data.emergencyContactPhone === invalidPhone) return `Emergency contact: ${phoneRequirement.charAt(0).toLowerCase()}${phoneRequirement.slice(1)}`
+  // Sent means a resident form's emergency contact: its email is required. Partial updates that leave it out are fine.
+  if (data.emergencyContactEmail !== undefined && !data.emergencyContactEmail) return "Enter the emergency contact's email."
+  if (data.emergencyContactEmail && !isValidEmail(data.emergencyContactEmail)) return 'Emergency contact: enter a valid email address.'
   if (data.emergencyContactRelation && !(emergencyContactRelations as readonly string[]).includes(data.emergencyContactRelation)) return `Emergency contact relationship must be one of: ${emergencyContactRelations.join(', ')}.`
   // A name or relationship with no number gives the owner nobody to call.
   if ((data.emergencyContactName || data.emergencyContactRelation) && data.emergencyContactPhone === '') return 'Add a phone number for the emergency contact, or clear its name and relationship.'
@@ -59,7 +62,7 @@ export function findInvalidField(data: Partial<Record<TextField, string>>) {
 }
 
 // Optional fields stored as null when blank.
-const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'collegeName'] as const
+const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'emergencyContactEmail', 'vehicleType', 'vehicleNumber', 'collegeName'] as const
 type OptionalField = (typeof optionalFields)[number]
 
 /**

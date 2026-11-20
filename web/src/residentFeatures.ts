@@ -24,6 +24,7 @@ export const residentFeatures = [
   { key: 'payments', label: 'Online payment', detail: 'Paying rent in the app; what is owed and receipts still show' },
   { key: 'weather', label: 'Weather', detail: 'The weather on Home; the phone’s location is not asked for' },
   { key: 'assistant', label: 'AI assistant', detail: 'Chat that answers questions about rent, Wi-Fi, rules and more; needs ANTHROPIC_API_KEY' },
+  { key: 'attendanceReport', label: 'Weekly attendance email to emergency contact', detail: 'Every Sunday evening, the past week’s (Sunday–Saturday) nightly roll call goes to each resident’s emergency contact email' },
 ] as const
 
 export type ResidentFeature = (typeof residentFeatures)[number]['key']

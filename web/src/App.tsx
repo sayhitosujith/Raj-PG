@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   CircleDollarSign,
   PiggyBank,
+  ClipboardCheck,
   ClipboardList,
   DoorOpen,
   Home,
@@ -57,6 +58,7 @@ import { customAmenitiesOf, readPropertyFeatures, tenantHint, type TenantType } 
 import { defaultMealTimes, readMealTimes, type MealTimes } from './meals'
 import { HousekeepingView } from './HousekeepingView'
 import { MaintenanceView } from './MaintenanceView'
+import { AttendanceView } from './AttendanceView'
 import { StaffPanel } from './StaffPanel'
 import { FreeRooms, type RoomOccupancy } from './FreeRooms'
 import { DoorLocksView } from './DoorLocksView'
@@ -578,6 +580,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {isOwner && <NavItem icon={ShieldCheck} label="Team management" active={activeView === 'Team management'} onClick={() => handleNavigation('Team management')} />}
           <NavItem icon={Wrench} label="Maintenance" badge={stats.openRequests !== '0' ? stats.openRequests : undefined} active={activeView === 'Maintenance'} onClick={() => handleNavigation('Maintenance')} />
           <NavItem icon={UtensilsCrossed} label="Kitchen" active={activeView === 'Kitchen'} onClick={() => handleNavigation('Kitchen')} />
+          <NavItem icon={ClipboardCheck} label="Attendance" active={activeView === 'Attendance'} onClick={() => handleNavigation('Attendance')} />
           <NavItem icon={Bell} label="Announcements" active={activeView === 'Announcements'} onClick={() => handleNavigation('Announcements')} />
           {isOwner && <NavItem icon={BadgeIndianRupee} label="Subscriptions" active={activeView === 'Subscriptions'} onClick={() => handleNavigation('Subscriptions')} />}
           <NavItem icon={Settings} label="Settings" active={activeView === 'Settings'} onClick={() => handleNavigation('Settings')} />
@@ -620,12 +623,13 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Staff management' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<StaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, workers: property.workers ?? [] }] : [])} canManage={isOwner} doorKeysEnabled={settings?.doorKeysEnabled ?? true} onChanged={saveWorkers} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Kitchen' && <FoodView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
+          {activeView === 'Attendance' && <AttendanceView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
           {activeView === 'Views' && isOwner && <SettingsView page="views" admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Door locks' && isOwner && <DoorLocksView lock={settings ? { model: settings.lockModel } : null} properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name }] : [])} onLocksChanged={doorLocks.reload} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Lock tasks' && isOwner && <LockTasksView lock={settings ? { model: settings.lockModel, location: settings.lockLocation } : null} tasks={doorLocks.tasks} hasError={doorLocks.hasError} onRetry={doorLocks.reload} onDone={markLockTaskDone} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
-          {activeView !== 'Dashboard' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Lock tasks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Dashboard')} />}
+          {activeView !== 'Dashboard' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Attendance' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Lock tasks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Dashboard')} />}
           <div className={activeView === 'Dashboard' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

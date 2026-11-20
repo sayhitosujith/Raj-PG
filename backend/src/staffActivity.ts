@@ -101,6 +101,7 @@ const actions: Array<[string, RegExp, Describe]> = [
   ['POST', /^\/properties\/([^/]+)\/workers$/, async (body, [id]) => `Added ${text(body.name) ?? 'a staff member'} to ${await propertyName(id)}'s staff`],
   ['PUT', /^\/properties\/([^/]+)\/workers\/[^/]+$/, async (body, [id]) => `Updated ${text(body.name) ?? 'a staff member'} in ${await propertyName(id)}'s staff`],
   ['DELETE', /^\/properties\/([^/]+)\/workers\/([^/]+)$/, async (_body, [id, workerId]) => `Removed ${(await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true } }))?.name ?? 'a staff member'} from ${await propertyName(id)}'s staff`],
+  ['PUT', /^\/attendance$/, async (body) => `Saved the roll call for ${await propertyName(text(body.propertyId) ?? '')}${text(body.date) ? ` on ${text(body.date)}` : ''}`],
   ['PATCH', /^\/maintenance\/[^/]+$/, (body) => `Updated a repair request${text(body.status) ? ` (${text(body.status)})` : ''}`],
   ['PUT', /^\/properties\/([^/]+)\/menu$/, async (_body, [id]) => `Updated the weekly menu for ${await propertyName(id)}`],
   ['POST', /^\/fire-alerts$/, () => 'Raised a fire alarm'],

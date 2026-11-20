@@ -2208,6 +2208,28 @@ div.portal-panel { display: contents; }
 .maintenance-photo-empty { display: grid; place-items: center; color: var(--muted); background: #f1f5f2; }
 .maintenance-photo-button { cursor: pointer; }
 .maintenance-list { display: grid; gap: 10px; margin-top: 14px; }
+/* Attendance (AttendanceView.tsx): one row per resident with a three-way toggle; buttons stay at least 40px tall for thumbs.
+   Present and Saved use the literal teal so the brand theme recolours them to the owner's colour. */
+.attendance-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin: 16px 0 10px; font-size: 12px; }
+.attendance-summary .is-saved { color: #167c70; font-weight: 700; }
+.attendance-summary .is-unsaved { color: var(--coral); font-weight: 700; }
+.attendance-summary small { color: var(--muted); font-size: 12px; }
+.attendance-list { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.attendance-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.attendance-list li > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.attendance-list strong { color: var(--ink); font-size: 13px; }
+.attendance-list small { color: var(--muted); font-size: 11px; }
+.attendance-toggle { display: grid; grid-template-columns: repeat(3, minmax(76px, 1fr)); gap: 3px; padding: 3px; border-radius: 9px; background: #f0f5f1; }
+.attendance-toggle button { min-height: 40px; padding: 0 10px; border: 0; border-radius: 7px; color: #62716c; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.attendance-toggle button.is-selected { color: #fff; }
+.attendance-toggle button.is-present.is-selected { background: #167c70; }
+.attendance-toggle button.is-away.is-selected { background: #b45309; }
+.attendance-toggle button.is-on-leave.is-selected { background: #3b6fb6; }
+.attendance-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 640px) {
+  .attendance-list li > div:first-child, .attendance-toggle { flex: 1 1 100%; }
+  .attendance-actions .primary-button { flex: 1; min-height: 44px; }
+}
 .maintenance-item { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
 .maintenance-item-head { display: flex; justify-content: space-between; gap: 12px; }
 .maintenance-item-head > div { display: grid; gap: 3px; min-width: 0; }
@@ -2282,6 +2304,8 @@ a.faq-card { text-decoration: none; }
 .portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
 .portal-emergency-contact .portal-details { margin: 0 0 14px; }
 .portal-profile .portal-emergency-contact h3 { margin-top: 6px; }
+/* Tells the resident what their emergency contact receives (the weekly attendance email), without competing with the card. */
+.portal-emergency-contact-note { margin: -6px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 /* The Home card right-aligns the move-out block; the Services tab copy (phones and tablets) reads left. */
 .portal-services-exit .exit-status-row { justify-items: start; }
 :is(.portal-profile-exit, .portal-services-exit) :is(.exit-refund-note, .exit-dues-note, .exit-signin-note) { max-width: none; text-align: left; }
@@ -3074,3 +3098,16 @@ a.faq-card { text-decoration: none; }
 :is(:root, :root[data-brand][data-theme]) .reset-rent-button.reset-rent-button:is(:hover, :focus-visible) { border-color: rgb(185 28 28); background: rgb(185 28 28); }
 :is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .reset-rent-button.reset-rent-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }
 :is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .reset-rent-button.reset-rent-button:is(:hover, :focus-visible) { border-color: rgb(185 28 28); background: rgb(185 28 28); }
+
+/* Required fields get a red asterisk after their label, everywhere, without marking each of the ~130 fields by hand.
+   Labels wrap their control (sometimes inside a wrapper, like a password with its show button), so a label holding a
+   required control becomes a wrapping flex row: its text, any hint and the asterisk share the first line, and the
+   control takes the full width below. !important because each form styles its own labels as grids; none is ever
+   hidden by CSS, so forcing flex reveals nothing. Checkboxes and radios sit inline with their text and are left
+   alone. PhoneInput labels its field separately and adds .required-mark itself (as `label > span`, to outrank the
+   forms' grey hint spans). */
+label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required) { display: flex !important; flex-wrap: wrap; align-items: baseline; column-gap: 4px !important; }
+label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required) > :is(input, select, textarea, div) { order: 2; flex: 1 0 100%; min-width: 0; }
+label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after { content: '*'; order: 1; }
+label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after, .required-mark, label > span.required-mark { color: rgb(220 38 38); font-weight: 800; }
+:root[data-theme="dark"] label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after, :root[data-theme="dark"] label > span.required-mark { color: rgb(248 113 113); }

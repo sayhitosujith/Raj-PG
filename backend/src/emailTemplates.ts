@@ -119,6 +119,18 @@ export function maintenanceUpdatedEmail(input: { business: string; name: string;
   ]) }
 }
 
+/**
+ * The week's roll call, to a resident's emergency contact (a parent, usually), who never signed up for the
+ * app: the footer says why they get it rather than pointing at a portal setting they cannot reach.
+ */
+export function weeklyAttendanceEmail(input: { business: string; name: string; property: string; room: string; week: string; nights: Array<[string, string]> }) {
+  return { subject: `Weekly attendance for ${input.name}: ${input.week}`, ...layout(input.business, `${input.name}'s attendance this week`, [
+    { kind: 'p', text: `This is ${input.name}'s nightly roll call at ${input.property} (${input.room}) for ${input.week}, as recorded by the staff each night.` },
+    { kind: 'rows', rows: input.nights },
+    { kind: 'p', text: '"Not recorded" means the staff did not save a roll call that night. Please contact the property with any questions.' },
+  ], `You get this as ${input.name}'s emergency contact.`) }
+}
+
 /** A new notice from the owner. */
 export function announcementEmail(input: { business: string; name: string; title: string; message: string; property: string }) {
   return { subject: `${input.property}: ${input.title}`, ...layout(input.business, input.title, [

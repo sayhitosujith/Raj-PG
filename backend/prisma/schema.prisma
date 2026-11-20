@@ -132,6 +132,7 @@ model Resident {
   emergencyContactName     String?
   emergencyContactRelation String?
   emergencyContactPhone    String?
+  emergencyContactEmail    String?
   // The resident's vehicle, for parking and security: type (Bike, Scooter, Car, Bicycle) and its
   // registration number, upper case. Both optional; a bicycle may have no number.
   vehicleType              String?
@@ -267,6 +268,8 @@ model Resident {
   mealFeedback             MealFeedback[]
   passkeys                 ResidentPasskey[]
   coverPhoto               ResidentCoverPhoto?
+  attendanceMarks          AttendanceMark[]
+  attendanceReports        AttendanceReport[]
   createdAt                DateTime                 @default(now())
 
   @@index([roomId])
@@ -1005,4 +1008,37 @@ model ResidentCoverPhoto {
   resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
   imageUrl   String
   updatedAt  DateTime @updatedAt
+}
+
+enum AttendanceStatus {
+  PRESENT
+  AWAY
+  ON_LEAVE
+}
+
+// One night's roll call mark for a resident, saved by staff (attendance.ts). The date is the IST
+// calendar night; markedByName is copied rather than linked so the record survives staff removal.
+model AttendanceMark {
+  id           String           @id @default(cuid())
+  residentId   String
+  resident     Resident         @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  date         DateTime         @db.Date
+  status       AttendanceStatus
+  markedByName String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([residentId, date])
+  @@index([date])
+}
+
+// A weekly attendance email already sent to a resident's emergency contact, so a retried or
+// duplicate cron call never emails twice for the same Monday-to-Sunday week.
+model AttendanceReport {
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  weekStart  DateTime @db.Date
+  sentAt     DateTime @default(now())
+
+  @@id([residentId, weekStart])
 }

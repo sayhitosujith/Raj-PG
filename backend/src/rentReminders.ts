@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
-import { Router, type Request } from 'express'
+import { Router, type NextFunction, type Request, type Response } from 'express'
+import { runWeeklyAttendance } from './attendanceReport.js'
 import { prisma } from './db.js'
 import { revokeOverdueDoorAccess } from './doorAccessRevocation.js'
 import { isEmailEnabled } from './emailClient.js'
@@ -43,12 +44,26 @@ function hasCronSecret(request: Request) {
   return expected.length === received.length && timingSafeEqual(expected, received)
 }
 
+// Every scheduled job is guarded the same way: unset secret is a server problem (503), a wrong key is 401.
+function requireCronSecret(request: Request, response: Response, next: NextFunction) {
+  if (!process.env.CRON_SECRET) { response.status(503).json({ error: 'CRON_SECRET is not set on the server.' }); return }
+  if (!hasCronSecret(request)) { response.status(401).json({ error: 'Invalid cron key.' }); return }
+  next()
+}
+
 /** Scheduled jobs, authorised by CRON_SECRET rather than a session; mounted before the auth guard. */
 export const cronRouter = Router()
 
-cronRouter.all('/cron/rent-reminders', async (request, response) => {
-  if (!process.env.CRON_SECRET) { response.status(503).json({ error: 'CRON_SECRET is not set on the server.' }); return }
-  if (!hasCronSecret(request)) { response.status(401).json({ error: 'Invalid cron key.' }); return }
+cronRouter.all('/cron/weekly-attendance', requireCronSecret, async (_request, response) => {
+  try {
+    response.json(await runWeeklyAttendance())
+  } catch (error) {
+    console.error('Weekly attendance run failed:', error)
+    response.status(503).json({ error: 'The weekly attendance run failed.' })
+  }
+})
+
+cronRouter.all('/cron/rent-reminders', requireCronSecret, async (_request, response) => {
   try {
     // Door access first: it must happen even when no messaging channel is set up.
     const doorAccess = await revokeOverdueDoorAccess()
