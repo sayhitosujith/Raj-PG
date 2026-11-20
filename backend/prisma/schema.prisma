@@ -1007,6 +1007,11 @@ model ResidentCoverPhoto {
   residentId String   @id
   resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
   imageUrl   String
+  // The image's focal point as percentages (0-100), used as its CSS object-position, and its zoom (1-3). A focal
+  // point rather than a re-cropped image, because the banner's aspect ratio changes with the screen width.
+  positionX  Float    @default(50)
+  positionY  Float    @default(50)
+  zoom       Float    @default(1)
   updatedAt  DateTime @updatedAt
 }
 

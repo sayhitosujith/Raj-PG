@@ -3,7 +3,8 @@ import { readApiError } from './superAdmin'
 
 /**
  * Saving a change to one of the resident's own images (photo or Profile cover): runs the request, then re-fetches
- * the profile so the new version URL is used, and reports the outcome through the toast.
+ * the profile so the new version URL is used, and reports the outcome through the toast. save resolves to whether it
+ * succeeded, for callers with a follow-up step (such as leaving the cover's adjust mode).
  */
 export function useImageSave(onChanged: () => Promise<void>, onNotice: (message: string) => void) {
   const [isSaving, setIsSaving] = useState(false)
@@ -11,11 +12,13 @@ export function useImageSave(onChanged: () => Promise<void>, onNotice: (message:
     setIsSaving(true)
     try {
       const response = await request()
-      if (!response.ok) { onNotice(await readApiError(response, failure)); return }
+      if (!response.ok) { onNotice(await readApiError(response, failure)); return false }
       await onChanged()
       onNotice(success)
+      return true
     } catch {
       onNotice('Could not reach the server.')
+      return false
     } finally {
       setIsSaving(false)
     }
