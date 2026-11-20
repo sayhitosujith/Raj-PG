@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Building2, Nfc } from 'lucide-react'
+import { Nfc } from 'lucide-react'
 import { rentPaidThrough, type RentSummary } from './rent'
 import { sharingLabel } from './rooms'
 
@@ -18,7 +18,6 @@ export function MemberCard({ property, membershipId, name, age, room, bed, roomB
   return (
     <div className="member-card">
       <div className="member-card-top">
-        <span className="member-card-badge" aria-hidden="true"><Building2 size={16} /></span>
         <p className="member-card-brand" title={property}><strong>{property}</strong><small>Resident card</small></p>
         <Nfc className="member-card-nfc" size={18} aria-hidden="true" />
         {roomBeds ? <span className="member-card-pill">{sharingLabel(roomBeds)}</span> : null}
