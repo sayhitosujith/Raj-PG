@@ -34,7 +34,8 @@ function hashToken(token: string) {
  */
 export async function startSession(response: Response, role: UserRole, subject: { superAdminId: string } | { residentId: string }) {
   const token = randomBytes(32).toString('base64url')
-  await prisma.session.create({ data: { tokenHash: hashToken(token), role, ...subject, expiresAt: new Date(Date.now() + sessionLifetimeMs) } })
+  // The user agent names the device in the owner's list of a resident's sign-ins; capped, as it is the client's to send.
+  await prisma.session.create({ data: { tokenHash: hashToken(token), role, ...subject, expiresAt: new Date(Date.now() + sessionLifetimeMs), userAgent: response.req.get('user-agent')?.slice(0, 300) ?? null } })
   response.cookie(sessionCookieName, token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: sessionLifetimeMs, path: '/' })
   return token
 }
@@ -60,8 +61,16 @@ async function findLiveSession(request: Request) {
   // Runs before every signed-in request, so a dropped Neon connection is retried (db.ts) rather than
   // answering "Sign-in is temporarily unavailable".
   const session = await withDatabaseRetry(() => prisma.session.findUnique({ where: { tokenHash: hashToken(token) } }))
-  return session && session.expiresAt > new Date() ? session : null
+  if (!session || session.expiresAt <= new Date()) return null
+  // "Last active" for the devices list. Written at most every few minutes per session, not on every request, and a
+  // failed write never fails the request it rides on.
+  if (!session.lastSeenAt || Date.now() - session.lastSeenAt.getTime() > lastSeenIntervalMs) {
+    await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined)
+  }
+  return session
 }
+
+const lastSeenIntervalMs = 5 * 60 * 1000
 
 /**
  * Signs a resident out everywhere and answers with why, when they may not use the app (their stay

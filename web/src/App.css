@@ -218,12 +218,21 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-card { padding-bottom: 0; animation: rise-in .35s ease both; animation-delay: calc(var(--stagger, 0) * 40ms); }
 /* The name column has a capped width so the contact column starts at the same place in every row,
    right after the names, instead of floating mid-row; the contact column takes the rest. */
-.resident-card .resident-row { grid-template-columns: 38px minmax(0, clamp(200px, 28%, 340px)) minmax(0, 1fr) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
+.resident-card .resident-row { grid-template-columns: 38px minmax(0, clamp(200px, 28%, 340px)) minmax(0, 1fr) minmax(0, 230px) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
 .resident-card .resident-row:hover { background: #f5f9f6; }
 .resident-card.is-expanded .resident-row { background: #f2f7f4; }
 .resident-avatar { transition: transform .25s ease; }
 .resident-card .resident-row:hover .resident-avatar { transform: scale(1.06); }
 .resident-room small { color: #98a09d; font-size: 9px; white-space: nowrap; }
+/* Where the resident is signed in (view only): a small titled list beside the contact details. */
+.resident-devices { display: grid; align-content: start; gap: 3px; min-width: 0; font-size: 11px; }
+.resident-devices-title { color: var(--muted); font-size: 10px; font-weight: 700; }
+.resident-devices ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.resident-devices li { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--ink); }
+.resident-devices li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resident-devices li small, .resident-devices-more { flex: none; color: var(--muted); font-size: 10px; }
+.resident-devices li svg { flex: none; color: var(--muted); }
+.resident-devices.is-empty { color: var(--muted); font-style: italic; }
 /* Header phone column, and the room block: room details stacked, the rent chip centred beside them. */
 /* One evenly spaced list: every line (with or without a copy icon) is the same height. */
 .resident-phone { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; color: #45544f; font-size: 11px; font-weight: 600; line-height: 18px; }
@@ -312,7 +321,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   :root[data-theme="dark"] .resident-list .resident-card { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); box-shadow: none; }
 }
 @container (max-width: 560px) {
-  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar room status status status status'; }
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar devices devices devices devices devices' 'avatar room status status status status'; }
+  .resident-card .resident-devices { grid-area: devices; }
+  .resident-card .resident-devices:empty { display: none; }
   .resident-card .row-toggle { grid-area: toggle; }
   .resident-card .resident-phone { grid-area: phone; }
   /* Only here, where the phone has its own named row; on desktop the empty cell keeps the columns aligned. */
@@ -322,7 +333,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .resident-badge { display: table; margin: 4px 0 0; }
   /* As a card on a phone: the avatar and the action icons share a header row, then the name, badges and details use
      the card's full width instead of a narrow column squeezed between them. */
-  .resident-list .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) repeat(4, 30px); grid-template-areas: 'avatar . edit clone delete toggle' 'info info info info info info' 'phone phone phone phone phone phone' 'room room room status status status'; column-gap: 4px; row-gap: 6px; }
+  .resident-list .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) repeat(4, 30px); grid-template-areas: 'avatar . edit clone delete toggle' 'info info info info info info' 'phone phone phone phone phone phone' 'devices devices devices devices devices devices' 'room room room status status status'; column-gap: 4px; row-gap: 6px; }
   .resident-list .resident-card .resident-avatar { align-self: center; }
   .resident-list .resident-card :is(.row-edit, .row-clone, .row-delete, .row-toggle) { align-self: center; }
   .resident-list .resident-card .status-pill { align-self: end; }

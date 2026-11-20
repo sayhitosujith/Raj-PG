@@ -187,13 +187,18 @@ export function WeeklyMenuButton({ refreshSignal, onNotice }: { refreshSignal: n
  * when `enabled` is false. Residents without the food plan pass false, since the menu API refuses them.
  * `reload` refetches at once, e.g. after a late request, rather than waiting for the next refresh.
  */
+const byMeal = (day: ResidentMenuDay | undefined) => day ? Object.fromEntries(day.meals.map((meal) => [meal.meal, meal])) as Partial<Record<Meal, ResidentMeal>> : null
+const nextDate = (iso: string) => new Date(Date.parse(`${iso}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+
 export function useTodayMenu(refreshSignal: number, enabled: boolean) {
   const [days, setDays] = useState<ResidentMenuDay[] | null>(null)
   const reload = () => { if (enabled) fetchMenu().then(setDays, () => undefined) }
   useEffect(reload, [enabled]) // eslint-disable-line react-hooks/exhaustive-deps -- refetch only when the plan changes
   useRefreshSignal(refreshSignal, reload)
   const today = enabled ? days?.[0] : undefined
-  return { date: today?.date ?? null, meals: today ? Object.fromEntries(today.meals.map((meal) => [meal.meal, meal])) as Partial<Record<Meal, ResidentMeal>> : null, reload }
+  // The next day in the list, when it is the calendar day after today (the opt-out banner warns about it too).
+  const tomorrow = today && days?.[1] && days[1].date === nextDate(today.date) ? days[1] : undefined
+  return { date: today?.date ?? null, meals: byMeal(today), tomorrowMeals: byMeal(tomorrow), reload }
 }
 
 /**
@@ -318,24 +323,39 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
 // "Breakfast", "Breakfast and dinner", "Breakfast, lunch and dinner".
 const listMeals = (labels: string[]) => labels.length < 2 ? labels.join('') : `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`
 
+type MealsByType = Partial<Record<Meal, ResidentMeal>> | null
+
+// The meals of one day that will not be served to this resident: not eating (an unanswered meal counts as not eating),
+// no approved late meal, and (for today) not finished yet.
+const skippedMeals = (meals: MealsByType, isOver: (meal: ResidentMeal) => boolean) => mealDetails.flatMap(({ meal, label }) => {
+  const day = meals?.[meal]
+  return day && !day.eating && day.lateRequest?.status !== 'APPROVED' && !isOver(day) ? [{ label, meal: day }] : []
+})
+
+// "Breakfast and dinner will not be served to you today." or "No food will be served to you tomorrow."
+function skippedLine(skipped: ReturnType<typeof skippedMeals>, day: 'today' | 'tomorrow') {
+  if (skipped.length === mealDetails.length) return `No food will be served to you ${day}.`
+  return `${listMeals(skipped.map(({ label }, index) => index === 0 ? label : label.toLowerCase()))} will not be served to you ${day}.`
+}
+
 /**
- * A banner on Home naming today's meals that will not be served to this resident, because they opted out and the
- * meal has not finished yet, so nobody walks to the dining hall expecting food. A late meal the kitchen approved
- * counts as served. When one can still be asked for, the banner says where.
+ * A banner on Home naming the meals that will not be served to this resident today (those not finished yet) and
+ * tomorrow, because they opted out or did not answer, so nobody walks to the dining hall expecting food. A late meal
+ * the kitchen approved counts as served. It also says how to change it: tomorrow's choices until the 11:59 pm
+ * cutoff, today's by asking for a late meal.
  */
-export function MealOptOutBanner({ meals, minutesIntoDay }: { meals: Partial<Record<Meal, ResidentMeal>> | null; minutesIntoDay: number }) {
-  if (!meals) return null
-  const skipped = mealDetails.flatMap(({ meal, label }) => {
-    const today = meals[meal]
-    return today && !today.eating && today.lateRequest?.status !== 'APPROVED' && minutesIntoDay < toMinutes(today.to) ? [{ label, canRequestLate: today.canRequestLate }] : []
-  })
-  if (!skipped.length) return null
-  const names = listMeals(skipped.map(({ label }, index) => index === 0 ? label : label.toLowerCase()))
-  const headline = skipped.length === mealDetails.length ? 'No food will be served to you today.' : `${names} will not be served to you today.`
+export function MealOptOutBanner({ meals, tomorrowMeals, minutesIntoDay }: { meals: MealsByType; tomorrowMeals: MealsByType; minutesIntoDay: number }) {
+  const today = skippedMeals(meals, (meal) => minutesIntoDay >= toMinutes(meal.to))
+  const tomorrow = skippedMeals(tomorrowMeals, () => false)
+  if (!today.length && !tomorrow.length) return null
+  const hints = [
+    tomorrow.some(({ meal }) => meal.canChange) ? "You can still change tomorrow's meals until 11:59 pm under Weekly menu." : '',
+    today.some(({ meal }) => meal.canRequestLate) ? 'For today, ask the kitchen for a late meal under Meals.' : '',
+  ].filter(Boolean)
   return (
     <div className="rent-banner meal-optout-banner" role="status">
       <UtensilsCrossed size={18} aria-hidden="true" />
-      <div><strong>{headline}</strong><p>You opted out{skipped.length < mealDetails.length ? ` of ${skipped.length === 1 ? 'this meal' : 'these meals'}` : " of today's meals"}.{skipped.some((meal) => meal.canRequestLate) ? ' Changed your mind? Ask the kitchen for a late meal under Meals.' : ''}</p></div>
+      <div>{today.length > 0 && <strong>{skippedLine(today, 'today')}</strong>}{tomorrow.length > 0 && <strong>{skippedLine(tomorrow, 'tomorrow')}</strong>}{hints.length > 0 && <p>{hints.join(' ')}</p>}</div>
     </div>
   )
 }

@@ -288,7 +288,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <PortalTabs active={tab} onChange={setTab} />
         {profile.workspace.assistantEnabled && <ResidentAssistant />}
         <div className="portal-panel" data-panel="home">
-        {eatsHere && <MealOptOutBanner meals={todayMenu.meals} minutesIntoDay={minutesIntoDay} />}
+        {eatsHere && <MealOptOutBanner meals={todayMenu.meals} tomorrowMeals={todayMenu.tomorrowMeals} minutesIntoDay={minutesIntoDay} />}
         <RentBanner rent={profile.rent} action={payAction} />
         {eatsHere && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
         {eatsHere && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}

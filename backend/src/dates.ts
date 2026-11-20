@@ -34,3 +34,13 @@ export function formatMonthLabel(key: string) {
   const [year, month] = key.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, 15)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', year: 'numeric' })
 }
+
+/** "Just now", "5 min ago", "3 h ago", "Yesterday", else the IST date ("12 Nov"), for activity lists. */
+export function relativeTime(date: Date) {
+  const minutes = Math.round((Date.now() - date.getTime()) / 60_000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes} min ago`
+  if (minutes < 24 * 60) return `${Math.round(minutes / 60)} h ago`
+  if (minutes < 48 * 60) return 'Yesterday'
+  return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
+}

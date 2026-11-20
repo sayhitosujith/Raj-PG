@@ -1,7 +1,7 @@
 import { AadharVerificationStatus, Diet, MemberTier, Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
 import { createAccessKey, hashAccessKey, hashPassword, isAcceptablePassword, isValidAccessKey, passwordRequirement } from './credentials.js'
-import { parseDateOnly, propertyNow } from './dates.js'
+import { parseDateOnly, propertyNow, relativeTime } from './dates.js'
 import { findDuplicate } from './duplicates.js'
 import { parseStudentIdCard, studentIdCardWrite } from './studentId.js'
 import { findExpiredDocument, sendDocument, hasCompleteIdentity, identityDocumentName, identityWrite, indianNationality, isIndian, parseIdentityFields, type IdentityFields, type IdentityInput } from './identityDocuments.js'
@@ -9,6 +9,7 @@ import { prisma, withDatabaseRetry } from './db.js'
 import { roomBedsSelect } from './occupancy.js'
 import { findProfilePhotoProblem, photoVersion, sendCoverPhoto, sendProfilePhoto } from './photo.js'
 import { toCoverPosition } from './coverPosition.js'
+import { deviceLabel } from './deviceLabel.js'
 import { rentFor, residentRentWrite } from './propertyRent.js'
 import { rentStatus } from './rent.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
@@ -25,7 +26,7 @@ import { residentWhere, staffAccess } from './staffAccess.js'
 
 // Omits the access key hash (never leaves the server) and the document data URLs (up to 2 MB
 // each; served on demand by GET /api/residents/:id/aadhar-card, /passport-scan and /student-id-card instead).
-const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, studentIdCardUrl: true, profilePhotoUrl: true }, include: { coverPhoto: { select: { updatedAt: true, positionX: true, positionY: true, zoom: true } }, room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
+const residentSummaryQuery = { omit: { accessKeyHash: true, aadharCardUrl: true, passportScanUrl: true, studentIdCardUrl: true, profilePhotoUrl: true }, include: { coverPhoto: { select: { updatedAt: true, positionX: true, positionY: true, zoom: true } }, sessions: { select: { userAgent: true, createdAt: true, lastSeenAt: true, expiresAt: true } }, room: { include: { property: { include: { sharingPrices: true } } } }, rentConcessions: { where: { status: 'ACTIVE' }, orderBy: { month: 'asc' }, select: { id: true, month: true, percent: true, reason: true } }, rentPayments: { orderBy: { month: 'desc' }, select: { id: true, month: true, amount: true, paidAt: true, razorpayPaymentId: true } } } } satisfies Prisma.ResidentDefaultArgs
 const hasAadharCardWhere = { AND: [{ aadharCardUrl: { not: null } }, { aadharCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasPassportScanWhere = { AND: [{ passportScanUrl: { not: null } }, { passportScanUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
 const hasStudentIdCardWhere = { AND: [{ studentIdCardUrl: { not: null } }, { studentIdCardUrl: { not: '' } }] } satisfies Prisma.ResidentWhereInput
@@ -54,13 +55,25 @@ class InputError extends Error {}
 
 // `needsNewAccessKey`: no password and no access key (cleared after an overdue-rent lockout), looked up
 // separately because the summary query never loads the credential hashes.
+/**
+ * Where the resident is signed in right now, most recently used first: one entry per live session, named from its
+ * user agent, with when it was last used. View only; expired sessions are left out.
+ */
+function signedInDevices(sessions: Array<{ userAgent: string | null; createdAt: Date; lastSeenAt: Date | null; expiresAt: Date }>) {
+  const now = Date.now()
+  return sessions.filter((session) => session.expiresAt.getTime() > now)
+    .map((session) => ({ label: deviceLabel(session.userAgent), lastActiveAt: session.lastSeenAt ?? session.createdAt }))
+    .sort((a, b) => b.lastActiveAt.getTime() - a.lastActiveAt.getTime())
+    .map(({ label, lastActiveAt }) => ({ label, lastActive: relativeTime(lastActiveAt) }))
+}
+
 function toResidentSummary(resident: Prisma.ResidentGetPayload<typeof residentSummaryQuery>, documents: DocumentsOnFile, rules: RentRules, needsNewAccessKey: boolean, rates: DailyRates) {
   const { nationality, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry } = resident
   const { approvalPending, id, name, phone, email, aadharNumber, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, emergencyContactEmail, vehicleType, vehicleNumber, occupation, collegeName, active, createdAt, joinedAt, passwordHash, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, registrationTokenHash, registrationSentAt, registrationExpiresAt, registrationSubmittedAt, profilePhotoUpdatedAt, foodOpted, diet, memberTier, whatsappOptIn, emailOptIn, foodRequestedAt, doorAccessKey, doorAccessKeyRevokedAt, room, rentPayments } = resident
   // Status needs every paid month; the row only shows the latest few, with Undo.
   const paidMonths = rentPayments.map((payment) => payment.month)
   const rent = { ...rentStatus(resident, paidMonths, rules), payments: rentPayments.slice(0, 6) }
-  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), coverVersion: photoVersion(resident.coverPhoto?.updatedAt), coverPosition: toCoverPosition(resident.coverPhoto), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, emergencyContactEmail, vehicleType, vehicleNumber, occupation, collegeName, dateOfBirth: resident.dateOfBirth, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, registration: registrationSentAt ? { status: registrationTokenHash ? 'INVITED' : 'SUBMITTED', sentAt: registrationSentAt, expiresAt: registrationExpiresAt, submittedAt: registrationSubmittedAt } : null, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, memberTier, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
+  return { rent, approvalPending, photoVersion: photoVersion(profilePhotoUpdatedAt), coverVersion: photoVersion(resident.coverPhoto?.updatedAt), coverPosition: toCoverPosition(resident.coverPhoto), devices: signedInDevices(resident.sessions), id, name, phone, email, nationality, aadharNumber, passportNumber, passportExpiry, visaNumber, visaType, visaExpiry, permanentAddress, emergencyContactName, emergencyContactRelation, emergencyContactPhone, emergencyContactEmail, vehicleType, vehicleNumber, occupation, collegeName, dateOfBirth: resident.dateOfBirth, active, createdAt, joinedAt, aadharStatus, aadharRejectionReason, aadharSubmittedAt, aadharReviewedAt, aadharReviewedByName, ...documents, registration: registrationSentAt ? { status: registrationTokenHash ? 'INVITED' : 'SUBMITTED', sentAt: registrationSentAt, expiresAt: registrationExpiresAt, submittedAt: registrationSubmittedAt } : null, hasPassword: Boolean(passwordHash), needsNewAccessKey, exitDues: resident.exitStatus === 'PENDING' || resident.exitStatus === 'APPROVED' ? computeExitDues(resident, rentPayments, rules, rates) : null, exitStatus: resident.exitStatus, exitDate: resident.exitDate, exitReason: resident.exitReason, movedOutAt: resident.movedOutAt, deletionRequestedAt: resident.deletionRequestedAt, deletedAt: resident.deletedAt, deletedByName: resident.deletedByName, rentAccessUntil: resident.rentAccessUntil, rentLocked: isRentLocked(resident, paidMonths, rules), doorAccessKey, doorAccessKeyRevokedAt, foodOpted, diet, memberTier, whatsappOptIn, emailOptIn, foodRequestedAt, // A moved-out resident has no room: their old place comes from movedOutFrom instead.
     // Active rent concessions (e.g. referral rewards), for the owner's rent panel, where each can be cancelled.
     rentConcessions: resident.rentConcessions,
     // Their bed in the room (1 to its beds); null only before a room is set or after moving out.

@@ -1,5 +1,5 @@
 import { Suspense, useState, type CSSProperties } from 'react'
-import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Pencil, Send, ShieldX, Trash2 } from 'lucide-react'
+import { BadgeCheck, ChevronDown, CopyPlus, IndianRupee, ExternalLink, Eye, EyeOff, Monitor, Pencil, Send, ShieldX, Smartphone, Trash2 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { daysStayedLabel, formatJoinDate } from './joinDate'
 import { formatDateOfBirth } from './dateOfBirth'
@@ -114,6 +114,22 @@ function approvalText(resident: Resident, canDecide: boolean) {
   return { title: 'Waiting for approval', detail: canDecide ? 'A receptionist added this resident. Approve to let them sign in, or reject to remove them and free the room.' : 'A super admin needs to approve this resident before they can sign in.' }
 }
 
+// A phone or tablet by its name ("iPhone · Safari"), for the icon beside it; everything else shows a screen.
+const isHandheld = (label: string) => /iPhone|iPad|Android/.test(label)
+
+// Where the resident is signed in, view only: the three most recently active devices and how many more.
+function ResidentDevices({ devices }: { devices?: Array<{ label: string; lastActive: string }> }) {
+  if (!devices) return <div className="resident-devices" />
+  if (!devices.length) return <div className="resident-devices is-empty">Not signed in on any device</div>
+  return (
+    <div className="resident-devices">
+      <span className="resident-devices-title">Signed in on {devices.length} {devices.length === 1 ? 'device' : 'devices'}</span>
+      <ul>{devices.slice(0, 3).map((device, index) => <li key={`${device.label}-${index}`}>{isHandheld(device.label) ? <Smartphone size={12} aria-hidden="true" /> : <Monitor size={12} aria-hidden="true" />}<span>{device.label}</span><small>{device.lastActive}</small></li>)}</ul>
+      {devices.length > 3 && <small className="resident-devices-more">+{devices.length - 3} more</small>}
+    </div>
+  )
+}
+
 /**
  * A resident waiting for a super admin: added by a receptionist, or invited by registration link (sent, then
  * submitted). Super admins approve (the resident can then sign in) or reject (the resident is removed and the
@@ -196,6 +212,7 @@ export function ResidentRow({ resident, index, propertyImage, isExpanded, onTogg
         <Avatar name={resident.name} photoUrl={residentPhotoUrl(resident)} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>
         <div className="resident-phone">{resident.phone && <span className="resident-contact-line"><PhoneText value={resident.phone} /><CopyButton className="contact-copy" value={resident.phone} label="Phone number" onNotice={onNotice} /></span>}{resident.email && <span className="resident-contact-line"><a className="resident-email" href={`mailto:${resident.email}`} title={resident.email}>{resident.email}</a><CopyButton className="contact-copy" value={resident.email} label="Email" onNotice={onNotice} /></span>}{isIndian(resident.nationality) ? resident.aadharNumber && <span className="resident-document"><b className="document-label is-id">Aadhaar</b> {formatAadhar(resident.aadharNumber, true)}</span> : <>{resident.passportNumber && <span className="resident-document"><b className="document-label is-id">Passport</b> {resident.passportNumber}{resident.passportExpiry && <> · expires <ExpiryDate value={resident.passportExpiry} /></>}</span>}{resident.visaNumber && <span className="resident-document"><b className="document-label is-visa">Visa</b> {visaText(resident)}{resident.visaExpiry && <> · expires <ExpiryDate value={resident.visaExpiry} /></>}</span>}</>}{hasAnyIdentity(resident) && <VerificationLine resident={resident} />}</div>
+        <ResidentDevices devices={resident.devices} />
         <div className="resident-room"><div className="resident-room-meta"><span>Room</span><strong>{resident.room}{resident.bedNumber ? ` · Bed ${resident.bedNumber}` : ''}</strong><small>{daysStayedLabel(resident.joinedAt)}</small></div><em className={`rent-chip ${rentChip(resident.rent).tone}`}><IndianRupee size={10} />{rentChip(resident.rent).text.replace(/^₹/, "")}</em></div>
         {resident.approvalPending ? <span className="status-pill gold">{resident.registration?.status === 'INVITED' ? 'Link sent' : resident.registration?.status === 'SUBMITTED' ? 'Review registration' : 'Pending approval'}</span> : <span className={`status-pill ${resident.active ? 'sage' : 'gold'}`}>{resident.active ? 'Active' : 'Inactive'}</span>}
         {!isRecord && <button className="row-edit" aria-label={`Edit ${resident.name}`} title="Edit resident" onClick={onEdit}><Pencil size={14} /></button>}

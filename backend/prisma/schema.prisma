@@ -585,6 +585,10 @@ model Session {
   resident     Resident?   @relation(fields: [residentId], references: [id], onDelete: Cascade)
   expiresAt    DateTime
   createdAt    DateTime    @default(now())
+  // The signing-in browser's user agent, for the owner's list of a resident's signed-in devices (deviceLabel.ts).
+  userAgent    String?
+  // Refreshed at most every few minutes while the session is used (auth.ts), so "last active" costs few writes.
+  lastSeenAt   DateTime?
 }
 
 enum AadharVerificationStatus {

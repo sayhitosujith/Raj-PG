@@ -1,4 +1,4 @@
-import { formatMonthLabel, propertyDayStart, propertyNow, propertyUtcOffsetMs } from './dates.js'
+import { formatMonthLabel, propertyDayStart, propertyNow, propertyUtcOffsetMs, relativeTime } from './dates.js'
 import { prisma } from './db.js'
 import { rupees } from './money.js'
 import { bedCounts } from './occupancy.js'
@@ -48,16 +48,6 @@ type ActivityRow ={ title: string; description: string; amount: string; time: st
 function monthStart(offset: number) {
   const [year, month] = propertyNow().date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1 + offset, 1) - propertyUtcOffsetMs)
-}
-
-// "Just now", "45 min ago", "3 h ago", "Yesterday", then "29 Sept".
-function relativeTime(date: Date) {
-  const minutes = Math.round((Date.now() - date.getTime()) / 60_000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes} min ago`
-  if (minutes < 24 * 60) return `${Math.round(minutes / 60)} h ago`
-  if (minutes < 48 * 60) return 'Yesterday'
-  return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' })
 }
 
 /**
