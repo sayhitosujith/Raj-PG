@@ -30,12 +30,13 @@ export function EmergencyContactFields({ contact }: { contact?: EmergencyContact
 
 /**
  * The contact for a details list: "Ravi Kumar (Father)" with the number on the line below, as a call
- * link so it can be rung from a phone, and their email under that as a mail link when one is given.
+ * link so it can be rung from a phone, and their email under that as a mail link. The email is required now but
+ * older contacts may lack one, so that shows as "Email not added" (a prompt to fill it in) rather than nothing.
  * "—" when there is none.
  */
 export function EmergencyContactText({ contact }: { contact: EmergencyContact }) {
   const { emergencyContactName: name, emergencyContactRelation: relation, emergencyContactPhone: phone, emergencyContactEmail: email } = contact
   if (!phone) return <>—</>
   const who = [name, relation && `(${relation})`].filter(Boolean).join(' ')
-  return <>{who && <>{who}<br /></>}<a className="emergency-contact-call" href={`tel:${phone}`}><PhoneText value={phone} /></a>{email && <><br /><a className="emergency-contact-call" href={`mailto:${email}`}>{email}</a></>}</>
+  return <>{who && <>{who}<br /></>}<a className="emergency-contact-call" href={`tel:${phone}`}><PhoneText value={phone} /></a><br />{email ? <a className="emergency-contact-call" href={`mailto:${email}`}>{email}</a> : <span className="emergency-contact-missing">Email not added</span>}</>
 }

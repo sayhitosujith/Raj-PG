@@ -29,6 +29,7 @@ import { dietLabels } from './diet'
 import { DietMark } from './DietToggle'
 import { memberTierLabels } from './memberTier'
 import { isStudent } from './occupations'
+import { centredCover, coverImageStyle } from './coverPosition'
 
 /** The owner's verification decision; a rejection always carries the reason shown to the resident. */
 export type AadharDecision = { decision: 'approve' } | { decision: 'reject'; reason: string }
@@ -186,6 +187,8 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
   }
   return (
     <article className={`resident-card${isExpanded ? ' is-expanded' : ''}`} data-resident-id={resident.id} style={{ '--stagger': Math.min(index, maxStaggerSteps) } as CSSProperties}>
+      {/* The resident's own cover, view only, behind the card's header row on phones (CSS); staff cannot change it. */}
+      {resident.coverVersion && <img className="resident-cover" src={`/api/residents/${resident.id}/cover?v=${resident.coverVersion}`} alt="" loading="lazy" style={coverImageStyle(resident.coverPosition ?? centredCover)} />}
       <div className="resident-row" onClick={toggleFromHeader}>
         <Avatar name={resident.name} photoUrl={residentPhotoUrl(resident)} className="resident-avatar" />
         <div className="resident-info"><strong>{resident.name}{resident.aadharStatus !== 'VERIFIED' && <span className={`resident-badge ${verificationBadges[resident.aadharStatus].tone}`}>{identityDocumentName(resident.nationality)} {verificationBadges[resident.aadharStatus].label}</span>}{isAwaitingSignIn(resident) && <span className="resident-badge">Awaiting sign-in</span>}{exitBadge(resident, securityDeposit) && <span className={`resident-badge ${exitBadge(resident, securityDeposit)?.tone}`}>{exitBadge(resident, securityDeposit)?.label}</span>}{deletionBadge(resident) && <span className={`resident-badge ${deletionBadge(resident)?.tone}`}>{deletionBadge(resident)?.label}</span>}{resident.active && resident.needsNewAccessKey && <span className="resident-badge coral" title="Their sign-in was cleared after an overdue-rent lockout. Edit resident → Send new login details.">Needs new access key</span>}{rentBadge && <span className={`resident-badge ${rentBadge.tone}`}>{rentBadge.label}</span>}{hasFoodRequest && <span className="resident-badge gold">Food requested</span>}</strong><small>{resident.property} · <LocationLink className="detail-location" property={resident.property} location={resident.location} /></small></div>

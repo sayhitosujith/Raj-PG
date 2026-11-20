@@ -181,6 +181,15 @@ button { cursor: pointer; }
 }
 @media (max-width: 720px) {
   .workspace-view { padding: 20px 16px; }
+  /* Owner app on a phone: the page's side margin and the card's inner padding were both wide, so content got
+     narrow; the card now sits nearly edge to edge with a slimmer inside. */
+  .app-shell .page-content { padding: 10px 6px 24px; }
+  .app-shell .workspace-view { padding: 16px 12px; border-radius: 12px; }
+  /* Every owner-app list that separates its items with divider lines shows each item as its own rounded card on a
+     phone, the same as the resident list (lists already drawn as cards, like maintenance, are left alone). */
+  .app-shell :is(.property-list, .crud-list, .activity-list, .attendance-list, .housekeeping-list) { gap: 10px; border-top: 0; }
+  .app-shell :is(.property-list, .crud-list, .activity-list, .attendance-list, .housekeeping-list) > * { padding: 12px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .04); }
+  :root[data-theme="dark"] .app-shell :is(.property-list, .crud-list, .activity-list, .attendance-list, .housekeeping-list) > * { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); box-shadow: none; }
   .toast { left: 16px; right: 16px; bottom: 16px; }
   .modal-backdrop { padding: 12px; }
   .profile-modal, .property-modal { padding: 18px 16px; }
@@ -281,9 +290,26 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
+/* Phones: the resident list starts sooner. Six compact tiles three to a row, and the search on its own line with the
+   three filters sharing the line below. */
 @container (max-width: 620px) {
-  .residents-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .residents-toolbar select { flex: 1 1 140px; }
+  .residents-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 14px 0; }
+  .residents-summary .summary-tile { gap: 3px; padding: 9px 8px; }
+  .residents-summary .summary-tile span { font-size: 10px; line-height: 1.2; }
+  .residents-summary .summary-tile strong { font-size: 16px; }
+  .residents-toolbar .toolbar-search { flex: 1 1 100%; }
+  .residents-toolbar select { flex: 1 1 0; min-width: 0; padding-right: 22px; text-overflow: ellipsis; }
+  /* Each resident as its own rounded card, in the style of the resident portal's detail cards, rather than rows
+     split by divider lines. */
+  .resident-list { gap: 10px; border-top: 0; }
+  .resident-list .resident-card { padding: 12px; border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .04); }
+  .resident-list .resident-card .resident-row { padding: 0; border-bottom: 0; }
+  /* The card carries the background, so the row inside stays see-through and the resident's cover shows behind its
+     header (the Views inner-card colour would otherwise paint the row white). */
+  /* !important: the brand theme's generated hover/expanded tints (prefixed for every brand) outrank any plain selector,
+     and on a card they painted a panel over the cover. The card itself is the highlight here. */
+  .resident-list .resident-card > .resident-row, .resident-list .resident-card > .resident-row:hover, .resident-list .resident-card.is-expanded > .resident-row { margin: 0; background: transparent !important; }
+  :root[data-theme="dark"] .resident-list .resident-card { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); box-shadow: none; }
 }
 @container (max-width: 560px) {
   .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar room status status status status'; }
@@ -294,6 +320,20 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
   .resident-card .resident-room { grid-area: room; flex-wrap: wrap; gap: 4px 8px; }
   .resident-card .resident-room-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
   .resident-badge { display: table; margin: 4px 0 0; }
+  /* As a card on a phone: the avatar and the action icons share a header row, then the name, badges and details use
+     the card's full width instead of a narrow column squeezed between them. */
+  .resident-list .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) repeat(4, 30px); grid-template-areas: 'avatar . edit clone delete toggle' 'info info info info info info' 'phone phone phone phone phone phone' 'room room room status status status'; column-gap: 4px; row-gap: 6px; }
+  .resident-list .resident-card .resident-avatar { align-self: center; }
+  .resident-list .resident-card :is(.row-edit, .row-clone, .row-delete, .row-toggle) { align-self: center; }
+  .resident-list .resident-card .status-pill { align-self: end; }
+  .resident-list .resident-badge { display: inline-block; justify-self: start; width: fit-content; margin: 4px 4px 0 0; }
+  /* The resident's own Profile cover fills the header strip behind the avatar and actions (view only), with a ring and
+     light circles so they stay readable on any picture. */
+  .resident-list .resident-card:has(> .resident-cover) { position: relative; overflow: hidden; }
+  .resident-list .resident-cover { display: block; position: absolute; top: 0; right: 0; left: 0; width: 100%; height: 62px; object-fit: cover; pointer-events: none; }
+  .resident-list .resident-card:has(> .resident-cover) .resident-row { position: relative; }
+  .resident-list .resident-card:has(> .resident-cover) .resident-avatar { box-shadow: 0 0 0 2px #fff, 0 2px 6px rgb(0 0 0 / .2); }
+  .resident-list .resident-card:has(> .resident-cover) :is(.row-edit, .row-clone, .row-delete, .row-toggle) { border-radius: 50%; background: rgb(255 255 255 / .9); box-shadow: 0 1px 4px rgb(0 0 0 / .15); }
 }
 
 /* Honour the OS "reduce motion" setting everywhere: states still change, just without movement. */
@@ -2264,7 +2304,7 @@ a.faq-card { text-decoration: none; }
 /* The cover runs edge to edge across the top of the card, so the card's own side and top padding is cancelled for it. */
 .portal-shell .workspace-view.portal-profile { --profile-pad: 14px; position: relative; overflow: hidden; padding: 0 var(--profile-pad) 18px; }
 @media (min-width: 1025px) { .portal-shell .workspace-view.portal-profile { --profile-pad: 24px; } }
-.portal-profile-cover { position: relative; grid-column: 1 / -1; width: calc(100% + 2 * var(--profile-pad, 0px)); height: clamp(110px, 22vw, 190px); margin: 0 calc(-1 * var(--profile-pad, 0px)); overflow: hidden; background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, #0f5c4d)); }
+.portal-profile-cover { position: relative; grid-column: 1 / -1; width: calc(100% + 2 * var(--profile-pad, 0px)); height: clamp(120px, 24vw, 260px); margin: 0 calc(-1 * var(--profile-pad, 0px)); overflow: hidden; background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, #0f5c4d)); }
 .portal-profile-head .portal-profile-actions { justify-content: flex-end; margin: 10px 0 0; }
 .portal-profile-intro { grid-column: 1 / -1; }
 /* No gap between the top bar and the Profile card: the cover starts right under the bar, as on LinkedIn. */
@@ -2317,6 +2357,21 @@ a.faq-card { text-decoration: none; }
 .portal-profile .portal-details { margin: 0 0 14px; }
 .portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
 .portal-emergency-contact .portal-details { margin: 0 0 14px; }
+.emergency-contact-missing { color: var(--muted); font-style: italic; }
+/* Phones: the Profile details two to a row in compact cards, so the list is half as long. The property (first card),
+   permanent address and emergency contact keep the full width; long values such as an email wrap inside their card. */
+@media (max-width: 640px) {
+  .portal-profile .portal-details { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .portal-profile .portal-details > .detail-card:first-child { grid-column: 1 / -1; }
+  /* Rows start at even cards (the property fills row one), so an even card just before the full-width address would
+     sit alone with a gap beside it (how many cards there are depends on nationality); it takes the row instead. */
+  .portal-profile .portal-details > .detail-card:nth-child(even):nth-last-child(2) { grid-column: 1 / -1; }
+  .portal-profile .portal-details > .detail-card { grid-template-columns: 28px minmax(0, 1fr); align-items: start; gap: 1px 8px; padding: 9px 10px; border-radius: 10px; }
+  .portal-profile .detail-card-icon { width: 28px; height: 28px; border-radius: 8px; }
+  .portal-profile .detail-card-icon svg { width: 15px; height: 15px; }
+  .portal-profile .portal-details > .detail-card dt { align-self: start; font-size: 12px; }
+  .portal-profile .portal-details > .detail-card dd { font-size: 11px; }
+}
 .portal-profile .portal-emergency-contact h3 { margin-top: 6px; }
 /* Tells the resident what their emergency contact receives (the weekly attendance email), without competing with the card. */
 .portal-emergency-contact-note { margin: -6px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
@@ -2866,7 +2921,10 @@ a.faq-card { text-decoration: none; }
 .audit-property { display: inline-flex; align-items: center; gap: 3px; color: var(--ink); font-weight: 700; }
 /* The admin's card backgrounds, once chosen in Views (light view only). */
 :root[data-card-bg]:not([data-theme="dark"]) :is(.workspace-view, .panel, .stat-card) { background: var(--card-bg); }
-:root[data-child-card-bg]:not([data-theme="dark"]) :is(.settings-section, .property-card, .workspace-summary div, .resident-row, .audit-log li, .colour-choice) { background: var(--child-card-bg); }
+:root[data-child-card-bg]:not([data-theme="dark"]) :is(.settings-section, .property-card, .workspace-summary div, .summary-tile, .resident-row, .audit-log li, .colour-choice) { background: var(--child-card-bg); }
+/* The clickable summary tiles take the inner card colour too (they had kept the default grey while the plain "Average stay"
+   tile took it, so one tile looked different); a thin border keeps them visible when that colour matches the card. */
+:root[data-child-card-bg]:not([data-theme="dark"]) :is(.workspace-summary div, .summary-tile:not(.is-selected)) { border: 1px solid var(--line); }
 .portal-colour-preview-card { background: var(--child-card-bg, color-mix(in srgb, var(--brand) 6%, #fff)) !important; }
 /* Resident portal: the main and inner card colours chosen under Views (light view only), as the admin
    pages get them above. .portal-shell carries the colours as --card-bg / --child-card-bg and is flagged
@@ -3125,3 +3183,12 @@ label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), sel
 label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after { content: '*'; order: 1; }
 label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after, .required-mark, label > span.required-mark { color: rgb(220 38 38); font-weight: 800; }
 :root[data-theme="dark"] label:has(:is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select, textarea):required)::after, :root[data-theme="dark"] label > span.required-mark { color: rgb(248 113 113); }
+/* The resident's cover only shows on phone cards (above); the desktop table has no room for it. */
+.resident-cover { display: none; }
+/* List cards (shown as cards on narrow screens, see above) lift gently with a soft shadow under a mouse, like the
+   resident portal's detail cards. Only where a pointer can hover, so a tap on a phone does not leave a card raised.
+   `translate`, not `transform`: the cards' entrance animation keeps holding transform, which would cancel the lift. */
+:is(.resident-list .resident-card, .app-shell :is(.property-list, .crud-list, .activity-list, .attendance-list, .housekeeping-list) > *) { transition: translate .2s ease, box-shadow .2s ease; }
+@media (hover: hover) and (max-width: 720px) {
+  :is(.resident-list .resident-card, .app-shell :is(.property-list, .crud-list, .activity-list, .attendance-list, .housekeeping-list) > *):hover { translate: 0 -2px; box-shadow: 0 8px 22px rgb(20 30 40 / .08); }
+}
