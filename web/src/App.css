@@ -1993,6 +1993,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .detail-card-icon { grid-area: icon; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--portal-icon, var(--ink)); background: #f5eff7; }
 .portal-details > .detail-card dt { grid-area: label; align-self: end; margin: 0; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .portal-details > .detail-card dd { grid-area: value; align-self: start; margin: 0; color: #6e6a78; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+/* A card with no label (the emergency contact, whose section heading names it) centres its value beside the icon. */
+.portal-details > .detail-card:not(:has(dt)) { grid-template-areas: "icon value"; }
+.portal-details > .detail-card:not(:has(dt)) dd { align-self: center; }
 .portal-shell :is(.whatsapp-preference, .passkey-settings) { border: 1px solid #dcc8e2; border-radius: 12px; background: #fff; }
 :root[data-theme="dark"] .portal-details > .detail-card, :root[data-theme="dark"] .portal-shell :is(.whatsapp-preference, .passkey-settings) { border-color: rgb(220 200 226 / .28); background: rgb(255 255 255 / .03); }
 :root[data-theme="dark"] .detail-card-icon { background: rgb(255 255 255 / .07); }

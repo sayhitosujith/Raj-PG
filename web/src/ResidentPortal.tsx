@@ -108,12 +108,12 @@ async function fetchList<T>(path: string) {
   return await response.json() as T[]
 }
 
-// The Profile headline's opening, LinkedIn style: "Student at St Aloysius College · " for a student with a college on
-// file, else just the occupation; nothing without one.
+// The Profile headline, LinkedIn style: "Student at St Aloysius College" for a student with a college on file, else
+// just the occupation; empty without one.
 function occupationHeadline(occupation: string | null | undefined, collegeName: string | null | undefined) {
   const role = occupation?.trim()
   if (!role) return ''
-  return isStudent(role) && collegeName?.trim() ? `${role} at ${collegeName.trim()} · ` : `${role} · `
+  return isStudent(role) && collegeName?.trim() ? `${role} at ${collegeName.trim()}` : role
 }
 
 type Announcement = { id: string; title: string; message: string; createdAt: string }
@@ -219,6 +219,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
 
   // Only the ID document number and address are checked (by the owner, against the upload); phone and email are as typed.
   const isAadharVerified = profile.aadharStatus === 'VERIFIED'
+  const headline = occupationHeadline(profile.occupation, profile.collegeName)
   // Occupation and diet as tags under the cardholder on the Home member card.
   const identityTags = (profile.occupation?.trim() || eatsHere) && <div className="portal-details-tags">{profile.occupation?.trim() && <span className="portal-details-room"><Briefcase size={13} aria-hidden="true" /><span>{profile.occupation.trim()}</span></span>}{eatsHere && (profile.diet ? <span className={`welcome-diet is-${profile.diet === 'VEG' ? 'veg' : 'non-veg'}`}><DietMark diet={profile.diet} /> {dietLabels[profile.diet]}</span> : <span className="welcome-diet is-unset">Diet not set</span>)}</div>
   // Each detail with the icon its card shows (see .detail-card in App.css).
@@ -242,10 +243,10 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   ]
 
   // One detail as a card: icon, label over value, and an arrow, in the portal's card style.
-  const detailCard = (label: string, value: ReactNode, Icon: LucideIcon, className = 'detail-card') => <div key={label} className={className}><span className="detail-card-icon" aria-hidden="true"><Icon size={18} /></span><dt>{label}</dt><dd>{value}</dd></div>
+  const detailCard = (label: string, value: ReactNode, Icon: LucideIcon, className = 'detail-card') => <div key={label} className={className}><span className="detail-card-icon" aria-hidden="true"><Icon size={18} /></span>{label && <dt>{label}</dt>}<dd>{value}</dd></div>
   const detailsList = <dl className="resident-details portal-details">{details.map(([label, value, icon]) => detailCard(label, value, icon))}{detailCard('Permanent address', <>{profile.permanentAddress || '—'}{profile.permanentAddress && isAadharVerified && profile.addressVerified !== false && <VerifiedBadge />}</>, House, 'detail-card resident-details-wide')}</dl>
   // Its own section under the details, so the person to call in an emergency is not lost among ID numbers and dates.
-  const emergencyContact = <div className="portal-emergency-contact"><h3>Emergency contact</h3><dl className="resident-details portal-details">{detailCard('Contact person', <EmergencyContactText contact={profile} />, Siren, 'detail-card resident-details-wide')}</dl></div>
+  const emergencyContact = <div className="portal-emergency-contact"><h3>Emergency contact</h3><dl className="resident-details portal-details">{detailCard('', <EmergencyContactText contact={profile} />, Siren, 'detail-card resident-details-wide')}</dl></div>
   // Home card on wide screens, Profile tab on phones (CSS shows one), like the details list above.
   // The receptionist's number (the property's manager number, else the workspace's), for the call button in Property info.
   const managerPhone = profile.ownerPhone ?? profile.workspace.contactPhone
@@ -338,9 +339,11 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
             <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, dateOfBirth: profile.dateOfBirth, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, collegeName: profile.collegeName, hasStudentIdCard: profile.hasStudentIdCard, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /><AccountSettings onChangePassword={() => setIsChangingPassword(true)}>{notifications}{deleteAccount}</AccountSettings></div>
             <div className="portal-profile-intro">
               <h2>{displayName(profile.name)}</h2>
-              <p className="portal-profile-headline">{occupationHeadline(profile.occupation, profile.collegeName)}Resident at {profile.property}</p>
+              {headline && <p className="portal-profile-headline">{headline}</p>}
+              <p className="portal-profile-headline">Resident at {profile.property}</p>
               <p>Room {profile.room}{profile.bedNumber ? ` · Bed ${profile.bedNumber}` : ''}{profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}</p>
-              <p>{[profile.city, profile.membershipId && `Member ${profile.membershipId}`].filter(Boolean).join(' · ')}</p>
+              {/* Hometown is the permanent address as typed (there is no separate field); the PG's city is on the Property card. */}
+              <p>{[profile.permanentAddress?.trim(), profile.membershipId && `Member ${profile.membershipId}`].filter(Boolean).join(' · ')}</p>
             </div>
           </div>
           {detailsList}
