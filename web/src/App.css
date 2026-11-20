@@ -2745,6 +2745,14 @@ a.faq-card { text-decoration: none; }
 :root[data-brand][data-theme] .sidebar :is(.sidebar-footer small, .help-icon) { color: color-mix(in srgb, var(--brand-on, #fff) 75%, transparent); }
 :root[data-brand][data-theme] .sidebar .brand-row { color: var(--brand-on, #fff); }
 :root[data-brand][data-theme] .sidebar .sidebar-close { color: var(--brand-on, #fff); }
+/* Phones: the close button is a clear round button (tinted from its own colour, so it reads on the light and the
+   branded drawer) pinned to the drawer's top-right corner, not a thin cross floating
+   beside the logo (which it had been, with no background and the logo's height around it). */
+@media (max-width: 720px) {
+  .sidebar .sidebar-close { position: absolute; z-index: 1; top: 14px; right: 14px; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: color-mix(in srgb, currentColor 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 32%, transparent); }
+  .sidebar .sidebar-close:hover, .sidebar .sidebar-close:focus-visible { background: color-mix(in srgb, currentColor 26%, transparent); }
+  .sidebar .sidebar-close svg { width: 20px; height: 20px; stroke-width: 2.4; }
+}
 :root[data-brand][data-theme] .sidebar .workspace-switcher { border-color: color-mix(in srgb, var(--brand-on, #fff) 30%, transparent); color: var(--brand-on, #fff); background: color-mix(in srgb, var(--brand-on, #fff) 14%, transparent); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher :is(strong, svg) { color: var(--brand-on, #fff); }
 :root[data-brand][data-theme] .sidebar .workspace-switcher small { color: color-mix(in srgb, var(--brand-on, #fff) 75%, transparent); }
