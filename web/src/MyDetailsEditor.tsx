@@ -7,13 +7,14 @@ import { VehicleFields, vehicleFields, type Vehicle } from './VehicleFields'
 import { readApiError } from './superAdmin'
 import { ModalLayer } from './ModalLayer'
 import { OccupationFields } from './OccupationFields'
+import { occupationFormFields } from './occupations'
 import { todayDateInputValue } from './joinDate'
 
 /** The resident's own details as the editor needs them. */
-export type EditableDetails = EmergencyContact & Vehicle & { name: string; occupation?: string | null; /** A student ID card is on file (needed while the occupation is Student). */ hasStudentIdCard?: boolean; phone?: string | null; email?: string | null; /** "YYYY-MM-DD…"; null when not given. */ dateOfBirth?: string | null; permanentAddress?: string | null; isIndian: boolean; documentNumber?: string | null }
+export type EditableDetails = EmergencyContact & Vehicle & { name: string; occupation?: string | null; /** A Student's college or school; null for anyone else. */ collegeName?: string | null; /** A student ID card is on file (needed while the occupation is Student). */ hasStudentIdCard?: boolean; phone?: string | null; email?: string | null; /** "YYYY-MM-DD…"; null when not given. */ dateOfBirth?: string | null; permanentAddress?: string | null; isIndian: boolean; documentNumber?: string | null }
 
 /**
- * "Edit" beside the resident's "My details" heading: a modal to change their name, phone, email, date of birth,
+ * The pencil (Edit my details) beside the resident's photo on Profile: a modal to change their name, phone, email, date of birth,
  * occupation (with their student ID card when they are a student), permanent address, emergency contact
  * and vehicle, saved straight away. Their ID document is changed
  * separately, through the existing ID form, because a new document needs the owner's review first.
@@ -47,7 +48,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const body = Object.fromEntries(['name', 'phone', 'email', 'dateOfBirth', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields].map((field) => [field, String(form.get(field) ?? '')]))
+    const body = Object.fromEntries(['name', 'phone', 'email', 'dateOfBirth', ...occupationFormFields, 'permanentAddress', ...emergencyContactFields, ...vehicleFields].map((field) => [field, String(form.get(field) ?? '')]))
     void send(() => fetch('/api/resident-portal/details', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, studentIdCardUrl: studentIdCard }) }), 'Could not save your details.', 'Your details are saved.')
   }
 
@@ -58,7 +59,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
 
   return (
     <>
-      <button type="button" className="secondary-button my-details-edit" onClick={() => setIsOpen(true)}><Pencil size={14} /> Edit</button>
+      <button type="button" className="secondary-button my-details-edit" aria-label="Edit my details" title="Edit my details" onClick={() => setIsOpen(true)}><Pencil size={16} /></button>
       {isOpen && <ModalLayer><div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
         <form className="profile-modal my-details-modal" role="dialog" aria-modal="true" aria-labelledby="my-details-title" onSubmit={save}>
           <div className="modal-heading"><div><p className="eyebrow">Resident</p><h2 id="my-details-title">Edit my details</h2></div><button type="button" className="icon-button" aria-label="Close" onClick={close}><X size={18} /></button></div>
@@ -66,7 +67,7 @@ export function MyDetailsEditor({ details, onChanged, onNotice }: { details: Edi
           <PhoneField name="phone" label="Phone" defaultValue={details.phone ?? ''} />
           <label>Email <span>(optional)</span><input name="email" type="email" maxLength={120} defaultValue={details.email ?? ''} autoComplete="email" /></label>
           <label>Date of birth <span>(optional)</span><input name="dateOfBirth" type="date" max={todayDateInputValue()} defaultValue={details.dateOfBirth?.slice(0, 10) ?? ''} autoComplete="bday" /></label>
-          <OccupationFields saved={details.occupation} hasCardOnFile={details.hasStudentIdCard} currentCardUrl="/api/resident-portal/student-id-card" onCard={setStudentIdCard} onError={setError} />
+          <OccupationFields saved={details.occupation} savedCollege={details.collegeName} hasCardOnFile={details.hasStudentIdCard} currentCardUrl="/api/resident-portal/student-id-card" onCard={setStudentIdCard} onError={setError} />
           <label>Permanent address<textarea name="permanentAddress" rows={2} maxLength={300} defaultValue={details.permanentAddress ?? ''} /></label>
           <EmergencyContactFields contact={details} />
           <VehicleFields vehicle={details} />

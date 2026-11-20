@@ -10,6 +10,7 @@ const maxUpiQrBytes = 1_500_000
 const maxMaintenancePhotoBytes = 1_500_000
 const maxPropertyPhotoBytes = 1_500_000
 const maxBannerBytes = 3_000_000
+const maxCoverPhotoBytes = 900_000
 
 /** Why an uploaded image is unacceptable, or null. Only raster types a browser can display safely. */
 function findImageProblem(dataUrl: unknown, maxBytes: number, label: string) {
@@ -83,3 +84,9 @@ export const contentVersion = (dataUrl: string) => createHash('sha1').update(dat
 
 /** Sends a property gallery photo (private: the property's residents and owners). */
 export const sendPropertyPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No photo.')
+
+/** Why a resident's Profile cover image is unacceptable, or null when it is fine (resized to ≤1600px in the browser). */
+export const findCoverPhotoProblem = (dataUrl: unknown) => findImageProblem(dataUrl, maxCoverPhotoBytes, 'a cover image')
+
+/** Sends a resident's Profile cover image (private: only that resident sees it). */
+export const sendCoverPhoto = (response: Response, dataUrl: string | null | undefined) => sendImage(response, dataUrl, 'private', 'No cover image.')

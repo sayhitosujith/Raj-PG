@@ -6,7 +6,7 @@ import { parseDateOnly, propertyNow } from './dates.js'
  * "My details" form so both trim, normalise and reject input the same way. The emergency contact and
  * vehicle are optional throughout (a blank value clears them); the occupation is required (studentId.ts).
  */
-export const textFields = ['name', 'phone', 'email', 'permanentAddress', 'emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'occupation'] as const
+export const textFields = ['name', 'phone', 'email', 'permanentAddress', 'emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'occupation', 'collegeName'] as const
 
 /** The relationships the forms offer for the emergency contact (web/src/EmergencyContact.tsx lists the same). */
 export const emergencyContactRelations = ['Father', 'Mother', 'Spouse', 'Sister', 'Legal guardian'] as const
@@ -52,13 +52,14 @@ export function findInvalidField(data: Partial<Record<TextField, string>>) {
   // Sent means the form's occupation field: it may not be blank. Partial updates that leave it out are fine.
   if (data.occupation !== undefined && !data.occupation) return 'Choose the occupation.'
   if (data.occupation && data.occupation.length > 60) return 'Keep the occupation under 60 characters.'
+  if (data.collegeName && data.collegeName.length > 120) return 'Keep the college name under 120 characters.'
   // A number with no type is ambiguous; a bicycle may have no number, so only this way round.
   if (data.vehicleNumber && data.vehicleType === '') return 'Choose the vehicle type for that number.'
   return null
 }
 
 // Optional fields stored as null when blank.
-const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber'] as const
+const optionalFields = ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactPhone', 'vehicleType', 'vehicleNumber', 'collegeName'] as const
 type OptionalField = (typeof optionalFields)[number]
 
 /**

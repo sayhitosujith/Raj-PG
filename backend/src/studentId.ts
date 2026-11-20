@@ -20,10 +20,11 @@ export function parseStudentIdCard(value: unknown): { card?: string } | { error:
 
 /**
  * What to store for the student ID card once `occupation` is saved: the new card, nothing new (one is
- * already on file), or null when they are not a student. Errors when a student would have no card.
+ * already on file), or null when they are not a student, which also clears their college name (optional
+ * for students, sent with the other text fields). Errors when a student would have no card.
  */
-export function studentIdCardWrite(occupation: string, card: string | undefined, hasCardOnFile: boolean): { data: { studentIdCardUrl?: string | null } } | { error: string } {
-  if (!isStudent(occupation)) return { data: { studentIdCardUrl: null } }
+export function studentIdCardWrite(occupation: string, card: string | undefined, hasCardOnFile: boolean): { data: { studentIdCardUrl?: string | null; collegeName?: null } } | { error: string } {
+  if (!isStudent(occupation)) return { data: { studentIdCardUrl: null, collegeName: null } }
   if (card) return { data: { studentIdCardUrl: card } }
   if (!hasCardOnFile) return { error: 'Upload the student ID card (a photo or PDF of the college or school ID).' }
   return { data: {} }

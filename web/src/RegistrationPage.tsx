@@ -6,6 +6,7 @@ import { readIdentityFields, type DocumentUploads } from './identity'
 import { IdentityDocumentFields } from './IdentityDocumentFields'
 import { InlineLoader } from './Loader'
 import { OccupationFields } from './OccupationFields'
+import { occupationFormFields } from './occupations'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
 import { readApiError } from './superAdmin'
 import { useTransparentLogo } from './transparentLogo'
@@ -47,7 +48,7 @@ export function RegistrationPage({ token }: { token: string }) {
     if (!photo) { setError('Take your profile photo with the camera.'); return }
     if (password.length < minimumPasswordLength) { setError(`Choose a password of at least ${minimumPasswordLength} characters.`); return }
     if (password !== form.get('confirmPassword')) { setError('The two passwords do not match.'); return }
-    const fields = Object.fromEntries(['name', 'email', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields].map((field) => [field, String(form.get(field) ?? '')]))
+    const fields = Object.fromEntries(['name', 'email', ...occupationFormFields, 'permanentAddress', ...emergencyContactFields, ...vehicleFields].map((field) => [field, String(form.get(field) ?? '')]))
     setIsSaving(true)
     setError('')
     try {

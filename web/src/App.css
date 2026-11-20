@@ -358,7 +358,6 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .profile-photo-overlay { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2px; border-radius: 50%; color: white; background: #18352fa6; opacity: 0; transition: opacity .2s ease; }
 .profile-photo-overlay small { font-size: 10px; font-weight: 700; }
 .profile-photo-button:hover .profile-photo-overlay, .profile-photo-button:focus-visible .profile-photo-overlay, .profile-photo-button.is-saving .profile-photo-overlay { opacity: 1; }
-.profile-photo-remove { font-size: 10px; }
 .spin { animation: spin .8s linear infinite; }
 @media (max-width: 1024px) {
   .portal-shell .welcome-row { flex-direction: row; justify-content: space-between; gap: 14px; }
@@ -1838,7 +1837,8 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .my-details-id-label { white-space: nowrap; }
 /* The document name before the ID number ("Passport Number", "Aadhaar Number"), bold and underlined. */
 .my-details-id-label { font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-.my-details-edit { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font-size: 12px; }
+/* Icon only, a round button the same size as the settings gear below it. */
+.my-details-edit { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 50%; }
 .my-details-note { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
 .my-details-document { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
 .my-details-document strong { display: block; color: var(--ink); font-size: 12px; }
@@ -2164,7 +2164,11 @@ div.portal-panel { display: contents; }
 .portal-avatar-ring::before { z-index: -1; background: conic-gradient(from var(--ring-angle), #f6c453, #ee7b5e, #e0559b, #8b6cf0, #5f8fd2, #f6c453); animation: avatar-ring-spin 6s linear infinite; }
 .portal-avatar-ring::after { z-index: -2; background: color-mix(in srgb, var(--brand, var(--teal)) 25%, transparent); animation: avatar-ring-pulse 2.4s ease-out infinite; }
 .portal-profile-button.is-active .portal-avatar-ring::before { animation-duration: 2.5s; }
-.portal-avatar { transition: transform .18s ease; }
+.portal-avatar { transition: transform .18s ease, width .2s ease, height .2s ease; }
+/* On the Profile screen the page itself shows the photo large, so the top bar's copy shrinks to a small thumbnail. */
+.portal-profile-button.is-active :is(.portal-avatar-ring, .portal-avatar) { border-radius: 9px; }
+.portal-profile-button.is-active .portal-avatar { width: 32px; height: 32px; font-size: 13px; }
+.portal-profile-button.is-active .portal-avatar-ring::before, .portal-profile-button.is-active .portal-avatar-ring::after { inset: -2px; border-radius: 11px; }
 .portal-profile-button:active .portal-avatar { transform: scale(.9); }
 @media (prefers-reduced-motion: reduce) {
   .portal-avatar-ring::before { animation: none; }
@@ -2227,24 +2231,57 @@ a.faq-card { text-decoration: none; }
 @media (min-width: 1025px) {
   .page-content[data-tab="profile"] > :not(.portal-profile, .portal-terms) { display: none; }
   .page-content[data-tab="profile"] .portal-profile { display: grid; gap: 4px; }
-  .portal-profile-back { display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-bottom: 10px; }
+  .portal-profile-back { display: inline-flex; align-items: center; gap: 6px; }
 }
-.portal-profile-head { display: flex; align-items: center; gap: 14px; }
-.portal-profile-head h2 { margin: 0 0 4px; font: 700 22px Manrope; color: var(--ink); }
-.portal-profile-head p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 12px; }
+/* Profile head, LinkedIn style: a cover banner, the photo overlapping its lower edge, then name and details.
+   The cover draws the property image twice: blurred to fill the banner, and whole on top, so a logo-style
+   picture is not cropped to a strip and a photo still fills the width. */
+.portal-profile-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+/* The cover runs edge to edge across the top of the card, so the card's own side and top padding is cancelled for it. */
+.portal-shell .workspace-view.portal-profile { --profile-pad: 14px; position: relative; overflow: hidden; padding: 0 var(--profile-pad) 18px; }
+@media (min-width: 1025px) { .portal-shell .workspace-view.portal-profile { --profile-pad: 24px; } }
+.portal-profile-cover { position: relative; grid-column: 1 / -1; width: calc(100% + 2 * var(--profile-pad, 0px)); height: clamp(110px, 22vw, 190px); margin: 0 calc(-1 * var(--profile-pad, 0px)); overflow: hidden; background: linear-gradient(135deg, var(--brand, var(--teal)), var(--brand-deep, #0f5c4d)); }
+.portal-profile-head .portal-profile-actions { justify-content: flex-end; margin: 10px 0 0; }
+.portal-profile-intro { grid-column: 1 / -1; }
+/* No gap between the top bar and the Profile card: the cover starts right under the bar, as on LinkedIn. */
+@media (max-width: 1024px) {
+  .portal-shell .page-content[data-tab="profile"] { padding-top: 0; }
+  /* The Payments wrapper has no tab of its own; emptied on other tabs it still took a flex gap above their first card. */
+  .page-content:not([data-tab="rent"]) > .portal-grid { display: none; }
+}
+/* Desktop's Back to home sits on the cover's corner, since the cover now starts at the card's top edge. */
+.portal-profile .portal-profile-back { position: absolute; z-index: 1; top: 12px; left: 12px; padding: 5px 10px; border-radius: 999px; color: var(--ink); background: rgb(255 255 255 / .92); box-shadow: 0 2px 8px rgb(0 0 0 / .15); text-decoration: none; }
+.portal-profile-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.portal-profile-cover img.is-fill { object-fit: cover; filter: blur(16px) saturate(1.15); transform: scale(1.15); opacity: .85; }
+.portal-profile-cover img.is-own { object-fit: cover; }
+/* Change and remove sit in the cover's top-right corner, as LinkedIn's camera button does. */
+.portal-profile-cover-actions { position: absolute; z-index: 1; top: 10px; right: 10px; display: flex; gap: 6px; }
+.portal-profile-cover-actions .icon-button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; color: rgb(31 41 55); background: rgb(255 255 255 / .92); box-shadow: 0 2px 8px rgb(0 0 0 / .18); }
+.portal-profile-head .profile-photo-picker { margin: calc(clamp(56px, 9vw, 76px) * -1) 0 0; justify-items: center; }
+.portal-profile-head .profile-photo-button { width: clamp(112px, 18vw, 152px); height: clamp(112px, 18vw, 152px); border-width: 4px; }
+.portal-profile-head .profile-photo { font-size: 36px; }
+.profile-photo-badge { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid white; border-radius: 50%; color: var(--ink); background: rgb(241 243 245); box-shadow: 0 2px 6px rgb(0 0 0 / .18); }
+.portal-profile-intro { display: grid; gap: 3px; padding: 6px 4px 14px; }
+/* The account settings gear sits beside the Edit pencil, a round button of the same size. */
+.portal-profile-actions .portal-profile-settings { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: var(--paper, white); transition: transform .3s ease; }
+.portal-profile-actions .portal-profile-settings:hover { transform: rotate(45deg); }
+/* Settings pop-up: the same setting cards as Help, stacked, and scrolling when a phone screen is short. */
+.account-settings { width: min(100%, 480px); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.account-settings-body { display: grid; gap: 12px; }
+.account-settings-body .notification-preferences { display: grid; gap: 12px; }
+.account-settings-body .notification-preferences > *, .account-settings-body > * { margin: 0; }
+.account-settings-password { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.portal-profile-intro h2 { margin: 0 0 2px; color: var(--ink); font: 700 22px Manrope, sans-serif; }
+.portal-profile-intro p { margin: 0; color: var(--muted); font-size: 13px; }
+.portal-profile-intro .portal-profile-headline { color: var(--ink); font-size: 14px; }
 .portal-profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
-.portal-profile-actions .secondary-button { display: inline-flex; align-items: center; gap: 6px; }
+.portal-profile-actions .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .portal-profile .portal-details { margin: 0 0 14px; }
 .portal-emergency-contact h3 { margin: 18px 0 10px; color: var(--ink); font: 700 16px Manrope, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
 .portal-emergency-contact .portal-details { margin: 0 0 14px; }
 .portal-profile .portal-emergency-contact h3 { margin-top: 6px; }
-/* Exit PG in the header's top-right corner; once a move-out is underway its notes are wider than the
-   space beside the name, so the block wraps onto its own full-width line under the header. */
-.portal-profile-head { flex-wrap: wrap; }
-.portal-profile-exit { align-self: flex-start; margin-left: auto; }
-/* The Home card right-aligns the move-out block; in the Profile list it reads left like everything else. */
-/* The Services tab copy (phones and tablets) reads left the same way. */
-:is(.portal-profile-exit, .portal-services-exit) .exit-status-row { justify-items: start; }
+/* The Home card right-aligns the move-out block; the Services tab copy (phones and tablets) reads left. */
+.portal-services-exit .exit-status-row { justify-items: start; }
 :is(.portal-profile-exit, .portal-services-exit) :is(.exit-refund-note, .exit-dues-note, .exit-signin-note) { max-width: none; text-align: left; }
 :is(.portal-profile-exit, .portal-services-exit) .exit-status { border-radius: 10px; }
 /* Exit PG on the Services tab, phones and tablets only: wide screens keep it in the Home card. */

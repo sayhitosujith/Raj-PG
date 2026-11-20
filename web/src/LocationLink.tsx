@@ -13,9 +13,10 @@ function locationTarget(property: string, location: string) {
 
 /**
  * A property's location as a map link that opens in a new tab. The click stops here so a link
- * inside a clickable row or card (expand, open property) does not also trigger that.
+ * inside a clickable row or card (expand, open property) does not also trigger that. `iconOnly`
+ * shows just the pin, for a line that already names the place (the label stays for screen readers).
  */
-export function LocationLink({ property, location, className }: { property: string; location: string; className?: string }) {
+export function LocationLink({ property, location, className, iconOnly = false }: { property: string; location: string; className?: string; iconOnly?: boolean }) {
   const { href, label } = locationTarget(property, location)
-  return <a className={className} href={href} target="_blank" rel="noopener noreferrer" title="Open in Google Maps" onClick={(event) => event.stopPropagation()}><MapPin size={14} aria-hidden="true" />{label}</a>
+  return <a className={className} href={href} target="_blank" rel="noopener noreferrer" title="Open in Google Maps" aria-label={iconOnly ? `${label}, open in Google Maps` : undefined} onClick={(event) => event.stopPropagation()}><MapPin size={14} aria-hidden="true" />{!iconOnly && label}</a>
 }

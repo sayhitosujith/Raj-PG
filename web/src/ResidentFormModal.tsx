@@ -4,6 +4,7 @@ import { copyWithNotice } from './clipboard'
 import { readIdentityFields, type DocumentUploads } from './identity'
 import { IdentityDocumentFields } from './IdentityDocumentFields'
 import { OccupationFields } from './OccupationFields'
+import { occupationFormFields } from './occupations'
 import { todayDateInputValue } from './joinDate'
 import { residentPhotoUrl, type Resident } from './resident'
 import { ResidentPhotoField, type PhotoChange } from './ResidentPhotoField'
@@ -118,7 +119,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'bedNumber', 'phone', 'email', 'dateOfBirth', 'occupation', 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
+    const fields = Object.fromEntries(['name', 'propertyId', 'roomNumber', 'bedNumber', 'phone', 'email', 'dateOfBirth', ...occupationFormFields, 'permanentAddress', ...emergencyContactFields, ...vehicleFields, 'joinedAt', 'monthlyRent', ...(isEdit ? ['rentAccessUntil'] : [])].map((field) => [field, String(form.get(field) ?? '')]))
     // An untouched file input means "keep the current upload", so only chosen files are sent.
     const payload = { ...fields, ...readIdentityFields(form), ...uploads, ...(photoChange !== undefined ? { profilePhoto: photoChange } : {}), foodOpted, diet, memberTier: String(form.get('memberTier') ?? 'SILVER'), whatsappOptIn: form.get('whatsappOptIn') === 'on', emailOptIn: form.get('emailOptIn') === 'on', ...(isEdit ? { active: form.get('status') === 'active' } : { accessKey, sendCredentials: form.get('sendCredentials') === 'on' }) }
     setIsSaving(true)
@@ -146,7 +147,7 @@ export function ResidentFormModal({ resident, prefill, properties, onClose, onSa
         <PhoneField name="phone" label="Phone number" required={!isEdit} defaultValue={resident?.phone ?? prefill?.phone} />
         <label>Email address<input name="email" type="email" required={!isEdit} defaultValue={resident?.email ?? prefill?.email ?? ''} placeholder="e.g. resident@example.com" /></label>
         <label>Date of birth <span className="field-hint">(optional)</span><input name="dateOfBirth" type="date" max={todayDateInputValue()} defaultValue={resident?.dateOfBirth?.slice(0, 10) ?? ''} /></label>
-        <OccupationFields saved={resident?.occupation} hasCardOnFile={resident?.hasStudentIdCard} currentCardUrl={resident && `/api/residents/${resident.id}/student-id-card`} onCard={(card) => setUploads((current) => ({ ...current, studentIdCardUrl: card }))} onError={setError} />
+        <OccupationFields saved={resident?.occupation} savedCollege={resident?.collegeName} hasCardOnFile={resident?.hasStudentIdCard} currentCardUrl={resident && `/api/residents/${resident.id}/student-id-card`} onCard={(card) => setUploads((current) => ({ ...current, studentIdCardUrl: card }))} onError={setError} />
         <label>Property<select name="propertyId" required value={propertyId} onChange={(event) => setPropertyId(event.target.value)}><option value="" disabled>Select property</option>{properties.filter((property) => property.id).map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
         <RoomSelect propertyId={propertyId} currentRoom={resident && propertyId === resident.propertyId ? resident.room : undefined} currentBed={resident && propertyId === resident.propertyId ? resident.bedNumber ?? undefined : undefined} preferredRoom={!resident && prefill && propertyId === prefill.propertyId ? prefill.roomNumber : undefined} preferredBed={!resident && prefill && propertyId === prefill.propertyId ? prefill.bedNumber : undefined} onBedsChange={setRoomBeds} />
         <label>Permanent address<textarea name="permanentAddress" required={!isEdit} defaultValue={resident?.permanentAddress ?? prefill?.permanentAddress ?? ''} placeholder="Full permanent address" /></label>

@@ -139,6 +139,8 @@ model Resident {
   // What the resident does: "Student", "Working professional", "Business", or their own words for anything
   // else (studentId.ts). Required by the forms; null only for residents saved before it was.
   occupation               String?
+  // The college or school of a Student (studentId.ts clears it for any other occupation).
+  collegeName              String?
   // Optional; null for residents saved before it was asked, or when staff leave it blank.
   dateOfBirth              DateTime?                @db.Date
   // A student's college or school ID card, as a data URL like aadharCardUrl. Required while the occupation is
@@ -264,6 +266,7 @@ model Resident {
   policiesAcceptedAt       DateTime?
   mealFeedback             MealFeedback[]
   passkeys                 ResidentPasskey[]
+  coverPhoto               ResidentCoverPhoto?
   createdAt                DateTime                 @default(now())
 
   @@index([roomId])
@@ -993,4 +996,13 @@ model StaffActivity {
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// The cover image a resident chose for their Profile page (the property's photo is shown without one). Kept out of
+// the Resident row so the portal's frequent profile reads do not carry the image.
+model ResidentCoverPhoto {
+  residentId String   @id
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  updatedAt  DateTime @updatedAt
 }

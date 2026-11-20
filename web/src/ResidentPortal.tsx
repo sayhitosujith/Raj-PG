@@ -17,6 +17,8 @@ import { formatAadhar } from './aadharNumber'
 import { readApiError } from './superAdmin'
 import { MealTimings } from './MealTimings'
 import type { MealTimes } from './meals'
+import { AccountSettings } from './AccountSettings'
+import { ProfileCover } from './ProfileCover'
 import { ProfilePhotoPicker } from './ProfilePhotoPicker'
 import type { RentSummary } from './rent'
 import type { ResidentWorkspace } from './workspaceSettings'
@@ -79,7 +81,7 @@ import type { MemberTier } from './memberTier'
 import { usePageTitle } from './pageTitle'
 import { isFeatureOn, type ResidentFeature } from './residentFeatures'
 
-type ResidentProfile = { /** Membership tier set by staff; Silver by default, null while the tier is switched off. */ memberTier?: MemberTier | null; /** Door lock PIN issued by a super admin, if any. */ doorAccessKey?: string | null; /** The property's locks for residents that the PIN opens; empty when none are listed. */ doorNames?: string[]; /** "PS-2026-0001": PG initials, joining year, member number; never changes. */ membershipId: string; /** Their student ID card is on file (needed while their occupation is Student). */ hasStudentIdCard?: boolean; /** The owner's last decision on a food request, for the notification. */ foodDecidedAt?: string | null; foodApproved?: boolean | null; /** When the weekly menu last changed, and what changed. */ menuUpdatedAt?: string | null; menuChanges?: string | null; /** The code in this resident's "Refer a friend" link. */ referralCode?: string | null; /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; /** The email of the receptionist at the resident's property; null when it has none. */ receptionistEmail?: string | null; /** "YYYY-MM-DD…"; null when not given. */ dateOfBirth?: string | null; email?: string | null; nationality: string; aadharNumber?: string | null; passportNumber?: string | null; /** Passport and Indian visa details (non-Indian residents), expiry dates as "YYYY-MM-DD…". */ passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; vehicleType?: string | null; vehicleNumber?: string | null; occupation?: string | null; createdAt: string; joinedAt: string; room: string; /** Beds in the room: 1 is single, 2 is two sharing… Absent from a backend older than this field. */ roomBeds?: number; /** Their bed in the room (1, 2, …); null until staff assign one. */ bedNumber?: number | null; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; /** Veg or non-veg, as the owner set it; null is Not set. */ diet?: Diet | null; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
+type ResidentProfile = { /** Membership tier set by staff; Silver by default, null while the tier is switched off. */ memberTier?: MemberTier | null; /** Door lock PIN issued by a super admin, if any. */ doorAccessKey?: string | null; /** The property's locks for residents that the PIN opens; empty when none are listed. */ doorNames?: string[]; /** "PS-2026-0001": PG initials, joining year, member number; never changes. */ membershipId: string; /** Their student ID card is on file (needed while their occupation is Student). */ hasStudentIdCard?: boolean; /** The owner's last decision on a food request, for the notification. */ foodDecidedAt?: string | null; foodApproved?: boolean | null; /** When the weekly menu last changed, and what changed. */ menuUpdatedAt?: string | null; menuChanges?: string | null; /** The code in this resident's "Refer a friend" link. */ referralCode?: string | null; /** Pending "Delete my account" request, if any, and when the owner last declined one. */ deletionRequestedAt?: string | null; deletionDeclinedAt?: string | null; deletionDeclineReason?: string | null; id: string; name: string; info: ResidentInfoData; exit: ExitNotice; /** The property's city (Edit property), when set. */ city?: string | null; addressVerified?: boolean; phone?: string | null; ownerPhone?: string | null; /** The email of the receptionist at the resident's property; null when it has none. */ receptionistEmail?: string | null; /** "YYYY-MM-DD…"; null when not given. */ dateOfBirth?: string | null; email?: string | null; nationality: string; aadharNumber?: string | null; passportNumber?: string | null; /** Passport and Indian visa details (non-Indian residents), expiry dates as "YYYY-MM-DD…". */ passportExpiry?: string | null; visaNumber?: string | null; visaType?: string | null; visaExpiry?: string | null; permanentAddress?: string | null; emergencyContactName?: string | null; emergencyContactRelation?: string | null; emergencyContactPhone?: string | null; vehicleType?: string | null; vehicleNumber?: string | null; occupation?: string | null; /** A Student's college or school; null for anyone else. */ collegeName?: string | null; createdAt: string; joinedAt: string; room: string; /** Beds in the room: 1 is single, 2 is two sharing… Absent from a backend older than this field. */ roomBeds?: number; /** Their bed in the room (1, 2, …); null until staff assign one. */ bedNumber?: number | null; property: string; location: string; mustSetPassword: boolean; aadharStatus: AadharStatus; aadharRejectionReason?: string | null; aadharSubmittedAt?: string | null; photoVersion: number | null; mealTimes: MealTimes; amenities: string[]; housekeepingStaff: string[]; rent: RentSummary; propertyImage: string; /** Version of the resident's own Profile cover image; null shows the property's photo. */ coverVersion?: number | null; onlinePayment: boolean; whatsappOptIn: boolean; emailOptIn: boolean; pendingUpiClaim: UpiClaim | null; foodOpted: boolean; /** Veg or non-veg, as the owner set it; null is Not set. */ diet?: Diet | null; foodRequestedAt: string | null; foodPlanRent: number | null; policyConsent: PolicyConsent | null; workspace: ResidentWorkspace }
 // Overdue rent, an ended stay or a closed account signed the resident out; its message replaces the portal,
 // even on a background refresh.
 class AccessBlockedError extends Error {
@@ -104,6 +106,14 @@ async function fetchList<T>(path: string) {
   const response = await fetch(path)
   if (!response.ok) throw new Error(`${path} request failed`)
   return await response.json() as T[]
+}
+
+// The Profile headline's opening, LinkedIn style: "Student at St Aloysius College · " for a student with a college on
+// file, else just the occupation; nothing without one.
+function occupationHeadline(occupation: string | null | undefined, collegeName: string | null | undefined) {
+  const role = occupation?.trim()
+  if (!role) return ''
+  return isStudent(role) && collegeName?.trim() ? `${role} at ${collegeName.trim()} · ` : `${role} · `
 }
 
 type Announcement = { id: string; title: string; message: string; createdAt: string }
@@ -213,7 +223,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
   const identityTags = (profile.occupation?.trim() || eatsHere) && <div className="portal-details-tags">{profile.occupation?.trim() && <span className="portal-details-room"><Briefcase size={13} aria-hidden="true" /><span>{profile.occupation.trim()}</span></span>}{eatsHere && (profile.diet ? <span className={`welcome-diet is-${profile.diet === 'VEG' ? 'veg' : 'non-veg'}`}><DietMark diet={profile.diet} /> {dietLabels[profile.diet]}</span> : <span className="welcome-diet is-unset">Diet not set</span>)}</div>
   // Each detail with the icon its card shows (see .detail-card in App.css).
   const details: Array<[string, ReactNode, LucideIcon]> = [
-    ['Property', <>{profile.property}{profile.location && <> · <LocationLink className="detail-location" property={profile.property} location={profile.location} /></>}{profile.city && <> · {profile.city}</>}</>, Building2],
+    ['Property', <>{profile.property}{(profile.location || profile.city) && <><br />{profile.location && <LocationLink className="detail-location" property={profile.property} location={profile.location} iconOnly />}{profile.location && profile.city && ' '}{profile.city}</>}</>, Building2],
     ['Room', profile.room, DoorOpen],
     ['Phone', profile.phone ? <PhoneText value={profile.phone} /> : '—', Phone],
     ['Date of birth', formatDateOfBirth(profile.dateOfBirth), Cake],
@@ -228,7 +238,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
     ['Days stayed', daysStayedLabel(profile.joinedAt), Hourglass],
     ['Food plan', profile.foodOpted ? 'With food' : 'Without food', UtensilsCrossed],
     // A student can open the ID card on file from here; without one, they are told it is missing.
-    ['Occupation', isStudent(profile.occupation) ? <>{profile.occupation} · {profile.hasStudentIdCard ? <a className="detail-card-link" href="/api/resident-portal/student-id-card" target="_blank" rel="noopener noreferrer">View ID card <ExternalLink size={12} aria-hidden="true" /></a> : 'ID card not uploaded'}</> : profile.occupation || '—', Briefcase],
+    ['Occupation', isStudent(profile.occupation) ? <>{profile.occupation}{profile.collegeName && <> · {profile.collegeName}</>} · {profile.hasStudentIdCard ? <a className="detail-card-link" href="/api/resident-portal/student-id-card" target="_blank" rel="noopener noreferrer">View ID card <ExternalLink size={12} aria-hidden="true" /></a> : 'ID card not uploaded'}</> : profile.occupation || '—', Briefcase],
   ]
 
   // One detail as a card: icon, label over value, and an arrow, in the portal's card style.
@@ -320,8 +330,19 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <section className="workspace-view portal-profile" data-panel="profile">
           {/* Wide screens only (CSS): phones go back with the bottom tab bar. */}
           <button type="button" className="text-link portal-profile-back" onClick={() => setTab('home')}><ArrowLeft size={14} aria-hidden="true" /> Back to home</button>
-          <div className="portal-profile-head"><ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} /><div><p className="eyebrow">Profile</p><h2>{profile.name}</h2><p>{profile.property} · Room {profile.room}</p></div></div>
-          <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, dateOfBirth: profile.dateOfBirth, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, hasStudentIdCard: profile.hasStudentIdCard, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /><button type="button" className="secondary-button" onClick={() => setIsChangingPassword(true)}><KeyRound size={14} /> Change password</button></div>
+          {/* Laid out like a LinkedIn profile: a cover banner, the resident's photo overlapping it, then who they are. */}
+          <div className="portal-profile-head">
+            <ProfileCover propertyImage={profile.propertyImage} coverVersion={profile.coverVersion ?? null} onChanged={onRefresh} onNotice={showNotice} />
+            <ProfilePhotoPicker name={profile.name} photoVersion={profile.photoVersion} onChanged={onRefresh} onNotice={showNotice} />
+            {/* Beside the photo, under the cover, where LinkedIn puts its edit buttons. */}
+            <div className="portal-profile-actions"><MyDetailsEditor details={{ name: profile.name, phone: profile.phone, email: profile.email, dateOfBirth: profile.dateOfBirth, permanentAddress: profile.permanentAddress, emergencyContactName: profile.emergencyContactName, emergencyContactRelation: profile.emergencyContactRelation, emergencyContactPhone: profile.emergencyContactPhone, vehicleType: profile.vehicleType, vehicleNumber: profile.vehicleNumber, occupation: profile.occupation, collegeName: profile.collegeName, hasStudentIdCard: profile.hasStudentIdCard, isIndian: profile.nationality === 'IN', documentNumber: profile.nationality === 'IN' ? profile.aadharNumber : profile.passportNumber }} onChanged={onRefresh} onNotice={showNotice} /><AccountSettings onChangePassword={() => setIsChangingPassword(true)}>{notifications}{deleteAccount}</AccountSettings></div>
+            <div className="portal-profile-intro">
+              <h2>{displayName(profile.name)}</h2>
+              <p className="portal-profile-headline">{occupationHeadline(profile.occupation, profile.collegeName)}Resident at {profile.property}</p>
+              <p>Room {profile.room}{profile.bedNumber ? ` · Bed ${profile.bedNumber}` : ''}{profile.roomBeds ? ` · ${sharingLabel(profile.roomBeds)}` : ''}</p>
+              <p>{[profile.city, profile.membershipId && `Member ${profile.membershipId}`].filter(Boolean).join(' · ')}</p>
+            </div>
+          </div>
           {detailsList}
           {emergencyContact}
         </section>

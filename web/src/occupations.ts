@@ -2,6 +2,9 @@
 export const occupationChoices = ['Student', 'Working professional', 'Business'] as const
 export type OccupationChoice = (typeof occupationChoices)[number] | 'Other'
 
+/** The occupation inputs every resident form posts (OccupationFields renders them), so each lists them once. */
+export const occupationFormFields = ['occupation', 'collegeName'] as const
+
 /** Whether an occupation is the Student choice (case and spacing aside), which needs a student ID card. */
 export const isStudent = (occupation: string | null | undefined) => occupation?.trim().toLowerCase() === 'student'
 

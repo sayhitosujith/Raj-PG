@@ -6,11 +6,11 @@ import { occupationChoices, splitOccupation, type OccupationChoice } from './occ
 /**
  * The required occupation as one form cell: a choice of Student, Working professional, Business or
  * Other (which asks for their own words), submitted as `occupation`. A Student also needs their college or
- * school ID card: required while none is on file, replaceable when one is, and passed up through `onCard`
- * like the other ID documents (undefined keeps what is on file). Shared by the owner's resident form and the
+ * school ID card, required while none is on file, replaceable when one is, and passed up through `onCard`
+ * like the other ID documents (undefined keeps what is on file), and may give their college's name (`collegeName`). Shared by the owner's resident form and the
  * resident's own My details form; the server applies the same rule (studentId.ts).
  */
-export function OccupationFields({ saved, hasCardOnFile = false, currentCardUrl, onCard, onError }: { saved?: string | null; hasCardOnFile?: boolean; /** Where the card on file can be viewed; no link without it. */ currentCardUrl?: string; onCard: (dataUrl: string | undefined) => void; onError: (message: string) => void }) {
+export function OccupationFields({ saved, savedCollege, hasCardOnFile = false, currentCardUrl, onCard, onError }: { saved?: string | null; /** The college name on file, to prefill. */ savedCollege?: string | null; hasCardOnFile?: boolean; /** Where the card on file can be viewed; no link without it. */ currentCardUrl?: string; onCard: (dataUrl: string | undefined) => void; onError: (message: string) => void }) {
   const initial = splitOccupation(saved)
   const [choice, setChoice] = useState<OccupationChoice | ''>(initial.choice)
   const [other, setOther] = useState(initial.other)
@@ -41,6 +41,7 @@ export function OccupationFields({ saved, hasCardOnFile = false, currentCardUrl,
       {choice === 'Other' && <label className="occupation-other">What do they do?<input required maxLength={60} value={other} onChange={(event) => setOther(event.target.value)} placeholder="e.g. Nurse, Freelancer" /></label>}
       <input type="hidden" name="occupation" value={occupation} />
       {choice === 'Student' && <>
+        <label>College name <span>(optional)</span><input name="collegeName" maxLength={120} defaultValue={savedCollege ?? ''} autoComplete="organization" placeholder="e.g. St Aloysius College, Mangaluru" /></label>
         <label className="document-upload">Student ID card <span>{hasCardOnFile ? '(choose a file to replace the current one)' : '(college or school ID; JPG, PNG or PDF)'}</span><input type="file" accept={documentAccept} required={!hasCardOnFile} onChange={(event) => void chooseCard(event)} /></label>
         {hasCardOnFile && currentCardUrl && <a className="current-card-link" href={currentCardUrl} target="_blank" rel="noopener noreferrer">View current ID card <ExternalLink size={11} /></a>}
       </>}

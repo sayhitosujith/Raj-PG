@@ -227,6 +227,7 @@ export function ResidentRow({ resident, index, isExpanded, onToggle, onEdit, onC
             <div><dt>Vehicle</dt><dd>{vehicleText(resident)}</dd></div>
             <div><dt>Member tier</dt><dd>{memberTierLabels[resident.memberTier ?? 'SILVER']}</dd></div>
             <div><dt>Occupation</dt><dd>{resident.occupation || '—'}</dd></div>
+            {isStudent(resident.occupation) && <div><dt>College</dt><dd>{resident.collegeName || '—'}</dd></div>}
             {isStudent(resident.occupation) && <div><dt>Student ID card</dt><dd>{resident.hasStudentIdCard ? <a href={`/api/residents/${resident.id}/student-id-card`} target="_blank" rel="noopener noreferrer">View student ID <ExternalLink size={11} /></a> : 'Not uploaded'}</dd></div>}
             <div className="resident-details-wide"><dt>Permanent address</dt><dd>{resident.permanentAddress || '—'}</dd></div>
             <div><dt>Portal sign-in</dt><dd className="sign-in-cell">{resident.hasPassword ? 'Password set' : 'Not signed in yet (uses access key)'}{!isRecord && <AccessKeyReset residentId={resident.id} residentName={resident.name} hasPassword={resident.hasPassword} onReset={onChanged} onNotice={onNotice} />}</dd></div>
