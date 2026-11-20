@@ -56,7 +56,7 @@ import { FireAlarmOverlay, ReportFireButton, useFireAlerts } from './FireAlarm'
 import { HolidayList, holidayOn, useHolidays } from './holidays'
 import { FestivalCelebration, FestivalGreeting } from './FestivalCelebration'
 import { HouseRules } from './HouseRules'
-import { MealChoiceGate, MealRatingPrompt, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
+import { MealChoiceGate, MealOptOutBanner, MealRatingPrompt, useTodayMenu, WeeklyMenuButton } from './ResidentFood'
 import { PortalScenery } from './PortalScenery'
 import { PolicyConsentModal, type PolicyConsent } from './PolicyConsentModal'
 import { useResidentTheme } from './useResidentTheme'
@@ -288,6 +288,7 @@ function ResidentHome({ profile, refreshSignal, onRefresh, onSignOut, onFireRais
         <PortalTabs active={tab} onChange={setTab} />
         {profile.workspace.assistantEnabled && <ResidentAssistant />}
         <div className="portal-panel" data-panel="home">
+        {eatsHere && <MealOptOutBanner meals={todayMenu.meals} minutesIntoDay={minutesIntoDay} />}
         <RentBanner rent={profile.rent} action={payAction} />
         {eatsHere && <MealChoiceGate refreshSignal={refreshSignal} onNotice={showNotice} />}
         {eatsHere && <MealRatingPrompt refreshSignal={refreshSignal} onNotice={showNotice} />}

@@ -744,6 +744,9 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .rent-banner { display: flex; gap: 12px; margin-bottom: 22px; padding: 14px 16px; border-radius: 10px; animation: rise-in .35s ease both; }
 .rent-banner strong { display: block; margin-bottom: 3px; font-size: 13px; }
 .rent-banner p { margin: 0; font-size: 12px; line-height: 1.5; }
+.meal-optout-banner { align-items: flex-start; border: 1px solid rgb(245 215 158); color: rgb(122 75 0); background: rgb(255 247 230); }
+.meal-optout-banner svg { flex: none; margin-top: 1px; }
+:root[data-theme="dark"] .meal-optout-banner { border-color: rgb(245 215 158 / .3); color: rgb(253 224 171); background: rgb(120 80 10 / .25); }
 .rent-banner svg { flex: 0 0 auto; margin-top: 1px; }
 .rent-banner.is-overdue { color: #9a4231; background: #fbe9e5; border: 1px solid #f3d3cb; }
 .paused-note { color: #b5523f; font-size: 10px; }

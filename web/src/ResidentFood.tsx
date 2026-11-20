@@ -314,3 +314,28 @@ export function MealRatingPrompt({ refreshSignal, onNotice }: { refreshSignal: n
     </div></ModalLayer>
   )
 }
+
+// "Breakfast", "Breakfast and dinner", "Breakfast, lunch and dinner".
+const listMeals = (labels: string[]) => labels.length < 2 ? labels.join('') : `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`
+
+/**
+ * A banner on Home naming today's meals that will not be served to this resident, because they opted out and the
+ * meal has not finished yet, so nobody walks to the dining hall expecting food. A late meal the kitchen approved
+ * counts as served. When one can still be asked for, the banner says where.
+ */
+export function MealOptOutBanner({ meals, minutesIntoDay }: { meals: Partial<Record<Meal, ResidentMeal>> | null; minutesIntoDay: number }) {
+  if (!meals) return null
+  const skipped = mealDetails.flatMap(({ meal, label }) => {
+    const today = meals[meal]
+    return today && !today.eating && today.lateRequest?.status !== 'APPROVED' && minutesIntoDay < toMinutes(today.to) ? [{ label, canRequestLate: today.canRequestLate }] : []
+  })
+  if (!skipped.length) return null
+  const names = listMeals(skipped.map(({ label }, index) => index === 0 ? label : label.toLowerCase()))
+  const headline = skipped.length === mealDetails.length ? 'No food will be served to you today.' : `${names} will not be served to you today.`
+  return (
+    <div className="rent-banner meal-optout-banner" role="status">
+      <UtensilsCrossed size={18} aria-hidden="true" />
+      <div><strong>{headline}</strong><p>You opted out{skipped.length < mealDetails.length ? ` of ${skipped.length === 1 ? 'this meal' : 'these meals'}` : " of today's meals"}.{skipped.some((meal) => meal.canRequestLate) ? ' Changed your mind? Ask the kitchen for a late meal under Meals.' : ''}</p></div>
+    </div>
+  )
+}
