@@ -82,7 +82,7 @@ export type WorkspaceSettings = {
   privacyPolicy: string
 }
 
-/** The owner's choice of view for residents: AUTO = light 7am–7pm, dark otherwise. */
+/** The owner's choice of view for residents. AUTO (the old day/night-by-clock option) is still stored by older workspaces and now means light. */
 export type ResidentTheme = 'AUTO' | 'LIGHT' | 'DARK'
 
 /** Used until settings load (and for the sidebar before sign-in data arrives); matches server defaults. */

@@ -3238,6 +3238,9 @@ a.faq-card { text-decoration: none; }
 }
 /* Dashboard > Reset rent figures: solid red with white text, like the other actions that cannot be undone.
    :is() with the doubled class outranks the owner's-colour .secondary-button rules. */
+/* Same size and shape as the primary "Add property" beside it (it borrows the smaller secondary style otherwise);
+   the 1px border is taken off the padding so both buttons are the same height. */
+.view-actions .reset-rent-button.reset-rent-button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: 8px; font-size: 12px; box-shadow: 0 5px 12px rgb(220 38 38 / .22); }
 :is(:root, :root[data-brand][data-theme]) .reset-rent-button.reset-rent-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }
 :is(:root, :root[data-brand][data-theme]) .reset-rent-button.reset-rent-button:is(:hover, :focus-visible) { border-color: rgb(185 28 28); background: rgb(185 28 28); }
 :is(:root[data-theme="dark"], :root[data-brand][data-theme="dark"]) .reset-rent-button.reset-rent-button { border-color: rgb(220 38 38); color: rgb(255 255 255); background: rgb(220 38 38); }

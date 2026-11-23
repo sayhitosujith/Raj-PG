@@ -199,8 +199,8 @@ export function SettingsView({ page = 'settings', admin, settings, onSaveAccount
           </SettingsSection>
 
           <SettingsSection icon={<SunMoon size={18} />} title="Resident view" description="Light or dark view for every resident's portal. Residents cannot change it themselves." onSubmit={(form) => onSaveSettings({ residentTheme: value(form, 'residentTheme') as ResidentTheme })}>
-            <label>View<select name="residentTheme" defaultValue={settings.residentTheme}>
-              <option value="AUTO">Auto: light from 7am, dark from 7pm</option>
+            {/* "Auto" by the clock is gone; a workspace still saved on it shows (and gets) light. */}
+            <label>View<select name="residentTheme" defaultValue={settings.residentTheme === 'DARK' ? 'DARK' : 'LIGHT'}>
               <option value="LIGHT">Always light</option>
               <option value="DARK">Always dark</option>
             </select></label>
