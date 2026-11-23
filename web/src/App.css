@@ -218,14 +218,47 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 .resident-card { padding-bottom: 0; animation: rise-in .35s ease both; animation-delay: calc(var(--stagger, 0) * 40ms); }
 /* The name column has a capped width so the contact column starts at the same place in every row,
    right after the names, instead of floating mid-row; the contact column takes the rest. */
-.resident-card .resident-row { grid-template-columns: 38px minmax(0, clamp(200px, 28%, 340px)) minmax(0, 1fr) minmax(0, 230px) auto auto 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
+.resident-card .resident-row { grid-template-columns: 38px minmax(0, clamp(170px, 20%, 280px)) minmax(0, clamp(170px, 17%, 240px)) minmax(0, 1fr) minmax(130px, 180px) minmax(80px, 104px) 28px 28px 28px 28px; margin: 0 -10px; padding: 12px 10px; border-radius: 10px; cursor: pointer; transition: background .2s, box-shadow .2s, transform .2s; }
 .resident-card .resident-row:hover { background: #f5f9f6; }
 .resident-card.is-expanded .resident-row { background: #f2f7f4; }
 .resident-avatar { transition: transform .25s ease; }
 .resident-card .resident-row:hover .resident-avatar { transform: scale(1.06); }
 .resident-room small { color: #98a09d; font-size: 9px; white-space: nowrap; }
 /* Where the resident is signed in (view only): a small titled list beside the contact details. */
-.resident-devices { display: grid; align-content: start; gap: 3px; min-width: 0; font-size: 11px; }
+/* Column labels over the desktop resident rows, on the same columns as .resident-row so each sits over its column.
+   Room & rent and status have fixed widths (not auto) so they start at the same place in every row and under the label. */
+.resident-list-head { display: grid; grid-template-columns: 38px minmax(0, clamp(170px, 20%, 280px)) minmax(0, clamp(170px, 17%, 240px)) minmax(0, 1fr) minmax(130px, 180px) minmax(80px, 104px) 28px 28px 28px 28px; column-gap: 13px; padding: 0 0 8px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.resident-list-head .is-resident { grid-column: 1 / 3; }
+.resident-list-head .is-devices { padding-left: 16px; }
+.resident-list-head .is-room { grid-column: 5 / -1; }
+/* Each row's position in the list, in the margin left of the avatar; out of the grid flow, so it takes no column. */
+.resident-card .resident-row, .resident-list-head { position: relative; }
+.resident-number { position: absolute; top: 50%; right: calc(100% - 4px); color: var(--muted); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; transform: translateY(-50%); }
+.resident-list-head .resident-number { top: 0; right: calc(100% + 6px); color: var(--ink); font-size: 11px; transform: none; }
+@container (max-width: 560px) { .resident-number { display: none; } }
+/* Phone cards need no column labels. */
+@container (max-width: 560px) { .resident-list-head { display: none; } }
+/* Narrower desktops and tablets have no room for a devices column: the devices sit under the contact details, and the
+   name, room, status and actions span both lines. */
+@container (min-width: 561px) and (max-width: 1100px) {
+  .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1.1fr) minmax(0, 1fr) minmax(120px, 170px) minmax(76px, 100px) 28px 28px 28px 28px; grid-template-areas: 'avatar info phone room status edit clone delete toggle' 'avatar info devices room status edit clone delete toggle'; }
+  .resident-card .resident-avatar { grid-area: avatar; }
+  .resident-card .resident-info { grid-area: info; }
+  .resident-card .resident-phone { grid-area: phone; }
+  .resident-card .resident-devices { grid-area: devices; padding-left: 0; }
+  .resident-card .resident-room { grid-area: room; }
+  .resident-card .resident-row > .status-pill { grid-area: status; }
+  .resident-card .row-edit:not(.row-clone) { grid-area: edit; }
+  .resident-card .row-clone { grid-area: clone; }
+  .resident-card .row-delete { grid-area: delete; }
+  .resident-card .row-toggle { grid-area: toggle; }
+  .resident-list-head { grid-template-columns: 38px minmax(0, 1.1fr) minmax(0, 1fr) minmax(120px, 170px) minmax(76px, 100px) 28px 28px 28px 28px; }
+  .resident-list-head .is-devices { display: none; }
+  .resident-list-head .is-room { grid-column: 4 / -1; }
+}
+/* Starts right after the contact details (that column has the same width in every row, so the devices line up; this
+   one takes the rest), reading left. */
+.resident-devices { display: grid; align-content: start; justify-items: start; gap: 3px; min-width: 0; padding-left: 16px; font-size: 11px; text-align: left; }
 .resident-devices-title { color: var(--muted); font-size: 10px; font-weight: 700; }
 .resident-devices ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .resident-devices li { display: grid; min-width: 0; color: var(--ink); }
@@ -325,7 +358,7 @@ button.summary-tile:focus-visible { outline: 2px solid var(--teal); outline-offs
 }
 @container (max-width: 560px) {
   .resident-card .resident-row { grid-template-columns: 38px minmax(0, 1fr) 28px 28px 28px 28px; grid-template-areas: 'avatar info edit clone delete toggle' 'avatar phone phone phone phone phone' 'avatar devices devices devices devices devices' 'avatar room status status status status'; }
-  .resident-card .resident-devices { grid-area: devices; }
+  .resident-card .resident-devices { grid-area: devices; padding-left: 0; }
   .resident-card .resident-devices:empty { display: none; }
   /* The card has the full width but a phone's is narrow: wrap the device details rather than hide most of them. */
   .resident-card .resident-device-where { overflow-wrap: anywhere; white-space: normal; }
