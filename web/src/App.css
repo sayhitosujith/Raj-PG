@@ -2415,6 +2415,9 @@ a.faq-card { text-decoration: none; }
 /* Settings pop-up: the same setting cards as Help, stacked, and scrolling when a phone screen is short. */
 .account-settings { width: min(100%, 480px); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .account-settings-body { display: grid; gap: 12px; }
+/* The same gear as the Profile button that opens this pop-up, after the title. */
+.modal-heading h2.account-settings-title { display: inline-flex; align-items: center; gap: 8px; }
+.account-settings-title svg { flex: none; color: var(--muted); }
 .account-settings-body .notification-preferences { display: grid; gap: 12px; }
 .account-settings-body .notification-preferences > *, .account-settings-body > * { margin: 0; }
 .account-settings-password { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
