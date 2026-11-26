@@ -3030,6 +3030,17 @@ a.faq-card { text-decoration: none; }
 .property-card-title p.property-gst { margin-top: 4px; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: .3px; overflow-wrap: anywhere; }
 .property-gst span { color: var(--muted); font-weight: 700; letter-spacing: .5px; }
 .gst-input { text-transform: uppercase; }
+/* On the resident card: a third line under the PG name, in figures that line up like the membership ID. */
+/* Card footer as a grid: cardholder, age and unit on the first row; the tags and "Resident card" on a
+   second row, both aligned to its bottom so the label always sits level with the last line of tags. */
+.member-card-foot { display: grid; column-gap: 12px; row-gap: 4px; }
+.member-card-foot:not(:has(.member-card-age)) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.member-card-tags { grid-column: 1 / -2; align-self: end; min-width: 0; }
+.member-card-tags:empty { display: none; }
+.member-card-tags .portal-details-tags { margin-top: 0; }
+/* DM Sans is loaded upright only and :root sets font-synthesis: none, so italic is synthesised here alone. */
+.member-card-kind { grid-column: -2 / -1; justify-self: end; align-self: end; font-size: 15px; font-style: italic; font-synthesis: style; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; opacity: .9; }
+.member-card-brand small.member-card-gst { margin-top: 1px; font-variant-numeric: tabular-nums; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gst-input::placeholder { text-transform: none; }
 /* Performance tests: the run controls, the pass/fail line and the per-request timings. */
 .performance-tests-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 16px; }
