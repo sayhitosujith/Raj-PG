@@ -17,6 +17,8 @@ model Property {
   ownerPhone          String?
   // The PG's own website, if it has one (a full https:// address); shown on the public site and in the portal's Info tab.
   websiteUrl          String?
+  // The property's GSTIN (15 characters, upper case, check character verified in gst.ts); null when not registered.
+  gstNumber           String?
   imageUrl            String
   status              String               @default("Healthy")
   // Meal service windows shown to residents, as 24-hour "HH:MM" local (IST) times.

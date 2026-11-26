@@ -12,6 +12,7 @@ import { cronRouter } from './rentReminders.js'
 import { whatsappAdminRouter } from './whatsappAdmin.js'
 import { financeAdminRouter } from './finance.js'
 import { reportsRouter } from './reports.js'
+import { parseGstNumber } from './gst.js'
 import { emailAdminRouter } from './emailAdmin.js'
 import { fallbackDashboard } from './data.js'
 import { prisma, withDatabaseRetry } from './db.js'
@@ -199,6 +200,8 @@ app.post('/api/properties', async (request, response) => {
   const { name, location, imageUrl, tenantType: rawTenantType, amenities: rawAmenities, totalRooms: rawTotalRooms, rentWithFood, rentWithoutFood } = request.body as { name?: string; location?: string; imageUrl?: string; tenantType?: unknown; amenities?: unknown; totalRooms?: unknown; rentWithFood?: unknown; rentWithoutFood?: unknown }
   const city = parseCity((request.body as { city?: unknown }).city)
   if ('error' in city) { response.status(400).json({ error: city.error }); return }
+  const gst = parseGstNumber((request.body as { gstNumber?: unknown }).gstNumber)
+  if ('error' in gst) { response.status(400).json({ error: gst.error }); return }
   const ownerPhone = parseOwnerPhone((request.body as { ownerPhone?: unknown }).ownerPhone)
   if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   const notice = parseNoticeDays((request.body as { noticePeriodDays?: unknown }).noticePeriodDays)
@@ -230,7 +233,7 @@ app.post('/api/properties', async (request, response) => {
 
   try {
     const property = await prisma.property.create({
-      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...ownerPhone, ...notice, ...info.data, ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows?.length ? { sharingPrices: { create: sharing.rows } } : {}) },
+      data: { name: name.trim(), location: location.trim(), imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80', ...city, ...gst, ...ownerPhone, ...notice, ...info.data, ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows?.length ? { sharingPrices: { create: sharing.rows } } : {}) },
       include: { sharingPrices: { select: sharingPriceFields } },
     })
     response.status(201).json({ source: 'postgresql', property: { ...property, image: property.imageUrl, ...occupancySummary({ ...property, rooms: [] }), tone: 'sage', mealTimes: toMealTimes(property) } })
@@ -261,6 +264,8 @@ app.put('/api/properties/:id', async (request, response) => {
   if (meals && 'error' in meals) { response.status(400).json({ error: meals.error }); return }
   const city = parseCity((request.body as { city?: unknown }).city)
   if ('error' in city) { response.status(400).json({ error: city.error }); return }
+  const gst = parseGstNumber((request.body as { gstNumber?: unknown }).gstNumber)
+  if ('error' in gst) { response.status(400).json({ error: gst.error }); return }
   const ownerPhone = parseOwnerPhone((request.body as { ownerPhone?: unknown }).ownerPhone)
   if ('error' in ownerPhone) { response.status(400).json({ error: ownerPhone.error }); return }
   const notice = parseNoticeDays((request.body as { noticePeriodDays?: unknown }).noticePeriodDays)
@@ -287,7 +292,7 @@ app.put('/api/properties/:id', async (request, response) => {
     // Price and residents' rents change together, so a resident never shows a stale rent. Retried when the
     // database drops the connection: it writes the same values again, so a repeat is harmless.
     const property = await withDatabaseRetry(() => prisma.$transaction(async (transaction) => {
-      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows ? { sharingPrices: { deleteMany: {}, create: sharing.rows } } : {}) }, include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } })
+      const updated = await transaction.property.update({ where: { id: request.params.id }, data: { ...(name?.trim() ? { name: name.trim() } : {}), ...(location?.trim() ? { location: location.trim() } : {}), ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}), ...(status?.trim() ? { status: status.trim() } : {}), ...city, ...gst, ...ownerPhone, ...notice, ...info.data, ...(meals ? meals.data : {}), ...tenantType, ...amenities, ...totalRooms, ...rents.data, ...(sharing.rows ? { sharingPrices: { deleteMany: {}, create: sharing.rows } } : {}) }, include: { rooms: { select: roomBedsSelect }, sharingPrices: { select: sharingPriceFields } } })
       if (Object.keys(rents.data).length || sharing.rows) await syncPropertyRents(transaction, updated.id)
       return updated
     }))
@@ -374,6 +379,7 @@ app.get('/api/dashboard', async (_request, response) => {
           ownerPhone: property.ownerPhone,
           noticePeriodDays: property.noticePeriodDays,
           websiteUrl: property.websiteUrl,
+          gstNumber: property.gstNumber,
           wifiName: property.wifiName,
           wifiPassword: property.wifiPassword,
           contacts: property.contacts,

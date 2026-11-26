@@ -31,7 +31,9 @@ type ReceiptData = {
   propertyPhoto: Buffer | null
   /** The owner's UPI ID the money was sent to, for a UPI transfer; null otherwise. */
   upi: { id: string } | null
-  resident: { name: string; phone: string | null; email: string | null; room: string; property: string; location: string }
+  /** The property's GSTIN, printed under the property; null when it has none or the resident has moved out. */
+  gstNumber: string | null
+  resident:{ name: string; phone: string | null; email: string | null; room: string; property: string; location: string }
   month: string
   amount: number
   paidAt: Date
@@ -87,6 +89,7 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
     business: { name: settings.businessName, phone: resident.room?.property.ownerPhone || settings.contactPhone, email: settings.contactEmail },
     propertyPhoto: await propertyPhoto(resident.room?.property.imageUrl),
     upi: report && settings.upiId ? { id: settings.upiId } : null,
+    gstNumber: resident.room?.property.gstNumber ?? null,
     resident: { name: displayName(resident.name), phone: resident.phone, email: resident.email, room: resident.room?.number ?? '—', property: resident.room?.property.name ?? resident.movedOutFrom ?? '', location: resident.room?.property.location ?? '' },
     month: payment.month,
     amount: payment.amount,
@@ -170,6 +173,7 @@ export function renderRentReceipt(receipt: ReceiptData): Promise<Buffer> {
     label('Property', propertyX, partiesTop)
     text(receipt.resident.property, propertyX, partiesTop + 14, { size: 12, bold: true, width: column })
     text(`Room ${receipt.resident.room}`, propertyX, doc.y + 3, { size: 9.5, color: colors.muted, width: column })
+    if (receipt.gstNumber) text(`GSTIN ${receipt.gstNumber}`, propertyX, doc.y + 2, { size: 9.5, color: colors.muted, width: column })
     // Who to contact about this property: its manager number (or the business phone) and email.
     for (const line of [receipt.business.phone, receipt.business.email].filter((value): value is string => Boolean(value))) text(line, propertyX, doc.y + 2, { size: 9.5, color: colors.muted, width: column })
     const link = mapLink(receipt.resident.location)

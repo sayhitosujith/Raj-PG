@@ -3026,6 +3026,11 @@ a.faq-card { text-decoration: none; }
   .report-stats dd { font-size: 17px; }
   .report-chart { padding: 12px 10px; }
 }
+/* GST number: under the location on property cards, and typed upper-case in the property forms. */
+.property-card-title p.property-gst { margin-top: 4px; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: .3px; overflow-wrap: anywhere; }
+.property-gst span { color: var(--muted); font-weight: 700; letter-spacing: .5px; }
+.gst-input { text-transform: uppercase; }
+.gst-input::placeholder { text-transform: none; }
 /* Performance tests: the run controls, the pass/fail line and the per-request timings. */
 .performance-tests-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 16px; }
 .performance-tests-controls label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
