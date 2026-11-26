@@ -1,4 +1,5 @@
 import { RentOrderStatus } from '@prisma/client'
+import { monthAfter } from './dates.js'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { rentForMonth, type rentSummary } from './rent.js'
@@ -14,10 +15,6 @@ export function outstandingRentItems(rent: Awaited<ReturnType<typeof rentSummary
   return rent.outstandingMonths.map((month) => ({ month, amount: rentForMonth(monthlyRent, month, rent.concessions) + (rent.overdueMonths.includes(month) ? rent.lateFee : 0) }))
 }
 
-const monthAfter = (key: string) => {
-  const [year, month] = key.split('-').map(Number)
-  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`
-}
 
 /**
  * What a direct UPI payment covers: everything owed or, when nothing is, the next unpaid month

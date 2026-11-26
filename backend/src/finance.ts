@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
-import { parseDateOnly, propertyNow, propertyUtcOffsetMs } from './dates.js'
+import { monthRange, parseDateOnly, propertyNow } from './dates.js'
 import { prisma } from './db.js'
-import { activeConcessions, rentStatus } from './rent.js'
+import { activeConcessions, owedForMonth, rentStatus } from './rent.js'
 import { getSettings, rentRulesOf } from './settings.js'
 
 /**
@@ -17,38 +17,28 @@ type ExpenseCategory = (typeof expenseCategories)[number]
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
 const maxAmount = 1_00_00_000
 
-const monthAfter = (key: string) => {
-  const [year, month] = key.split('-').map(Number)
-  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`
-}
-
-/** A month's calendar-day range (for date-only columns) and its IST instant range (for timestamps). */
-function monthRange(month: string) {
-  const start = new Date(`${month}-01T00:00:00Z`)
-  const end = new Date(`${monthAfter(month)}-01T00:00:00Z`)
-  return { start, end, istStart: new Date(start.getTime() - propertyUtcOffsetMs), istEnd: new Date(end.getTime() - propertyUtcOffsetMs) }
-}
-
-/** Paid Payments entries that are not rent, optionally within an IST instant range. */
-async function otherIncome(range?: { istStart: Date; istEnd: Date }) {
+/**
+ * Paid Payments entries that are not rent, optionally within an IST instant range. Shared with the
+ * Reports page so "other income" is defined once.
+ */
+export async function otherIncomePayments(range?: { istStart: Date; istEnd: Date }) {
   const payments = await prisma.payment.findMany({
     where: { status: 'paid', rentMonths: { equals: Prisma.DbNull }, ...(range ? { createdAt: { gte: range.istStart, lt: range.istEnd } } : {}) },
-    select: { amount: true, razorpayQrId: true },
+    select: { amount: true, razorpayQrId: true, propertyId: true, createdAt: true },
   })
   // A resident's rent QR has a RentOrder under the same id; that money is already in the rent ledger.
   const qrIds = payments.flatMap((payment) => payment.razorpayQrId ? [payment.razorpayQrId] : [])
   const rentQrIds = new Set(qrIds.length ? (await prisma.rentOrder.findMany({ where: { razorpayOrderId: { in: qrIds } }, select: { razorpayOrderId: true } })).map((order) => order.razorpayOrderId) : [])
-  return payments.filter((payment) => !payment.razorpayQrId || !rentQrIds.has(payment.razorpayQrId)).reduce((sum, payment) => sum + payment.amount, 0)
+  return payments.filter((payment) => !payment.razorpayQrId || !rentQrIds.has(payment.razorpayQrId))
 }
+
+const otherIncome = async (range?: { istStart: Date; istEnd: Date }) => (await otherIncomePayments(range)).reduce((sum, payment) => sum + payment.amount, 0)
 
 /** Rent still owed for `month`, from each resident's rent status (so it matches the rent screens). */
 async function rentOutstanding(month: string) {
   const rules = rentRulesOf(await getSettings())
   const residents = await prisma.resident.findMany({ where: { active: true, monthlyRent: { not: null } }, select: { monthlyRent: true, rentTrackedFrom: true, joinedAt: true, active: true, rentPayments: { select: { month: true } }, ...activeConcessions } })
-  return residents.reduce((sum, resident) => {
-    const status = rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules)
-    return status.outstandingMonths.includes(month) ? sum + (status.monthAmounts[month] ?? 0) + (status.overdueMonths.includes(month) ? status.lateFee : 0) : sum
-  }, 0)
+  return residents.reduce((sum, resident) => sum + owedForMonth(rentStatus(resident, resident.rentPayments.map((payment) => payment.month), rules), month), 0)
 }
 
 function respondToError(response: Response, error: unknown, fallback: string) {

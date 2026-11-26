@@ -5,7 +5,7 @@ import { canReachProperty, staffAccess } from './staffAccess.js'
 /**
  * The receptionist role's limits, applied in one place before every staff route (mounted right after the
  * staff sign-in check), so no individual route can forget them:
- *  1. owner-only routes refuse receptionists (team, settings changes, website text, WhatsApp/email setup, finance,
+ *  1. owner-only routes refuse receptionists (team, settings changes, website text, WhatsApp/email setup, finance, reports,
  *     approving new residents,
  *     adding/editing/deleting properties, rooms and property staff, deleted records, deleting residents, door access keys, door locks and door lock tasks);
  *  2. routes about one record (a resident, payment, booking, request…) or one property check that it
@@ -29,6 +29,7 @@ const ownerOnly: Rule[] = [
   { path: /^\/email(\/|$)/ },
   { path: /^\/finance(\/|$)/ },
   { path: /^\/expenses(\/|$)/ },
+  { path: /^\/reports(\/|$)/ },
   { method: 'POST', path: /^\/properties$/ },
   { method: 'PUT', path: /^\/properties\/[^/]+$/ },
   { method: 'DELETE', path: /^\/properties\/[^/]+$/ },

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { randomBytes } from 'node:crypto'
 import { Router } from 'express'
+import { monthAfter } from './dates.js'
 import { prisma } from './db.js'
 import { rentSummary } from './rent.js'
 import { isFeatureOn } from './residentFeatureGate.js'
@@ -51,10 +52,6 @@ export async function referrerForCode(code: unknown) {
   return resident?.id ?? null
 }
 
-const monthAfter = (key: string) => {
-  const [year, month] = key.split('-').map(Number)
-  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`
-}
 
 /**
  * Grants the referral reward for `friendId` if it is due: the friend came through someone's

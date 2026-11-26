@@ -23,6 +23,7 @@ import {
   Globe,
   History,
   Gauge,
+  ChartColumn,
   ShieldCheck,
   Users,
   UtensilsCrossed,
@@ -105,6 +106,7 @@ import { IsSuperAdminProvider } from './staffContext'
 import { AuditLogsView } from './AuditLogsView'
 import { weatherCityWarning } from './weather'
 import { PerformanceTestsView } from './PerformanceTestsView'
+import { ReportsView } from './ReportsView'
 import { sitePaths } from './router'
 
 type IconType = typeof Home
@@ -575,6 +577,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {isOwner && <NavItem icon={Archive} label="Deleted records" active={activeView === 'Deleted records'} onClick={() => handleNavigation('Deleted records')} />}
           <NavItem icon={ClipboardList} label="Referral Requests" badge={stats.pendingBookings ? String(stats.pendingBookings) : undefined} active={activeView === 'Referral Requests'} onClick={() => handleNavigation('Referral Requests')} />
           <NavItem icon={WalletCards} label="Payments" active={activeView === 'Payments'} onClick={() => handleNavigation('Payments')} />
+          {isOwner && <NavItem icon={ChartColumn} label="Reports" active={activeView === 'Reports'} onClick={() => handleNavigation('Reports')} />}
           <p className="nav-label nav-label-spaced">Manage</p>
           <NavItem icon={Sparkles} label="Staff management" badge={newHousekeepingCount ? String(newHousekeepingCount) : undefined} active={activeView === 'Staff management'} onClick={() => handleNavigation('Staff management')} />
           {isOwner && <NavItem icon={ShieldCheck} label="Team management" active={activeView === 'Team management'} onClick={() => handleNavigation('Team management')} />}
@@ -619,6 +622,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Team management' && isOwner && <SuperAdminsView currentAdminId={currentAdmin.id} properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} onAdminChange={onAdminChange} />}
           {activeView === 'Performance tests' && isOwner && <PerformanceTestsView onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Audit logs' && isOwner && <AuditLogsView refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} />}
+          {activeView === 'Reports' && isOwner && <ReportsView properties={properties} refreshSignal={refreshSignal} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Deleted records' && <DeletedRecordsView refreshSignal={refreshSignal} securityDeposit={settings?.securityDeposit ?? null} onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} />}
           {activeView === 'Maintenance' && <MaintenanceView onBack={() => handleNavigation('Dashboard')} onNotice={showNotice} onChanged={() => void refreshWorkspace()} />}
           {activeView === 'Staff management' && <HousekeepingView requests={housekeeping} loadState={housekeepingLoadState} staff={<StaffPanel properties={properties.flatMap((property) => property.id ? [{ id: property.id, name: property.name, workers: property.workers ?? [] }] : [])} canManage={isOwner} doorKeysEnabled={settings?.doorKeysEnabled ?? true} onChanged={saveWorkers} onNotice={showNotice} />} onRetry={retryHousekeeping} onUpdate={updateHousekeeping} onBack={() => handleNavigation('Dashboard')} />}
@@ -629,7 +633,7 @@ function App({ currentAdmin, onSignOut, onAdminChange }: { currentAdmin: SuperAd
           {activeView === 'Lock tasks' && isOwner && <LockTasksView lock={settings ? { model: settings.lockModel, location: settings.lockLocation } : null} tasks={doorLocks.tasks} hasError={doorLocks.hasError} onRetry={doorLocks.reload} onDone={markLockTaskDone} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Website' && isOwner && <WebsiteEditor onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
           {activeView === 'Settings' && <SettingsView page={isOwner ? 'settings' : 'account'} admin={currentAdmin} settings={settings} onSaveAccount={saveAccount} onSaveSettings={saveSettings} onSaveImage={saveImage} onNotice={showNotice} onBack={() => handleNavigation('Dashboard')} />}
-          {activeView !== 'Dashboard' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Attendance' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Lock tasks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Dashboard')} />}
+          {activeView !== 'Dashboard' && activeView !== 'Residents' && activeView !== 'Team management' && activeView !== 'Subscriptions' && activeView !== 'My subscription' && activeView !== 'Deleted records' && activeView !== 'Audit logs' && activeView !== 'Reports' && activeView !== 'Performance tests' && activeView !== 'Staff management' && activeView !== 'Maintenance' && activeView !== 'Kitchen' && activeView !== 'Attendance' && activeView !== 'Settings' && activeView !== 'Views' && activeView !== 'Website' && activeView !== 'Door locks' && activeView !== 'Lock tasks' && activeView !== 'Properties' && !['Referral Requests', 'Payments', 'Announcements'].includes(activeView) && <WorkspaceView view={activeView} stats={stats} onBack={() => handleNavigation('Dashboard')} />}
           <div className={activeView === 'Dashboard' ? 'dashboard-view' : 'dashboard-view view-hidden'}>
           <section className="stat-grid" aria-label="Property summary">
             <StatCard icon={Building2} label="Total properties" value={stats.properties} detail={details?.properties ?? 'All properties active'} accent="teal" />

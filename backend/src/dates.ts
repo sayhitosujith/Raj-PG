@@ -29,6 +29,25 @@ export function propertyDayStart(now = new Date()) {
   return new Date(Date.parse(`${propertyNow(now).date}T00:00:00Z`) - propertyUtcOffsetMs)
 }
 
+/** The "YYYY-MM" month key after `key`; the one month-stepping rule for rent, orders, referrals and reports. */
+export function monthAfter(key: string) {
+  const [year, month] = key.split('-').map(Number)
+  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`
+}
+
+/**
+ * A month's calendar-day range (for date-only columns such as Expense.date or Resident.joinedAt) and
+ * its IST instant range (for timestamps such as paidAt or createdAt), both end-exclusive.
+ */
+export function monthRange(month: string) {
+  const start = new Date(`${month}-01T00:00:00Z`)
+  const end = new Date(`${monthAfter(month)}-01T00:00:00Z`)
+  return { start, end, istStart: new Date(start.getTime() - propertyUtcOffsetMs), istEnd: new Date(end.getTime() - propertyUtcOffsetMs) }
+}
+
+/** The IST "YYYY-MM" a timestamp falls in, so a payment at 1am IST on the 1st counts in the new month. */
+export const istMonthKey = (instant: Date) => new Date(instant.getTime() + propertyUtcOffsetMs).toISOString().slice(0, 7)
+
 /** "October 2026" from a "YYYY-MM" month key, as receipts and messages write it. */
 export function formatMonthLabel(key: string) {
   const [year, month] = key.split('-').map(Number)

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { Router, type Response } from 'express'
-import { propertyUtcOffsetMs } from './dates.js'
+import { monthAfter, propertyUtcOffsetMs } from './dates.js'
 import { prisma } from './db.js'
 import { notifyInBackground, notifyRentRecorded } from './notifications.js'
 import { getSettings, rentRulesOf, type RentRules } from './settings.js'
@@ -58,8 +58,6 @@ export function rentForMonth(monthlyRent: number, month: string, concessions: re
   return monthlyRent - Math.round(monthlyRent * percentOff / 100)
 }
 
-const nextMonthKey = (month: string) => { const [year, number] = month.split('-').map(Number); return number === 12 ? monthKey(year + 1, 1) : monthKey(year, number + 1) }
-
 /**
  * Computes a resident's rent position. Billing starts at the later of their joining date and the
  * date rent was first set, so turning rent on for an existing resident never invents back-rent.
@@ -88,9 +86,18 @@ export function rentStatus(resident: { monthlyRent: number | null; rentTrackedFr
   const { monthlyRent } = resident
   const price = (month: string) => rentForMonth(monthlyRent, month, concessions)
   // The months anyone may be asked to pay: those owed, this month and next (paying ahead).
-  const monthAmounts = Object.fromEntries([...new Set([...outstandingMonths, currentMonth, nextMonthKey(currentMonth)])].map((month) => [month, price(month)]))
+  const monthAmounts = Object.fromEntries([...new Set([...outstandingMonths, currentMonth, monthAfter(currentMonth)])].map((month) => [month, price(month)]))
   const amountDue = outstandingMonths.reduce((sum, month) => sum + price(month), 0) + overdueMonths.length * rules.lateFee
   return { state, monthlyRent: resident.monthlyRent, currentMonth, outstandingMonths, overdueMonths, amountDue, dueDay, lateFee: rules.lateFee, monthAmounts, concessions: [...concessions] }
+}
+
+/**
+ * What `month` still owes, late fee included once it is overdue; 0 when it is paid or not billed.
+ * The one rule behind the finance summary's and the Reports page's outstanding rent.
+ */
+export function owedForMonth(status: ReturnType<typeof rentStatus>, month: string) {
+  if (!status.outstandingMonths.includes(month)) return 0
+  return (status.monthAmounts[month] ?? 0) + (status.overdueMonths.includes(month) ? status.lateFee : 0)
 }
 
 /**
@@ -104,9 +111,9 @@ export function nextRentDue(status: ReturnType<typeof rentStatus>, paidMonths: s
   if (status.overdueMonths.length) return { state: 'OVERDUE' as const, dueDate: dueDate(status.overdueMonths[0]), amount: status.amountDue }
   if (status.outstandingMonths.includes(status.currentMonth)) return { state: 'DUE' as const, dueDate: dueDate(status.currentMonth), amount: status.monthAmounts[status.currentMonth] ?? status.monthlyRent }
   const paid = new Set(paidMonths)
-  let month = nextMonthKey(status.currentMonth)
+  let month = monthAfter(status.currentMonth)
   // Bounded: nobody pays years ahead, and a runaway loop must not hang the dashboard.
-  for (let ahead = 0; ahead < 36 && paid.has(month); ahead += 1) month = nextMonthKey(month)
+  for (let ahead = 0; ahead < 36 && paid.has(month); ahead += 1) month = monthAfter(month)
   return { state: 'UPCOMING' as const, dueDate: dueDate(month), amount: rentForMonth(status.monthlyRent, month, status.concessions) }
 }
 

@@ -11,6 +11,7 @@ import { notifyAnnouncement, notifyInBackground } from './notifications.js'
 import { cronRouter } from './rentReminders.js'
 import { whatsappAdminRouter } from './whatsappAdmin.js'
 import { financeAdminRouter } from './finance.js'
+import { reportsRouter } from './reports.js'
 import { emailAdminRouter } from './emailAdmin.js'
 import { fallbackDashboard } from './data.js'
 import { prisma, withDatabaseRetry } from './db.js'
@@ -135,6 +136,7 @@ app.use('/api', paymentsAdminRouter)
 app.use('/api', bookingAdminRouter)
 app.use('/api', whatsappAdminRouter)
 app.use('/api', financeAdminRouter)
+app.use('/api', reportsRouter)
 app.use('/api', emailAdminRouter)
 app.use('/api', settingsRouter)
 app.use('/api', siteContentRouter)

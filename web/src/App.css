@@ -2966,6 +2966,66 @@ a.faq-card { text-decoration: none; }
 .audit-log-main strong { color: var(--ink); font-size: 13px; overflow-wrap: anywhere; }
 .audit-log-main small { color: var(--muted); font-size: 11px; }
 .audit-log time { flex: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
+/* Reports (super admins): headline figures, month-by-month bar charts and downloadable tables.
+   Series colours are fixed in order (blue, then orange): validated for colour-blind separation on the
+   light and dark chart surfaces. Orange sits just under 3:1 on white, so every chart also has a legend,
+   exact values on hover and a table view. */
+.reports-view { --report-series-0: #257de0; --report-series-1: #f47230; --report-grid: #e8ece9; --report-tooltip-bg: #fff; }
+:root[data-theme="dark"] .reports-view { --report-series-0: #338ced; --report-series-1: #e76624; --report-grid: rgb(255 255 255 / .12); --report-tooltip-bg: #1f2624; }
+.reports-tabs { margin-top: 16px; }
+/* minmax(0, 1fr) everywhere: a grid column otherwise grows to its content's width, and the chart
+   (which draws at its container's measured width) would then hold the page wider than a phone. */
+.report-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 8px; }
+.report-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0; }
+.report-stats > div { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+.report-stats dt { color: var(--muted); font-size: 11px; }
+.report-stats dd { margin: 0; color: var(--ink); font: 700 21px Manrope, sans-serif; font-variant-numeric: tabular-nums; }
+.report-stats small { color: var(--muted); font-size: 10.5px; }
+.report-stats .is-loss, .report-table .is-loss { color: var(--critical); }
+.report-stats .is-profit { color: var(--good); }
+.report-chart { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+.report-chart-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; }
+.report-chart-head strong { color: var(--ink); font: 700 13px Manrope, sans-serif; }
+.report-chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; color: var(--ink); font-size: 11px; }
+.report-chart-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.report-chart .legend-swatch.report-series-0, .report-chart-tooltip .report-series-0 { background: var(--report-series-0); }
+.report-chart .legend-swatch.report-series-1, .report-chart-tooltip .report-series-1 { background: var(--report-series-1); }
+.report-chart { min-width: 0; }
+.report-chart-plot { position: relative; min-width: 0; }
+/* Drawn at its measured pixel width (MonthlyBarChart), so it is never stretched and text stays 11px. */
+.report-chart-plot svg { display: block; overflow: visible; }
+.report-bar.report-series-0 { fill: var(--report-series-0); }
+.report-bar.report-series-1 { fill: var(--report-series-1); }
+.report-chart g.is-dimmed .report-bar { opacity: .35; }
+.report-chart-grid line { stroke: var(--report-grid); stroke-width: 1; }
+.report-chart-grid text, .report-chart-month { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.report-chart-baseline { stroke: var(--muted); stroke-width: 1; opacity: .6; }
+.report-chart-hit { fill: transparent; cursor: default; outline: none; }
+.report-chart-hit:focus-visible { stroke: var(--teal); stroke-width: 2; }
+.report-chart-tooltip { position: absolute; top: 4px; z-index: 2; display: grid; gap: 4px; min-width: 150px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--report-tooltip-bg); box-shadow: 0 6px 18px rgb(0 0 0 / .12); font-size: 11px; pointer-events: none; }
+.report-chart-tooltip strong { font-size: 11.5px; }
+.report-chart-tooltip span { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 6px; }
+.report-chart-tooltip span.is-total { grid-template-columns: 1fr auto; padding-top: 4px; border-top: 1px solid var(--line); }
+.report-chart-tooltip .legend-swatch { width: 10px; height: 10px; }
+.report-chart-tooltip b { font-variant-numeric: tabular-nums; }
+.report-chart-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--muted); font-size: 12px; pointer-events: none; }
+.report-chart-toggle { justify-self: start; padding: 0; }
+.report-chart-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px; }
+.report-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.report-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.report-section-head h3 { margin: 0; color: var(--ink); font: 700 14px Manrope, sans-serif; }
+.report-csv { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font-size: 12px; }
+.report-table-scroll { overflow-x: auto; }
+.report-table th.is-numeric, .report-table td.is-numeric { text-align: right; white-space: nowrap; }
+.report-meter { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.report-meter > span { width: 70px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--report-grid); }
+.report-meter i { display: block; height: 100%; border-radius: 3px; background: var(--report-series-0); }
+.report-note, .report-empty { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+@media (max-width: 560px) {
+  .report-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-stats dd { font-size: 17px; }
+  .report-chart { padding: 12px 10px; }
+}
 /* Performance tests: the run controls, the pass/fail line and the per-request timings. */
 .performance-tests-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 16px; }
 .performance-tests-controls label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
