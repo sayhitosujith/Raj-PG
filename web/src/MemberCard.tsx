@@ -18,7 +18,7 @@ export function MemberCard({ property, gstNumber, membershipId, name, age, room,
   return (
     <div className="member-card">
       <div className="member-card-top">
-        <p className="member-card-brand" title={property}><strong>{property}</strong>{gstNumber && <small className="member-card-gst">GSTIN {gstNumber}</small>}</p>
+        <p className="member-card-brand" title={property}><strong>{property}</strong>{gstNumber && <small className="member-card-gst">GSTIN-{gstNumber}</small>}</p>
         <Nfc className="member-card-nfc" size={18} aria-hidden="true" />
         {roomBeds ? <span className="member-card-pill">{sharingLabel(roomBeds)}</span> : null}
       </div>
