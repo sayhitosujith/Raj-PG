@@ -29,7 +29,8 @@ export function MemberCard({ property, gstNumber, membershipId, name, age, room,
         {paidThrough && <p className="member-card-field is-end"><span>Valid thru</span>{paidThrough === 'due' ? <strong className="member-card-due">Rent due</strong> : <strong>{cardDate(paidThrough)}</strong>}</p>}
       </div>
       <div className="member-card-row member-card-foot">
-        <div className="member-card-field"><span>Cardholder</span><strong>{name}</strong></div>
+        {/* No "Cardholder" caption: the name sits at the top of the footer, on the captions' line. */}
+        <div className="member-card-field"><strong>{name}</strong></div>
         {age !== null && age !== undefined ? <div className="member-card-field member-card-age"><span>Age</span><strong>{age} {age === 1 ? 'year' : 'years'}</strong></div> : null}
         <p className="member-card-field is-end"><span>Unit</span><strong>Room {room}</strong>{bed ? <strong>Bed {bed}</strong> : null}</p>
         {/* A second row: the tags on the left and "Resident card" on the right share one bottom line,
