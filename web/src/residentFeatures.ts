@@ -4,6 +4,7 @@
  */
 export const residentFeatures = [
   { key: 'tier', label: 'Member tier', detail: 'Silver, Gold or Pearl under the resident’s name, and its FAQ' },
+  { key: 'gstin', label: 'GSTIN', detail: 'The property’s GST number on the resident card and rent receipts' },
   { key: 'faqs', label: 'FAQs', detail: 'The FAQs card in Help and on WhatsApp' },
   { key: 'passkeys', label: 'Face ID / fingerprint sign-in', detail: 'Setting it up, and signing in with it' },
   { key: 'whatsapp', label: 'WhatsApp updates', detail: 'Rent reminders, receipts and notices on WhatsApp' },

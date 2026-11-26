@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit'
 import { formatMonthLabel } from './dates.js'
 import { prisma } from './db.js'
 import { displayName } from './names.js'
+import { isResidentFeatureOn } from './residentFeatures.js'
 import { getSettings } from './settings.js'
 
 /**
@@ -89,7 +90,8 @@ export async function loadRentReceipt(residentId: string, rentPaymentId: string)
     business: { name: settings.businessName, phone: resident.room?.property.ownerPhone || settings.contactPhone, email: settings.contactEmail },
     propertyPhoto: await propertyPhoto(resident.room?.property.imageUrl),
     upi: report && settings.upiId ? { id: settings.upiId } : null,
-    gstNumber: resident.room?.property.gstNumber ?? null,
+    // Hidden with the GSTIN resident feature (Settings), like the resident card.
+    gstNumber: isResidentFeatureOn(settings.residentFeatures, 'gstin') ? resident.room?.property.gstNumber ?? null : null,
     resident: { name: displayName(resident.name), phone: resident.phone, email: resident.email, room: resident.room?.number ?? '—', property: resident.room?.property.name ?? resident.movedOutFrom ?? '', location: resident.room?.property.location ?? '' },
     month: payment.month,
     amount: payment.amount,
