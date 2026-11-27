@@ -2973,8 +2973,8 @@ a.faq-card { text-decoration: none; }
    Series colours are fixed in order (blue, then orange): validated for colour-blind separation on the
    light and dark chart surfaces. Orange sits just under 3:1 on white, so every chart also has a legend,
    exact values on hover and a table view. */
-.reports-view { --report-series-0: #257de0; --report-series-1: #f47230; --report-grid: #e8ece9; --report-tooltip-bg: #fff; }
-:root[data-theme="dark"] .reports-view { --report-series-0: #338ced; --report-series-1: #e76624; --report-grid: rgb(255 255 255 / .12); --report-tooltip-bg: #1f2624; }
+.reports-view { --report-series-0: #257de0; --report-series-1: #f47230; --report-grid: #e8ece9; --report-tooltip-bg: #fff; --report-surface: #fff; --report-map-low: #d4e6fb; --report-map-empty: #eef1ef; }
+:root[data-theme="dark"] .reports-view { --report-series-0: #338ced; --report-series-1: #e76624; --report-grid: rgb(255 255 255 / .12); --report-tooltip-bg: #1f2624; --report-surface: #171c1b; --report-map-low: #1e3a5c; --report-map-empty: #262d2b; }
 .reports-tabs { margin-top: 16px; }
 /* minmax(0, 1fr) everywhere: a grid column otherwise grows to its content's width, and the chart
    (which draws at its container's measured width) would then hold the page wider than a phone. */
@@ -2986,7 +2986,7 @@ a.faq-card { text-decoration: none; }
 .report-stats small { color: var(--muted); font-size: 10.5px; }
 .report-stats .is-loss, .report-table .is-loss { color: var(--critical); }
 .report-stats .is-profit { color: var(--good); }
-.report-chart { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+.report-chart { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 8px; margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
 .report-chart-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; }
 .report-chart-head strong { color: var(--ink); font: 700 13px Manrope, sans-serif; }
 .report-chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; color: var(--ink); font-size: 11px; }
@@ -2995,7 +2995,7 @@ a.faq-card { text-decoration: none; }
 .report-chart .legend-swatch.report-series-1, .report-chart-tooltip .report-series-1 { background: var(--report-series-1); }
 .report-chart { min-width: 0; }
 .report-chart-plot { position: relative; min-width: 0; }
-/* Drawn at its measured pixel width (MonthlyBarChart), so it is never stretched and text stays 11px. */
+/* Drawn at its measured pixel width (MonthlyChart), so it is never stretched and text stays 11px. */
 .report-chart-plot svg { display: block; overflow: visible; }
 .report-bar.report-series-0 { fill: var(--report-series-0); }
 .report-bar.report-series-1 { fill: var(--report-series-1); }
@@ -3014,6 +3014,66 @@ a.faq-card { text-decoration: none; }
 .report-chart-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--muted); font-size: 12px; pointer-events: none; }
 .report-chart-toggle { justify-self: start; padding: 0; }
 .report-chart-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px; }
+/* A donut needs less room than the chart beside it; side by side on wide screens, stacked on phones. */
+.report-chart-pair.is-donut-first { grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 760px) { .report-chart-pair.is-donut-first { grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); } }
+/* Line charts: 2px lines, 8px markers ringed in the surface colour, a crosshair on the hovered month. */
+.report-line path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.report-line circle { stroke: var(--report-surface); stroke-width: 2; transition: r .15s; }
+.report-line.report-series-0 path { stroke: var(--report-series-0); }
+.report-line.report-series-1 path { stroke: var(--report-series-1); }
+.report-line.report-series-0 circle { fill: var(--report-series-0); }
+.report-line.report-series-1 circle { fill: var(--report-series-1); }
+.report-chart-crosshair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: .7; }
+/* Donut: ring with the headline (or hovered slice) in the middle, figures listed beside it. */
+.report-donut { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 20px; padding: 4px 0; }
+.report-donut-ring { position: relative; flex: none; width: 160px; height: 160px; }
+.report-donut-ring svg { display: block; width: 100%; height: 100%; }
+.report-donut-track { stroke: var(--report-grid); }
+.report-donut-slice { transition: opacity .15s; }
+.report-donut-slice.report-series-0 { stroke: var(--report-series-0); }
+.report-donut-slice.report-series-1 { stroke: var(--report-series-1); }
+.report-donut-slice.is-dimmed { opacity: .35; }
+.report-donut-centre { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2px; text-align: center; pointer-events: none; }
+.report-donut-centre strong { color: var(--ink); font: 700 24px Manrope, sans-serif; font-variant-numeric: tabular-nums; }
+.report-donut-centre small { color: var(--muted); font-size: 11px; }
+.report-donut-legend { display: grid; gap: 2px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.report-donut-legend button { display: grid; grid-template-columns: 12px auto auto auto; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 7px; color: var(--ink); background: none; font: inherit; font-size: 12px; text-align: left; cursor: default; }
+.report-donut-legend button:is(:hover, :focus-visible, .is-active) { background: color-mix(in srgb, var(--ink) 6%, transparent); outline: none; }
+.report-donut-legend b { font-variant-numeric: tabular-nums; }
+.report-donut-legend small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.report-donut-legend .legend-swatch.report-series-0, .report-hbar-track .report-series-0 { background: var(--report-series-0); }
+.report-donut-legend .legend-swatch.report-series-1, .report-hbar-track .report-series-1 { background: var(--report-series-1); }
+/* Horizontal bars: name, then the bar, then its figure; the name moves above the bar on phones. */
+.report-hbars { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.report-hbars li { display: grid; grid-template-columns: minmax(90px, 160px) minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.report-hbar-label { overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.report-hbar-track { display: flex; gap: 2px; height: 12px; min-width: 0; overflow: hidden; }
+.report-hbar-track i { display: block; height: 100%; min-width: 2px; }
+.report-hbar-track i:last-child { border-radius: 0 4px 4px 0; }
+.report-hbar-value { color: var(--ink); font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* World map: one blue from pale to deep by resident count; countries without residents stay neutral. */
+.report-map { position: relative; min-width: 0; }
+.report-map svg { display: block; margin: 0 auto; }
+.report-map-country { fill: var(--report-map-empty); stroke: var(--report-surface); stroke-width: .5; }
+.report-map-country.has-residents { cursor: pointer; outline: none; transition: filter .15s; }
+.report-map-country.has-residents:is(:hover, :focus-visible) { filter: brightness(1.12); stroke: var(--ink); stroke-width: 1; }
+.report-map-country.is-selected { stroke: var(--ink); stroke-width: 1.5; }
+.report-map-tooltip { top: auto; min-width: 130px; }
+.report-map-legend { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.report-map-legend i { width: 120px; height: 8px; border-radius: 4px; }
+.report-map-hint { color: var(--muted); font-size: 11px; }
+/* Country list: the same bar layout as the charts, but each row is a button that filters the residents. */
+.report-countries { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.report-countries button { display: grid; grid-template-columns: 20px minmax(90px, 180px) minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: 8px; color: var(--ink); background: none; font: inherit; text-align: left; cursor: pointer; }
+.report-countries button:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--ink) 5%, transparent); outline: none; }
+.report-countries button.is-active { border-color: var(--report-series-0); background: color-mix(in srgb, var(--report-series-0) 10%, transparent); }
+.report-countries .report-hbar-track .report-series-0 { background: var(--report-series-0); }
+@container (max-width: 420px) { .report-countries button { grid-template-columns: 20px minmax(0, 1fr) auto; } .report-countries .report-hbar-track { grid-column: 2 / -1; } }
+@container (max-width: 420px) {
+  .report-hbars li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
+  .report-hbar-label { grid-column: 1 / -1; }
+}
 .report-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .report-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .report-section-head h3 { margin: 0; color: var(--ink); font: 700 14px Manrope, sans-serif; }

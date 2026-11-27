@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRefreshSignal } from './useAutoRefresh'
 
 /** The four reports on the super admins' Reports page; each maps to GET /api/reports/<kind>. */
-export const reportKinds = [['rent', 'Rent & dues'], ['finance', 'Income vs expenses'], ['occupancy', 'Occupancy'], ['requests', 'Maintenance & housekeeping']] as const
+export const reportKinds = [['rent', 'Rent & dues'], ['finance', 'Income vs expenses'], ['occupancy', 'Occupancy'], ['requests', 'Maintenance & housekeeping'], ['countries', 'Residents by country']] as const
 export type ReportKind = (typeof reportKinds)[number][0]
 
 /** Periods the backend accepts (it falls back to 6 for anything else). */
@@ -35,6 +35,12 @@ export type OccupancyReport = {
 export type RequestsReport = {
   maintenance: { months: { month: string; raised: number; resolved: number }[]; open: number; averageDaysToResolve: number | null; byCategory: { category: string; raised: number; open: number }[] }
   housekeeping: { months: { month: string; requested: number; done: number; cancelled: number }[]; open: number }
+}
+
+/** Current residents grouped by nationality (ISO alpha-2), largest group first. */
+export type CountriesReport = {
+  total: number
+  countries: { code: string; residents: { id: string; name: string; property: string; room: string }[] }[]
 }
 
 /**

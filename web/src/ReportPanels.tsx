@@ -1,13 +1,23 @@
+import { lazy, Suspense, useState } from 'react'
+import { countryName } from './countries'
+import { Flag } from './CountryFlag'
 import { expenseCategoryLabels, type ExpenseCategory } from './finance'
+import { InlineLoader } from './Loader'
 import { maintenanceCategoryLabels } from './maintenance'
-import { MonthlyBarChart } from './MonthlyBarChart'
+import { DonutChart } from './DonutChart'
+import { HorizontalBarChart } from './HorizontalBarChart'
+import { MonthlyChart } from './MonthlyChart'
 import { formatMonth, formatRupees } from './rent'
 import { ReportPending, ReportStats, ReportTable, percentOf } from './ReportParts'
-import { compactRupees, useReport, type FinanceReport, type OccupancyReport, type ReportFilter, type RentReport, type RequestsReport } from './reports'
+import { compactRupees, useReport, type CountriesReport, type FinanceReport, type OccupancyReport, type ReportFilter, type RentReport, type RequestsReport } from './reports'
+
+// The map and its world outlines (~100 KB) load only when this tab is opened, not with the dashboard.
+const WorldMap = lazy(() => import('./WorldMap').then((module) => ({ default: module.WorldMap })))
 
 /**
- * The four report bodies on the Reports page. Each loads its own data for the shared filter and
- * shows headline figures, a monthly chart and the detail tables (each with its own CSV download).
+ * The report bodies on the Reports page. Each loads its own data for the shared filter and
+ * shows headline figures, charts suited to its figures (a donut for parts of a whole, lines for a trend,
+ * horizontal bars for categories and properties, bars by month) and the detail tables, each with its CSV.
  * `fileTag` (e.g. "last-6-months") is appended to download names so saved files say what they cover.
  */
 type PanelProps = { filter: ReportFilter; refreshSignal: number; fileTag: string }
@@ -28,8 +38,12 @@ export function RentReportPanel({ filter, refreshSignal, fileTag }: PanelProps) 
         { label: 'Still owed for these months', value: formatRupees(data.totals.outstanding), tone: data.totals.outstanding ? 'is-loss' : undefined },
         { label: 'Owed now, all months', value: formatRupees(data.totals.owedNow), note: `${data.dues.length} resident${data.dues.length === 1 ? '' : 's'}, late fees included`, tone: data.totals.owedNow ? 'is-loss' : undefined },
       ]} />
-      <MonthlyBarChart title="Rent for each month: collected and still owed" months={months} stacked format={formatRupees} axisFormat={compactRupees}
-        series={[{ label: 'Collected', values: data.months.map((row) => row.collected) }, { label: 'Still owed', values: data.months.map((row) => row.outstanding) }]} />
+      <div className="report-chart-pair is-donut-first">
+        <DonutChart title="Collected vs still owed" format={formatRupees} centre={{ value: percentOf(data.totals.collected, data.totals.expected), label: 'collected' }}
+          slices={[{ label: 'Collected', value: data.totals.collected }, { label: 'Still owed', value: data.totals.outstanding }]} />
+        <MonthlyChart title="Rent for each month: collected and still owed" months={months} stacked format={formatRupees} axisFormat={compactRupees}
+          series={[{ label: 'Collected', values: data.months.map((row) => row.collected) }, { label: 'Still owed', values: data.months.map((row) => row.outstanding) }]} />
+      </div>
       <ReportTable title="Month by month" fileName={`rent-by-month-${fileTag}`} rows={data.months} rowKey={(row) => row.month} empty="No months in this period."
         columns={[monthColumn,
           { label: 'Expected (₹)', value: (row) => row.expected, cell: (row) => formatRupees(row.expected), numeric: true },
@@ -62,8 +76,11 @@ export function FinanceReportPanel({ filter, refreshSignal, fileTag }: PanelProp
         { label: 'Expenses', value: formatRupees(data.totals.expenses) },
         { label: isLoss ? 'Loss' : 'Profit', value: `${isLoss ? '−' : ''}${formatRupees(Math.abs(data.totals.profit))}`, tone: isLoss ? 'is-loss' : 'is-profit' },
       ]} />
-      <MonthlyBarChart title="Income and expenses by month" months={data.months.map((row) => row.month)} format={formatRupees} axisFormat={compactRupees}
+      <MonthlyChart kind="line" title="Income and expenses by month" months={data.months.map((row) => row.month)} format={formatRupees} axisFormat={compactRupees}
         series={[{ label: 'Income', values: data.months.map((row) => row.income) }, { label: 'Expenses', values: data.months.map((row) => row.expenses) }]} />
+      <HorizontalBarChart title="Expenses by category" segments={['Spent']} format={formatRupees} empty="No expenses recorded in this period."
+        total={(row) => `${formatRupees(row.values[0])} · ${percentOf(row.values[0], data.totals.expenses)}`}
+        rows={categories.filter((row) => row.amount > 0).map((row) => ({ key: row.category, label: expenseCategoryLabels[row.category], values: [row.amount] }))} />
       <ReportTable title="Month by month" fileName={`income-expenses-${fileTag}`} rows={data.months} rowKey={(row) => row.month} empty="No months in this period."
         columns={[monthColumn,
           { label: 'Rent received (₹)', value: (row) => row.rentReceived, cell: (row) => formatRupees(row.rentReceived), numeric: true },
@@ -96,7 +113,14 @@ export function OccupancyReportPanel({ filter, refreshSignal, fileTag }: PanelPr
         { label: 'Moved in', value: count(moveIns), note: 'in this period' },
         { label: 'Moved out', value: count(moveOuts), note: 'in this period' },
       ]} />
-      <MonthlyBarChart title="Move-ins and move-outs by month" months={data.months.map((row) => row.month)} format={count} wholeNumbers
+      <div className="report-chart-pair is-donut-first">
+        <DonutChart title="Beds taken vs free" format={count} centre={{ value: `${data.totals.occupancy}%`, label: 'occupied' }}
+          slices={[{ label: 'Taken', value: data.totals.taken }, { label: 'Free', value: data.totals.free }]} />
+        <HorizontalBarChart title="Occupancy by property" segments={['Taken', 'Free']} format={count} fillRow empty="No properties yet."
+          total={(row) => `${percentOf(row.values[0], row.values[0] + row.values[1])} · ${count(row.values[0])}/${count(row.values[0] + row.values[1])}`}
+          rows={data.byProperty.map((row) => ({ key: row.propertyId, label: row.name, values: [row.taken, row.free] }))} />
+      </div>
+      <MonthlyChart title="Move-ins and move-outs by month" months={data.months.map((row) => row.month)} format={count} wholeNumbers
         series={[{ label: 'Moved in', values: data.months.map((row) => row.moveIns) }, { label: 'Moved out', values: data.months.map((row) => row.moveOuts) }]} />
       <ReportTable title="Beds by property, right now" fileName={`occupancy-by-property-${fileTag}`} rows={data.byProperty} rowKey={(row) => row.propertyId} empty="No properties yet."
         columns={[
@@ -126,6 +150,8 @@ export function RequestsReportPanel({ filter, refreshSignal, fileTag }: PanelPro
   // Both lists cover the same months in the same order (the backend builds them from one scope).
   const combined = maintenance.months.map((row, index) => ({ ...row, ...housekeeping.months[index] }))
   const days = maintenance.averageDaysToResolve
+  const openOf = (category: string) => maintenance.byCategory.find((row) => row.category === category)?.open ?? 0
+  const categoryName = (category: string) => maintenanceCategoryLabels[category as keyof typeof maintenanceCategoryLabels] ?? category
   return (
     <>
       <ReportStats stats={[
@@ -134,11 +160,14 @@ export function RequestsReportPanel({ filter, refreshSignal, fileTag }: PanelPro
         { label: 'Cleaning requests open', value: count(housekeeping.open) },
       ]} />
       <div className="report-chart-pair">
-        <MonthlyBarChart title="Repairs raised and resolved" months={months} format={count} wholeNumbers
+        <MonthlyChart title="Repairs raised and resolved" months={months} format={count} wholeNumbers
           series={[{ label: 'Raised', values: maintenance.months.map((row) => row.raised) }, { label: 'Resolved', values: maintenance.months.map((row) => row.resolved) }]} />
-        <MonthlyBarChart title="Cleaning requested and done" months={months} format={count} wholeNumbers
+        <MonthlyChart title="Cleaning requested and done" months={months} format={count} wholeNumbers
           series={[{ label: 'Requested', values: housekeeping.months.map((row) => row.requested) }, { label: 'Done', values: housekeeping.months.map((row) => row.done) }]} />
       </div>
+      <HorizontalBarChart title="Repairs by category" segments={['Raised in period']} format={count} empty="No repairs raised in this period."
+        total={(row) => `${count(row.values[0])} raised${openOf(row.key) ? ` · ${count(openOf(row.key))} open` : ''}`}
+        rows={maintenance.byCategory.filter((row) => row.raised > 0).map((row) => ({ key: row.category, label: categoryName(row.category), values: [row.raised] }))} />
       <ReportTable title="Month by month" fileName={`maintenance-housekeeping-${fileTag}`} rows={combined} rowKey={(row) => row.month} empty="No months in this period."
         columns={[monthColumn,
           { label: 'Repairs raised', value: (row) => row.raised, numeric: true },
@@ -148,9 +177,59 @@ export function RequestsReportPanel({ filter, refreshSignal, fileTag }: PanelPro
           { label: 'Cleaning cancelled', value: (row) => row.cancelled, numeric: true }]} />
       <ReportTable title="Repairs by category" fileName={`repairs-by-category-${fileTag}`} rows={maintenance.byCategory} rowKey={(row) => row.category} empty="No repair categories."
         columns={[
-          { label: 'Category', value: (row) => maintenanceCategoryLabels[row.category as keyof typeof maintenanceCategoryLabels] ?? row.category },
+          { label: 'Category', value: (row) => categoryName(row.category) },
           { label: 'Raised in period', value: (row) => row.raised, numeric: true },
           { label: 'Open now', value: (row) => row.open, numeric: true }]} />
+    </>
+  )
+}
+
+/**
+ * Where current residents come from: a world map shaded by nationality, the countries ranked, and the
+ * residents themselves. Picking a country (on the map or in the list) narrows the residents table to it.
+ */
+export function CountriesReportPanel({ filter, refreshSignal }: PanelProps) {
+  const { data, failed } = useReport<CountriesReport>('countries', filter, refreshSignal)
+  const [picked, setPicked] = useState<string | null>(null)
+  if (!data) return <ReportPending failed={failed} />
+  // A pick that the property filter has since emptied falls back to everyone.
+  const selected = picked && data.countries.some((country) => country.code === picked) ? picked : null
+  const counts = Object.fromEntries(data.countries.map((country) => [country.code, country.residents.length]))
+  const top = data.countries[0]
+  const fromAbroad = data.countries.filter((country) => country.code !== 'IN').reduce((sum, country) => sum + country.residents.length, 0)
+  const residents = data.countries.filter((country) => !selected || country.code === selected).flatMap((country) => country.residents.map((resident) => ({ ...resident, country: country.code })))
+  return (
+    <>
+      <ReportStats stats={[
+        { label: 'Residents', value: count(data.total), note: 'living at the properties now' },
+        { label: 'Countries', value: count(data.countries.length) },
+        { label: 'Most common', value: top ? countryName(top.code) : '—', note: top ? `${count(top.residents.length)} of ${count(data.total)} residents` : undefined },
+        { label: 'From outside India', value: count(fromAbroad), note: fromAbroad ? 'passport and visa holders' : undefined },
+      ]} />
+      <figure className="report-chart">
+        <figcaption className="report-chart-head"><strong>Residents by nationality</strong><small className="report-map-hint">Click a country to see its residents</small></figcaption>
+        <Suspense fallback={<InlineLoader label="Loading the map…" />}><WorldMap counts={counts} selected={selected} onSelect={setPicked} /></Suspense>
+      </figure>
+      <section className="report-section">
+        <div className="report-section-head"><h3>Countries</h3>{selected && <button type="button" className="text-link" onClick={() => setPicked(null)}>Show all countries</button>}</div>
+        {top ? (
+          <ul className="report-countries">
+            {data.countries.map((country) => (
+              <li key={country.code}><button type="button" className={selected === country.code ? 'is-active' : ''} aria-pressed={selected === country.code} onClick={() => setPicked(selected === country.code ? null : country.code)}>
+                <Flag code={country.code} /><span className="report-hbar-label">{countryName(country.code)}</span>
+                <span className="report-hbar-track" aria-hidden="true"><i className="report-series-0" style={{ width: `${(country.residents.length / top.residents.length) * 100}%` }} /></span>
+                <b className="report-hbar-value">{count(country.residents.length)} · {percentOf(country.residents.length, data.total)}</b>
+              </button></li>
+            ))}
+          </ul>
+        ) : <p className="report-empty">No residents live at the properties right now.</p>}
+      </section>
+      <ReportTable title={selected ? `Residents from ${countryName(selected)}` : 'All residents'} fileName={`residents-by-country${selected ? `-${selected.toLowerCase()}` : ''}`} rows={residents} rowKey={(row) => row.id} empty="No residents to show."
+        columns={[
+          { label: 'Resident', value: (row) => row.name },
+          { label: 'Country', value: (row) => countryName(row.country), cell: (row) => <span className="country-label"><Flag code={row.country} />{countryName(row.country)}</span> },
+          { label: 'Property', value: (row) => row.property || '—' },
+          { label: 'Room', value: (row) => row.room || '—' }]} />
     </>
   )
 }

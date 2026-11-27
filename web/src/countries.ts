@@ -12,3 +12,6 @@ export const countries: Country[] = flagIconCountries
   .filter((country) => country.iso)
   .map((country) => ({ code: country.code.toUpperCase(), name: country.name }))
   .sort((a, b) => a.name.localeCompare(b.name, 'en'))
+
+/** A country's English name from its alpha-2 code (either case); the bare code when it is not a known country. */
+export const countryName = (code: string) => countries.find((country) => country.code === code.toUpperCase())?.name ?? code

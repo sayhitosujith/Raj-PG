@@ -1,4 +1,4 @@
-import { countries } from './countries'
+import { countryName } from './countries'
 
 // Flags are referenced by URL instead of through flag-icons' stylesheet, which would put every flag
 // into the app-wide CSS that residents download too.
@@ -12,6 +12,6 @@ export function Flag({ code }: { code: string }) {
 
 /** A country's flag and English name, for read-only display; falls back to the bare code if unknown. */
 export function CountryLabel({ code }: { code: string }) {
-  const country = countries.find((candidate) => candidate.code === code)
-  return <span className="country-label">{country && <Flag code={country.code} />}{country?.name ?? code}</span>
+  const name = countryName(code)
+  return <span className="country-label">{name !== code && <Flag code={code} />}{name}</span>
 }

@@ -178,6 +178,28 @@ reportsRouter.get('/reports/occupancy', reportRoute(async (scope) => {
   }
 }))
 
+/**
+ * Residents by country: everyone living at the properties now, grouped by nationality (ISO alpha-2,
+ * as stored), largest group first, with each resident's name, property and room for the drill-down.
+ * A snapshot of today, so the period filter does not apply; the property filter does.
+ */
+reportsRouter.get('/reports/countries', reportRoute(async (scope) => {
+  const [directory, residents] = await Promise.all([
+    propertyDirectory(),
+    prisma.resident.findMany({ where: { active: true, deletedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true, nationality: true, ...residentPlaceSelect } }),
+  ])
+  const byCountry = new Map<string, { id: string; name: string; property: string; room: string }[]>()
+  for (const resident of residents) {
+    const propertyId = directory.propertyOf(resident)
+    if (!inScope(scope, propertyId)) continue
+    const list = byCountry.get(resident.nationality) ?? []
+    list.push({ id: resident.id, name: resident.name, property: propertyId ? directory.nameOf.get(propertyId) ?? '' : '', room: resident.room?.number ?? '' })
+    byCountry.set(resident.nationality, list)
+  }
+  const countries = [...byCountry.entries()].map(([code, list]) => ({ code, residents: list })).sort((a, b) => b.residents.length - a.residents.length || a.code.localeCompare(b.code))
+  return { total: sum(countries.map((country) => country.residents.length)), countries }
+}))
+
 const dayMs = 24 * 60 * 60 * 1000
 
 /**
